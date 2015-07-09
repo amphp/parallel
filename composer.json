@@ -1,0 +1,33 @@
+{
+    "name": "icicleio/concurrent",
+    "description": "Asynchronous threads and forks for running concurrent tasks",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Stephen Coakley",
+            "email": "me@stephencoakley.com",
+            "homepage": "http://stephencoakley.com"
+        }
+    ],
+    "require": {
+        "icicleio/icicle": "@stable",
+        "icicleio/socket": "^0.1.0",
+        "jeremeamia/superclosure": "^2.1"
+    },
+    "suggest": {
+        "ext-pcntl": "Required for fork contexts",
+        "ext-pthreads": "Required for thread contexts",
+        "ext-sem": "Required for fork synchronization"
+    },
+    "autoload": {
+        "psr-4": {
+            "Icicle\\Concurrent\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Icicle\\Tests\\Concurrent\\": "tests"
+        }
+    }
+}
