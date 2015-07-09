@@ -1,0 +1,5 @@
+# ignore dependencies
+vendor/
+
+# ignore lock file
+composer.lock
