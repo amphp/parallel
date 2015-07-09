@@ -3,15 +3,48 @@ namespace Icicle\Concurrent\Forking;
 
 use Icicle\Loop;
 use Icicle\Concurrent\Context;
-use Icicle\Socket\Server\ServerFactory;
-use Icicle\Concurrent\Task;
+use Icicle\Socket\Stream\DuplexStream;
+use Icicle\Promise\Deferred;
 
-class ForkContext implements Context
+abstract class ForkContext implements Context
 {
-    private $socket;
+    private $parentSocket;
+    private $childSocket;
+    private $pid = 0;
+    private $isChild = false;
 
-    public function run(Task $task)
+    public function getPid()
     {
+        return $this->pid;
+    }
+
+    public function isRunning()
+    {
+        if (!$this->isChild) {
+            return posix_getpgid($this->pid) !== false;
+        }
+
+        return true;
+    }
+
+    public function join()
+    {
+        pcntl_waitpid($this->pid, $status);
+    }
+
+    public function start()
+    {
+        $deferred = new Deferred(function (\Exception $exception) {
+            $this->stop();
+        });
+
+        if (($fd = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
+            throw new \Exception();
+        }
+
+        $this->parentSocket = new DuplexStream($fd[0]);
+        $this->childSocket = $fd[1];
+
         if (($pid = pcntl_fork()) === -1) {
             throw new \Exception();
         }
@@ -20,11 +53,15 @@ class ForkContext implements Context
 
         // We are the parent, so create a server socket.
         if ($pid !== 0) {
-            $server = (new ServerFactory())->create('127.0.0.1', 7575);
-            $client = (yield $server->accept());
-            $data = (yield $client->read(0, "\n"));
-            print "Got data from worker: $data\n";
-            return;
+            $this->pid = $pid;
+            $this->parentSocket->read(0, "\n")->then(function ($data) use ($deferred) {
+                print "Got data from worker: $data\n";
+                $deferred->resolve();
+            }, function (\Exception $exception) use ($deferred) {
+                $deferred->reject($exception);
+            });
+
+            return $deferred->getPromise();
         }
 
         // We will have a cloned event loop from the parent after forking. The
@@ -34,32 +71,50 @@ class ForkContext implements Context
         Loop\clear();
         Loop\stop();
 
-        // To communicate with the parent process, we will connect using a TCP
-        // socket. We will use a blocking, synchronous socket that won't interrupt
-        // the synchronous work we need to do.
-        while (true) {
-            $socket = @stream_socket_client('tcp://127.0.0.1:7575', $errno, $errstr, 30);
-
-            // Server hasn't started yet, so keep trying to connect.
-            if ($errno === 111) {
-                usleep(100);
-            } else {
-                break;
-            }
-        }
+        $this->pid = getmypid();
 
         try {
             // We are the child, so begin working.
-            $task->runHere();
+            $this->run();
 
             // Let the parent context now that we are done by sending some data.
-            fwrite($socket, 'done');
+            fwrite($this->childSocket, 'done');
         } catch (\Throwable $e) {
-            fwrite($socket, 'error');
+            fwrite($this->childSocket, 'error');
         }
 
-        fwrite($socket, 'done');
-        fclose($socket);
+        fwrite($this->childSocket, 'done');
+        fclose($this->childSocket);
         exit(0);
     }
+
+    public function stop()
+    {
+        if ($this->isRunning()) {
+            // send the SIGTERM signal to ask the process to end
+            posix_kill($this->getPid(), SIGTERM);
+        }
+    }
+
+    public function kill()
+    {
+        if ($this->isRunning()) {
+            // forcefully kill the process using SIGKILL
+            posix_kill($this->getPid(), SIGKILL);
+        }
+    }
+
+    public function lock()
+    {
+    }
+
+    public function unlock()
+    {
+    }
+
+    public function synchronize(callable $callback)
+    {
+    }
+
+    abstract public function run();
 }

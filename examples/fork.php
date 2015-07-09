@@ -2,17 +2,22 @@
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use Icicle\Concurrent\Forking\ForkContext;
-use Icicle\Concurrent\Task;
-use Icicle\Coroutine\Coroutine;
 
-$task = new Task(function () {
-    print "Exiting in 5 seconds...\n";
-    sleep(5);
-    print "Context exiting...\n";
+class Test extends ForkContext
+{
+    public function run()
+    {
+        print "Exiting in 5 seconds...\n";
+        sleep(5);
+        print "Context exiting...\n";
+    }
+}
+
+$context = new Test();
+$context->start()->then(function () {
+    print "Context finished!\n";
+    Icicle\Loop\stop();
 });
-
-$context = new ForkContext();
-new Coroutine($context->run($task));
 
 print "Context started.\n";
 
