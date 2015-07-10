@@ -3,7 +3,6 @@ namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\Context;
 use Icicle\Concurrent\ContextAbortException;
-use Icicle\Concurrent\Semaphore;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
 use Icicle\Socket\Stream\DuplexStream;
@@ -21,7 +20,6 @@ abstract class ForkContext extends Synchronizable implements Context
     private $pid = 0;
     private $isChild = false;
     private $deferred;
-    private $semaphore;
 
     /**
      * Creates a new fork context.
@@ -33,7 +31,6 @@ abstract class ForkContext extends Synchronizable implements Context
         $this->deferred = new Deferred(function (\Exception $exception) {
             $this->stop();
         });
-        $this->semaphore = new Semaphore();
     }
 
     /**
@@ -160,32 +157,6 @@ abstract class ForkContext extends Synchronizable implements Context
         }
 
         return $this->deferred->getPromise();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function lock()
-    {
-        $this->semaphore->lock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unlock()
-    {
-        $this->semaphore->unlock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback)
-    {
-        $this->lock();
-        $callback($this);
-        $this->unlock();
     }
 
     /**
