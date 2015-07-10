@@ -1,5 +1,4 @@
-# ignore dependencies
-vendor/
-
-# ignore lock file
+build
 composer.lock
+phpunit.xml
+vendor
