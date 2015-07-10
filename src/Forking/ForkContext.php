@@ -10,7 +10,7 @@ use Icicle\Socket\Stream\DuplexStream;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-abstract class ForkContext extends Synchronizable implements Context
+abstract class ForkContext extends Synchronized implements Context
 {
     const MSG_DONE = 1;
     const MSG_ERROR = 2;
