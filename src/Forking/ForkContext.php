@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\ContextInterface;
-use Icicle\Concurrent\ContextAbortException;
+use Icicle\Concurrent\Exception\ContextAbortException;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
 use Icicle\Socket\Stream\DuplexStream;

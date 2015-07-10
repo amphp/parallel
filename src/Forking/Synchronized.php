@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\Semaphore;
+use Icicle\Concurrent\Exception\SynchronizedMemoryException;
 
 /**
  * A synchronized object that safely shares its state across processes and
