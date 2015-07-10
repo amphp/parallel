@@ -35,7 +35,7 @@ abstract class Synchronized
      */
     public function lock()
     {
-        $this->semaphore->lock();
+        $this->semaphore->acquire();
     }
 
     /**
@@ -43,7 +43,7 @@ abstract class Synchronized
      */
     public function unlock()
     {
-        $this->semaphore->unlock();
+        $this->semaphore->release();
     }
 
     /**

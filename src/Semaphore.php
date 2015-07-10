@@ -33,7 +33,7 @@ class Semaphore implements \Serializable
     {
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->maxLocks = $maxLocks;
-        $this->handle = sem_get($this->key, $maxLocks, $permissions, 0);
+        $this->handle = sem_get($this->key, $maxLocks, $permissions, 1);
 
         if ($this->handle === false) {
             throw new SemaphoreException('Failed to create the semaphore.');
@@ -51,11 +51,11 @@ class Semaphore implements \Serializable
     }
 
     /**
-     * Locks the semaphore.
+     * Acquires a lock from the semaphore.
      *
-     * Blocks until the semaphore is locked.
+     * Blocks until a lock can be acquired.
      */
-    public function lock()
+    public function acquire()
     {
         if (!sem_acquire($this->handle)) {
             throw new SemaphoreException('Failed to lock the semaphore.');
@@ -63,9 +63,9 @@ class Semaphore implements \Serializable
     }
 
     /**
-     * Unlocks the semaphore.
+     * Releases a lock to the semaphore.
      */
-    public function unlock()
+    public function release()
     {
         if (!sem_release($this->handle)) {
             throw new SemaphoreException('Failed to unlock the semaphore.');
@@ -106,6 +106,6 @@ class Semaphore implements \Serializable
         // Get the semaphore key and attempt to re-connect to the semaphore in
         // memory.
         list($this->key, $this->maxLocks) = unserialize($serialized);
-        $this->handle = sem_get($this->key, $maxLocks);
+        $this->handle = sem_get($this->key, $maxLocks, 0666, 1);
     }
 }
