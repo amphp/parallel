@@ -4,7 +4,7 @@ namespace Icicle\Concurrent;
 /**
  * Interface for all types of execution contexts.
  */
-interface Context
+interface ContextInterface
 {
     /**
      * Checks if the context is running.
@@ -24,7 +24,11 @@ interface Context
     public function unlock();
 
     /**
-     * Executes a callback with write access to the context data.
+     * Invokes a function while maintaining a lock for the calling context.
+     *
+     * @param callable $callback The function to invoke.
+     *
+     * @return mixed The value returned by the callback.
      */
     public function synchronized(callable $callback);
 

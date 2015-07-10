@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\Context;
+use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\ContextAbortException;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
@@ -10,7 +10,7 @@ use Icicle\Socket\Stream\DuplexStream;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-abstract class ForkContext extends Synchronized implements Context
+abstract class ForkContext extends Synchronized implements ContextInterface
 {
     const MSG_DONE = 1;
     const MSG_ERROR = 2;
