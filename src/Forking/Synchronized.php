@@ -6,6 +6,9 @@ use Icicle\Concurrent\Semaphore;
 /**
  * A synchronized object that safely shares its state across processes and
  * provides methods for process synchronization.
+ *
+ * When used with forking, the object must be created prior to forking for both
+ * processes to access the synchronized object.
  */
 abstract class Synchronized
 {
@@ -22,7 +25,7 @@ abstract class Synchronized
         $this->memoryKey = abs(crc32(spl_object_hash($this)));
         $this->memoryBlock = shm_attach($this->memoryKey, 8192);
         if (!is_resource($this->memoryBlock)) {
-            throw new \Exception();
+            throw new SynchronizedMemoryException('Failed to create shared memory block.');
         }
     }
 
@@ -52,9 +55,28 @@ abstract class Synchronized
     public function synchronized(callable $callback)
     {
         $this->lock();
-        $returnValue = $callback($this);
-        $this->unlock();
+
+        try {
+            $returnValue = $callback($this);
+        } finally {
+            $this->unlock();
+        }
+
         return $returnValue;
+    }
+
+    /**
+     * Destroys the synchronized object safely.
+     */
+    public function __destruct()
+    {
+        if (is_resource($this->memoryBlock)) {
+            $this->synchronized(function () {
+                if (!shm_remove($this->memoryBlock)) {
+                    throw new SynchronizedMemoryException('Failed to discard shared memory block.');
+                }
+            });
+        }
     }
 
     /**
@@ -74,6 +96,11 @@ abstract class Synchronized
         $key = abs(crc32($name));
         if (shm_has_var($this->memoryBlock, $key)) {
             $serialized = shm_get_var($this->memoryBlock, $key);
+
+            if ($serialized === false) {
+                throw new SynchronizedMemoryException('Failed to read from shared memory block.');
+            }
+
             return unserialize($serialized);
         }
     }
@@ -85,7 +112,7 @@ abstract class Synchronized
     {
         $key = abs(crc32($name));
         if (!shm_put_var($this->memoryBlock, $key, serialize($value))) {
-            throw new \Exception();
+            throw new SynchronizedMemoryException('Failed to write to shared memory block.');
         }
     }
 
@@ -96,16 +123,7 @@ abstract class Synchronized
     {
         $key = abs(crc32($name));
         if (!shm_remove_var($this->memoryBlock, $key)) {
-            throw new \Exception();
-        }
-    }
-
-    public function __destruct()
-    {
-        if ($this->memoryBlock) {
-            if (!shm_remove($this->memoryBlock)) {
-                throw new \Exception();
-            }
+            throw new SynchronizedMemoryException('Failed to erase data in shared memory block.');
         }
     }
 }
