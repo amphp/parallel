@@ -22,12 +22,8 @@ class Test extends ForkContext
 $context = new Test();
 $context->data = 'blank';
 $context->start();
-$context->join()->then(function () {
-    print "Context done!\n";
-    Loop\stop();
-});
 
-Loop\periodic(1, function () use ($context) {
+$timer = Loop\periodic(1, function () use ($context) {
     static $i;
     $i = $i + 1 ?: 1;
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -35,6 +31,11 @@ Loop\periodic(1, function () use ($context) {
     $context->synchronized(function ($context) {
         printf("Context data: '%s'\n", $context->data);
     });
+});
+
+$context->join()->then(function () use ($timer) {
+    print "Context done!\n";
+    $timer->stop();
 });
 
 Loop\run();
