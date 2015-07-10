@@ -1,30 +1,40 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
+use Icicle\Loop;
 use Icicle\Concurrent\Forking\ForkContext;
 
 class Test extends ForkContext
 {
     public function run()
     {
-        print "Exiting in 5 seconds...\n";
-        sleep(5);
-        print "Context exiting...\n";
+        print "Child sleeping for 5 seconds...\n";
+        sleep(3);
+
+        $this->synchronized(function () {
+            $this->data = 'progress';
+        });
+
+        sleep(2);
     }
 }
 
 $context = new Test();
-$context->start()->then(function () {
-    print "Context finished!\n";
-    Icicle\Loop\stop();
+$context->data = 'blank';
+$context->start();
+$context->join()->then(function () {
+    print "Context done!\n";
+    Loop\stop();
 });
 
-print "Context started.\n";
-
-Icicle\Loop\periodic(1, function () {
+Loop\periodic(1, function () use ($context) {
     static $i;
     $i = $i + 1 ?: 1;
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
+
+    $context->synchronized(function ($context) {
+        printf("Context data: '%s'\n", $context->data);
+    });
 });
 
-Icicle\Loop\run();
+Loop\run();
