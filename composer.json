@@ -18,7 +18,8 @@
     "suggest": {
         "ext-pcntl": "Required for fork contexts",
         "ext-pthreads": "Required for thread contexts",
-        "ext-sem": "Required for fork synchronization"
+        "ext-sysvsem": "Required for fork synchronization",
+        "ext-sysvshm": "Required for fork contexts"
     },
     "autoload": {
         "psr-4": {
