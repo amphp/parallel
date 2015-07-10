@@ -14,28 +14,19 @@ interface Context
     public function isRunning();
 
     /**
-     * Acquires a lock on the context asynchronously.
-     *
-     * @return PromiseInterface Promise that is resolved when the lock is acquired.
+     * Acquires a lock on the context.
      */
     public function lock();
 
     /**
      * Unlocks the context.
-     *
-     * @return bool True if successful, otherwise false.
      */
     public function unlock();
 
     /**
      * Executes a callback with write access to the context data.
-     *
-     * The callback is executed asynchronously in the future when other contexts
-     * are no longer synchronizing.
-     *
-     * @return PromiseInterface Promise that is resolved when the synchronization completes.
      */
-    public function synchronize(callable $callback);
+    public function synchronized(callable $callback);
 
     /**
      * Starts the context execution.
@@ -43,7 +34,20 @@ interface Context
     public function start();
 
     /**
-     * Blocks the caller's execution until the referenced context finishes.
+     * Stops context execution.
+     */
+    public function stop();
+
+    /**
+     * Immediately kills the context without invoking any handlers.
+     */
+    public function kill();
+
+    /**
+     * Gets a promise that resolves when the context ends and joins with the
+     * parent context.
+     *
+     * @return PromiseInterface Promise that is resolved when the context finishes.
      */
     public function join();
 
