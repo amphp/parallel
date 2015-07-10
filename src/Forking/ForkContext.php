@@ -87,7 +87,8 @@ abstract class ForkContext extends Synchronized implements ContextInterface
 
                 // Get the fatal exception from the process.
                 return $this->parentSocket->read(2)->then(function ($data) {
-                    list($serializedLength) = unpack('S', $data);
+                    $serializedLength = unpack('S', $data);
+                    $serializedLength = $serializedLength[1];
                     return $this->parentSocket->read($serializedLength);
                 })->then(function ($data) {
                     $previous = unserialize($data);
@@ -162,4 +163,15 @@ abstract class ForkContext extends Synchronized implements ContextInterface
      * {@inheritdoc}
      */
     abstract public function run();
+
+    public function __destruct()
+    {
+        parent::__destruct();
+
+        // The parent process outlives the child process, so don't destroy the
+        // semaphore until the parent exits.
+        if (!$this->isChild) {
+            $this->semaphore->destroy();
+        }
+    }
 }

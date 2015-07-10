@@ -15,7 +15,7 @@ abstract class Synchronized
 {
     private $memoryBlock;
     private $memoryKey;
-    private $semaphore;
+    protected $semaphore;
 
     /**
      * Creates a new synchronized object.
