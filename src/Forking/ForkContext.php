@@ -71,8 +71,6 @@ abstract class ForkContext extends Synchronized implements Context
             throw new \Exception();
         }
 
-        Loop\reInit();
-
         if ($pid !== 0) {
             // We are the parent, so close the child socket.
             $this->pid = $pid;
@@ -113,6 +111,7 @@ abstract class ForkContext extends Synchronized implements Context
         // child context by default is synchronous and uses the parent event
         // loop, so we need to stop the clone before doing any work in case it
         // is already running.
+        Loop\reInit();
         Loop\clear();
         Loop\stop();
 
