@@ -20,6 +20,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
     private $pid = 0;
     private $isChild = false;
     private $deferred;
+    public $sem;
 
     /**
      * Creates a new fork context.
@@ -31,6 +32,8 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         $this->deferred = new Deferred(function (\Exception $exception) {
             $this->stop();
         });
+
+        $this->sem = new AsyncIpcSemaphore();
     }
 
     /**
@@ -67,6 +70,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         $this->parentSocket = new DuplexStream($fd[0]);
         $this->childSocket = $fd[1];
 
+        $parentPid = getmypid();
         if (($pid = pcntl_fork()) === -1) {
             throw new \Exception();
         }
@@ -75,6 +79,10 @@ abstract class ForkContext extends Synchronized implements ContextInterface
             // We are the parent, so close the child socket.
             $this->pid = $pid;
             fclose($this->childSocket);
+
+            Loop\signal(SIGUSR1, function () {
+                $this->sem->update();
+            });
 
             // Wait for the child process to send us a byte over the socket pair
             // to discover immediately when the process has completed.
@@ -116,9 +124,14 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         Loop\clear();
         Loop\stop();
 
+        pcntl_signal(SIGUSR1, function () {
+            $this->sem->update();
+        });
+
         // Execute the context runnable and send the parent context the result.
         try {
             $this->run();
+            pcntl_signal_dispatch();
             fwrite($this->childSocket, chr(self::MSG_DONE));
         } catch (\Exception $exception) {
             fwrite($this->childSocket, chr(self::MSG_ERROR));
@@ -172,6 +185,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         // semaphore until the parent exits.
         if (!$this->isChild) {
             $this->semaphore->destroy();
+            $this->sem->destroy();
         }
     }
 }
