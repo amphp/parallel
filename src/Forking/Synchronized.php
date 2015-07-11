@@ -13,9 +13,39 @@ use Icicle\Concurrent\Exception\SynchronizedMemoryException;
  */
 abstract class Synchronized
 {
+    /**
+     * @var int The default amount of bytes to allocate for the object.
+     */
+    const SHM_DEFAULT_SIZE = 16384;
+
+    /**
+     * @var int The byte offset to the start of the object data in memory.
+     */
+    const SHM_DATA_OFFSET = 5;
+
+    /**
+     * @var int The default permissions for other processes to access the object.
+     */
+    const OBJECT_PERMISSIONS = 0600;
+
+    /**
+     * @var The shared memory segment key.
+     */
     private $__key;
+
+    /**
+     * @var An open handle to the shared memory segment.
+     */
     private $__shm;
+
+    /**
+     * @var array A local cache of property values that are synchronized.
+     */
     private $__synchronizedProperties = [];
+
+    /**
+     * @var Semaphore A semaphore used for locking the object data.
+     */
     protected $semaphore;
 
     /**
@@ -24,7 +54,7 @@ abstract class Synchronized
     public function __construct()
     {
         $this->__key = abs(crc32(spl_object_hash($this)));
-        $this->__open($this->__key, 'c', 0600, 1024);
+        $this->__open($this->__key, 'c', static::OBJECT_PERMISSIONS, static::SHM_DEFAULT_SIZE);
         $this->__write(0, pack('x5'));
         $this->__initSynchronizedProperties();
         $this->semaphore = new Semaphore();
@@ -90,7 +120,7 @@ abstract class Synchronized
     /**
      * @internal
      */
-    public function __isset($name)
+    final public function __isset($name)
     {
         $this->__readSynchronizedProperties();
         return isset($this->__synchronizedProperties[$name]);
@@ -99,7 +129,7 @@ abstract class Synchronized
     /**
      * @internal
      */
-    public function __get($name)
+    final public function __get($name)
     {
         $this->__readSynchronizedProperties();
         return $this->__synchronizedProperties[$name];
@@ -108,7 +138,7 @@ abstract class Synchronized
     /**
      * @internal
      */
-    public function __set($name, $value)
+    final public function __set($name, $value)
     {
         $this->__readSynchronizedProperties();
         $this->__synchronizedProperties[$name] = $value;
@@ -118,7 +148,7 @@ abstract class Synchronized
     /**
      * @internal
      */
-    public function __unset($name)
+    final public function __unset($name)
     {
         $this->__readSynchronizedProperties();
         if (isset($this->__synchronizedProperties[$name])) {
@@ -170,7 +200,7 @@ abstract class Synchronized
      */
     private function __readSynchronizedProperties()
     {
-        $data = $this->__read(0, 5);
+        $data = $this->__read(0, static::SHM_DATA_OFFSET);
         $header = unpack('Cstate/Lsize', $data);
 
         // State set to 1 indicates the memory is stale and has been moved to a
@@ -184,7 +214,7 @@ abstract class Synchronized
         }
 
         if ($header['size'] > 0) {
-            $data = $this->__read(5, $header['size']);
+            $data = $this->__read(static::SHM_DATA_OFFSET, $header['size']);
             $this->__synchronizedProperties = unserialize($data);
         }
     }
@@ -203,14 +233,14 @@ abstract class Synchronized
         // has moved and along with the new key. The old segment will be discarded
         // automatically after all other processes notice the change and close
         // the old handle.
-        if (shmop_size($this->__shm) < $size + 5) {
+        if (shmop_size($this->__shm) < $size + static::SHM_DATA_OFFSET) {
             $this->__key = $this->__key < 0xffffffff ? $this->__key + 1 : rand(0x10, 0xfffffffe);
             $header = pack('CL', 1, $this->__key);
             $this->__write(0, $header);
             $this->destroy();
             shmop_close($this->__shm);
 
-            $this->__open($this->__key, 'c', 0600, $size * 2);
+            $this->__open($this->__key, 'c', static::OBJECT_PERMISSIONS, $size * 2);
         }
 
         $data = pack('xLa*', $size, $serialized);
