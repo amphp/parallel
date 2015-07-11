@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Forking\Synchronized;
 use Icicle\Promise;
 
 /**
@@ -19,6 +20,26 @@ class AsyncSemaphore extends Synchronized
      *                current calling context.
      */
     private $waitQueue;
+
+    /**
+     * @synchronized
+     */
+    private $maxLocks;
+
+    /**
+     * @synchronized
+     */
+    private $queueSize;
+
+    /**
+     * @synchronized
+     */
+    private $locks;
+
+    /**
+     * @synchronized
+     */
+    private $processQueue;
 
     /**
      * Creates a new asynchronous semaphore.
@@ -64,7 +85,6 @@ class AsyncSemaphore extends Synchronized
                 $deferred = new Promise\Deferred();
                 $this->waitQueue->enqueue($deferred);
                 $this->processQueue->enqueue(getmypid());
-                var_dump($this->processQueue);
                 return $deferred->getPromise();
             }
         });
@@ -89,7 +109,6 @@ class AsyncSemaphore extends Synchronized
             ++$this->locks;
         });
 
-        var_dump($this->processQueue);
         if (!$this->processQueue->isEmpty()) {
             $pid = $this->processQueue->dequeue();
 
