@@ -1,8 +1,10 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
+use Icicle\Concurrent\AsyncSemaphore;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ContextAbortException;
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
 use Icicle\Socket\Stream\DuplexStream;
@@ -33,7 +35,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
             $this->stop();
         });
 
-        $this->sem = new AsyncIpcSemaphore();
+        $this->sem = new AsyncSemaphore();
     }
 
     /**
@@ -80,10 +82,6 @@ abstract class ForkContext extends Synchronized implements ContextInterface
             $this->pid = $pid;
             fclose($this->childSocket);
 
-            Loop\signal(SIGUSR1, function () {
-                $this->sem->update();
-            });
-
             // Wait for the child process to send us a byte over the socket pair
             // to discover immediately when the process has completed.
             $this->parentSocket->read(1)->then(function ($data) {
@@ -120,18 +118,17 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         // child context by default is synchronous and uses the parent event
         // loop, so we need to stop the clone before doing any work in case it
         // is already running.
+        Loop\stop();
         Loop\reInit();
         Loop\clear();
-        Loop\stop();
-
-        pcntl_signal(SIGUSR1, function () {
-            $this->sem->update();
-        });
 
         // Execute the context runnable and send the parent context the result.
         try {
-            $this->run();
-            pcntl_signal_dispatch();
+            $generator = $this->run();
+            if ($generator instanceof \Generator) {
+                $coroutine = new Coroutine($generator);
+            }
+            Loop\run();
             fwrite($this->childSocket, chr(self::MSG_DONE));
         } catch (\Exception $exception) {
             fwrite($this->childSocket, chr(self::MSG_ERROR));

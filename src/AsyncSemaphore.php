@@ -3,6 +3,7 @@ namespace Icicle\Concurrent;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Forking\Synchronized;
+use Icicle\Loop;
 use Icicle\Promise;
 
 /**
@@ -59,6 +60,10 @@ class AsyncSemaphore extends Synchronized
         $this->queueSize = 0;
         $this->locks = $maxLocks;
         $this->processQueue = new \SplQueue();
+
+        Loop\signal(SIGUSR1, function () {
+            $this->handlePendingLocks();
+        });
     }
 
     /**
@@ -77,7 +82,6 @@ class AsyncSemaphore extends Synchronized
         // Alright, we gotta get in and out as fast as possible. Deep breath...
         return $this->synchronized(function () {
             if ($this->locks > 0) {
-                printf("Async lock count: %d--\n", $this->locks);
                 // Oh goody, a free lock! Acquire a lock and get outta here!
                 --$this->locks;
                 return Promise\resolve();
@@ -102,10 +106,9 @@ class AsyncSemaphore extends Synchronized
     {
         $this->synchronized(function () {
             if ($this->locks === $this->maxLocks) {
-                throw new \Exception();
+                throw new SemaphoreException('No locks acquired to release.');
             }
 
-            printf("Async lock count: %d++\n", $this->locks);
             ++$this->locks;
         });
 
@@ -122,13 +125,16 @@ class AsyncSemaphore extends Synchronized
         return Promise\resolve();
     }
 
-    public function update()
+    /**
+     * Handles pending lock requests and resolves a pending acquire() call if
+     * new locks are available.
+     */
+    private function handlePendingLocks()
     {
         $dequeue = false;
 
         $this->synchronized(function () use (&$dequeue) {
             if ($this->locks > 0 && !$this->waitQueue->isEmpty()) {
-                printf("Async lock count: %d--\n", $this->locks);
                 --$this->locks;
                 $dequeue = true;
             }
