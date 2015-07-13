@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\AsyncSemaphore;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ContextAbortException;
 use Icicle\Coroutine\Coroutine;
@@ -22,7 +21,6 @@ abstract class ForkContext extends Synchronized implements ContextInterface
     private $pid = 0;
     private $isChild = false;
     private $deferred;
-    public $sem;
 
     /**
      * Creates a new fork context.
@@ -34,8 +32,6 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         $this->deferred = new Deferred(function (\Exception $exception) {
             $this->stop();
         });
-
-        $this->sem = new AsyncSemaphore();
     }
 
     /**
@@ -53,11 +49,12 @@ abstract class ForkContext extends Synchronized implements ContextInterface
      */
     public function isRunning()
     {
-        if (!$this->isChild) {
-            return posix_getpgid($this->pid) !== false;
+        // If we are the child process, then we must be running, don't you think?
+        if ($this->isChild) {
+            return true;
         }
 
-        return true;
+        return posix_getpgid($this->pid) !== false;
     }
 
     /**
@@ -181,8 +178,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         // The parent process outlives the child process, so don't destroy the
         // semaphore until the parent exits.
         if (!$this->isChild) {
-            $this->semaphore->destroy();
-            $this->sem->destroy();
+            //$this->semaphore->destroy();
         }
     }
 }

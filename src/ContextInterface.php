@@ -26,11 +26,11 @@ interface ContextInterface
     /**
      * Invokes a function while maintaining a lock for the calling context.
      *
-     * @param callable $callback The function to invoke.
+     * @param \Closure $callback The function to invoke.
      *
      * @return mixed The value returned by the callback.
      */
-    public function synchronized(callable $callback);
+    public function synchronized(\Closure $callback);
 
     /**
      * Starts the context execution.

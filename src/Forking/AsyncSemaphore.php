@@ -1,8 +1,8 @@
 <?php
-namespace Icicle\Concurrent;
+namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
-use Icicle\Concurrent\Forking\Synchronized;
+use Icicle\Concurrent\Semaphore;
 use Icicle\Loop;
 use Icicle\Promise;
 
@@ -14,8 +14,26 @@ use Icicle\Promise;
  * guaranteed to perform very few memory read or write operations to reduce the
  * semaphore latency.
  */
-class AsyncSemaphore extends Synchronized
+class AsyncSemaphore extends SharedObject
 {
+    /**
+     * @var int The number of available locks.
+     * @synchronized
+     */
+    private $locks;
+
+    /**
+     * @var int The maximum number of locks the semaphore allows.
+     * @synchronized
+     */
+    private $maxLocks;
+
+    /**
+     * @var int A queue of processes waiting on locks.
+     * @synchronized
+     */
+    private $processQueue;
+
     /**
      * @var \SplQueue A queue of promises waiting to acquire a lock within the
      *                current calling context.
@@ -23,24 +41,9 @@ class AsyncSemaphore extends Synchronized
     private $waitQueue;
 
     /**
-     * @synchronized
+     * @var Semaphore A synchronous semaphore for double locking.
      */
-    private $maxLocks;
-
-    /**
-     * @synchronized
-     */
-    private $queueSize;
-
-    /**
-     * @synchronized
-     */
-    private $locks;
-
-    /**
-     * @synchronized
-     */
-    private $processQueue;
+    private $semaphore;
 
     /**
      * Creates a new asynchronous semaphore.
@@ -55,11 +58,11 @@ class AsyncSemaphore extends Synchronized
             throw new InvalidArgumentError('Max locks must be a positive integer.');
         }
 
-        $this->maxLocks = $maxLocks;
-        $this->waitQueue = new \SplQueue();
-        $this->queueSize = 0;
         $this->locks = $maxLocks;
+        $this->maxLocks = $maxLocks;
         $this->processQueue = new \SplQueue();
+        $this->waitQueue = new \SplQueue();
+        $this->semaphore = new Semaphore(1);
 
         Loop\signal(SIGUSR1, function () {
             $this->handlePendingLocks();
@@ -78,20 +81,26 @@ class AsyncSemaphore extends Synchronized
      */
     public function acquire()
     {
-        print "Lock request\n";
+        $deferred = new Promise\Deferred();
+
         // Alright, we gotta get in and out as fast as possible. Deep breath...
-        return $this->synchronized(function () {
+        $this->semaphore->acquire();
+
+        try {
             if ($this->locks > 0) {
                 // Oh goody, a free lock! Acquire a lock and get outta here!
                 --$this->locks;
-                return Promise\resolve();
+                $deferred->resolve();
             } else {
-                $deferred = new Promise\Deferred();
                 $this->waitQueue->enqueue($deferred);
                 $this->processQueue->enqueue(getmypid());
-                return $deferred->getPromise();
+                $this->__writeSynchronizedProperties();
             }
-        });
+        } finally {
+            $this->semaphore->release();
+        }
+
+        return $deferred->getPromise();
     }
 
     /**
@@ -104,17 +113,23 @@ class AsyncSemaphore extends Synchronized
      */
     public function release()
     {
-        $this->synchronized(function () {
-            if ($this->locks === $this->maxLocks) {
-                throw new SemaphoreException('No locks acquired to release.');
-            }
+        $this->semaphore->acquire();
 
-            ++$this->locks;
-        });
+        if ($this->locks === $this->maxLocks) {
+            $this->semaphore->release();
+            throw new SemaphoreException('No locks acquired to release.');
+        }
+
+        ++$this->locks;
 
         if (!$this->processQueue->isEmpty()) {
             $pid = $this->processQueue->dequeue();
+            $pending = true;
+        }
 
+        $this->semaphore->release();
+
+        if ($pending) {
             if ($pid === getmypid()) {
                 $this->waitQueue->dequeue()->resolve();
             } else {
@@ -131,14 +146,12 @@ class AsyncSemaphore extends Synchronized
      */
     private function handlePendingLocks()
     {
-        $dequeue = false;
-
-        $this->synchronized(function () use (&$dequeue) {
-            if ($this->locks > 0 && !$this->waitQueue->isEmpty()) {
-                --$this->locks;
-                $dequeue = true;
-            }
-        });
+        $this->semaphore->acquire();
+        if ($this->locks > 0 && !$this->waitQueue->isEmpty()) {
+            --$this->locks;
+            $dequeue = true;
+        }
+        $this->semaphore->release();
 
         if ($dequeue) {
             $this->waitQueue->dequeue()->resolve();
@@ -147,6 +160,7 @@ class AsyncSemaphore extends Synchronized
 
     public function destroy()
     {
-        //$this->semaphore->destroy();
+        parent::destroy();
+        $this->semaphore->destroy();
     }
 }
