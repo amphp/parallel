@@ -14,33 +14,28 @@ class Test extends ForkContext
 
     public function run()
     {
-        print "Child sleeping for 5 seconds...\n";
-        yield $this->sem->acquire();
+        print "Child sleeping for 4 seconds...\n";
+        yield $this->lock();
         sleep(4);
-        yield $this->sem->release();
+        yield $this->unlock();
 
-        $this->synchronized(function () {
+        yield $this->synchronized(function () {
             $this->data = 'progress';
         });
 
-        //throw new Exception('Testing exception bubbling.');
-
+        print "Child sleeping for 2 seconds...\n";
         sleep(2);
     }
 }
 
 $generator = function () {
-    $before = memory_get_usage();
     $context = new Test();
-    $after = memory_get_usage();
     $context->data = 'blank';
-    printf("Object memory: %d bytes\n", $after - $before);
     $context->start();
 
     Loop\timer(1, function () use ($context) {
-        $context->sem->acquire()->then(function () use ($context) {
-            print "Finally got semaphore from child!\n";
-            return $context->sem->release();
+        $context->synchronized(function ($context) {
+            print "Finally got lock from child!\n";
         });
     });
 
@@ -50,9 +45,7 @@ $generator = function () {
         print "Demonstrating how alive the parent is for the {$i}th time.\n";
 
         if ($context->isRunning()) {
-            $context->synchronized(function ($context) {
-                printf("Context data: '%s'\n", $context->data);
-            });
+            printf("Context data: '%s'\n", $context->data);
         }
     });
 
