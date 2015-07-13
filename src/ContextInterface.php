@@ -15,11 +15,15 @@ interface ContextInterface
 
     /**
      * Acquires a lock on the context.
+     *
+     * @return \Icicle\Promise\PromiseInterface
      */
     public function lock();
 
     /**
      * Unlocks the context.
+     *
+     * @return \Icicle\Promise\PromiseInterface
      */
     public function unlock();
 
@@ -28,7 +32,7 @@ interface ContextInterface
      *
      * @param \Closure $callback The function to invoke.
      *
-     * @return mixed The value returned by the callback.
+     * @return \Icicle\Promise\PromiseInterface
      */
     public function synchronized(\Closure $callback);
 
@@ -51,7 +55,7 @@ interface ContextInterface
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return PromiseInterface Promise that is resolved when the context finishes.
+     * @return \Icicle\Promise\PromiseInterface Promise that is resolved when the context finishes.
      */
     public function join();
 
