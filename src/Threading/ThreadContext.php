@@ -21,8 +21,10 @@ abstract class ThreadContext implements ContextInterface
      */
     private $deferredJoin;
 
-    private $parentSocket;
-    private $clientSocket;
+    /**
+     * @var DuplexStream An active socket connection to the thread's socket.
+     */
+    private $socket;
 
     /**
      * Creates a new thread context.
@@ -33,7 +35,7 @@ abstract class ThreadContext implements ContextInterface
             $this->kill();
         });
 
-        $this->thread = new Thread();
+        $this->thread = new Thread(static::class);
     }
 
     /**
@@ -49,14 +51,19 @@ abstract class ThreadContext implements ContextInterface
      */
     public function start()
     {
-        if (($fd = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
+        if (($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
             throw new \Exception();
         }
 
-        $this->parentSocket = new DuplexStream($fd[0]);
-        $this->childSocket = $fd[1];
+        // When the thread is started, the event loop will be duplicated, so we
+        // need to start the thread before we add anything else to the event loop
+        // or we will cause a segmentation fault.
+        $this->thread->initialize($sockets[1]);
+        $this->thread->start(PTHREADS_INHERIT_ALL);
 
-        $this->parentSocket->read(1)->then(function ($data) {
+        $this->socket = new DuplexStream($sockets[0]);
+
+        $this->socket->read(1)->then(function ($data) {
             $message = ord($data);
             if ($message === Thread::MSG_DONE) {
                 $this->thread->join();
@@ -65,22 +72,19 @@ abstract class ThreadContext implements ContextInterface
             }
 
             // Get the fatal exception from the process.
-            return $this->parentSocket->read(2)->then(function ($data) {
+            return $this->socket->read(2)->then(function ($data) {
                 $serializedLength = unpack('S', $data);
                 $serializedLength = $serializedLength[1];
-                return $this->parentSocket->read($serializedLength);
+                return $this->socket->read($serializedLength);
             })->then(function ($data) {
                 $previous = unserialize($data);
                 $exception = new ContextAbortException('The context encountered an error.', 0, $previous);
                 $this->deferredJoin->reject($exception);
-                $this->parentSocket->close();
+                $this->socket->close();
             });
         }, function (\Exception $exception) {
             $this->deferredJoin->reject($exception);
         });
-
-        $this->thread->initialize($this->childSocket);
-        $this->thread->start(PTHREADS_INHERIT_ALL);
     }
 
     /**
@@ -137,13 +141,5 @@ abstract class ThreadContext implements ContextInterface
         }
 
         return $returnValue;
-    }
-
-    /**
-     * Initializes the thread and executes the main context code.
-     */
-    private function initializeThread()
-    {
-        $this->run();
     }
 }

@@ -7,6 +7,12 @@ class Thread extends \Thread
     const MSG_ERROR = 2;
 
     private $socket;
+    private $class;
+
+    public function __construct($class)
+    {
+        $this->class = $class;
+    }
 
     public function initialize($socket)
     {
@@ -15,8 +21,9 @@ class Thread extends \Thread
 
     public function run()
     {
-        echo "TESTING\n";
-        sleep(5);
+        $class = $this->class;
+        $instance = new $class();
+        $instance->run();
 
         $this->sendMessage(self::MSG_DONE);
         fclose($this->socket);
