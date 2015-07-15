@@ -64,6 +64,12 @@ abstract class SharedObject
     }
 
     /**
+     * Checks if a synchronized property is set.
+     *
+     * @param string $name The name of the property to check.
+     *
+     * @return bool True if the property is set, otherwise false.
+     *
      * @internal
      */
     final public function __isset($name)
@@ -73,6 +79,12 @@ abstract class SharedObject
     }
 
     /**
+     * Gets the value of a synchronized property.
+     *
+     * @param string $name The name of the property to get.
+     *
+     * @return mixed The value of the property.
+     *
      * @internal
      */
     final public function __get($name)
@@ -82,6 +94,11 @@ abstract class SharedObject
     }
 
     /**
+     * Sets the value of a synchronized property.
+     *
+     * @param string $name  The name of the property to set.
+     * @param mixed  $value The value to set the property to.
+     *
      * @internal
      */
     final public function __set($name, $value)
@@ -92,6 +109,10 @@ abstract class SharedObject
     }
 
     /**
+     * Unsets a synchronized property.
+     *
+     * @param string $name The name of the property to unset.
+     *
      * @internal
      */
     final public function __unset($name)
@@ -117,6 +138,9 @@ abstract class SharedObject
         $class = new \ReflectionClass(get_called_class());
         $synchronizedProperties = [];
 
+        // Find *all* defined and inherited properties of the called class (late
+        // binding) and get which class the property was defined in. This
+        // includes inherited private properties.
         do {
             foreach ($class->getProperties() as $property) {
                 if (!$property->isStatic()) {
@@ -128,12 +152,17 @@ abstract class SharedObject
             }
         } while ($class = $class->getParentClass());
 
+        // Define a closure that deletes a property and returns its default
+        // value. This function will be called on the current object to delete
+        // synchronized properties (by being bound to the class scope that
+        // defined the property).
         $unsetter = function ($name) {
             $initValue = $this->{$name};
             unset($this->{$name});
             return $initValue;
         };
 
+        // Cache the synchronized property table.
         foreach ($synchronizedProperties as $property => $class) {
             $this->__synchronizedProperties[$property] = $unsetter
                 ->bindTo($this, $class)
@@ -142,6 +171,8 @@ abstract class SharedObject
     }
 
     /**
+     * Reloads the object's property table from shared memory.
+     *
      * @internal
      */
     private function __readSynchronizedProperties()
@@ -166,6 +197,8 @@ abstract class SharedObject
     }
 
     /**
+     * Writes the object's property table to shared memory.
+     *
      * @internal
      */
     protected function __writeSynchronizedProperties()
@@ -194,6 +227,13 @@ abstract class SharedObject
     }
 
     /**
+     * Opens a shared memory handle.
+     *
+     * @param int    $key         The shared memory key.
+     * @param string $mode        The mode to open the shared memory in.
+     * @param int    $permissions Process permissions on the shared memory.
+     * @param int The size to crate the shared memory in bytes.
+     *
      * @internal
      */
     private function __open($key, $mode, $permissions, $size)
@@ -205,6 +245,13 @@ abstract class SharedObject
     }
 
     /**
+     * Reads binary data from shared memory.
+     *
+     * @param int $offset The offset to read from.
+     * @param int $size   The number of bytes to read.
+     *
+     * @return string The binary data at the given offset.
+     *
      * @internal
      */
     private function __read($offset, $size)
@@ -217,6 +264,11 @@ abstract class SharedObject
     }
 
     /**
+     * Writes binary data to shared memory.
+     *
+     * @param int    $offset The offset to write to.
+     * @param string $data   The binary data to write.
+     *
      * @internal
      */
     private function __write($offset, $data)
