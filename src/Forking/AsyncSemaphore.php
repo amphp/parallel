@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\SemaphoreException;
 use Icicle\Concurrent\Semaphore;
 use Icicle\Loop;
 use Icicle\Promise;
@@ -146,6 +147,7 @@ class AsyncSemaphore extends SharedObject
      */
     private function handlePendingLocks()
     {
+        $dequeue = false;
         $this->semaphore->acquire();
         if ($this->locks > 0 && !$this->waitQueue->isEmpty()) {
             --$this->locks;
