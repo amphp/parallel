@@ -15,9 +15,7 @@ class Test extends ForkContext
     public function run()
     {
         print "Child sleeping for 4 seconds...\n";
-        yield $this->lock();
         sleep(4);
-        yield $this->unlock();
 
         yield $this->synchronized(function () {
             $this->data = 'progress';
@@ -45,7 +43,9 @@ $generator = function () {
         print "Demonstrating how alive the parent is for the {$i}th time.\n";
 
         if ($context->isRunning()) {
-            printf("Context data: '%s'\n", $context->data);
+            $context->synchronized(function ($context) {
+                printf("Context data: '%s'\n", $context->data);
+            });
         }
     });
 
