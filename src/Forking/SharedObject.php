@@ -232,7 +232,7 @@ abstract class SharedObject
      * @param int    $key         The shared memory key.
      * @param string $mode        The mode to open the shared memory in.
      * @param int    $permissions Process permissions on the shared memory.
-     * @param int The size to crate the shared memory in bytes.
+     * @param int    $size        The size to crate the shared memory in bytes.
      *
      * @internal
      */
