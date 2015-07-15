@@ -8,6 +8,10 @@ use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * Implements an execution context using native multi-threading.
+ *
+ * The thread context is not itself threaded. A local instance of the context is
+ * maintained both in the context that creates the thread and in the thread
+ * itself.
  */
 abstract class ThreadContext implements ContextInterface
 {
@@ -25,6 +29,12 @@ abstract class ThreadContext implements ContextInterface
      * @var DuplexStream An active socket connection to the thread's socket.
      */
     private $socket;
+
+    public static function createThreadInstance()
+    {
+        $class = new \ReflectionClass(static::class);
+        return $class->newInstanceWithoutConstructor();
+    }
 
     /**
      * Creates a new thread context.

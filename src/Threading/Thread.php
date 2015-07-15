@@ -1,6 +1,9 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+/**
+ * A thread object that is used by ThreadContext.
+ */
 class Thread extends \Thread
 {
     const MSG_DONE = 1;
@@ -22,7 +25,7 @@ class Thread extends \Thread
     public function run()
     {
         $class = $this->class;
-        $instance = new $class();
+        $instance = $class::createThreadInstance();
         $instance->run();
 
         $this->sendMessage(self::MSG_DONE);
