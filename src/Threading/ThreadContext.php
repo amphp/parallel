@@ -76,8 +76,8 @@ abstract class ThreadContext implements ContextInterface
         $this->socket->read(1)->then(function ($data) {
             $message = ord($data);
             if ($message === Thread::MSG_DONE) {
-                $this->thread->join();
                 $this->deferredJoin->resolve();
+                $this->thread->join();
                 return;
             }
 
