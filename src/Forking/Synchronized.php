@@ -1,6 +1,8 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
+use Icicle\Concurrent\SynchronizableInterface;
+
 /**
  * A synchronized object that safely shares its state across processes and
  * provides methods for process synchronization.
@@ -8,7 +10,7 @@ namespace Icicle\Concurrent\Forking;
  * When used with forking, the object must be created prior to forking for both
  * processes to access the synchronized object.
  */
-abstract class Synchronized extends SharedObject
+abstract class Synchronized extends SharedObject implements SynchronizableInterface
 {
     /**
      * @var AsyncSemaphore A semaphore used for locking the object data.

@@ -4,7 +4,7 @@ namespace Icicle\Concurrent;
 /**
  * Interface for all types of execution contexts.
  */
-interface ContextInterface
+interface ContextInterface extends SynchronizableInterface
 {
     /**
      * Checks if the context is running.
@@ -12,29 +12,6 @@ interface ContextInterface
      * @return bool True if the context is running, otherwise false.
      */
     public function isRunning();
-
-    /**
-     * Acquires a lock on the context.
-     *
-     * @return \Icicle\Promise\PromiseInterface
-     */
-    public function lock();
-
-    /**
-     * Unlocks the context.
-     *
-     * @return \Icicle\Promise\PromiseInterface
-     */
-    public function unlock();
-
-    /**
-     * Invokes a function while maintaining a lock for the calling context.
-     *
-     * @param callable $callback The function to invoke.
-     *
-     * @return \Icicle\Promise\PromiseInterface
-     */
-    public function synchronized(callable $callback);
 
     /**
      * Starts the context execution.
