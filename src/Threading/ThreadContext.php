@@ -130,7 +130,7 @@ abstract class ThreadContext implements ContextInterface
     /**
      * {@inheritdoc}
      */
-    public function synchronized(\Closure $callback)
+    public function synchronized(callable $callback)
     {
         $this->lock();
 

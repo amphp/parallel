@@ -44,11 +44,11 @@ abstract class Synchronized extends SharedObject
     /**
      * Invokes a function while maintaining a lock for the calling context.
      *
-     * @param \Closure $callback The function to invoke.
+     * @param callable $callback The function to invoke.
      *
      * @return mixed The value returned by the callback.
      */
-    public function synchronized(\Closure $callback)
+    public function synchronized(callable $callback)
     {
         return $this->lock()->then(function () use ($callback) {
             try {

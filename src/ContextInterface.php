@@ -30,11 +30,11 @@ interface ContextInterface
     /**
      * Invokes a function while maintaining a lock for the calling context.
      *
-     * @param \Closure $callback The function to invoke.
+     * @param callable $callback The function to invoke.
      *
      * @return \Icicle\Promise\PromiseInterface
      */
-    public function synchronized(\Closure $callback);
+    public function synchronized(callable $callback);
 
     /**
      * Starts the context execution.
