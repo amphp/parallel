@@ -11,7 +11,7 @@ use Icicle\Socket\Stream\DuplexStream;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-abstract class ForkContext extends Synchronized implements ContextInterface
+class ForkContext extends Synchronized implements ContextInterface
 {
     const MSG_DONE = 1;
     const MSG_ERROR = 2;
@@ -21,13 +21,18 @@ abstract class ForkContext extends Synchronized implements ContextInterface
     private $pid = 0;
     private $isChild = false;
     private $deferred;
+    private $function;
 
     /**
      * Creates a new fork context.
+     *
+     * @param callable $function The function to run in the context.
      */
-    public function __construct()
+    public function __construct(callable $function)
     {
         parent::__construct();
+
+        $this->function = $function;
 
         $this->deferred = new Deferred(function (\Exception $exception) {
             $this->stop();
@@ -120,22 +125,7 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         Loop\clear();
 
         // Execute the context runnable and send the parent context the result.
-        try {
-            $generator = $this->run();
-            if ($generator instanceof \Generator) {
-                $coroutine = new Coroutine($generator);
-            }
-            Loop\run();
-            fwrite($this->childSocket, chr(self::MSG_DONE));
-        } catch (\Exception $exception) {
-            fwrite($this->childSocket, chr(self::MSG_ERROR));
-            $serialized = serialize($exception);
-            $length = strlen($serialized);
-            fwrite($this->childSocket, pack('S', $length).$serialized);
-        } finally {
-            fclose($this->childSocket);
-            exit(0);
-        }
+        $this->run();
     }
 
     public function stop()
@@ -166,11 +156,6 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         return $this->deferred->getPromise();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    abstract public function run();
-
     public function __destruct()
     {
         parent::__destruct();
@@ -179,6 +164,26 @@ abstract class ForkContext extends Synchronized implements ContextInterface
         // semaphore until the parent exits.
         if (!$this->isChild) {
             //$this->semaphore->destroy();
+        }
+    }
+
+    private function run()
+    {
+        try {
+            $generator = call_user_func($this->function);
+            if ($generator instanceof \Generator) {
+                $coroutine = new Coroutine($generator);
+            }
+            Loop\run();
+            fwrite($this->childSocket, chr(self::MSG_DONE));
+        } catch (\Exception $exception) {
+            fwrite($this->childSocket, chr(self::MSG_ERROR));
+            $serialized = serialize($exception);
+            $length = strlen($serialized);
+            fwrite($this->childSocket, pack('S', $length) . $serialized);
+        } finally {
+            fclose($this->childSocket);
+            exit(0);
         }
     }
 }

@@ -7,6 +7,13 @@ namespace Icicle\Concurrent;
 interface ContextInterface extends SynchronizableInterface
 {
     /**
+     * Creates a new context with a given function to run.
+     *
+     * @return ContextInterface A context instance.
+     */
+    //public static function create(callable $function);
+
+    /**
      * Checks if the context is running.
      *
      * @return bool True if the context is running, otherwise false.
@@ -35,9 +42,4 @@ interface ContextInterface extends SynchronizableInterface
      * @return \Icicle\Promise\PromiseInterface Promise that is resolved when the context finishes.
      */
     public function join();
-
-    /**
-     * Executes the context's main code.
-     */
-    public function run();
 }
