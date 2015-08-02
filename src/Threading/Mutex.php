@@ -1,14 +1,14 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+use Icicle\Concurrent\Sync\MutexInterface;
+
 /**
- * A thread-safe mutex.
- *
- * Operations are guaranteed to be atomic.
+ * A thread-safe mutex using the pthreads locking mechanism.
  *
  * Compatible with POSIX systems and Microsoft Windows.
  */
-class Mutex extends \Threaded
+class Mutex extends \Threaded implements MutexInterface
 {
     /**
      * @var long A unique handle ID on a system mutex.
@@ -26,7 +26,7 @@ class Mutex extends \Threaded
     }
 
     /**
-     * Locks the mutex.
+     * {@inheritdoc}
      */
     public function lock()
     {
@@ -34,7 +34,7 @@ class Mutex extends \Threaded
     }
 
     /**
-     * Unlocks the mutex.
+     * {@inheritdoc}
      */
     public function unlock()
     {
