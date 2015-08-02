@@ -26,7 +26,7 @@ class ExtSyncSemaphore implements SemaphoreInterface
     /**
      * {@inheritdoc}
      */
-    public function lock()
+    public function acquire()
     {
         $this->semaphore->lock(-1);
     }
@@ -34,7 +34,7 @@ class ExtSyncSemaphore implements SemaphoreInterface
     /**
      * {@inheritdoc}
      */
-    public function unlock()
+    public function release()
     {
         $this->semaphore->unlock();
     }
