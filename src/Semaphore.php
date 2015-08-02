@@ -2,11 +2,12 @@
 namespace Icicle\Concurrent;
 
 use Icicle\Concurrent\Exception\SemaphoreException;
+use Icicle\Concurrent\Sync\SemaphoreInterface;
 
 /**
  * A synchronous semaphore that uses System V IPC semaphores.
  */
-class Semaphore implements \Serializable
+class Semaphore implements SemaphoreInterface, \Serializable
 {
     /**
      * @var int The key to the semaphore.
