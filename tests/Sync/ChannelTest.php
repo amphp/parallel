@@ -3,6 +3,7 @@ namespace Icicle\Tests\Concurrent\Sync;
 
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Loop;
+use Icicle\Coroutine;
 
 class ChannelTest extends \PHPUnit_Framework_TestCase
 {
@@ -20,7 +21,7 @@ class ChannelTest extends \PHPUnit_Framework_TestCase
 
         // Close $a. $b should close on next read...
         $a->close();
-        $b->receive();
+        new Coroutine\Coroutine($b->receive());
 
         Loop\run();
 
@@ -33,7 +34,7 @@ class ChannelTest extends \PHPUnit_Framework_TestCase
         list($a, $b) = Channel::create();
 
         $a->send('hello')->then(function () use ($b) {
-            return $b->receive();
+            return new Coroutine\Coroutine($b->receive());
         })->done(function ($data) {
             $this->assertEquals('hello', $data);
         });

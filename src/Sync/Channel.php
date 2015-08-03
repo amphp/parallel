@@ -2,7 +2,6 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\ChannelException;
-use Icicle\Coroutine;
 use Icicle\Socket\Stream\DuplexStream;
 
 /**
@@ -72,28 +71,24 @@ class Channel
      */
     public function receive()
     {
-        return Coroutine\create(function () {
-            // Read the message header first and extract its contents.
-            $header = unpack('Ctype/Llength', (yield $this->getSocket()->read(5)));
+        // Read the message header first and extract its contents.
+        $header = unpack('Ctype/Llength', (yield $this->getSocket()->read(5)));
 
-            // If the message type is MESSAGE_DONE, the peer was closed and the channel
-            // is done.
-            if ($header['type'] === self::MESSAGE_DONE) {
-                $this->getSocket()->close();
-                return;
-            }
+        // If the message type is MESSAGE_DONE, the peer was closed and the channel
+        // is done.
+        if ($header['type'] === self::MESSAGE_DONE) {
+            $this->getSocket()->close();
+            return;
+        }
 
-            // Read the serialized data from the socket.
-            if ($header['type'] === self::MESSAGE_DATA) {
-                $serialized = (yield $this->socket->read($header['length']));
-                $data = unserialize($serialized);
+        // Read the serialized data from the socket.
+        if ($header['type'] === self::MESSAGE_DATA) {
+            $serialized = (yield $this->socket->read($header['length']));
+            $data = unserialize($serialized);
 
-                yield $data;
-                return;
-            }
-
-            yield false;
-        });
+            yield $data;
+            return;
+        }
     }
 
     /**
