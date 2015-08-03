@@ -1,3 +1,4 @@
+.vagrant
 build
 composer.lock
 phpunit.xml
