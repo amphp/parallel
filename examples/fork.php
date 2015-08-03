@@ -2,10 +2,10 @@
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Concurrent\Forking\ForkContext;
-use Icicle\Coroutine\Coroutine;
+use Icicle\Coroutine;
 use Icicle\Loop;
 
-$generator = function () {
+Coroutine\create(function () {
     $context = new ForkContext(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
@@ -30,7 +30,6 @@ $generator = function () {
     } finally {
         $timer->stop();
     }
-};
+});
 
-new Coroutine($generator());
 Loop\run();
