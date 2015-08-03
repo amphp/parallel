@@ -1,5 +1,5 @@
 <?php
-namespace Icicle\Stream\Exception;
+namespace Icicle\Concurrent\Exception;
 
 class InvalidArgumentError extends Error
 {
