@@ -36,6 +36,14 @@ interface ContextInterface extends SynchronizableInterface
     public function kill();
 
     /**
+     * Causes the context to immediately panic.
+     *
+     * @param string $message A panic message.
+     * @param int $code A panic code.
+     */
+    public function panic($message = '', $code = 0);
+
+    /**
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
