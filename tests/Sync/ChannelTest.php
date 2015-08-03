@@ -31,11 +31,11 @@ class ChannelTest extends \PHPUnit_Framework_TestCase
 
     public function testSendReceive()
     {
-        list($a, $b) = Channel::create();
+        Coroutine\create(function () {
+            list($a, $b) = Channel::create();
 
-        $a->send('hello')->then(function () use ($b) {
-            return new Coroutine\Coroutine($b->receive());
-        })->done(function ($data) {
+            yield $a->send('hello');
+            $data = (yield $b->receive());
             $this->assertEquals('hello', $data);
         });
 
