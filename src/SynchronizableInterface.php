@@ -7,21 +7,21 @@ namespace Icicle\Concurrent;
 interface SynchronizableInterface
 {
     /**
-     * Acquires a lock on the context.
+     * Acquires a lock on the object.
      *
      * @return \Icicle\Promise\PromiseInterface
      */
     public function lock();
 
     /**
-     * Unlocks the context.
+     * Unlocks the object.
      *
      * @return \Icicle\Promise\PromiseInterface
      */
     public function unlock();
 
     /**
-     * Invokes a function while maintaining a lock for the calling context.
+     * Invokes a function while maintaining a lock on the object.
      *
      * @param callable $callback The function to invoke.
      *
