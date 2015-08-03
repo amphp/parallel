@@ -2,11 +2,11 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\ContextInterface;
-use Icicle\Concurrent\Exception\ContextAbortException;
+use Icicle\Concurrent\Exception\PanicError;
+use Icicle\Concurrent\Sync\Channel;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
-use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -67,43 +67,26 @@ class ForkContext extends Synchronized implements ContextInterface
      */
     public function start()
     {
-        if (($fd = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
-            throw new \Exception();
-        }
+        $channels = Channel::create();
 
-        $this->parentSocket = new DuplexStream($fd[0]);
-        $this->childSocket = $fd[1];
+        $this->parentSocket = $channels[0];
+        $this->childSocket = $channels[1];
 
         $parentPid = getmypid();
         if (($pid = pcntl_fork()) === -1) {
             throw new \Exception();
         }
 
+        // We are the parent inside this block.
         if ($pid !== 0) {
-            // We are the parent, so close the child socket.
             $this->pid = $pid;
-            fclose($this->childSocket);
 
             // Wait for the child process to send us a byte over the socket pair
             // to discover immediately when the process has completed.
-            $this->parentSocket->read(1)->then(function ($data) {
-                $message = ord($data);
-                if ($message === self::MSG_DONE) {
-                    $this->deferred->resolve();
-                    return;
-                }
-
-                // Get the fatal exception from the process.
-                return $this->parentSocket->read(2)->then(function ($data) {
-                    $serializedLength = unpack('S', $data);
-                    $serializedLength = $serializedLength[1];
-                    return $this->parentSocket->read($serializedLength);
-                })->then(function ($data) {
-                    $previous = unserialize($data);
-                    $exception = new ContextAbortException('The context encountered an error.', 0, $previous);
-                    $this->deferred->reject($exception);
-                    $this->parentSocket->close();
-                });
+            // @TODO error checking, check message type received
+            $receive = new Coroutine($this->parentSocket->receive());
+            $receive->then(function ($data) {
+                $this->deferred->resolve();
             }, function (\Exception $exception) {
                 $this->deferred->reject($exception);
             });
@@ -156,6 +139,16 @@ class ForkContext extends Synchronized implements ContextInterface
         return $this->deferred->getPromise();
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function panic($message = '', $code = 0)
+    {
+        if ($this->isThread) {
+            throw new PanicError($message, $code);
+        }
+    }
+
     public function __destruct()
     {
         parent::__destruct();
@@ -175,14 +168,13 @@ class ForkContext extends Synchronized implements ContextInterface
                 $coroutine = new Coroutine($generator);
             }
             Loop\run();
-            fwrite($this->childSocket, chr(self::MSG_DONE));
-        } catch (\Exception $exception) {
+        /*} catch (\Exception $exception) {
             fwrite($this->childSocket, chr(self::MSG_ERROR));
             $serialized = serialize($exception);
             $length = strlen($serialized);
-            fwrite($this->childSocket, pack('S', $length) . $serialized);
+            fwrite($this->childSocket, pack('S', $length).$serialized);*/
         } finally {
-            fclose($this->childSocket);
+            $this->childSocket->close();
             exit(0);
         }
     }
