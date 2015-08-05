@@ -11,7 +11,7 @@ interface ContextInterface extends SynchronizableInterface
      *
      * @return ContextInterface A context instance.
      */
-    //public static function create(callable $function);
+    public static function create(callable $function);
 
     /**
      * Checks if the context is running.
@@ -26,12 +26,7 @@ interface ContextInterface extends SynchronizableInterface
     public function start();
 
     /**
-     * Stops context execution.
-     */
-    public function stop();
-
-    /**
-     * Immediately kills the context without invoking any handlers.
+     * Immediately kills the context.
      */
     public function kill();
 
@@ -39,7 +34,7 @@ interface ContextInterface extends SynchronizableInterface
      * Causes the context to immediately panic.
      *
      * @param string $message A panic message.
-     * @param int $code A panic code.
+     * @param int    $code    A panic code.
      */
     public function panic($message = '', $code = 0);
 

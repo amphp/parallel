@@ -28,15 +28,16 @@ class ForkContext extends Synchronized implements ContextInterface
      *
      * @param callable $function The function to run in the context.
      */
-    public function __construct(callable $function)
+    public static function create(callable $function)
     {
-        parent::__construct();
+        $instance = new static();
 
-        $this->function = $function;
-
-        $this->deferred = new Deferred(function (\Exception $exception) {
-            $this->stop();
+        $instance->function = $function;
+        $instance->deferred = new Deferred(function (\Exception $exception) use ($instance) {
+            $instance->stop();
         });
+
+        return $instance;
     }
 
     /**
@@ -109,14 +110,6 @@ class ForkContext extends Synchronized implements ContextInterface
 
         // Execute the context runnable and send the parent context the result.
         $this->run();
-    }
-
-    public function stop()
-    {
-        if ($this->isRunning()) {
-            // send the SIGTERM signal to ask the process to end
-            posix_kill($this->getPid(), SIGTERM);
-        }
     }
 
     public function kill()

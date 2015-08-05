@@ -1,12 +1,12 @@
 <?php
-require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__).'/vendor/autoload.php';
 
 use Icicle\Concurrent\Forking\ForkContext;
 use Icicle\Coroutine;
 use Icicle\Loop;
 
 Coroutine\create(function () {
-    $context = new ForkContext(function () {
+    $context = ForkContext::create(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
 
@@ -26,7 +26,7 @@ Coroutine\create(function () {
         print "Context done!\n";
     } catch (Exception $e) {
         print "Error from child!\n";
-        print $e . "\n";
+        print $e."\n";
     } finally {
         $timer->stop();
     }

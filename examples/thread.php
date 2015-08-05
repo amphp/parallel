@@ -12,15 +12,15 @@ Coroutine\create(function () {
     });
 
     // Create a new child thread that does some blocking stuff.
-    $test = new ThreadContext(function () {
+    $test = ThreadContext::create(function () {
         print "Sleeping for 5 seconds...\n";
         sleep(5);
+        return 42;
     });
 
     // Run the thread and wait asynchronously for it to finish.
     $test->start();
-    yield $test->join();
-    print "Thread ended!\n";
+    printf("Thread ended with value %d!\n", (yield $test->join()));
 })->done(function () {
     Loop\stop();
 });

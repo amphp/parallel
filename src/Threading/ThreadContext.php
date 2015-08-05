@@ -5,7 +5,6 @@ use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\PanicError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Promise;
-use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -17,56 +16,45 @@ use Icicle\Socket\Stream\DuplexStream;
 class ThreadContext implements ContextInterface
 {
     /**
-     * @var \Thread A thread instance.
+     * @var Thread A thread instance.
      */
     public $thread;
-
-    /**
-     * @var DuplexStream An active socket connection to the thread's socket.
-     */
-    private $socket;
-
-    /**
-     * @var A reference handle to the invoker.
-     */
-    private $invoker;
 
     /**
      * @var Channel A channel for communicating with the thread.
      */
     private $channel;
 
-    private $isThread = false;
+    /**
+     * @var bool Indicates if this context instance belongs to the thread.
+     */
+    private $isThread = true;
 
     /**
-     * Creates an instance of the current context class for the local thread.
-     *
-     * @internal
-     *
-     * @return self
+     * {@inheritdoc}
      */
-    final public static function createLocalInstance(Thread $thread)
+    public static function create(callable $function)
     {
-        $class = new \ReflectionClass(static::class);
-        $instance = $class->newInstanceWithoutConstructor();
-        $instance->thread = $thread;
-        $instance->isThread = true;
-        return $instance;
+        $thread = new Thread($function);
+        $thread->autoloaderPath = static::getComposerAutoloader();
+
+        $context = new static($thread);
+        $context->isThread = false;
+        $context->deferredJoin = new Promise\Deferred(function () use ($context) {
+            $context->kill();
+        });
+
+        return $context;
     }
 
     /**
-     * Creates a new thread context.
+     * Creates a new thread context from a thread.
      *
-     * @param callable $function The function to run in the thread.
+     * @param Thread $thread The thread object.
      */
-    public function __construct(callable $function)
+    public function __construct(Thread $thread)
     {
-        $this->deferredJoin = new Promise\Deferred(function () {
-            $this->kill();
-        });
-
-        $this->thread = new Thread($function);
-        $this->thread->autoloaderPath = $this->getComposerAutoloader();
+        $this->thread = $thread;
     }
 
     /**
@@ -107,37 +95,6 @@ class ThreadContext implements ContextInterface
             $this->thread->init($channels[0]);
             $this->thread->notify();
         });
-
-        /*$this->socket->read(1)->then(function ($data) {
-            $message = ord($data);
-            if ($message === Thread::MSG_DONE) {
-                $this->deferredJoin->resolve();
-                $this->thread->join();
-                return;
-            }
-
-            // Get the fatal exception from the process.
-            return $this->socket->read(2)->then(function ($data) {
-                $serializedLength = unpack('S', $data);
-                $serializedLength = $serializedLength[1];
-                return $this->socket->read($serializedLength);
-            })->then(function ($data) {
-                $panic = unserialize($data);
-                $exception = new PanicError($panic['message'], $panic['code'], $panic['trace']);
-                $this->deferredJoin->reject($exception);
-                $this->socket->close();
-            });
-        }, function (\Exception $exception) {
-            $this->deferredJoin->reject($exception);
-        });*/
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function stop()
-    {
-        $this->thread->kill();
     }
 
     /**
@@ -155,6 +112,8 @@ class ThreadContext implements ContextInterface
     {
         if ($this->isThread) {
             throw new PanicError($message, $code);
+        } else {
+            $this->kill();
         }
     }
 
@@ -163,8 +122,18 @@ class ThreadContext implements ContextInterface
      */
     public function join()
     {
-        yield $this->channel->receive();
+        // Get an array of completion data from the thread when it finishes.
+        $response = (yield $this->channel->receive());
+
+        // If the status is not OK, bubble the problem up.
+        if (!$response['ok']) {
+            throw new PanicError($response['panic']['message'], $response['panic']['code'], $response['panic']['trace']);
+        }
+
+        $this->channel->close();
         $this->thread->join();
+
+        yield $response['value'];
     }
 
     /**
@@ -206,7 +175,7 @@ class ThreadContext implements ContextInterface
      *
      * @return \Composer\Autoload\ClassLoader|null
      */
-    private function getComposerAutoloader()
+    private static function getComposerAutoloader()
     {
         foreach (get_included_files() as $path) {
             if (strpos($path, 'vendor/autoload.php') !== false) {
