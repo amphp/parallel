@@ -89,7 +89,7 @@ class ThreadContext implements ContextInterface
         // the event loop, and then notify us when the thread environment is
         // ready. If we don't do this first, objects will break when passed
         // to the thread, since the classes are not yet defined.
-        $this->thread->start(PTHREADS_INHERIT_INI);
+        $this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_ALLOW_GLOBALS);
 
         // The thread must prepare itself first, so wait until the thread has
         // done so. We need to unlock ourselves while waiting to prevent
