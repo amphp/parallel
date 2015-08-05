@@ -11,6 +11,11 @@ use Icicle\Concurrent\Exception\LocalObjectError;
  * the current thread. The object stored can be of any type, and can even be (or
  * rather, especially) non-thread-safe or non-serializable objects.
  *
+ * This is useful for storing references to non-thread-safe objects from within
+ * a thread. Normally, only thread-safe or serializable objects are allowed to
+ * be stored as member variables. You can wrap such objects in a `LocalObject`
+ * to store a reference to it safely.
+ *
  * To access the wrapped object, you must call `LocalObject::deref()` to fetch a
  * reference to the object. If you think of a `LocalObject` as a fancy pointer
  * instead of an actual object, you will be less likely to forget to call
