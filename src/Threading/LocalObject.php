@@ -40,7 +40,9 @@ class LocalObject implements \Serializable
 
         // We can't use this object's hash as the ID because it may change as
         // the handle is passed around and serialized and unserialized.
-        $this->objectId = uniqid('LO#', true);
+        do {
+            $this->objectId = uniqid('', true);
+        } while (!$this->isFreed());
         $this->threadId = \Thread::getCurrentThreadId();
 
         // Store the object in the thread-local array.
