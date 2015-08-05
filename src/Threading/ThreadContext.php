@@ -2,7 +2,8 @@
 namespace Icicle\Concurrent\Threading;
 
 use Icicle\Concurrent\ContextInterface;
-use Icicle\Concurrent\Exception\ContextAbortException;
+use Icicle\Concurrent\Exception\PanicError;
+use Icicle\Concurrent\Sync\Channel;
 use Icicle\Promise;
 use Icicle\Socket\Stream\DuplexStream;
 
@@ -21,11 +22,6 @@ class ThreadContext implements ContextInterface
     public $thread;
 
     /**
-     * @var Promise\Deferred A deferred object that resolves when the context ends.
-     */
-    private $deferredJoin;
-
-    /**
      * @var DuplexStream An active socket connection to the thread's socket.
      */
     private $socket;
@@ -36,17 +32,25 @@ class ThreadContext implements ContextInterface
     private $invoker;
 
     /**
+     * @var Channel A channel for communicating with the thread.
+     */
+    private $channel;
+
+    private $isThread = false;
+
+    /**
      * Creates an instance of the current context class for the local thread.
      *
-     * @return self
-     *
      * @internal
+     *
+     * @return self
      */
     final public static function createLocalInstance(Thread $thread)
     {
         $class = new \ReflectionClass(static::class);
         $instance = $class->newInstanceWithoutConstructor();
         $instance->thread = $thread;
+        $instance->isThread = true;
         return $instance;
     }
 
@@ -78,16 +82,33 @@ class ThreadContext implements ContextInterface
      */
     public function start()
     {
-        if (($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
-            throw new \Exception();
-        }
+        $channels = Channel::create();
+        $this->channel = new Channel($channels[1]);
 
-        $this->thread->initialize($sockets[1]);
+        // Start the thread first. The thread will prepare the autoloader and
+        // the event loop, and then notify us when the thread environment is
+        // ready. If we don't do this first, objects will break when passed
+        // to the thread, since the classes are not yet defined.
         $this->thread->start(PTHREADS_INHERIT_INI);
 
-        $this->socket = new DuplexStream($sockets[0]);
+        // The thread must prepare itself first, so wait until the thread has
+        // done so. We need to unlock ourselves while waiting to prevent
+        // deadlocks if we somehow acquired the lock before the thread did.
+        $this->thread->synchronized(function () {
+            if (!$this->thread->prepared) {
+                $this->thread->wait();
+            }
+        });
 
-        $this->socket->read(1)->then(function ($data) {
+        // At this stage, the thread environment has been prepared, and we kept
+        // the lock from above, so initialize the thread with the necessary
+        // values to be copied over.
+        $this->thread->synchronized(function () use ($channels) {
+            $this->thread->init($channels[0]);
+            $this->thread->notify();
+        });
+
+        /*$this->socket->read(1)->then(function ($data) {
             $message = ord($data);
             if ($message === Thread::MSG_DONE) {
                 $this->deferredJoin->resolve();
@@ -101,14 +122,14 @@ class ThreadContext implements ContextInterface
                 $serializedLength = $serializedLength[1];
                 return $this->socket->read($serializedLength);
             })->then(function ($data) {
-                $previous = unserialize($data);
-                $exception = new ContextAbortException('The context encountered an error.', 0, $previous);
+                $panic = unserialize($data);
+                $exception = new PanicError($panic['message'], $panic['code'], $panic['trace']);
                 $this->deferredJoin->reject($exception);
                 $this->socket->close();
             });
         }, function (\Exception $exception) {
             $this->deferredJoin->reject($exception);
-        });
+        });*/
     }
 
     /**
@@ -130,9 +151,20 @@ class ThreadContext implements ContextInterface
     /**
      * {@inheritdoc}
      */
+    public function panic($message = '', $code = 0)
+    {
+        if ($this->isThread) {
+            throw new PanicError($message, $code);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function join()
     {
-        return $this->deferredJoin->getPromise();
+        yield $this->channel->receive();
+        $this->thread->join();
     }
 
     /**
@@ -185,6 +217,14 @@ class ThreadContext implements ContextInterface
             }
         }
 
-        return null;
+        // Find the Composer autoloader initializer class, and use it to fetch
+        // the autoloader instance.
+        /*foreach (get_declared_classes() as $name) {
+        if (strpos($name, 'ComposerAutoloaderInit') === 0) {
+        return $name::getLoader();
+        }
+        }*/
+
+        return;
     }
 }

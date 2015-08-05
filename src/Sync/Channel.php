@@ -45,9 +45,7 @@ class Channel
             throw new ChannelException('Failed to create channel sockets.');
         }
 
-        return array_map(static function ($socket) {
-            return new static($socket);
-        }, $sockets);
+        return $sockets;
     }
 
     /**
@@ -147,7 +145,7 @@ class Channel
      *
      * @param resource $socketResource
      */
-    private function __construct($socketResource)
+    public function __construct($socketResource)
     {
         $this->socketResource = $socketResource;
     }
