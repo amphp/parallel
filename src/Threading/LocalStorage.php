@@ -13,19 +13,16 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
 {
     /**
-     * @var string The key where this local storage's data is stored.
+     * @var LocalObject A thread-local array object of items.
      */
-    private $storageKey;
+    private $array;
 
     /**
      * Creates a new local storage container.
      */
     public function __construct()
     {
-        global $__localStorage;
-
-        $this->storageKey = spl_object_hash($this);
-        $__localStorage[$this->storageKey] = [];
+        $this->array = new LocalObject(new \ArrayObject());
     }
 
     /**
@@ -35,8 +32,7 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function count()
     {
-        global $__localStorage;
-        return count($__localStorage[$this->storageKey]);
+        return count($this->array->deref());
     }
 
     /**
@@ -46,8 +42,7 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function getIterator()
     {
-        global $__localStorage;
-        return new \ArrayIterator($__localStorage[$this->storageKey]);
+        return $this->array->deref()->getIterator();
     }
 
     /**
@@ -55,8 +50,7 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function clear()
     {
-        global $__localStorage;
-        $__localStorage[$this->storageKey] = [];
+        $this->array->deref()->exchangeArray([]);
     }
 
     /**
@@ -68,12 +62,11 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetExists($key)
     {
-        global $__localStorage;
-
         if (!is_int($key) && !is_string($key)) {
             throw new InvalidArgumentError('Key must be an integer or string.');
         }
-        return isset($__localStorage[$this->storageKey][$key]);
+
+        return $this->array->deref()->offsetExists($key);
     }
 
     /**
@@ -85,17 +78,15 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetGet($key)
     {
-        global $__localStorage;
-
         if (!is_int($key) && !is_string($key)) {
             throw new InvalidArgumentError('Key must be an integer or string.');
         }
 
-        if (!isset($__localStorage[$this->storageKey][$key])) {
+        if (!$this->offsetExists($key)) {
             throw new InvalidArgumentError("The key '{$key}' does not exist.");
         }
 
-        return $__localStorage[$this->storageKey][$key];
+        return $this->array->deref()->offsetGet($key);
     }
 
     /**
@@ -106,12 +97,11 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetSet($key, $value)
     {
-        global $__localStorage;
-
         if (!is_int($key) && !is_string($key)) {
             throw new InvalidArgumentError('Key must be an integer or string.');
         }
-        $__localStorage[$this->storageKey][$key] = $value;
+
+        $this->array->deref()->offsetSet($key, $value);
     }
 
     /**
@@ -121,20 +111,28 @@ class LocalStorage implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetUnset($key)
     {
-        global $__localStorage;
-
         if (!is_int($key) && !is_string($key)) {
             throw new InvalidArgumentError('Key must be an integer or string.');
         }
-        unset($__localStorage[$this->storageKey][$key]);
+
+        $this->array->deref()->offsetUnset($key);
     }
 
     /**
-     * Removes the local storage from the current thread's memory.
+     * Frees the local storage and all items.
      */
-    public function __destruct()
+    public function free()
     {
-        global $__localStorage;
-        unset($__localStorage[$this->storageKey]);
+        $this->array->free();
+    }
+
+    /**
+     * Gets a copy of all the items in the local storage.
+     *
+     * @return array An array of item keys and values.
+     */
+    public function __debugInfo()
+    {
+        return $this->array->deref()->getArrayCopy();
     }
 }

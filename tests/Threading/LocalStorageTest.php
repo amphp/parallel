@@ -2,7 +2,6 @@
 namespace Icicle\Tests\Concurrent\Threading;
 
 use Icicle\Concurrent\Threading\LocalStorage;
-use Icicle\Promise\Promise;
 use Icicle\Tests\Concurrent\TestCase;
 
 /**
@@ -121,16 +120,5 @@ class LocalStorageTest extends TestCase
         };
 
         $this->assertInstanceOf('Closure', $this->localStorage['foo']);
-    }
-
-    public function testThreadedPromise()
-    {
-        $t = $thread = \Thread::from(function () {
-            $storage = new LocalStorage();
-            $storage['promise'] = new Promise();
-        });
-
-        $thread->start(PTHREADS_INHERIT_INI);
-        $thread->join();
     }
 }
