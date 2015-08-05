@@ -23,7 +23,7 @@ use Icicle\Concurrent\Exception\LocalObjectError;
 class LocalObject implements \Serializable
 {
     /**
-     * @var string The object's local object ID.
+     * @var int The object's local object ID.
      */
     private $objectId;
 
@@ -31,6 +31,11 @@ class LocalObject implements \Serializable
      * @var int The ID of the thread the object belongs to.
      */
     private $threadId;
+
+    /**
+     * @var int The next available object ID.
+     */
+    private static $nextId = 0;
 
     /**
      * Creates a new local object container.
@@ -49,7 +54,7 @@ class LocalObject implements \Serializable
         // We can't use this object's hash as the ID because it may change as
         // the handle is passed around and serialized and unserialized.
         do {
-            $this->objectId = uniqid('', true);
+            $this->objectId = self::$nextId++;
         } while (!$this->isFreed());
         $this->threadId = \Thread::getCurrentThreadId();
 
