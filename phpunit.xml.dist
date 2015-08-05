@@ -16,15 +16,6 @@
         <testsuite name="Icicle Concurrent">
             <directory>tests</directory>
         </testsuite>
-
-        <testsuite name="Threading">
-            <directory>tests</directory>
-            <groups>
-                <include>
-                    <group>threading</group>
-                </include>
-            </groups>
-        </testsuite>
     </testsuites>
 
     <filter>
