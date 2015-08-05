@@ -12,6 +12,21 @@ class LocalObjectTest extends TestCase
     public function testConstructor()
     {
         $object = new LocalObject(new \stdClass());
+        $this->assertInternalType('object', $object->deref());
+    }
+
+    public function testClosureObject()
+    {
+        $object = new LocalObject(function () {});
+        $this->assertInstanceOf('Closure', $object->deref());
+    }
+
+    public function testResource()
+    {
+        $object = new LocalObject(new \stdClass());
+        $object->deref()->resource = fopen(__FILE__, 'r');
+        $this->assertInternalType('resource', $object->deref()->resource);
+        fclose($object->deref()->resource);
     }
 
     /**
@@ -64,5 +79,16 @@ class LocalObjectTest extends TestCase
         $local = new LocalObject($object);
         $local = unserialize(serialize($local));
         $this->assertSame($object, $local->deref());
+    }
+
+    public function testPromiseInThread()
+    {
+        $thread = \Thread::from(function () {
+            require __DIR__.'../../vendor/autoload.php';
+            $promise = new LocalObject(new Promise());
+        });
+
+        $thread->start(PTHREADS_INHERIT_INI);
+        $thread->join();
     }
 }
