@@ -11,6 +11,11 @@ use Icicle\Concurrent\Exception\LocalObjectError;
  * the current thread. The object stored can be of any type, and can even be (or
  * rather, especially) non-thread-safe or non-serializable objects.
  *
+ * To access the wrapped object, you must call `LocalObject::deref()` to fetch a
+ * reference to the object. If you think of a `LocalObject` as a fancy pointer
+ * instead of an actual object, you will be less likely to forget to call
+ * `deref()` before using the object.
+ *
  * Note that the wrapped object will become static, and will not be implicitly
  * destroyed by the garbage collector. To destroy the object, you must call
  * `LocalObject::free()` for the object to be destroyed.
@@ -18,7 +23,7 @@ use Icicle\Concurrent\Exception\LocalObjectError;
 class LocalObject implements \Serializable
 {
     /**
-     * @var string This object's local object ID.
+     * @var string The object's local object ID.
      */
     private $objectId;
 
@@ -30,7 +35,10 @@ class LocalObject implements \Serializable
     /**
      * Creates a new local object container.
      *
-     * @param object The object to store in the container.
+     * The object given will be assigned a new object ID and will have a
+     * reference to it stored in memory local to the thread.
+     *
+     * @param object $object The object to store in the container.
      */
     public function __construct($object)
     {
@@ -52,7 +60,7 @@ class LocalObject implements \Serializable
     /**
      * Gets the object stored in the container.
      *
-     * @return \stdClass The stored object.
+     * @return object The stored object.
      */
     public function deref()
     {
@@ -68,7 +76,8 @@ class LocalObject implements \Serializable
     /**
      * Releases the reference to the local object.
      *
-     * If there are no other references to the object, it will be destroyed.
+     * If there are no other references to the object outside of this handle, it
+     * will be destroyed by the garbage collector.
      */
     public function free()
     {
@@ -77,6 +86,9 @@ class LocalObject implements \Serializable
 
     /**
      * Checks if the object has been freed.
+     *
+     * Note that this does not check if the object has been destroyed; it only
+     * checks if this handle has freed its reference to the object.
      *
      * @return bool True if the object is freed, otherwise false.
      */
