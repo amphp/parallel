@@ -38,7 +38,7 @@ class Thread extends \Thread
      */
     public function __construct(callable $function)
     {
-        $this->context = ThreadContext::createLocalInstance($this);
+        $this->context = new ThreadContext($this);
         $this->function = $function;
     }
 
@@ -75,6 +75,9 @@ class Thread extends \Thread
         // Initialize the thread-local global event loop.
         Loop\loop();
 
+        // Register a shutdown handler to deal with errors smoothly.
+        //register_shutdown_function([$this, 'handleShutdown']);
+
         // Now let the parent thread know that we are done preparing the
         // thread environment and are ready to accept data.
         $this->prepared = true;
@@ -89,12 +92,12 @@ class Thread extends \Thread
         $this->unlock();
 
         // At this point, the thread environment has been prepared, and the
-        // parent has finished injecting values into our memory.
-
+        // parent has finished injecting values into our memory, so begin using
+        // the channel.
         $this->channel = new LocalObject(new Channel($this->socket));
-        //$this->socket = null;
 
-        //register_shutdown_function([$this, 'handleShutdown']);
+        // Now that everything is finally ready, invoke the function, closure,
+        // or coroutine passed in from the user.
         try {
             if ($this->function instanceof \Closure) {
                 $generator = $this->function->bindTo($this->context)->__invoke();
@@ -107,10 +110,20 @@ class Thread extends \Thread
             } else {
                 $returnValue = $generator;
             }
-        } catch (\Exception $exception) {
-            print $exception;
 
-            $panic = [
+            // Send the return value back to the parent thread.
+            $response = [
+                'ok' => true,
+                'value' => $returnValue,
+            ];
+            new Coroutine($this->channel->deref()->send($response));
+
+            Loop\run();
+        } catch (\Exception $exception) {
+            // If normal execution failed and caused an error, catch it and send
+            // it to the parent context so the error can bubble up.
+            $response = [
+                'ok' => false,
                 'panic' => [
                     'message' => $exception->getMessage(),
                     'code' => $exception->getCode(),
@@ -118,12 +131,13 @@ class Thread extends \Thread
                 ],
             ];
 
-            $this->channel->deref()->send($panic);
+            new Coroutine($this->channel->deref()->send($response));
         } finally {
             $this->channel->deref()->close();
         }
 
-        Loop\run();
+        // We don't really need to do this, but let's be explicit about freeing
+        // our resources.
         $this->channel->free();
     }
 
@@ -142,11 +156,6 @@ class Thread extends \Thread
             fwrite($this->socket, pack('S', $length).$serialized);
             fclose($this->socket);
         }
-    }
-
-    private function sendMessage($message)
-    {
-        fwrite($this->socket, chr($message));
     }
 
     public function removeTraceArgs($trace)

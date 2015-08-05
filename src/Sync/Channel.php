@@ -15,9 +15,8 @@ use Icicle\Socket\Stream\DuplexStream;
  */
 class Channel
 {
-    const MESSAGE_DONE = 1;
-    const MESSAGE_ERROR = 2;
-    const MESSAGE_DATA = 3;
+    const MESSAGE_CLOSE = 1;
+    const MESSAGE_DATA = 2;
 
     /**
      * @var DuplexStream An asynchronous socket stream.
@@ -86,10 +85,11 @@ class Channel
         }
         $header = unpack('Ctype/Llength', $buffer);
 
-        // If the message type is MESSAGE_DONE, the peer was closed and the channel
+        // If the message type is MESSAGE_CLOSE, the peer was closed and the channel
         // is done.
-        if ($header['type'] === self::MESSAGE_DONE) {
+        if ($header['type'] === self::MESSAGE_CLOSE) {
             $this->getSocket()->close();
+            yield false;
             return;
         }
 
@@ -102,13 +102,10 @@ class Channel
 
             // Attempt to unserialize the received data.
             try {
-                $data = unserialize($buffer);
+                yield unserialize($buffer);
             } catch (\Exception $exception) {
                 throw new ChannelException('Received corrupt data from peer.', 0, $exception);
             }
-
-            yield $data;
-            return;
         }
     }
 
@@ -123,7 +120,7 @@ class Channel
     public function close()
     {
         // Create a message with just a DONE header and zero data.
-        $message = pack('Cx4', self::MESSAGE_DONE);
+        $message = pack('Cx4', self::MESSAGE_CLOSE);
 
         return $this->getSocket()->write($message)->then(function () {
             $this->getSocket()->close();
