@@ -91,4 +91,14 @@ class LocalObjectTest extends TestCase
         $thread->start(PTHREADS_INHERIT_INI);
         $thread->join();
     }
+
+    public function testCloneIsNewObject()
+    {
+        $object = new \stdClass();
+        $local = new LocalObject($object);
+        $clone = clone $local;
+        $this->assertNotSame($local, $clone);
+        $this->assertNotSame($object, $clone->deref());
+        $this->assertNotEquals($local->__debugInfo()['id'], $clone->__debugInfo()['id']);
+    }
 }

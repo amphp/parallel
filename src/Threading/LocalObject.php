@@ -115,6 +115,16 @@ class LocalObject implements \Serializable
     }
 
     /**
+     * Handles cloning, which creates clones the local object and creates a new
+     * local object handle.
+     */
+    public function __clone()
+    {
+        $object = clone $this->deref();
+        $this->__construct($object);
+    }
+
+    /**
      * Gets information about the object for debugging purposes.
      *
      * @return array An array of debugging information.
