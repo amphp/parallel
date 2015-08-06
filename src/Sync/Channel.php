@@ -21,14 +21,19 @@ class Channel
     const HEADER_LENGTH = 5;
 
     /**
-     * @var DuplexStream An asynchronous socket stream.
+     * @var \Icicle\Socket\Stream\DuplexStream An asynchronous socket stream.
      */
-    private $socket;
+    private $stream;
 
     /**
-     * @var resource A synchronous socket stream.
+     * Creates a new channel instance.
+     *
+     * @param resource $socket
      */
-    private $socketResource;
+    public function __construct($socket)
+    {
+        $this->stream = new DuplexStream($socket);
+    }
 
     /**
      * Creates a new channel and returns a pair of connections.
@@ -37,9 +42,11 @@ class Channel
      * channel. Each connection is a peer and interacts with the other, even
      * across threads or processes.
      *
-     * @return [Channel, Channel] A pair of channels.
+     * @return resource[] Pair of socket resources.
+     *
+     * @throws \Icicle\Concurrent\Exception\ChannelException
      */
-    public static function create()
+    public static function createSocketPair()
     {
         // Create a socket pair.
         if (($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
@@ -54,7 +61,7 @@ class Channel
      *
      * @param mixed $data The data to send.
      *
-     * @return Generator
+     * @return \Generator
      */
     public function send($data)
     {
@@ -68,15 +75,15 @@ class Channel
         $length = strlen($serialized);
 
         $header = pack('CL', self::MESSAGE_DATA, $length);
-        $message = $header.$serialized;
+        $message = $header . $serialized;
 
-        yield $this->getSocket()->write($message);
+        yield $this->stream->write($message);
     }
 
     /**
      * Waits asynchronously for a message from the peer.
      *
-     * @return Generator
+     * @return \Generator
      */
     public function receive()
     {
@@ -84,7 +91,7 @@ class Channel
         $buffer = '';
         $length = self::HEADER_LENGTH;
         do {
-            $buffer .= (yield $this->getSocket()->read($length));
+            $buffer .= (yield $this->stream->read($length));
         } while (($length -= strlen($buffer)) > 0);
 
         $header = unpack('Ctype/Llength', $buffer);
@@ -92,7 +99,7 @@ class Channel
         // If the message type is MESSAGE_CLOSE, the peer was closed and the channel
         // is done.
         if ($header['type'] === self::MESSAGE_CLOSE) {
-            $this->getSocket()->close();
+            $this->stream->close();
             yield null;
             return;
         }
@@ -102,7 +109,7 @@ class Channel
             $buffer = '';
             $length = $header['length'];
             do {
-                $buffer .= (yield $this->getSocket()->read($length));
+                $buffer .= (yield $this->stream->read($length));
             } while (($length -= strlen($buffer)) > 0);
 
             // Attempt to unserialize the received data.
@@ -120,14 +127,14 @@ class Channel
      * This method closes the connection to the peer and sends a message to the
      * peer notifying that the connection has been closed.
      *
-     * @return PromiseInterface
+     * @return \Icicle\Promise\PromiseInterface
      */
     public function close()
     {
         // Create a message with just a DONE header and zero data.
         $message = pack('Cx4', self::MESSAGE_CLOSE);
 
-        return $this->getSocket()->end($message);
+        return $this->stream->end($message);
     }
 
     /**
@@ -137,30 +144,6 @@ class Channel
      */
     public function isOpen()
     {
-        return $this->getSocket()->isOpen();
-    }
-
-    /**
-     * Creates a new channel instance.
-     *
-     * @param resource $socketResource
-     */
-    public function __construct($socketResource)
-    {
-        $this->socketResource = $socketResource;
-    }
-
-    /**
-     * Gets an asynchronous socket instance.
-     *
-     * @return DuplexStream
-     */
-    private function getSocket()
-    {
-        if ($this->socket === null) {
-            $this->socket = new DuplexStream($this->socketResource);
-        }
-
-        return $this->socket;
+        return $this->stream->isOpen();
     }
 }

@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
@@ -6,12 +7,14 @@ use Icicle\Coroutine;
 use Icicle\Loop;
 
 Coroutine\create(function () {
-    $context = ForkContext::create(function () {
+    $context = new ForkContext(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
 
         print "Child sleeping for 2 seconds...\n";
         sleep(2);
+
+        return 42;
     });
     $context->start();
 
@@ -22,8 +25,7 @@ Coroutine\create(function () {
     });
 
     try {
-        yield $context->join();
-        print "Context done!\n";
+        printf("Child ended with value %d!\n", (yield $context->join()));
     } catch (Exception $e) {
         print "Error from child!\n";
         print $e."\n";
