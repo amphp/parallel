@@ -34,6 +34,7 @@ class Thread extends \Thread
      * Creates a new thread object.
      *
      * @param callable $function The function to execute in the thread.
+     * @param string $autoloaderPath Path to autoloader include file.
      */
     public function __construct(callable $function, $autoloaderPath = '')
     {
@@ -77,12 +78,9 @@ class Thread extends \Thread
         // don't do this first, objects we receive from other threads will just
         // be garbage data and unserializable values (like resources) will be
         // lost. This happens even with thread-safe objects.
-        if ('' !== $this->autoloaderPath && file_exists($this->autoloaderPath)) {
+        if ('' !== $this->autoloaderPath) {
             require $this->autoloaderPath;
         }
-
-        // Register a shutdown handler to deal with errors smoothly.
-        //register_shutdown_function([$this, 'handleShutdown']);
 
         // Now let the parent thread know that we are done preparing the
         // thread environment and are ready to accept data.
