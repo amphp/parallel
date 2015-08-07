@@ -143,7 +143,11 @@ class ThreadContext implements ContextInterface
         $data = (yield $this->channel->receive());
 
         if ($data instanceof ExitInterface) {
-            throw new SynchronizationError(sprintf('Thread exited with result of type: %s', $data->getResult()));
+            $data = $data->getResult();
+            throw new SynchronizationError(sprintf(
+                'Thread unexpectedly exited with result of type: %s',
+                is_object($data) ? get_class($data) : gettype($data)
+            ));
         }
 
         yield $data;

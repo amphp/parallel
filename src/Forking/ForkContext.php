@@ -152,7 +152,11 @@ class ForkContext extends Synchronized implements ContextInterface
         $data = (yield $this->channel->receive());
 
         if ($data instanceof ExitInterface) {
-            throw new SynchronizationError(sprintf('Fork exited with result of type: %s', $data->getResult()));
+            $data = $data->getResult();
+            throw new SynchronizationError(sprintf(
+                'Fork unexpectedly exited with result of type: %s',
+                is_object($data) ? get_class($data) : gettype($data)
+            ));
         }
 
         yield $data;
