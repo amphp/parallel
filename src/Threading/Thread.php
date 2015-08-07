@@ -22,6 +22,11 @@ class Thread extends \Thread
      */
     private $function;
 
+    /**
+     * @var
+     */
+    private $args;
+
     private $prepared = false;
     private $initialized = false;
 
@@ -34,12 +39,14 @@ class Thread extends \Thread
      * Creates a new thread object.
      *
      * @param callable $function The function to execute in the thread.
+     * @param mixed[]|null $args Arguments to pass to the function.
      * @param string $autoloaderPath Path to autoloader include file.
      */
-    public function __construct(callable $function, $autoloaderPath = '')
+    public function __construct(callable $function, array $args = [], $autoloaderPath = '')
     {
         $this->autoloaderPath = $autoloaderPath;
         $this->function = $function;
+        $this->args = $args;
     }
 
     /**
@@ -111,8 +118,9 @@ class Thread extends \Thread
     private function execute(Channel $channel)
     {
         try {
-            $function = $this->function;
-            $result = new ExitSuccess(yield $function($channel));
+            $result = new ExitSuccess(
+                yield call_user_func_array($this->function, array_merge([$channel], $this->args))
+            );
         } catch (\Exception $exception) {
             $result = new ExitFailure($exception);
         }

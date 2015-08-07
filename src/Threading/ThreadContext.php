@@ -31,9 +31,11 @@ class ThreadContext implements ContextInterface
      *
      * @param callable $function
      */
-    public function __construct(callable $function)
+    public function __construct(callable $function /* , ...$args */)
     {
-        $this->thread = new Thread($function, $this->getComposerAutoloader());
+        $args = array_slice(func_get_args(), 1);
+
+        $this->thread = new Thread($function, $args, $this->getComposerAutoloader());
     }
 
     /**

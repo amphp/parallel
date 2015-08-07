@@ -32,11 +32,12 @@ class ForkContext extends Synchronized implements ContextInterface
      */
     private $function;
 
-    public function __construct(callable $function)
+    public function __construct(callable $function /* , ...$args */)
     {
         parent::__construct();
 
         $this->function = $function;
+        $this->args = array_slice(func_get_args(), 1);
     }
 
     /**
@@ -104,8 +105,9 @@ class ForkContext extends Synchronized implements ContextInterface
     private function execute(Channel $channel)
     {
         try {
-            $function = $this->function;
-            $result = new ExitSuccess(yield $function($channel));
+            $result = new ExitSuccess(
+                yield call_user_func_array($this->function, array_merge([$channel], $this->args))
+            );
         } catch (\Exception $exception) {
             $result = new ExitFailure($exception);
         }
