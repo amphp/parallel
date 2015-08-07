@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\ContextInterface;
+use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitFailure;
@@ -16,9 +17,6 @@ use Icicle\Promise;
  */
 class ForkContext extends Synchronized implements ContextInterface
 {
-    const MSG_DONE = 1;
-    const MSG_ERROR = 2;
-
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
      */
@@ -66,35 +64,36 @@ class ForkContext extends Synchronized implements ContextInterface
     {
         list($parent, $child) = Channel::createSocketPair();
 
-        if (($pid = pcntl_fork()) === -1) {
-            throw new \Exception();
+        switch ($pid = pcntl_fork()) {
+            case -1: // Failure
+                throw new ForkException('Could not fork process!');
+
+            case 0: // Child
+                // We will have a cloned event loop from the parent after forking. The
+                // child context by default is synchronous and uses the parent event
+                // loop, so we need to stop the clone before doing any work in case it
+                // is already running.
+                Loop\stop();
+                Loop\reInit();
+                Loop\clear();
+
+                $channel = new Channel($parent);
+                fclose($child);
+
+                // Execute the context runnable and send the parent context the result.
+                try {
+                    Promise\wait(new Coroutine($this->execute($channel)));
+                } catch (\Exception $exception) {
+                    exit(-1);
+                }
+
+                exit(0);
+
+            default: // Parent
+                $this->pid = $pid;
+                $this->channel = new Channel($child);
+                fclose($parent);
         }
-
-        // We are the parent inside this block.
-        if ($pid !== 0) {
-            $this->channel = new Channel($parent);
-            fclose($child);
-
-            $this->pid = $pid;
-
-            return;
-        }
-
-        $channel = new Channel($child);
-        fclose($parent);
-
-        // We will have a cloned event loop from the parent after forking. The
-        // child context by default is synchronous and uses the parent event
-        // loop, so we need to stop the clone before doing any work in case it
-        // is already running.
-        Loop\stop();
-        Loop\reInit();
-        Loop\clear();
-
-        // Execute the context runnable and send the parent context the result.
-        Promise\wait(new Coroutine($this->execute($channel)));
-
-        exit(0);
     }
 
     /**
