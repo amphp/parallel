@@ -10,7 +10,7 @@ class ChannelTest extends TestCase
 {
     public function testCreate()
     {
-        list($a, $b) = Channel::create();
+        list($a, $b) = Channel::createSocketPair();
 
         $this->assertInternalType('resource', $a);
         $this->assertInternalType('resource', $b);
@@ -18,7 +18,7 @@ class ChannelTest extends TestCase
 
     public function testClose()
     {
-        list($a, $b) = Channel::create();
+        list($a, $b) = Channel::createSocketPair();
         $a = new Channel($a);
         $b = new Channel($b);
 
@@ -35,7 +35,7 @@ class ChannelTest extends TestCase
     public function testSendReceive()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::create();
+            list($a, $b) = Channel::createSocketPair();
             $a = new Channel($a);
             $b = new Channel($b);
 
@@ -52,7 +52,7 @@ class ChannelTest extends TestCase
      */
     public function testThreadTransfer()
     {
-        list($a, $b) = Channel::create();
+        list($a, $b) = Channel::createSocketPair();
         $a = new Channel($a);
         $b = new Channel($b);
 
