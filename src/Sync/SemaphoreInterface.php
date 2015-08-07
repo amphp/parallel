@@ -10,14 +10,9 @@ namespace Icicle\Concurrent\Sync;
 interface SemaphoreInterface
 {
     /**
-     * Acquires a lock from the semaphore.
+     * Acquires a lock from the semaphore asynchronously.
      *
-     * Blocks until a lock can be acquired.
+     * @return \Icicle\Promise\PromiseInterface<Lock> A promise resolved with a lock.
      */
     public function acquire();
-
-    /**
-     * Releases a lock to the semaphore.
-     */
-    public function release();
 }
