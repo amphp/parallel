@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\SynchronizableInterface;
+use Icicle\Concurrent\Sync\AsyncSemaphore;
 
 /**
  * A synchronized object that safely shares its state across processes and

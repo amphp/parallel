@@ -1,9 +1,9 @@
 <?php
-namespace Icicle\Concurrent\Forking;
+namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SemaphoreException;
-use Icicle\Concurrent\Semaphore;
+use Icicle\Concurrent\Forking\SharedObject;
 use Icicle\Loop;
 use Icicle\Promise;
 

@@ -1,8 +1,7 @@
 <?php
-namespace Icicle\Concurrent;
+namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SemaphoreException;
-use Icicle\Concurrent\Sync\SemaphoreInterface;
 
 /**
  * A synchronous semaphore that uses System V IPC semaphores.
