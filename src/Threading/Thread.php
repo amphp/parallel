@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+use Icicle\Concurrent\ExecutorInterface;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitFailure;
 use Icicle\Concurrent\Sync\ExitSuccess;
@@ -104,23 +105,23 @@ class Thread extends \Thread
 
         // At this point, the thread environment has been prepared, and the
         // parent has finished injecting values into our memory, so begin using
-        // the channel.
-        $channel = new Channel($this->socket);
+        // the thread.
+        $executor = new ThreadExecutor($this, new Channel($this->socket));
 
-        Promise\wait(new Coroutine($this->execute($channel)));
+        Promise\wait(new Coroutine($this->execute($executor)));
     }
 
     /**
-     * @param Channel $channel
+     * @param \Icicle\Concurrent\ExecutorInterface
      *
      * @return \Generator
      */
-    private function execute(Channel $channel)
+    private function execute(ExecutorInterface $executor)
     {
         try {
             $function = $this->function;
             if ($function instanceof \Closure) {
-                $function = $function->bindTo($channel, Channel::class);
+                $function = $function->bindTo($executor, ThreadExecutor::class);
             }
 
             $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
@@ -128,8 +129,8 @@ class Thread extends \Thread
             $result = new ExitFailure($exception);
         }
 
-        yield $channel->send($result);
+        yield $executor->send($result);
 
-        $channel->close();
+        yield $executor->close();
     }
 }

@@ -4,6 +4,7 @@ namespace Icicle\Concurrent\Forking;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\ExecutorInterface;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitFailure;
 use Icicle\Concurrent\Sync\ExitInterface;
@@ -15,7 +16,7 @@ use Icicle\Promise;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class ForkContext extends Synchronized implements ContextInterface
+class ForkContext implements ContextInterface
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
@@ -32,12 +33,17 @@ class ForkContext extends Synchronized implements ContextInterface
      */
     private $function;
 
+    /**
+     * @var \Icicle\Concurrent\Forking\Synchronized
+     */
+    private $synchronized;
+
     public function __construct(callable $function /* , ...$args */)
     {
-        parent::__construct();
-
         $this->function = $function;
         $this->args = array_slice(func_get_args(), 1);
+
+        $this->synchronized = new Synchronized();
     }
 
     /**
@@ -81,9 +87,11 @@ class ForkContext extends Synchronized implements ContextInterface
                 $channel = new Channel($parent);
                 fclose($child);
 
+                $executor = new ForkExecutor($this->synchronized, $channel);
+
                 // Execute the context runnable and send the parent context the result.
                 try {
-                    Promise\wait(new Coroutine($this->execute($channel)));
+                    Promise\wait(new Coroutine($this->execute($executor)));
                 } catch (\Exception $exception) {
                     exit(-1);
                 }
@@ -98,16 +106,16 @@ class ForkContext extends Synchronized implements ContextInterface
     }
 
     /**
-     * @param Channel $channel
+     * @param \Icicle\Concurrent\ExecutorInterface
      *
      * @return \Generator
      */
-    private function execute(Channel $channel)
+    private function execute(ExecutorInterface $executor)
     {
         try {
             $function = $this->function;
             if ($function instanceof \Closure) {
-                $function = $function->bindTo($channel, Channel::class);
+                $function = $function->bindTo($executor, ForkExecutor::class);
             }
 
             $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
@@ -115,9 +123,33 @@ class ForkContext extends Synchronized implements ContextInterface
             $result = new ExitFailure($exception);
         }
 
-        yield $channel->send($result);
+        yield $executor->send($result);
 
-        $channel->close();
+        yield $executor->close();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function lock()
+    {
+        return $this->synchronized->lock();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function unlock()
+    {
+        return $this->synchronized->unlock();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function synchronized(callable $callback)
+    {
+        return $this->synchronized->synchronized($callback);
     }
 
     /**

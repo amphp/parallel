@@ -11,7 +11,7 @@ use Icicle\Concurrent\Sync\AsyncSemaphore;
  * When used with forking, the object must be created prior to forking for both
  * processes to access the synchronized object.
  */
-abstract class Synchronized extends SharedObject implements SynchronizableInterface
+class Synchronized extends SharedObject implements SynchronizableInterface
 {
     /**
      * @var AsyncSemaphore A semaphore used for locking the object data.
