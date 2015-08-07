@@ -105,9 +105,12 @@ class ForkContext extends Synchronized implements ContextInterface
     private function execute(Channel $channel)
     {
         try {
-            $result = new ExitSuccess(
-                yield call_user_func_array($this->function, array_merge([$channel], $this->args))
-            );
+            $function = $this->function;
+            if ($function instanceof \Closure) {
+                $function = $function->bindTo($channel, Channel::class);
+            }
+
+            $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
         } catch (\Exception $exception) {
             $result = new ExitFailure($exception);
         }
