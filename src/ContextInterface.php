@@ -7,13 +7,6 @@ namespace Icicle\Concurrent;
 interface ContextInterface extends SynchronizableInterface
 {
     /**
-     * Creates a new context with a given function to run.
-     *
-     * @return ContextInterface A context instance.
-     */
-    public static function create(callable $function);
-
-    /**
      * Checks if the context is running.
      *
      * @return bool True if the context is running, otherwise false.
@@ -31,12 +24,20 @@ interface ContextInterface extends SynchronizableInterface
     public function kill();
 
     /**
-     * Causes the context to immediately panic.
+     * @return \Generator
      *
-     * @param string $message A panic message.
-     * @param int    $code    A panic code.
+     * @resolve mixed
      */
-    public function panic($message = '', $code = 0);
+    public function receive();
+
+    /**
+     * @param mixed $data
+     *
+     * @return \Generator
+     *
+     * @resolve int
+     */
+    public function send($data);
 
     /**
      * Gets a promise that resolves when the context ends and joins with the
