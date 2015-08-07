@@ -7,22 +7,32 @@ use Icicle\Coroutine;
 use Icicle\Loop;
 
 $timer = Loop\periodic(1, function () {
-    print "Demonstrating how alive the parent is.\n";
+    static $i;
+    $i = $i ? ++$i : 1;
+    print "Demonstrating how alive the parent is for the {$i}th time.\n";
 });
 
 Coroutine\create(function () {
     // Create a periodic message in the main thread.
 
     // Create a new child thread that does some blocking stuff.
-    $test = new ThreadContext(function () {
-        print "Sleeping for 5 seconds...\n";
-        sleep(5);
-        return 42;
+    $context = new ThreadContext(function () {
+        print "Sleeping for 3 seconds...\n";
+        sleep(3);
+
+        yield $this->send('Data sent from child.');
+
+        print "Sleeping for 2 seconds...\n";
+        sleep(2);
+
+        yield 42;
     });
 
     // Run the thread and wait asynchronously for it to finish.
-    $test->start();
-    printf("Thread ended with value %d!\n", (yield $test->join()));
-})->done([$timer, 'stop']);
+    $context->start();
+
+    printf("Received the following from child: %s\n", (yield $context->receive()));
+    printf("Thread ended with value %d!\n", (yield $context->join()));
+})->cleanup([$timer, 'stop']);
 
 Loop\run();

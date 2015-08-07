@@ -4,7 +4,7 @@ namespace Icicle\Concurrent;
 /**
  * Interface for all types of execution contexts.
  */
-interface ContextInterface extends SynchronizableInterface
+interface ContextInterface extends SynchronizableInterface, ChannelInterface
 {
     /**
      * Checks if the context is running.
@@ -22,22 +22,6 @@ interface ContextInterface extends SynchronizableInterface
      * Immediately kills the context.
      */
     public function kill();
-
-    /**
-     * @return \Generator
-     *
-     * @resolve mixed
-     */
-    public function receive();
-
-    /**
-     * @param mixed $data
-     *
-     * @return \Generator
-     *
-     * @resolve int
-     */
-    public function send($data);
 
     /**
      * Gets a promise that resolves when the context ends and joins with the

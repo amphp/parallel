@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Sync;
 
+use Icicle\Concurrent\ChannelInterface;
 use Icicle\Concurrent\Exception\ChannelException;
 use Icicle\Socket\Stream\DuplexStream;
 
@@ -13,7 +14,7 @@ use Icicle\Socket\Stream\DuplexStream;
  * channel object can be safely transferred between threads up until the point
  * that the channel is used.
  */
-class Channel
+class Channel implements ChannelInterface
 {
     const MESSAGE_CLOSE = 1;
     const MESSAGE_DATA = 2;
