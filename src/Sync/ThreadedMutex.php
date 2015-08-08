@@ -51,7 +51,7 @@ class ThreadedMutex implements MutexInterface
      *
      * @throws MutexException Thrown if the operation fails.
      */
-    public function __destruct()
+    public function destroy()
     {
         if (!Mutex::destroy($this->handle)) {
             throw new MutexException('Failed to destroy the mutex. Did you forget to unlock it first?');
