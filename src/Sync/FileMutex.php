@@ -25,38 +25,31 @@ class FileMutex implements MutexInterface
     public function __construct()
     {
         $this->fileName = sys_get_temp_dir()
-                          . DIRECTORY_SEPARATOR
-                          . spl_object_hash($this)
-                          . '.lock';
+                          .DIRECTORY_SEPARATOR
+                          .spl_object_hash($this)
+                          .'.lock';
         touch($this->fileName, time());
     }
 
     /**
      * {@inheritdoc}
      */
-    public function lock()
+    public function acquire()
     {
         $handle = $this->getFileHandle();
-        $success = flock($handle, LOCK_EX);
-        fclose($handle);
 
-        if (!$success) {
-            throw new MutexException("Failed to access the mutex file for locking.")
+        // Try to access the lock. If we can't get the lock, set an asynchronous
+        // timer and try again.
+        while (!flock($handle, LOCK_EX | LOCK_NB)) {
+            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function unlock()
-    {
-        $handle = $this->getFileHandle();
-        $success = flock($handle, LOCK_UN);
+        // Return a lock object that can be used to release the lock on the mutex.
+        yield new Lock(function (Lock $lock) {
+            $this->release();
+        });
+
         fclose($handle);
-
-        if (!$success) {
-            throw new MutexException("Failed to unlock the mutex file.")
-        }
     }
 
     /**
@@ -65,6 +58,20 @@ class FileMutex implements MutexInterface
     public function __destruct()
     {
         @unlink($this->fileName);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function release()
+    {
+        $handle = $this->getFileHandle();
+        $success = flock($handle, LOCK_UN);
+        fclose($handle);
+
+        if (!$success) {
+            throw new MutexException('Failed to unlock the mutex file.');
+        }
     }
 
     /**
@@ -77,7 +84,7 @@ class FileMutex implements MutexInterface
         $handle = @fopen($this->fileName, 'wb');
 
         if ($handle === false) {
-            throw new MutexException("Failed to open the mutex file.");
+            throw new MutexException('Failed to open the mutex file.');
         }
 
         return $handle;
