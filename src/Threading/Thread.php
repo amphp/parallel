@@ -6,10 +6,13 @@ use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitFailure;
 use Icicle\Concurrent\Sync\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
+use Icicle\Loop;
 use Icicle\Promise;
 
 /**
  * An internal thread that executes a given function concurrently.
+ *
+ * @internal
  */
 class Thread extends \Thread
 {
@@ -28,9 +31,6 @@ class Thread extends \Thread
      */
     private $args;
 
-    private $prepared = false;
-    private $initialized = false;
-
     /**
      * @var resource
      */
@@ -39,36 +39,17 @@ class Thread extends \Thread
     /**
      * Creates a new thread object.
      *
+     * @param resource $socket IPC communication socket.
      * @param callable $function The function to execute in the thread.
-     * @param mixed[]|null $args Arguments to pass to the function.
+     * @param mixed[] $args Arguments to pass to the function.
      * @param string $autoloaderPath Path to autoloader include file.
      */
-    public function __construct(callable $function, array $args = [], $autoloaderPath = '')
+    public function __construct($socket, callable $function, array $args = [], $autoloaderPath = '')
     {
         $this->autoloaderPath = $autoloaderPath;
         $this->function = $function;
         $this->args = $args;
-    }
-
-    /**
-     * Initializes the thread by injecting values from the parent into threaded memory.
-     *
-     * @param resource $socket The channel socket to communicate to the parent with.
-     */
-    public function init($socket)
-    {
         $this->socket = $socket;
-        $this->initialized = true;
-    }
-
-    /**
-     * Determines if the thread has successfully been prepared.
-     *
-     * @return bool
-     */
-    public function isPrepared()
-    {
-        return $this->prepared;
     }
 
     /**
@@ -76,39 +57,22 @@ class Thread extends \Thread
      */
     public function run()
     {
-        // First thing we need to do is prepare the thread environment to make
-        // it usable, so lock the thread while we do it. Hopefully we get the
-        // lock first, but if we don't the parent will release and give us a
-        // chance before continuing.
-        $this->lock();
-
-        // First thing we need to do is initialize the class autoloader. If we
-        // don't do this first, objects we receive from other threads will just
-        // be garbage data and unserializable values (like resources) will be
-        // lost. This happens even with thread-safe objects.
+        /* First thing we need to do is initialize the class autoloader. If we
+         * don't do this first, objects we receive from other threads will just
+         * be garbage data and unserializable values (like resources) will be
+         * lost. This happens even with thread-safe objects.
+         */
         if ('' !== $this->autoloaderPath) {
             require $this->autoloaderPath;
         }
 
-        // Now let the parent thread know that we are done preparing the
-        // thread environment and are ready to accept data.
-        $this->prepared = true;
-        $this->notify();
-        $this->unlock();
-
-        // Wait for objects to be injected by the context wrapper object.
-        $this->lock();
-        if (!$this->initialized) {
-            $this->wait();
-        }
-        $this->unlock();
-
-        // At this point, the thread environment has been prepared, and the
-        // parent has finished injecting values into our memory, so begin using
-        // the thread.
+        // At this point, the thread environment has been prepared so begin using the thread.
         $executor = new ThreadExecutor($this, new Channel($this->socket));
 
-        Promise\wait(new Coroutine($this->execute($executor)));
+        $coroutine = new Coroutine($this->execute($executor));
+        $coroutine->done();
+
+        Loop\run();
     }
 
     /**

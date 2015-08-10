@@ -35,7 +35,10 @@ class ThreadContext implements ContextInterface
     {
         $args = array_slice(func_get_args(), 1);
 
-        $this->thread = new Thread($function, $args, $this->getComposerAutoloader());
+        list($channel, $socket) = Channel::createSocketPair();
+
+        $this->channel = new Channel($channel);
+        $this->thread = new Thread($socket, $function, $args, $this->getComposerAutoloader());
     }
 
     /**
@@ -51,31 +54,7 @@ class ThreadContext implements ContextInterface
      */
     public function start()
     {
-        list($threadSocket, $parentSocket) = Channel::createSocketPair();
-        $this->channel = new Channel($parentSocket);
-
-        // Start the thread first. The thread will prepare the autoloader and
-        // the event loop, and then notify us when the thread environment is
-        // ready. If we don't do this first, objects will break when passed
-        // to the thread, since the classes are not yet defined.
         $this->thread->start(PTHREADS_INHERIT_INI);
-
-        // The thread must prepare itself first, so wait until the thread has
-        // done so. We need to unlock ourselves while waiting to prevent
-        // deadlocks if we somehow acquired the lock before the thread did.
-        $this->thread->synchronized(function () {
-            if (!$this->thread->isPrepared()) {
-                $this->thread->wait();
-            }
-        });
-
-        // At this stage, the thread environment has been prepared, and we kept
-        // the lock from above, so initialize the thread with the necessary
-        // values to be copied over.
-        $this->thread->synchronized(function () use ($threadSocket) {
-            $this->thread->init($threadSocket);
-            $this->thread->notify();
-        });
     }
 
     /**
@@ -103,38 +82,6 @@ class ThreadContext implements ContextInterface
             $this->channel->close();
             $this->thread->join();
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function lock()
-    {
-        $this->thread->lock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unlock()
-    {
-        $this->thread->unlock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback)
-    {
-        $this->lock();
-
-        try {
-            $returnValue = $callback($this);
-        } finally {
-            $this->unlock();
-        }
-
-        return $returnValue;
     }
 
     /**
@@ -172,12 +119,18 @@ class ThreadContext implements ContextInterface
      */
     private function getComposerAutoloader()
     {
+        static $path;
+
+        if (null !== $path) {
+            return $path;
+        }
+
         foreach (get_included_files() as $path) {
             if (preg_match('/vendor\/autoload.php$/i', $path)) {
                 return $path;
             }
         }
 
-        return '';
+        return $path = '';
     }
 }

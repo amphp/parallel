@@ -4,7 +4,7 @@ namespace Icicle\Concurrent;
 /**
  * Interface for execution context within a thread or fork.
  */
-interface ExecutorInterface extends SynchronizableInterface, ChannelInterface
+interface ExecutorInterface extends ChannelInterface
 {
     /**
      * @return \Icicle\Promise\PromiseInterface

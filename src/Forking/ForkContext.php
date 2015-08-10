@@ -89,9 +89,11 @@ class ForkContext implements ContextInterface
 
                 $executor = new ForkExecutor($this->synchronized, $channel);
 
-                // Execute the context runnable and send the parent context the result.
+                $coroutine = new Coroutine($this->execute($executor));
+                $coroutine->done();
+
                 try {
-                    Promise\wait(new Coroutine($this->execute($executor)));
+                    Loop\run();
                 } catch (\Exception $exception) {
                     exit(-1);
                 }

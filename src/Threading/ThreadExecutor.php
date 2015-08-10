@@ -49,28 +49,4 @@ class ThreadExecutor implements ExecutorInterface
     {
         return $this->channel->close();
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function lock()
-    {
-        return $this->thread->lock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unlock()
-    {
-        return $this->thread->unlock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback)
-    {
-        return $this->thread->synchronized($callback);
-    }
 }

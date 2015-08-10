@@ -4,7 +4,7 @@ namespace Icicle\Concurrent;
 /**
  * Interface for all types of execution contexts.
  */
-interface ContextInterface extends SynchronizableInterface, ChannelInterface
+interface ContextInterface extends ChannelInterface
 {
     /**
      * Checks if the context is running.
