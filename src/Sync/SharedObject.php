@@ -59,7 +59,7 @@ class SharedObject implements \Serializable
     {
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->memOpen($this->key, 'n', static::OBJECT_PERMISSIONS, static::SHM_DEFAULT_SIZE);
-        $this->update($value);
+        $this->set($value);
     }
 
     /**
@@ -73,22 +73,29 @@ class SharedObject implements \Serializable
             throw new SharedMemoryException('The object has already been freed.');
         }
 
-        $data = $this->memGet(0, static::SHM_DATA_OFFSET);
-        $header = unpack('Cstate/Lsize', $data);
+        // Read from the memory block and handle moved blocks until we find the
+        // correct block.
+        do {
+            $data = $this->memGet(0, static::SHM_DATA_OFFSET);
+            $header = unpack('Cstate/Lsize', $data);
 
-        // If the state is STATE_MOVED, the memory is stale and has been moved
-        // to a new location. Move handle and try to read again.
-        if ($header['state'] === static::STATE_MOVED) {
+            // If the state is STATE_MOVED, the memory is stale and has been moved
+            // to a new location. Move handle and try to read again.
+            if ($header['state'] !== static::STATE_MOVED) {
+                break;
+            }
+
             shmop_close($this->handle);
             $this->key = $header['size'];
             $this->memOpen($this->key, 'w', 0, 0);
-            return $this->deref();
-        }
+        } while (true);
 
-        if ($header['size'] <= 0) {
+        // Make sure the header is in a valid state and format.
+        if ($header['state'] !== static::STATE_ALLOCATED || $header['size'] <= 0) {
             throw new SharedMemoryException('Shared object memory is corrupt.');
         }
 
+        // Read the actual value data from memory and unserialize it.
         $data = $this->memGet(static::SHM_DATA_OFFSET, $header['size']);
         return unserialize($data);
     }
@@ -100,7 +107,7 @@ class SharedObject implements \Serializable
      */
     public function set($value)
     {
-        $serialized = serialize($object);
+        $serialized = serialize($value);
         $size = strlen($serialized);
 
         // If we run out of space, we need to allocate a new shared memory
@@ -110,10 +117,10 @@ class SharedObject implements \Serializable
         // automatically after all other processes notice the change and close
         // the old handle.
         if (shmop_size($this->handle) < $size + static::SHM_DATA_OFFSET) {
-            $this->key = $this->key < 0xffffffff ? $this->__key + 1 : mt_rand(0x10, 0xfffffffe);
+            $this->key = $this->key < 0xffffffff ? $this->key + 1 : mt_rand(0x10, 0xfffffffe);
             $header = pack('CL', static::STATE_MOVED, $this->key);
             $this->memSet(0, $header);
-            $this->free();
+            $this->memDelete();
             shmop_close($this->handle);
 
             $this->memOpen($this->key, 'n', static::OBJECT_PERMISSIONS, $size * 2);
@@ -133,11 +140,12 @@ class SharedObject implements \Serializable
      */
     public function free()
     {
-        // Invalidate the memory block first, then request it to be deleted.
+        // Invalidate the memory block by setting its state to FREED.
         $this->memSet(0, pack('Cx4', static::STATE_FREED));
-        if (!shmop_delete($this->handle)) {
-            throw new SharedMemoryException('Failed to discard shared memory block.');
-        }
+
+        // Request the block to be deleted, then close our local handle.
+        $this->memDelete();
+        shmop_close($this->handle);
     }
 
     /**
@@ -268,6 +276,18 @@ class SharedObject implements \Serializable
     {
         if (!shmop_write($this->handle, $data, $offset)) {
             throw new SharedMemoryException('Failed to write to shared memory block.');
+        }
+    }
+
+    /**
+     * Requests the shared memory segment to be deleted.
+     *
+     * @internal
+     */
+    private function memDelete()
+    {
+        if (!shmop_delete($this->handle)) {
+            throw new SharedMemoryException('Failed to discard shared memory block.');
         }
     }
 }

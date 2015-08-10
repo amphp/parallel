@@ -42,12 +42,14 @@ class SharedObjectTest extends TestCase
         $this->assertTrue($object->isFreed());
     }
 
-    public function testUpdate()
+    public function testSet()
     {
-        $object = new \stdClass();
-        $object->foo = 3;
-        $shared = new SharedObject($object);
-        $this->assertEquals(3, $shared->deref()->foo);
+        $shared = new SharedObject(3);
+        $this->assertEquals(3, $shared->deref());
+
+        $shared->set(4);
+        $this->assertEquals(4, $shared->deref());
+
         $shared->free();
     }
 
@@ -66,9 +68,12 @@ class SharedObjectTest extends TestCase
         $object = new \stdClass();
         $shared = new SharedObject($object);
         $clone = clone $shared;
+
         $this->assertNotSame($shared, $clone);
         $this->assertNotSame($object, $clone->deref());
         $this->assertNotEquals($shared->__debugInfo()['id'], $clone->__debugInfo()['id']);
+
+        $clone->free();
         $shared->free();
     }
 }
