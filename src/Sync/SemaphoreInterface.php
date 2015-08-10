@@ -10,9 +10,13 @@ namespace Icicle\Concurrent\Sync;
 interface SemaphoreInterface
 {
     /**
+     * @coroutine
+     *
      * Acquires a lock from the semaphore asynchronously.
      *
-     * @return \Icicle\Promise\PromiseInterface<Lock> A promise resolved with a lock.
+     * @return \Generator
+     *
+     * @resolve \Icicle\Concurrent\Sync\Lock
      */
     public function acquire();
 }
