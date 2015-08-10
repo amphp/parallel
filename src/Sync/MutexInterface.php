@@ -12,9 +12,13 @@ namespace Icicle\Concurrent\Sync;
 interface MutexInterface
 {
     /**
+     * @coroutine
+     *
      * Acquires a lock on the mutex.
      *
      * @return \Generator Resolves with a lock object when the acquire is successful.
+     *
+     * @resolve \Icicle\Concurrent\Sync\Lock
      */
     public function acquire();
 }

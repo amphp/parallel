@@ -50,7 +50,7 @@ class Lock
     public function release()
     {
         if ($this->released) {
-            throw new LockAlreadyReleasedError();
+            throw new LockAlreadyReleasedError('The lock has already been released!');
         }
 
         // Invoke the releaser function given to us by the synchronization source
