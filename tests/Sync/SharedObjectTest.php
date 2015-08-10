@@ -76,4 +76,48 @@ class SharedObjectTest extends TestCase
         $clone->free();
         $shared->free();
     }
+
+    /**
+     * @group posix
+     */
+    public function testSetInSeparateProcess()
+    {
+        $object = new SharedObject(42);
+
+        $this->doInFork(function () use ($object) {
+            $object->set(43);
+        });
+
+        $this->assertEquals(43, $object->deref());
+        $object->free();
+    }
+
+    /**
+     * @group posix
+     */
+    public function testFreeInSeparateProcess()
+    {
+        $object = new SharedObject(42);
+
+        $this->doInFork(function () use ($object) {
+            $object->free();
+        });
+
+        $this->assertTrue($object->isFreed());
+    }
+
+    private function doInFork(callable $function)
+    {
+        switch (pcntl_fork()) {
+            case -1:
+                $this->fail('Failed to fork process.');
+                break;
+            case 0:
+                $status = (int)$function();
+                exit(0);
+            default:
+                pcntl_wait($status);
+                return $status;
+        }
+    }
 }
