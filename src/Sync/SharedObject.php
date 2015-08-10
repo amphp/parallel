@@ -11,25 +11,19 @@ use Icicle\Concurrent\Exception\SharedMemoryException;
  * object handle itself is serializable and can be sent to any thread or process
  * to give access to the value that is shared in the container.
  *
+ * Because each shared object uses its own shared memory segment, it is much
+ * more efficient to store a larger object containing many values inside a
+ * single shared container than to use many small shared containers.
+ *
  * Note that accessing a shared object is not atomic. Access to a shared object
  * should be protected with a mutex to preserve data integrity.
  */
 class SharedObject implements \Serializable
 {
     /**
-     * @var int The default amount of bytes to allocate for the object.
-     */
-    const SHM_DEFAULT_SIZE = 16384;
-
-    /**
      * @var int The byte offset to the start of the object data in memory.
      */
-    const SHM_DATA_OFFSET = 5;
-
-    /**
-     * @var int The default permissions for other processes to access the object.
-     */
-    const OBJECT_PERMISSIONS = 0600;
+    const MEM_DATA_OFFSET = 7;
 
     // A list of valid states the object can be in.
     const STATE_UNALLOCATED = 0;
@@ -53,12 +47,17 @@ class SharedObject implements \Serializable
      * The object given will be assigned a new object ID and will have a
      * reference to it stored in memory local to the thread.
      *
-     * @param mixed $value The value to store in the container.
+     * @param mixed $value       The value to store in the container.
+     * @param int   $size        The number of bytes to allocate for the object.
+     *                           If not specified defaults to 16384.
+     * @param int   $permissions The access permissions to set for the object.
+     *                           If not specified defaults to 0600.
      */
-    public function __construct($value)
+    public function __construct($value, $size = 16384, $permissions = 0600)
     {
         $this->key = abs(crc32(spl_object_hash($this)));
-        $this->memOpen($this->key, 'n', static::OBJECT_PERMISSIONS, static::SHM_DEFAULT_SIZE);
+        $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
+        $this->setHeader(self::STATE_ALLOCATED, 0, $permissions);
         $this->set($value);
     }
 
@@ -73,30 +72,15 @@ class SharedObject implements \Serializable
             throw new SharedMemoryException('The object has already been freed.');
         }
 
-        // Read from the memory block and handle moved blocks until we find the
-        // correct block.
-        do {
-            $data = $this->memGet(0, static::SHM_DATA_OFFSET);
-            $header = unpack('Cstate/Lsize', $data);
-
-            // If the state is STATE_MOVED, the memory is stale and has been moved
-            // to a new location. Move handle and try to read again.
-            if ($header['state'] !== static::STATE_MOVED) {
-                break;
-            }
-
-            shmop_close($this->handle);
-            $this->key = $header['size'];
-            $this->memOpen($this->key, 'w', 0, 0);
-        } while (true);
+        $header = $this->getHeader();
 
         // Make sure the header is in a valid state and format.
-        if ($header['state'] !== static::STATE_ALLOCATED || $header['size'] <= 0) {
+        if ($header['state'] !== self::STATE_ALLOCATED || $header['size'] <= 0) {
             throw new SharedMemoryException('Shared object memory is corrupt.');
         }
 
         // Read the actual value data from memory and unserialize it.
-        $data = $this->memGet(static::SHM_DATA_OFFSET, $header['size']);
+        $data = $this->memGet(self::MEM_DATA_OFFSET, $header['size']);
         return unserialize($data);
     }
 
@@ -107,8 +91,13 @@ class SharedObject implements \Serializable
      */
     public function set($value)
     {
+        if ($this->isFreed()) {
+            throw new SharedMemoryException('The object has already been freed.');
+        }
+
         $serialized = serialize($value);
         $size = strlen($serialized);
+        $header = $this->getHeader();
 
         // If we run out of space, we need to allocate a new shared memory
         // segment that is larger than the current one. To coordinate with other
@@ -116,19 +105,19 @@ class SharedObject implements \Serializable
         // has moved and along with the new key. The old segment will be discarded
         // automatically after all other processes notice the change and close
         // the old handle.
-        if (shmop_size($this->handle) < $size + static::SHM_DATA_OFFSET) {
+        if (shmop_size($this->handle) < $size + self::MEM_DATA_OFFSET) {
             $this->key = $this->key < 0xffffffff ? $this->key + 1 : mt_rand(0x10, 0xfffffffe);
-            $header = pack('CL', static::STATE_MOVED, $this->key);
-            $this->memSet(0, $header);
+            $this->setHeader(self::STATE_MOVED, $this->key, 0);
+
             $this->memDelete();
             shmop_close($this->handle);
 
-            $this->memOpen($this->key, 'n', static::OBJECT_PERMISSIONS, $size * 2);
+            $this->memOpen($this->key, 'n', $header['permissions'], $size * 2);
         }
 
         // Rewrite the header and the serialized value to memory.
-        $data = pack('CLa*', static::STATE_ALLOCATED, $size, $serialized);
-        $this->memSet(0, $data);
+        $this->setHeader(self::STATE_ALLOCATED, $size, $header['permissions']);
+        $this->memSet(self::MEM_DATA_OFFSET, $serialized);
     }
 
     /**
@@ -137,15 +126,20 @@ class SharedObject implements \Serializable
      * The memory containing the shared value will be invalidated. When all
      * process disconnect from the object, the shared memory block will be
      * destroyed.
+     *
+     * Calling `free()` on an object already freed will have no effect.
      */
     public function free()
     {
-        // Invalidate the memory block by setting its state to FREED.
-        $this->memSet(0, pack('Cx4', static::STATE_FREED));
+        if (!$this->isFreed()) {
+            // Invalidate the memory block by setting its state to FREED.
+            $this->setHeader(static::STATE_FREED, 0, 0);
 
-        // Request the block to be deleted, then close our local handle.
-        $this->memDelete();
-        shmop_close($this->handle);
+            // Request the block to be deleted, then close our local handle.
+            $this->memDelete();
+            shmop_close($this->handle);
+            $this->handle = null;
+        }
     }
 
     /**
@@ -158,14 +152,11 @@ class SharedObject implements \Serializable
      */
     public function isFreed()
     {
-        $handle = @shmop_open($this->key, 'a', 0, 0);
-
-        // If we could connect to the memory block, check if it has been
-        // invalidated.
-        if ($handle !== false) {
-            $data = $this->memGet(0, static::SHM_DATA_OFFSET);
-            $header = unpack('Cstate/Lsize', $data);
-            shmop_close($handle);
+        // If we are no longer connected to the memory segment, check if it has
+        // been invalidated.
+        if ($this->handle !== null) {
+            $this->handleMovedMemory();
+            $header = $this->getHeader();
             return $header['state'] === static::STATE_FREED;
         }
 
@@ -193,6 +184,7 @@ class SharedObject implements \Serializable
     public function unserialize($serialized)
     {
         $this->key = unserialize($serialized);
+        $this->memOpen($this->key, 'w', 0, 0);
     }
 
     /**
@@ -228,14 +220,59 @@ class SharedObject implements \Serializable
     }
 
     /**
+     * Updates the current memory segment handle, handling any moves made on the
+     * data.
+     */
+    private function handleMovedMemory()
+    {
+        // Read from the memory block and handle moved blocks until we find the
+        // correct block.
+        while (true) {
+            $header = $this->getHeader();
+
+            // If the state is STATE_MOVED, the memory is stale and has been moved
+            // to a new location. Move handle and try to read again.
+            if ($header['state'] !== self::STATE_MOVED) {
+                break;
+            }
+
+            shmop_close($this->handle);
+            $this->key = $header['size'];
+            $this->memOpen($this->key, 'w', 0, 0);
+        }
+    }
+
+    /**
+     * Reads and returns the data header at the current memory segment.
+     *
+     * @return array An associative array of header data.
+     */
+    private function getHeader()
+    {
+        $data = $this->memGet(0, self::MEM_DATA_OFFSET);
+        return unpack('Cstate/Lsize/Spermissions', $data);
+    }
+
+    /**
+     * Sets the header data for the current memory segment.
+     *
+     * @param int $state       An object state.
+     * @param int $size        The size of the stored data, or other value.
+     * @param int $permissions The permissions mask on the memory segment.
+     */
+    private function setHeader($state, $size, $permissions)
+    {
+        $header = pack('CLS', $state, $size, $permissions);
+        $this->memSet(0, $header);
+    }
+
+    /**
      * Opens a shared memory handle.
      *
      * @param int    $key         The shared memory key.
      * @param string $mode        The mode to open the shared memory in.
      * @param int    $permissions Process permissions on the shared memory.
      * @param int    $size        The size to crate the shared memory in bytes.
-     *
-     * @internal
      */
     private function memOpen($key, $mode, $permissions, $size)
     {
@@ -252,8 +289,6 @@ class SharedObject implements \Serializable
      * @param int $size   The number of bytes to read.
      *
      * @return string The binary data at the given offset.
-     *
-     * @internal
      */
     private function memGet($offset, $size)
     {
@@ -269,8 +304,6 @@ class SharedObject implements \Serializable
      *
      * @param int    $offset The offset to write to.
      * @param string $data   The binary data to write.
-     *
-     * @internal
      */
     private function memSet($offset, $data)
     {
@@ -281,8 +314,6 @@ class SharedObject implements \Serializable
 
     /**
      * Requests the shared memory segment to be deleted.
-     *
-     * @internal
      */
     private function memDelete()
     {

@@ -77,6 +77,15 @@ class SharedObjectTest extends TestCase
         $shared->free();
     }
 
+    public function testObjectOverflowMoved()
+    {
+        $object = new SharedObject('hi', 14);
+        $object->set('hello world');
+
+        $this->assertEquals('hello world', $object->deref());
+        $object->free();
+    }
+
     /**
      * @group posix
      */
