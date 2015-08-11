@@ -18,6 +18,8 @@ class PosixSemaphoreTest extends TestCase
             $lock = (yield $semaphore->acquire());
             $lock->release();
             $this->assertTrue($lock->isReleased());
+
+            $semaphore->destroy();
         });
 
         Loop\run();
@@ -25,12 +27,10 @@ class PosixSemaphoreTest extends TestCase
 
     public function testAcquireMultiple()
     {
-        ob_end_flush();
-
         $this->assertRunTimeBetween(function () {
-            Coroutine\create(function () {
-                $semaphore = new PosixSemaphore(1);
+            $semaphore = new PosixSemaphore(1);
 
+            Coroutine\create(function () use ($semaphore) {
                 $lock1 = (yield $semaphore->acquire());
                 Loop\timer(0.5, function () use ($lock1) {
                     $lock1->release();
@@ -48,8 +48,7 @@ class PosixSemaphoreTest extends TestCase
             });
 
             Loop\run();
+            $semaphore->destroy();
         }, 1.5, 1.65);
-
-        ob_start();
     }
 }
