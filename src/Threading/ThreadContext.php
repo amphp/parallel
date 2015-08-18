@@ -5,6 +5,8 @@ use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitInterface;
+use Icicle\Concurrent\Sync\Lock;
+use Icicle\Coroutine;
 use Icicle\Promise;
 
 /**
@@ -108,6 +110,20 @@ class ThreadContext implements ContextInterface
     public function send($data)
     {
         return $this->channel->send($data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function acquire()
+    {
+        while (!$this->thread->tsl()) {
+            yield Coroutine\sleep(0.01);
+        }
+
+        yield new Lock(function () {
+            $this->thread->release();
+        });
     }
 
     /**

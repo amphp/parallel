@@ -13,10 +13,18 @@ $timer = Loop\periodic(1, function () {
 });
 
 Coroutine\create(function () {
-    // Create a periodic message in the main thread.
-
     // Create a new child thread that does some blocking stuff.
     $context = new ThreadContext(function () {
+        printf("\$this: %s\n", get_class($this));
+
+        printf("Received the following from parent: %s\n", (yield $this->receive()));
+
+        try {
+            $lock = (yield $this->acquire());
+        } catch (Exception $e) {
+            echo $e;
+        }
+
         print "Sleeping for 3 seconds...\n";
         sleep(3);
 
@@ -31,8 +39,18 @@ Coroutine\create(function () {
     // Run the thread and wait asynchronously for it to finish.
     $context->start();
 
+    yield $context->send('Start data');
+
+    $lock = (yield $context->acquire());
+
+    printf("Cooperatively sleeping in parent for 2 seconds before releasing lock...\n");
+
+    yield Coroutine\sleep(2);
+
+    $lock->release();
+
     printf("Received the following from child: %s\n", (yield $context->receive()));
     printf("Thread ended with value %d!\n", (yield $context->join()));
-})->cleanup([$timer, 'stop']);
+})->cleanup([$timer, 'stop'])->done();
 
 Loop\run();
