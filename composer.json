@@ -19,8 +19,8 @@
         }
     ],
     "require": {
-        "icicleio/icicle": "^0.7 || ^0.8",
-        "icicleio/socket": "^0.1"
+        "icicleio/icicle": "^0.8",
+        "icicleio/socket": "^0.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.6",
