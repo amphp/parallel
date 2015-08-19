@@ -60,7 +60,7 @@ class ThreadContext implements ContextInterface
             throw new SynchronizationError('The thread has already been started.');
         }
 
-        $this->thread->start(PTHREADS_INHERIT_INI);
+        $this->thread->start(PTHREADS_INHERIT_ALL);
     }
 
     /**

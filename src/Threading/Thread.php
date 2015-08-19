@@ -66,9 +66,19 @@ class Thread extends \Thread
          * be garbage data and unserializable values (like resources) will be
          * lost. This happens even with thread-safe objects.
          */
-        if ('' !== $this->autoloaderPath) {
-            require $this->autoloaderPath;
+        // If inheriting the autoloader failed, re-register it now.
+        if (empty(spl_autoload_functions())) {
+            foreach (get_declared_classes() as $className) {
+                if (strpos($className, 'ComposerAutoloaderInit') === 0) {
+                    $classLoader = $className::getLoader();
+                    break;
+                }
+            }
         }
+
+        // Erase the old event loop inherited from the parent thread and create
+        // a new one.
+        Loop\loop(Loop\create());
 
         // At this point, the thread environment has been prepared so begin using the thread.
         $channel = new Channel($this->socket);
