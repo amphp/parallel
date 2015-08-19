@@ -2,12 +2,12 @@
 namespace Icicle\Concurrent\Threading;
 
 use Icicle\Concurrent\ContextInterface;
+use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ExitInterface;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
-use Icicle\Promise;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -56,6 +56,10 @@ class ThreadContext implements ContextInterface
      */
     public function start()
     {
+        if ($this->isRunning()) {
+            throw new SynchronizationError('The thread has already been started.');
+        }
+
         $this->thread->start(PTHREADS_INHERIT_INI);
     }
 
@@ -64,6 +68,7 @@ class ThreadContext implements ContextInterface
      */
     public function kill()
     {
+        $this->channel->close();
         $this->thread->kill();
     }
 
@@ -72,10 +77,14 @@ class ThreadContext implements ContextInterface
      */
     public function join()
     {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
+        }
+
         try {
             $response = (yield $this->channel->receive());
 
-            if (!$response instanceof ExitInterface) {
+            if (!$response instanceof ExitStatusInterface) {
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
@@ -91,9 +100,13 @@ class ThreadContext implements ContextInterface
      */
     public function receive()
     {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
+        }
+
         $data = (yield $this->channel->receive());
 
-        if ($data instanceof ExitInterface) {
+        if ($data instanceof ExitStatusInterface) {
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
                 'Thread unexpectedly exited with result of type: %s',
@@ -109,6 +122,14 @@ class ThreadContext implements ContextInterface
      */
     public function send($data)
     {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
+        }
+
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
+        }
+
         return $this->channel->send($data);
     }
 

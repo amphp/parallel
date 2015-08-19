@@ -1,8 +1,10 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\ExecutorInterface;
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
 
@@ -20,9 +22,9 @@ class ThreadExecutor implements ExecutorInterface
 
     /**
      * @param \Icicle\Concurrent\Threading\Thread
-     * @param \Icicle\Concurrent\Sync\Channel $channel
+     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      */
-    public function __construct(Thread $thread, Channel $channel)
+    public function __construct(Thread $thread, ChannelInterface $channel)
     {
         $this->thread = $thread;
         $this->channel = $channel;
@@ -41,15 +43,11 @@ class ThreadExecutor implements ExecutorInterface
      */
     public function send($data)
     {
-        return $this->channel->send($data);
-    }
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        return $this->channel->close();
+        yield $this->channel->send($data);
     }
 
     /**

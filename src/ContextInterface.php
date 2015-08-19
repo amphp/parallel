@@ -24,10 +24,14 @@ interface ContextInterface extends ChannelInterface
     public function kill();
 
     /**
+     * @coroutine
+     *
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Icicle\Promise\PromiseInterface Promise that is resolved when the context finishes.
+     * @return \Generator
+     *
+     * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      */
     public function join();
 }

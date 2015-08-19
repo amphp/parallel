@@ -3,15 +3,15 @@ namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ForkException;
+use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\ExecutorInterface;
 use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\ExitFailure;
-use Icicle\Concurrent\Sync\ExitInterface;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\Sync\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Promise;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -87,9 +87,7 @@ class ForkContext implements ContextInterface
                 $channel = new Channel($parent);
                 fclose($child);
 
-                $executor = new ForkExecutor($this->synchronized, $channel);
-
-                $coroutine = new Coroutine($this->execute($executor));
+                $coroutine = new Coroutine($this->execute($channel));
                 $coroutine->done();
 
                 try {
@@ -108,12 +106,18 @@ class ForkContext implements ContextInterface
     }
 
     /**
-     * @param \Icicle\Concurrent\ExecutorInterface
+     * @coroutine
+     *
+     * This method is run only on the child.
+     *
+     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      *
      * @return \Generator
      */
-    private function execute(ExecutorInterface $executor)
+    private function execute(ChannelInterface $channel)
     {
+        $executor = new ForkExecutor($this->synchronized, $channel);
+
         try {
             $function = $this->function;
             if ($function instanceof \Closure) {
@@ -125,9 +129,11 @@ class ForkContext implements ContextInterface
             $result = new ExitFailure($exception);
         }
 
-        yield $executor->send($result);
-
-        yield $executor->close();
+        try {
+            yield $channel->send($result);
+        } finally {
+            $channel->close();
+        }
     }
 
     /**
@@ -162,6 +168,10 @@ class ForkContext implements ContextInterface
         if ($this->isRunning()) {
             // forcefully kill the process using SIGKILL
             posix_kill($this->getPid(), SIGKILL);
+
+            if (null !== $this->channel && $this->channel->isOpen()) {
+                $this->channel->close();
+            }
         }
     }
 
@@ -173,8 +183,11 @@ class ForkContext implements ContextInterface
         try {
             $response = (yield $this->channel->receive());
 
-            if (!$response instanceof ExitInterface) {
-                throw new SynchronizationError('Did not receive an exit status from fork.');
+            if (!$response instanceof ExitStatusInterface) {
+                throw new SynchronizationError(sprintf(
+                    'Did not receive an exit status from fork. Instead received data of type %s',
+                    is_object($response) ? get_class($response) : gettype($response)
+                ));
             }
 
             yield $response->getResult();
@@ -190,7 +203,7 @@ class ForkContext implements ContextInterface
     {
         $data = (yield $this->channel->receive());
 
-        if ($data instanceof ExitInterface) {
+        if ($data instanceof ExitStatusInterface) {
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
                 'Fork unexpectedly exited with result of type: %s',
@@ -206,6 +219,10 @@ class ForkContext implements ContextInterface
      */
     public function send($data)
     {
-        return $this->channel->send($data);
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
+        }
+
+        yield $this->channel->send($data);
     }
 }

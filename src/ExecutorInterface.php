@@ -6,8 +6,4 @@ namespace Icicle\Concurrent;
  */
 interface ExecutorInterface extends ChannelInterface
 {
-    /**
-     * @return \Icicle\Promise\PromiseInterface
-     */
-    public function close();
 }

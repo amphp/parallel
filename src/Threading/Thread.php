@@ -1,13 +1,12 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\ExecutorInterface;
 use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\ExitFailure;
 use Icicle\Concurrent\Sync\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Promise;
 
 /**
  * An internal thread that executes a given function concurrently.
@@ -72,9 +71,9 @@ class Thread extends \Thread
         }
 
         // At this point, the thread environment has been prepared so begin using the thread.
-        $executor = new ThreadExecutor($this, new Channel($this->socket));
+        $channel = new Channel($this->socket);
 
-        $coroutine = new Coroutine($this->execute($executor));
+        $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
 
         Loop\run();
@@ -113,12 +112,18 @@ class Thread extends \Thread
     }
 
     /**
-     * @param \Icicle\Concurrent\ExecutorInterface
+     * @coroutine
+     *
+     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      *
      * @return \Generator
+     *
+     * @resolve int
      */
-    private function execute(ExecutorInterface $executor)
+    private function execute(ChannelInterface $channel)
     {
+        $executor = new ThreadExecutor($this, $channel);
+
         try {
             $function = $this->function;
             if ($function instanceof \Closure) {
@@ -130,8 +135,10 @@ class Thread extends \Thread
             $result = new ExitFailure($exception);
         }
 
-        yield $executor->send($result);
-
-        yield $executor->close();
+        try {
+            yield $channel->send($result);
+        } finally {
+            $channel->close();
+        }
     }
 }

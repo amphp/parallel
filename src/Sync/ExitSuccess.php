@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Sync;
 
-class ExitSuccess implements ExitInterface
+class ExitSuccess implements ExitStatusInterface
 {
     /**
      * @var mixed

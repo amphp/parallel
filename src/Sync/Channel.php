@@ -1,8 +1,8 @@
 <?php
 namespace Icicle\Concurrent\Sync;
 
-use Icicle\Concurrent\ChannelInterface;
 use Icicle\Concurrent\Exception\ChannelException;
+use Icicle\Socket\Exception\Exception as SocketException;
 use Icicle\Socket\Stream\DuplexStream;
 
 /**
@@ -16,10 +16,7 @@ use Icicle\Socket\Stream\DuplexStream;
  */
 class Channel implements ChannelInterface
 {
-    const MESSAGE_CLOSE = 1;
-    const MESSAGE_DATA = 2;
-
-    const HEADER_LENGTH = 5;
+    const HEADER_LENGTH = 4;
 
     /**
      * @var \Icicle\Socket\Stream\DuplexStream An asynchronous socket stream.
@@ -37,7 +34,7 @@ class Channel implements ChannelInterface
     }
 
     /**
-     * Creates a new channel and returns a pair of connections.
+     * Returns a pair of connected stream socket resources.
      *
      * Creates a new channel connection and returns two connections to the
      * channel. Each connection is a peer and interacts with the other, even
@@ -45,7 +42,7 @@ class Channel implements ChannelInterface
      *
      * @return resource[] Pair of socket resources.
      *
-     * @throws \Icicle\Concurrent\Exception\ChannelException
+     * @throws \Icicle\Concurrent\Exception\ChannelException If creating the sockets fails.
      */
     public static function createSocketPair()
     {
@@ -58,90 +55,78 @@ class Channel implements ChannelInterface
     }
 
     /**
-     * Sends data across the channel to the peer.
-     *
-     * @param mixed $data The data to send.
-     *
-     * @return \Generator
+     * {@inheritdoc}
      */
     public function send($data)
     {
+        if (!$this->stream->isWritable()) {
+            throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
+        }
+
         // Serialize the data to send into the channel.
         try {
             $serialized = serialize($data);
         } catch (\Exception $exception) {
-            throw new ChannelException('The given data is not sendable because it is not serializable.',
-                0, $exception);
+            throw new ChannelException(
+                'The given data cannot be sent because it is not serializable.', 0, $exception
+            );
         }
+
         $length = strlen($serialized);
 
-        $header = pack('CL', self::MESSAGE_DATA, $length);
-        $message = $header.$serialized;
+        try {
+            yield $this->stream->write(pack('L', $length) . $serialized);
+        } catch (SocketException $exception) {
+            throw new ChannelException('Sending on the channel failed. Did the context die?', 0, $exception);
+        }
 
-        yield $this->stream->write($message);
+        yield $length;
     }
 
     /**
-     * Waits asynchronously for a message from the peer.
-     *
-     * @return \Generator
+     * {@inheritdoc}
      */
     public function receive()
     {
-        // Read the message header first and extract its contents.
-        $buffer = '';
+        // Read the message length first to determine how much needs to be read from the stream.
         $length = self::HEADER_LENGTH;
+        $buffer = '';
         do {
+            if (!$this->stream->isReadable()) {
+                throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
+            }
+
             $buffer .= (yield $this->stream->read($length));
         } while (($length -= strlen($buffer)) > 0);
 
-        $header = unpack('Ctype/Llength', $buffer);
-
-        // If the message type is MESSAGE_CLOSE, the peer was closed and the channel
-        // is done.
-        if ($header['type'] === self::MESSAGE_CLOSE) {
-            $this->stream->close();
-            yield null;
-            return;
-        }
-
-        // Read the serialized data from the socket.
-        if ($header['type'] === self::MESSAGE_DATA) {
-            $buffer = '';
-            $length = $header['length'];
-            do {
-                $buffer .= (yield $this->stream->read($length));
-            } while (($length -= strlen($buffer)) > 0);
-
-            // Attempt to unserialize the received data.
-            try {
-                yield unserialize($buffer);
-            } catch (\Exception $exception) {
-                throw new ChannelException('Received corrupt data from peer.', 0, $exception);
+        list( , $length) = unpack('L', $buffer);
+        $buffer = '';
+        do {
+            if (!$this->stream->isReadable()) {
+                throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
             }
+
+            $buffer .= (yield $this->stream->read($length));
+        } while (($length -= strlen($buffer)) > 0);
+
+        // Attempt to unserialize the received data.
+        try {
+            yield unserialize($buffer);
+        } catch (\Exception $exception) {
+            throw new ChannelException('Received corrupt data from peer.', 0, $exception);
         }
     }
 
     /**
-     * Closes the channel.
-     *
-     * This method closes the connection to the peer and sends a message to the
-     * peer notifying that the connection has been closed.
-     *
-     * @return \Icicle\Promise\PromiseInterface
+     * {@inheritdoc}
      */
     public function close()
     {
-        // Create a message with just a DONE header and zero data.
-        $message = pack('Cx4', self::MESSAGE_CLOSE);
-
-        return $this->stream->end($message);
+        $this->stream->close();
     }
 
     /**
-     * Checks if the channel is still open.
-     *
-     * @return bool True if the channel is open, otherwise false.
+     * {@inheritdoc}
      */
     public function isOpen()
     {

@@ -1,8 +1,10 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
+use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\ExecutorInterface;
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
 
 class ForkExecutor implements ExecutorInterface
 {
@@ -12,11 +14,11 @@ class ForkExecutor implements ExecutorInterface
     private $synchronized;
 
     /**
-     * @var \Icicle\Concurrent\Sync\Channel
+     * @var \Icicle\Concurrent\Sync\ChannelInterface
      */
     private $channel;
 
-    public function __construct(Synchronized $synchronized, Channel $channel)
+    public function __construct(Synchronized $synchronized, ChannelInterface $channel)
     {
         $this->synchronized = $synchronized;
         $this->channel = $channel;
@@ -35,15 +37,11 @@ class ForkExecutor implements ExecutorInterface
      */
     public function send($data)
     {
-        return $this->channel->send($data);
-    }
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        return $this->channel->close();
+        yield $this->channel->send($data);
     }
 
     /**
