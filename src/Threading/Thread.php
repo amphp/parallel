@@ -16,11 +16,6 @@ use Icicle\Loop;
 class Thread extends \Thread
 {
     /**
-     * @var string Path to an autoloader to include.
-     */
-    public $autoloaderPath;
-
-    /**
      * @var callable The function to execute in the thread.
      */
     private $function;
@@ -43,14 +38,12 @@ class Thread extends \Thread
     /**
      * Creates a new thread object.
      *
-     * @param resource $socket         IPC communication socket.
-     * @param callable $function       The function to execute in the thread.
-     * @param mixed[]  $args           Arguments to pass to the function.
-     * @param string   $autoloaderPath Path to autoloader include file.
+     * @param resource $socket   IPC communication socket.
+     * @param callable $function The function to execute in the thread.
+     * @param mixed[]  $args     Arguments to pass to the function.
      */
-    public function __construct($socket, callable $function, array $args = [], $autoloaderPath = '')
+    public function __construct($socket, callable $function, array $args = [])
     {
-        $this->autoloaderPath = $autoloaderPath;
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
