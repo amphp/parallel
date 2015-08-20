@@ -43,10 +43,10 @@ class Thread extends \Thread
     /**
      * Creates a new thread object.
      *
-     * @param resource $socket IPC communication socket.
-     * @param callable $function The function to execute in the thread.
-     * @param mixed[] $args Arguments to pass to the function.
-     * @param string $autoloaderPath Path to autoloader include file.
+     * @param resource $socket         IPC communication socket.
+     * @param callable $function       The function to execute in the thread.
+     * @param mixed[]  $args           Arguments to pass to the function.
+     * @param string   $autoloaderPath Path to autoloader include file.
      */
     public function __construct($socket, callable $function, array $args = [], $autoloaderPath = '')
     {
@@ -61,18 +61,17 @@ class Thread extends \Thread
      */
     public function run()
     {
-        /* First thing we need to do is initialize the class autoloader. If we
-         * don't do this first, objects we receive from other threads will just
-         * be garbage data and unserializable values (like resources) will be
-         * lost. This happens even with thread-safe objects.
+        /* First thing we need to do is re-initialize the class autoloader. If
+         * we don't do this first, any object of a class that was loaded after
+         * the thread started will just be garbage data and unserializable
+         * values (like resources) will be lost. This happens even with
+         * thread-safe objects.
          */
-        // If inheriting the autoloader failed, re-register it now.
-        if (empty(spl_autoload_functions())) {
-            foreach (get_declared_classes() as $className) {
-                if (strpos($className, 'ComposerAutoloaderInit') === 0) {
-                    $classLoader = $className::getLoader();
-                    break;
-                }
+        foreach (get_declared_classes() as $className) {
+            if (strpos($className, 'ComposerAutoloaderInit') === 0) {
+                // Calling getLoader() will register the class loader for us
+                $className::getLoader();
+                break;
             }
         }
 
