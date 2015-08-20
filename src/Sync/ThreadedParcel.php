@@ -4,7 +4,7 @@ namespace Icicle\Concurrent\Sync;
 /**
  * A thread-safe container that shares a value between multiple threads.
  */
-class ThreadedSharedObject implements MutexInterface
+class ThreadedParcel implements ParcelInterface, MutexInterface
 {
     private $mutex;
     private $threaded;
@@ -23,21 +23,17 @@ class ThreadedSharedObject implements MutexInterface
     }
 
     /**
-     * Gets the value from the shared container.
-     *
-     * @return mixed The shared value.
+     * {@inheritdoc}
      */
-    public function get()
+    public function unwrap()
     {
         return $this->threaded->value;
     }
 
     /**
-     * Sets the value in the shared container.
-     *
-     * @param mixed $value The value to set to.
+     * {@inheritdoc}
      */
-    public function set($value)
+    public function wrap($value)
     {
         $this->threaded->value = $value;
     }
@@ -76,5 +72,17 @@ class ThreadedSharedObject implements MutexInterface
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __clone()
+    {
+        $clone = new \Threaded();
+        $clone->value = $this->unwrap();
+        $this->threaded = $clone;
+
+        $this->mutex = clone $this->mutex;
     }
 }

@@ -18,7 +18,7 @@ use Icicle\Concurrent\Exception\SharedMemoryException;
  * Note that accessing a shared object is not atomic. Access to a shared object
  * should be protected with a mutex to preserve data integrity.
  */
-class SharedObject implements \Serializable
+class Parcel implements ParcelInterface, \Serializable
 {
     /**
      * @var int The byte offset to the start of the object data in memory.
@@ -58,15 +58,13 @@ class SharedObject implements \Serializable
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
         $this->setHeader(self::STATE_ALLOCATED, 0, $permissions);
-        $this->set($value);
+        $this->wrap($value);
     }
 
     /**
-     * Gets the shared value stored in the container.
-     *
-     * @return mixed The stored value.
+     * {@inheritdoc}
      */
-    public function deref()
+    public function unwrap()
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed.');
@@ -85,11 +83,9 @@ class SharedObject implements \Serializable
     }
 
     /**
-     * Sets the value in the container to a new value.
-     *
-     * @param mixed $value The value to set.
+     * {@inheritdoc}
      */
-    public function set($value)
+    public function wrap($value)
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed.');
@@ -187,13 +183,13 @@ class SharedObject implements \Serializable
         $this->memOpen($this->key, 'w', 0, 0);
     }
 
+
     /**
-     * Handles cloning, which creates clones the local object and creates a new
-     * local object handle.
+     * {@inheritdoc}
      */
     public function __clone()
     {
-        $value = $this->deref();
+        $value = $this->unwrap();
         $this->__construct($value);
     }
 
