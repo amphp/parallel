@@ -40,7 +40,7 @@ class ThreadContext implements ContextInterface
         list($channel, $socket) = Channel::createSocketPair();
 
         $this->channel = new Channel($channel);
-        $this->thread = new Thread($socket, $function, $args, $this->getComposerAutoloader());
+        $this->thread = new Thread($socket, $function, $args);
     }
 
     /**
@@ -60,7 +60,7 @@ class ThreadContext implements ContextInterface
             throw new SynchronizationError('The thread has already been started.');
         }
 
-        $this->thread->start(PTHREADS_INHERIT_INI);
+        $this->thread->start(PTHREADS_INHERIT_ALL);
     }
 
     /**
@@ -145,29 +145,5 @@ class ThreadContext implements ContextInterface
         yield new Lock(function () {
             $this->thread->release();
         });
-    }
-
-    /**
-     * Gets the full path to the Composer autoloader.
-     *
-     * If no Composer autoloader is being used, `null` is returned.
-     *
-     * @return string
-     */
-    private function getComposerAutoloader()
-    {
-        static $path;
-
-        if (null !== $path) {
-            return $path;
-        }
-
-        foreach (get_included_files() as $path) {
-            if (preg_match('/vendor\/autoload.php$/i', $path)) {
-                return $path;
-            }
-        }
-
-        return $path = '';
     }
 }

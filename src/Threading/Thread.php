@@ -16,11 +16,6 @@ use Icicle\Loop;
 class Thread extends \Thread
 {
     /**
-     * @var string Path to an autoloader to include.
-     */
-    public $autoloaderPath;
-
-    /**
      * @var callable The function to execute in the thread.
      */
     private $function;
@@ -43,14 +38,12 @@ class Thread extends \Thread
     /**
      * Creates a new thread object.
      *
-     * @param resource $socket IPC communication socket.
+     * @param resource $socket   IPC communication socket.
      * @param callable $function The function to execute in the thread.
-     * @param mixed[] $args Arguments to pass to the function.
-     * @param string $autoloaderPath Path to autoloader include file.
+     * @param mixed[]  $args     Arguments to pass to the function.
      */
-    public function __construct($socket, callable $function, array $args = [], $autoloaderPath = '')
+    public function __construct($socket, callable $function, array $args = [])
     {
-        $this->autoloaderPath = $autoloaderPath;
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
@@ -61,14 +54,23 @@ class Thread extends \Thread
      */
     public function run()
     {
-        /* First thing we need to do is initialize the class autoloader. If we
-         * don't do this first, objects we receive from other threads will just
-         * be garbage data and unserializable values (like resources) will be
-         * lost. This happens even with thread-safe objects.
+        /* First thing we need to do is re-initialize the class autoloader. If
+         * we don't do this first, any object of a class that was loaded after
+         * the thread started will just be garbage data and unserializable
+         * values (like resources) will be lost. This happens even with
+         * thread-safe objects.
          */
-        if ('' !== $this->autoloaderPath) {
-            require $this->autoloaderPath;
+        foreach (get_declared_classes() as $className) {
+            if (strpos($className, 'ComposerAutoloaderInit') === 0) {
+                // Calling getLoader() will register the class loader for us
+                $className::getLoader();
+                break;
+            }
         }
+
+        // Erase the old event loop inherited from the parent thread and create
+        // a new one.
+        Loop\loop(Loop\create());
 
         // At this point, the thread environment has been prepared so begin using the thread.
         $channel = new Channel($this->socket);
