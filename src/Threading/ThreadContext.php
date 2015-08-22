@@ -29,6 +29,20 @@ class ThreadContext implements ContextInterface
     private $channel;
 
     /**
+     * Spawns a new thread and runs it.
+     *
+     * @param callable $function A callable to invoke in the thread.
+     *
+     * @return ThreadContext The thread object that was spawned.
+     */
+    public static function spawn(callable $function /* , ...$args */)
+    {
+        $thread = new static($function);
+        $thread->start();
+        return $thread;
+    }
+
+    /**
      * Creates a new thread context from a thread.
      *
      * @param callable $function
