@@ -11,7 +11,7 @@ use Icicle\Coroutine;
 class ThreadExecutor implements ExecutorInterface
 {
     /**
-     * @var \Icicle\Concurrent\Threading\Thread
+     * @var \Icicle\Concurrent\Threading\InternalThread
      */
     private $thread;
 
@@ -21,10 +21,10 @@ class ThreadExecutor implements ExecutorInterface
     private $channel;
 
     /**
-     * @param \Icicle\Concurrent\Threading\Thread
+     * @param \Icicle\Concurrent\Threading\InternalThread
      * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      */
-    public function __construct(Thread $thread, ChannelInterface $channel)
+    public function __construct(InternalThread $thread, ChannelInterface $channel)
     {
         $this->thread = $thread;
         $this->channel = $channel;

@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
-use Icicle\Concurrent\Threading\ThreadContext;
+use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine\Coroutine;
 
 /**
@@ -19,7 +19,7 @@ class WorkerThread implements WorkerInterface
      */
     public function __construct()
     {
-        $this->thread = new ThreadContext(function () {
+        $this->thread = new Thread(function () {
             while (true) {
                 print "Waiting for task...\n";
                 $task = (yield $this->receive());

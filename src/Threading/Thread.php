@@ -1,146 +1,173 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+use Icicle\Concurrent\ChannelInterface;
+use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\ExitFailure;
-use Icicle\Concurrent\Sync\ExitSuccess;
-use Icicle\Coroutine\Coroutine;
-use Icicle\Loop;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Lock;
+use Icicle\Coroutine;
 
 /**
- * An internal thread that executes a given function concurrently.
+ * Implements an execution context using native multi-threading.
  *
- * @internal
+ * The thread context is not itself threaded. A local instance of the context is
+ * maintained both in the context that creates the thread and in the thread
+ * itself.
  */
-class Thread extends \Thread
+class Thread implements ChannelInterface
 {
     /**
-     * @var callable The function to execute in the thread.
+     * @var \Icicle\Concurrent\Threading\InternalThread An internal thread instance.
      */
-    private $function;
+    private $thread;
 
     /**
-     * @var
+     * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the thread.
      */
-    private $args;
+    private $channel;
 
     /**
-     * @var resource
-     */
-    private $socket;
-
-    /**
-     * @var bool
-     */
-    private $lock = true;
-
-    /**
-     * Creates a new thread object.
+     * Spawns a new thread and runs it.
      *
-     * @param resource $socket   IPC communication socket.
-     * @param callable $function The function to execute in the thread.
-     * @param mixed[]  $args     Arguments to pass to the function.
-     */
-    public function __construct($socket, callable $function, array $args = [])
-    {
-        $this->function = $function;
-        $this->args = $args;
-        $this->socket = $socket;
-    }
-
-    /**
-     * Runs the thread code and the initialized function.
-     */
-    public function run()
-    {
-        /* First thing we need to do is re-initialize the class autoloader. If
-         * we don't do this first, any object of a class that was loaded after
-         * the thread started will just be garbage data and unserializable
-         * values (like resources) will be lost. This happens even with
-         * thread-safe objects.
-         */
-        foreach (get_declared_classes() as $className) {
-            if (strpos($className, 'ComposerAutoloaderInit') === 0) {
-                // Calling getLoader() will register the class loader for us
-                $className::getLoader();
-                break;
-            }
-        }
-
-        // Erase the old event loop inherited from the parent thread and create
-        // a new one.
-        Loop\loop(Loop\create());
-
-        // At this point, the thread environment has been prepared so begin using the thread.
-        $channel = new Channel($this->socket);
-
-        $coroutine = new Coroutine($this->execute($channel));
-        $coroutine->done();
-
-        Loop\run();
-    }
-
-    /**
-     * Attempts to obtain the lock. Returns true if the lock was obtained.
+     * @param callable $function A callable to invoke in the thread.
      *
-     * @return bool
+     * @return Thread The thread object that was spawned.
      */
-    public function tsl()
+    public static function spawn(callable $function /* , ...$args */)
     {
-        if (!$this->lock) {
-            return false;
-        }
-
-        $this->lock();
-
-        try {
-            if ($this->lock) {
-                $this->lock = false;
-                return true;
-            }
-            return false;
-        } finally {
-            $this->unlock();
-        }
+        $class  = new \ReflectionClass(__CLASS__);
+        $thread = $class->newInstanceArgs(func_get_args());
+        $thread->start();
+        return $thread;
     }
 
     /**
-     * Releases the lock.
+     * Creates a new thread context from a thread.
+     *
+     * @param callable $function
      */
-    public function release()
+    public function __construct(callable $function /* , ...$args */)
     {
-        $this->lock = true;
+        $args = array_slice(func_get_args(), 1);
+
+        list($channel, $socket) = Channel::createSocketPair();
+
+        $this->channel = new Channel($channel);
+        $this->thread = new InternalThread($socket, $function, $args);
+    }
+
+    /**
+     * Checks if the context is running.
+     *
+     * @return bool True if the context is running, otherwise false.
+     */
+    public function isRunning()
+    {
+        return $this->thread->isRunning();
+    }
+
+    /**
+     * Starts the context execution.
+     */
+    public function start()
+    {
+        if ($this->isRunning()) {
+            throw new SynchronizationError('The thread has already been started.');
+        }
+
+        $this->thread->start(PTHREADS_INHERIT_ALL);
+    }
+
+    /**
+     * Immediately kills the context.
+     */
+    public function kill()
+    {
+        $this->channel->close();
+        $this->thread->kill();
     }
 
     /**
      * @coroutine
      *
-     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
+     * Gets a promise that resolves when the context ends and joins with the
+     * parent context.
      *
      * @return \Generator
      *
-     * @resolve int
+     * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      */
-    private function execute(ChannelInterface $channel)
+    public function join()
     {
-        $executor = new ThreadExecutor($this, $channel);
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
+        }
 
         try {
-            $function = $this->function;
-            if ($function instanceof \Closure) {
-                $function = $function->bindTo($executor, ThreadExecutor::class);
+            $response = (yield $this->channel->receive());
+
+            if (!$response instanceof ExitStatusInterface) {
+                throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
-            $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
-        } catch (\Exception $exception) {
-            $result = new ExitFailure($exception);
+            yield $response->getResult();
+        } finally {
+            $this->channel->close();
+            $this->thread->join();
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function receive()
+    {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
         }
 
-        try {
-            yield $channel->send($result);
-        } finally {
-            $channel->close();
+        $data = (yield $this->channel->receive());
+
+        if ($data instanceof ExitStatusInterface) {
+            $data = $data->getResult();
+            throw new SynchronizationError(sprintf(
+                'Thread unexpectedly exited with result of type: %s',
+                is_object($data) ? get_class($data) : gettype($data)
+            ));
         }
+
+        yield $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function send($data)
+    {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The thread has not been started or has already finished.');
+        }
+
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
+        }
+
+        return $this->channel->send($data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function acquire()
+    {
+        while (!$this->thread->tsl()) {
+            yield Coroutine\sleep(0.01);
+        }
+
+        yield new Lock(function () {
+            $this->thread->release();
+        });
     }
 }

@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\ContextInterface;
+use Icicle\Concurrent\ChannelInterface as ContextChannelInterface;
 use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
@@ -16,7 +16,7 @@ use Icicle\Loop;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class ForkContext implements ContextInterface
+class Fork implements ContextChannelInterface
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
@@ -38,6 +38,20 @@ class ForkContext implements ContextInterface
      */
     private $synchronized;
 
+    /**
+     * Spawns a new forked process and runs it.
+     *
+     * @param callable $function A callable to invoke in the process.
+     *
+     * @return Thread The process object that was spawned.
+     */
+    public static function spawn(callable $function /* , ...$args */)
+    {
+        $thread = new static($function);
+        $thread->start();
+        return $thread;
+    }
+
     public function __construct(callable $function /* , ...$args */)
     {
         $this->function = $function;
@@ -57,7 +71,9 @@ class ForkContext implements ContextInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Checks if the context is running.
+     *
+     * @return bool True if the context is running, otherwise false.
      */
     public function isRunning()
     {
@@ -65,7 +81,7 @@ class ForkContext implements ContextInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Starts the context execution.
      */
     public function start()
     {
@@ -161,7 +177,7 @@ class ForkContext implements ContextInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Immediately kills the context.
      */
     public function kill()
     {
@@ -176,7 +192,14 @@ class ForkContext implements ContextInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @coroutine
+     *
+     * Gets a promise that resolves when the context ends and joins with the
+     * parent context.
+     *
+     * @return \Generator
+     *
+     * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      */
     public function join()
     {

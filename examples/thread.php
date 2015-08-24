@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Icicle\Concurrent\Threading\ThreadContext;
+use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
 use Icicle\Loop;
 
@@ -13,8 +13,10 @@ $timer = Loop\periodic(1, function () {
 });
 
 Coroutine\create(function () {
+    $foo = 1;
+
     // Create a new child thread that does some blocking stuff.
-    $context = new ThreadContext(function () {
+    $context = Thread::spawn(function () use ($foo) {
         printf("\$this: %s\n", get_class($this));
 
         printf("Received the following from parent: %s\n", (yield $this->receive()));
@@ -35,9 +37,6 @@ Coroutine\create(function () {
 
         yield 42;
     });
-
-    // Run the thread and wait asynchronously for it to finish.
-    $context->start();
 
     yield $context->send('Start data');
 
