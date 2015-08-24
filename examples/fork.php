@@ -2,12 +2,12 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Icicle\Concurrent\Forking\Process;
+use Icicle\Concurrent\Forking\Fork;
 use Icicle\Coroutine;
 use Icicle\Loop;
 
 Coroutine\create(function () {
-    $context = Process::spawn(function () {
+    $context = Fork::spawn(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
 

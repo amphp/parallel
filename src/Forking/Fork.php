@@ -16,7 +16,7 @@ use Icicle\Loop;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Process implements ContextChannelInterface
+class Fork implements ContextChannelInterface
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
