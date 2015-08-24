@@ -13,10 +13,8 @@ $timer = Loop\periodic(1, function () {
 });
 
 Coroutine\create(function () {
-    $foo = 1;
-
     // Create a new child thread that does some blocking stuff.
-    $context = Thread::spawn(function () use ($foo) {
+    $context = Thread::spawn(function () {
         printf("\$this: %s\n", get_class($this));
 
         printf("Received the following from parent: %s\n", (yield $this->receive()));
