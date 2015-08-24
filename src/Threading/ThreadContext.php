@@ -37,7 +37,8 @@ class ThreadContext implements ContextInterface
      */
     public static function spawn(callable $function /* , ...$args */)
     {
-        $thread = new static($function);
+        $class  = new \ReflectionClass(__CLASS__);
+        $thread = $class->newInstanceArgs(func_get_args());
         $thread->start();
         return $thread;
     }
