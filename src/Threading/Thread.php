@@ -19,6 +19,8 @@ use Icicle\Socket\Stream\DuplexStream;
  */
 class Thread implements ChannelInterface
 {
+    const LATENCY_TIMEOUT = 0.01; // 10 ms
+
     /**
      * @var \Icicle\Concurrent\Threading\InternalThread An internal thread instance.
      */
@@ -173,7 +175,7 @@ class Thread implements ChannelInterface
     public function acquire()
     {
         while (!$this->thread->tsl()) {
-            yield Coroutine\sleep(0.01);
+            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
         yield new Lock(function () {

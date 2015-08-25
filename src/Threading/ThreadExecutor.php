@@ -10,6 +10,8 @@ use Icicle\Coroutine;
 
 class ThreadExecutor implements ExecutorInterface
 {
+    const LATENCY_TIMEOUT = 0.01; // 10 ms
+
     /**
      * @var \Icicle\Concurrent\Threading\InternalThread
      */
@@ -56,7 +58,7 @@ class ThreadExecutor implements ExecutorInterface
     public function acquire()
     {
         while (!$this->thread->tsl()) {
-            yield Coroutine\sleep(0.01);
+            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
         yield new Lock(function () {
