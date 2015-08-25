@@ -8,6 +8,7 @@ use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
+use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -59,8 +60,8 @@ class Thread implements ChannelInterface
 
         list($channel, $this->socket) = Channel::createSocketPair();
 
-        $this->channel = new Channel($channel, $channel);
         $this->thread = new InternalThread($this->socket, $function, $args);
+        $this->channel = new Channel(new DuplexStream($channel));
     }
 
     /**
@@ -92,6 +93,7 @@ class Thread implements ChannelInterface
     {
         $this->channel->close();
         $this->thread->kill();
+        fclose($this->socket);
     }
 
     /**

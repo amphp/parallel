@@ -12,6 +12,7 @@ use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\Sync\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -102,7 +103,7 @@ class Fork implements ContextChannelInterface
                 $loop->reInit();
                 $loop->clear();
 
-                $channel = new Channel($parent, $parent);
+                $channel = new Channel(new DuplexStream($parent));
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
@@ -110,15 +111,18 @@ class Fork implements ContextChannelInterface
 
                 try {
                     $loop->run();
+                    $code = 0;
                 } catch (\Exception $exception) {
-                    exit(-1);
+                    $code = -1;
                 }
 
-                exit(0);
+                $channel->close();
+
+                exit($code);
 
             default: // Parent
                 $this->pid = $pid;
-                $this->channel = new Channel($child, $child);
+                $this->channel = new Channel(new DuplexStream($child));
                 fclose($parent);
         }
     }

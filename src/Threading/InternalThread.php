@@ -7,6 +7,7 @@ use Icicle\Concurrent\Sync\ExitFailure;
 use Icicle\Concurrent\Sync\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Stream\DuplexStream;
 
 /**
  * An internal thread that executes a given function concurrently.
@@ -73,7 +74,7 @@ class InternalThread extends \Thread
         Loop\loop($loop);
 
         // At this point, the thread environment has been prepared so begin using the thread.
-        $channel = new Channel($this->socket, $this->socket);
+        $channel = new Channel(new DuplexStream($this->socket));
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();

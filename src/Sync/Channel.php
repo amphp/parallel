@@ -2,19 +2,16 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\ChannelException;
+use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Socket\Exception\Exception as SocketException;
-use Icicle\Socket\Stream\DuplexStream;
-use Icicle\Socket\Stream\ReadableStream;
-use Icicle\Socket\Stream\WritableStream;
+use Icicle\Stream\DuplexStreamInterface;
+use Icicle\Stream\ReadableStreamInterface;
+use Icicle\Stream\WritableStreamInterface;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
  *
  * Supports full duplex read and write.
- *
- * Note that the sockets are lazily bound to enable temporary thread safety. A
- * channel object can be safely transferred between threads up until the point
- * that the channel is used.
  */
 class Channel implements ChannelInterface
 {
@@ -33,17 +30,24 @@ class Channel implements ChannelInterface
     /**
      * Creates a new channel instance.
      *
-     * @param resource $read
-     * @param resource $write
+     * @param \Icicle\Stream\ReadableStreamInterface $read
+     * @param \Icicle\Stream\WritableStreamInterface|null $write
+     *
+     * @throws \Icicle\Concurrent\Exception\InvalidArgumentError Thrown if no write stream is provided and the read
+     *     stream is not a duplex stream.
      */
-    public function __construct($read, $write)
+    public function __construct(ReadableStreamInterface $read, WritableStreamInterface $write = null)
     {
-        if ($read === $write) {
-            $this->read = $this->write = new DuplexStream($read);
+        if (null === $write) {
+            if (!$read instanceof DuplexStreamInterface) {
+                throw new InvalidArgumentError('Must provide a duplex stream if not providing a write stream.');
+            }
+            $this->write = $read;
         } else {
-            $this->read = new ReadableStream($read);
-            $this->write = new WritableStream($write);
+            $this->write = $write;
         }
+
+        $this->read = $read;
     }
 
     /**
