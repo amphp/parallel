@@ -19,32 +19,26 @@ Coroutine\create(function () {
 
         printf("Received the following from parent: %s\n", (yield $this->receive()));
 
-        try {
-            $lock = (yield $this->acquire());
-        } catch (Exception $e) {
-            echo $e;
-        }
+        yield $this->synchronized(function () {
+            print "Sleeping for 3 seconds...\n";
+            sleep(3);
 
-        print "Sleeping for 3 seconds...\n";
-        sleep(3);
+            yield $this->send('Data sent from child.');
 
-        yield $this->send('Data sent from child.');
-
-        print "Sleeping for 2 seconds...\n";
-        sleep(2);
+            print "Sleeping for 2 seconds...\n";
+            sleep(2);
+        });
 
         yield 42;
     });
 
     yield $context->send('Start data');
 
-    $lock = (yield $context->acquire());
+    yield $context->synchronized(function () {
+        printf("Cooperatively sleeping in parent for 2 seconds before releasing lock...\n");
 
-    printf("Cooperatively sleeping in parent for 2 seconds before releasing lock...\n");
-
-    yield Coroutine\sleep(2);
-
-    $lock->release();
+        yield Coroutine\sleep(2);
+    });
 
     printf("Received the following from child: %s\n", (yield $context->receive()));
     printf("Thread ended with value %d!\n", (yield $context->join()));

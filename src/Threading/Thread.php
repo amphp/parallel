@@ -6,7 +6,6 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitStatusInterface;
-use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
 use Icicle\Socket\Stream\DuplexStream;
 
@@ -93,8 +92,8 @@ class Thread implements ChannelInterface
      */
     public function kill()
     {
-        $this->channel->close();
         $this->thread->kill();
+        $this->channel->close();
         fclose($this->socket);
     }
 
@@ -170,16 +169,20 @@ class Thread implements ChannelInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param callable $callback
+     *
+     * @return \Generator
      */
-    public function acquire()
+    public function synchronized(callable $callback)
     {
         while (!$this->thread->tsl()) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
-        yield new Lock(function () {
+        try {
+            yield $callback($this);
+        } finally {
             $this->thread->release();
-        });
+        }
     }
 }

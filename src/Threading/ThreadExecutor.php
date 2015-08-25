@@ -5,7 +5,6 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\ExecutorInterface;
 use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\ExitStatusInterface;
-use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
 
 class ThreadExecutor implements ExecutorInterface
@@ -53,16 +52,20 @@ class ThreadExecutor implements ExecutorInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param callable $callback
+     *
+     * @return \Generator
      */
-    public function acquire()
+    public function synchronized(callable $callback)
     {
         while (!$this->thread->tsl()) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
-        yield new Lock(function () {
+        try {
+            yield $callback($this);
+        } finally {
             $this->thread->release();
-        });
+        }
     }
 }
