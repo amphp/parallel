@@ -13,7 +13,7 @@ Coroutine\create(function () {
 
     $returnValue = (yield $worker->enqueue(new HelloTask()));
 
-    printf("Return value: %d\n", $returnValue);
+    printf("Return value: %s\n", $returnValue);
 
     $code = (yield $worker->shutdown());
     printf("Code: %d\n", $code);

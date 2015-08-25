@@ -34,17 +34,17 @@ class Process
     private $options;
 
     /**
-     * @var resource|null
+     * @var \Icicle\Socket\Stream\WritableStream|null
      */
     private $stdin;
 
     /**
-     * @var resource|null
+     * @var \Icicle\Socket\Stream\ReadableStream|null
      */
     private $stdout;
 
     /**
-     * @var resource|null
+     * @var \Icicle\Socket\Stream\ReadableStream|null
      */
     private $stderr;
 
@@ -60,8 +60,9 @@ class Process
 
     /**
      * @param   string $command Command to run.
-     * @param   string|null $cwd Working directory or use null to use the working directory of the current PHP process.
-     * @param   mixed[] $env Environment variables or use null to inherit from the current PHP process.
+     * @param   string|null $cwd Working directory or use an empty string to use the working directory of the current
+     *     PHP process.
+     * @param   mixed[] $env Environment variables or use an empty array to inherit from the current PHP process.
      * @param   mixed[] $options Options for proc_open().
      */
     public function __construct($command, $cwd = '', array $env = [], array $options = [])
@@ -87,6 +88,18 @@ class Process
     public function __destruct()
     {
         $this->kill(); // Will only terminate if the process is still running.
+
+        if (null !== $this->stdin) {
+            $this->stdin->close();
+        }
+
+        if (null !== $this->stdout) {
+            $this->stdout->close();
+        }
+
+        if (null !== $this->stderr) {
+            $this->stderr->close();
+        }
     }
 
     /**
@@ -130,13 +143,11 @@ class Process
 
         $this->pid = $status['pid'];
 
-        list($this->stdin, $this->stdout, $this->stderr, $stream) = $pipes;
+        $this->stdin = new WritableStream($pipes[0]);
+        $this->stdout = new ReadableStream($pipes[1]);
+        $this->stderr = new ReadableStream($pipes[2]);
 
-//        $this->stdin = new WritableStream($pipes[0]);
-//        $this->stdout = new ReadableStream($pipes[1]);
-//        $this->stderr = new ReadableStream($pipes[2]);
-
-        $stream = new ReadableStream($stream);
+        $stream = new ReadableStream($pipes[3]);
 
         $this->promise = new Coroutine($stream->read());
         $this->promise = $this->promise
@@ -147,9 +158,11 @@ class Process
                 return (int) $code;
             })
             ->cleanup(function () use ($stream) {
-                proc_close($this->process);
-                $this->process = null;
-                //$this->stdin->close();
+                if (is_resource($this->process)) {
+                    proc_close($this->process);
+                    $this->process = null;
+                }
+                $this->stdin->close();
                 $stream->close();
             });
     }
@@ -168,8 +181,8 @@ class Process
         try {
             yield $this->promise;
         } finally {
-            //$this->stdout->close();
-            //$this->stderr->close();
+            $this->stdout->close();
+            $this->stderr->close();
         }
     }
 
@@ -267,7 +280,7 @@ class Process
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return  resource
+     * @return  \Icicle\Socket\Stream\WritableStream
      *
      * @throws  Exception If the process has not been started.
      */
@@ -283,7 +296,7 @@ class Process
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return  resource
+     * @return  \Icicle\Socket\Stream\ReadableStream
      *
      * @throws  Exception If the process has not been started.
      */
@@ -299,7 +312,7 @@ class Process
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return  resource
+     * @return  \Icicle\Socket\Stream\ReadableStream
      *
      * @throws  Exception If the process has not been started.
      */

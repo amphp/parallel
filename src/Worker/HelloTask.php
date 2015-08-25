@@ -5,7 +5,6 @@ class HelloTask implements TaskInterface
 {
     public function run()
     {
-        echo "Hello";
-        return 42;
+        return "Hello, world!";
     }
 }

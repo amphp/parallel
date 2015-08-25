@@ -7,6 +7,8 @@ use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Stream\ReadableStream;
+use Icicle\Socket\Stream\WritableStream;
 
 function run(ChannelInterface $channel)
 {
@@ -30,12 +32,15 @@ function run(ChannelInterface $channel)
     }
 }
 
+// Redirect all output written using echo, print, printf, etc. to STDERR.
 ob_start(function ($data) {
     $written = fwrite(STDERR, $data);
     return '';
 }, 1);
 
-$coroutine = new Coroutine(run(new Channel(STDIN, STDOUT)));
+$coroutine = new Coroutine(
+    run(new Channel(new ReadableStream(STDIN), new WritableStream(STDOUT)))
+);
 $coroutine->done();
 
 Loop\run();
