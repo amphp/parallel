@@ -29,11 +29,16 @@ class Thread implements ChannelInterface
     private $channel;
 
     /**
+     * @var resource
+     */
+    private $socket;
+
+    /**
      * Spawns a new thread and runs it.
      *
      * @param callable $function A callable to invoke in the thread.
      *
-     * @return Thread The thread object that was spawned.
+     * @return \Icicle\Concurrent\Threading\Thread The thread object that was spawned.
      */
     public static function spawn(callable $function /* , ...$args */)
     {
@@ -52,10 +57,10 @@ class Thread implements ChannelInterface
     {
         $args = array_slice(func_get_args(), 1);
 
-        list($channel, $socket) = Channel::createSocketPair();
+        list($channel, $this->socket) = Channel::createSocketPair();
 
-        $this->channel = new Channel($channel);
-        $this->thread = new InternalThread($socket, $function, $args);
+        $this->channel = new Channel($channel, $channel);
+        $this->thread = new InternalThread($this->socket, $function, $args);
     }
 
     /**
@@ -98,6 +103,8 @@ class Thread implements ChannelInterface
      * @return \Generator
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
+     *
+     * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
     {
@@ -114,8 +121,9 @@ class Thread implements ChannelInterface
 
             yield $response->getResult();
         } finally {
-            $this->channel->close();
             $this->thread->join();
+            $this->channel->close();
+            fclose($this->socket);
         }
     }
 

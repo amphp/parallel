@@ -68,17 +68,17 @@ class InternalThread extends \Thread
             }
         }
 
-        // Erase the old event loop inherited from the parent thread and create
-        // a new one.
-        Loop\loop(Loop\create());
+        // Erase the old event loop inherited from the parent thread and create a new one.
+        $loop = Loop\create();
+        Loop\loop($loop);
 
         // At this point, the thread environment has been prepared so begin using the thread.
-        $channel = new Channel($this->socket);
+        $channel = new Channel($this->socket, $this->socket);
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
 
-        Loop\run();
+        $loop->run();
     }
 
     /**
@@ -137,10 +137,6 @@ class InternalThread extends \Thread
             $result = new ExitFailure($exception);
         }
 
-        try {
-            yield $channel->send($result);
-        } finally {
-            $channel->close();
-        }
+        yield $channel->send($result);
     }
 }

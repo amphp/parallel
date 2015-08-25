@@ -4,6 +4,8 @@ namespace Icicle\Concurrent\Sync;
 use Icicle\Concurrent\Exception\ChannelException;
 use Icicle\Socket\Exception\Exception as SocketException;
 use Icicle\Socket\Stream\DuplexStream;
+use Icicle\Socket\Stream\ReadableStream;
+use Icicle\Socket\Stream\WritableStream;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -19,18 +21,29 @@ class Channel implements ChannelInterface
     const HEADER_LENGTH = 4;
 
     /**
-     * @var \Icicle\Socket\Stream\DuplexStream An asynchronous socket stream.
+     * @var \Icicle\Stream\ReadableStreamInterface
      */
-    private $stream;
+    private $read;
+
+    /**
+     * @var \Icicle\Stream\WritableStreamInterface
+     */
+    private $write;
 
     /**
      * Creates a new channel instance.
      *
-     * @param resource $socket
+     * @param resource $read
+     * @param resource $write
      */
-    public function __construct($socket)
+    public function __construct($read, $write)
     {
-        $this->stream = new DuplexStream($socket);
+        if ($read === $write) {
+            $this->read = $this->write = new DuplexStream($read);
+        } else {
+            $this->read = new ReadableStream($read);
+            $this->write = new WritableStream($write);
+        }
     }
 
     /**
@@ -59,7 +72,7 @@ class Channel implements ChannelInterface
      */
     public function send($data)
     {
-        if (!$this->stream->isWritable()) {
+        if (!$this->write->isWritable()) {
             throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
         }
 
@@ -75,7 +88,7 @@ class Channel implements ChannelInterface
         $length = strlen($serialized);
 
         try {
-            yield $this->stream->write(pack('L', $length) . $serialized);
+            yield $this->write->write(pack('L', $length) . $serialized);
         } catch (SocketException $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', 0, $exception);
         }
@@ -92,21 +105,21 @@ class Channel implements ChannelInterface
         $length = self::HEADER_LENGTH;
         $buffer = '';
         do {
-            if (!$this->stream->isReadable()) {
+            if (!$this->read->isReadable()) {
                 throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
             }
 
-            $buffer .= (yield $this->stream->read($length));
+            $buffer .= (yield $this->read->read($length));
         } while (($length -= strlen($buffer)) > 0);
 
         list( , $length) = unpack('L', $buffer);
         $buffer = '';
         do {
-            if (!$this->stream->isReadable()) {
+            if (!$this->read->isReadable()) {
                 throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
             }
 
-            $buffer .= (yield $this->stream->read($length));
+            $buffer .= (yield $this->read->read($length));
         } while (($length -= strlen($buffer)) > 0);
 
         // Attempt to unserialize the received data.
@@ -122,7 +135,11 @@ class Channel implements ChannelInterface
      */
     public function close()
     {
-        $this->stream->close();
+        $this->read->close();
+
+        if ($this->write !== $this->read) {
+            $this->write->close();
+        }
     }
 
     /**
@@ -130,6 +147,6 @@ class Channel implements ChannelInterface
      */
     public function isOpen()
     {
-        return $this->stream->isOpen();
+        return $this->read->isOpen() && ($this->read === $this->write || $this->write->isOpen());
     }
 }

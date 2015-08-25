@@ -43,13 +43,14 @@ class Fork implements ContextChannelInterface
      *
      * @param callable $function A callable to invoke in the process.
      *
-     * @return Thread The process object that was spawned.
+     * @return \Icicle\Concurrent\Forking\Fork The process object that was spawned.
      */
     public static function spawn(callable $function /* , ...$args */)
     {
-        $thread = new static($function);
-        $thread->start();
-        return $thread;
+        $class  = new \ReflectionClass(__CLASS__);
+        $fork = $class->newInstanceArgs(func_get_args());
+        $fork->start();
+        return $fork;
     }
 
     public function __construct(callable $function /* , ...$args */)
@@ -96,18 +97,19 @@ class Fork implements ContextChannelInterface
                 // child context by default is synchronous and uses the parent event
                 // loop, so we need to stop the clone before doing any work in case it
                 // is already running.
-                Loop\stop();
-                Loop\reInit();
-                Loop\clear();
+                $loop = Loop\loop();
+                $loop->stop();
+                $loop->reInit();
+                $loop->clear();
 
-                $channel = new Channel($parent);
+                $channel = new Channel($parent, $parent);
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
                 $coroutine->done();
 
                 try {
-                    Loop\run();
+                    $loop->run();
                 } catch (\Exception $exception) {
                     exit(-1);
                 }
@@ -116,7 +118,7 @@ class Fork implements ContextChannelInterface
 
             default: // Parent
                 $this->pid = $pid;
-                $this->channel = new Channel($child);
+                $this->channel = new Channel($child, $child);
                 fclose($parent);
         }
     }
@@ -200,6 +202,8 @@ class Fork implements ContextChannelInterface
      * @return \Generator
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
+     *
+     * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
     {
