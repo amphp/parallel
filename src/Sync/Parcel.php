@@ -210,7 +210,7 @@ class Parcel implements ParcelInterface, \Serializable
 
         return [
             'id' => $this->key,
-            'object' => $this->deref(),
+            'object' => $this->unwrap(),
             'freed' => false,
         ];
     }

@@ -1,54 +1,54 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
-use Icicle\Concurrent\Sync\SharedObject;
+use Icicle\Concurrent\Sync\Parcel;
 use Icicle\Tests\Concurrent\TestCase;
 
-class SharedObjectTest extends TestCase
+class ParcelTest extends TestCase
 {
     public function testConstructor()
     {
-        $object = new SharedObject(new \stdClass());
-        $this->assertInternalType('object', $object->deref());
+        $object = new Parcel(new \stdClass());
+        $this->assertInternalType('object', $object->unwrap());
         $object->free();
     }
 
-    public function testDerefIsOfCorrectType()
+    public function testUnwrapIsOfCorrectType()
     {
-        $object = new SharedObject(new \stdClass());
-        $this->assertInstanceOf('stdClass', $object->deref());
+        $object = new Parcel(new \stdClass());
+        $this->assertInstanceOf('stdClass', $object->unwrap());
         $object->free();
     }
 
-    public function testDerefIsEqual()
+    public function testUnwrapIsEqual()
     {
         $object = new \stdClass();
-        $shared = new SharedObject($object);
-        $this->assertEquals($object, $shared->deref());
+        $shared = new Parcel($object);
+        $this->assertEquals($object, $shared->unwrap());
         $shared->free();
     }
 
     public function testNewObjectIsNotFreed()
     {
-        $object = new SharedObject(new \stdClass());
+        $object = new Parcel(new \stdClass());
         $this->assertFalse($object->isFreed());
         $object->free();
     }
 
     public function testFreeReleasesObject()
     {
-        $object = new SharedObject(new \stdClass());
+        $object = new Parcel(new \stdClass());
         $object->free();
         $this->assertTrue($object->isFreed());
     }
 
-    public function testSet()
+    public function testWrap()
     {
-        $shared = new SharedObject(3);
-        $this->assertEquals(3, $shared->deref());
+        $shared = new Parcel(3);
+        $this->assertEquals(3, $shared->unwrap());
 
-        $shared->set(4);
-        $this->assertEquals(4, $shared->deref());
+        $shared->wrap(4);
+        $this->assertEquals(4, $shared->unwrap());
 
         $shared->free();
     }
@@ -56,21 +56,21 @@ class SharedObjectTest extends TestCase
     /**
      * @expectedException \Icicle\Concurrent\Exception\SharedMemoryException
      */
-    public function testDerefThrowsErrorIfFreed()
+    public function testUnwrapThrowsErrorIfFreed()
     {
-        $object = new SharedObject(new \stdClass());
+        $object = new Parcel(new \stdClass());
         $object->free();
-        $object->deref();
+        $object->unwrap();
     }
 
     public function testCloneIsNewObject()
     {
         $object = new \stdClass();
-        $shared = new SharedObject($object);
+        $shared = new Parcel($object);
         $clone = clone $shared;
 
         $this->assertNotSame($shared, $clone);
-        $this->assertNotSame($object, $clone->deref());
+        $this->assertNotSame($object, $clone->unwrap());
         $this->assertNotEquals($shared->__debugInfo()['id'], $clone->__debugInfo()['id']);
 
         $clone->free();
@@ -79,10 +79,10 @@ class SharedObjectTest extends TestCase
 
     public function testObjectOverflowMoved()
     {
-        $object = new SharedObject('hi', 14);
-        $object->set('hello world');
+        $object = new Parcel('hi', 14);
+        $object->wrap('hello world');
 
-        $this->assertEquals('hello world', $object->deref());
+        $this->assertEquals('hello world', $object->unwrap());
         $object->free();
     }
 
@@ -91,13 +91,13 @@ class SharedObjectTest extends TestCase
      */
     public function testSetInSeparateProcess()
     {
-        $object = new SharedObject(42);
+        $object = new Parcel(42);
 
         $this->doInFork(function () use ($object) {
-            $object->set(43);
+            $object->wrap(43);
         });
 
-        $this->assertEquals(43, $object->deref());
+        $this->assertEquals(43, $object->unwrap());
         $object->free();
     }
 
@@ -106,7 +106,7 @@ class SharedObjectTest extends TestCase
      */
     public function testFreeInSeparateProcess()
     {
-        $object = new SharedObject(42);
+        $object = new Parcel(42);
 
         $this->doInFork(function () use ($object) {
             $object->free();

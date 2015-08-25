@@ -46,7 +46,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
             throw new SemaphoreException('Failed to create the semaphore.');
         }
 
-        $this->data = new SharedObject([
+        $this->data = new Parcel([
             'locks' => (int)$maxLocks,
             'waitQueue' => [],
         ]);
@@ -62,7 +62,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
         $this->lock();
 
         try {
-            $data = $this->data->deref();
+            $data = $this->data->unwrap();
 
             // Attempt to acquire a lock from the semaphore. If no locks are
             // available immediately, we have a lot of work to do...
@@ -73,7 +73,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
                 // thread that has been waiting longer than us.
                 $id = mt_rand();
                 $data['waitQueue'][] = $id;
-                $this->data->set($data);
+                $this->data->wrap($data);
 
                 // Sleep for a while, giving a chance for other threads to release
                 // their locks. After we finish sleeping, we can check again to see
@@ -82,7 +82,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
                     $this->unlock();
                     yield Coroutine\sleep(self::LATENCY_TIMEOUT);
                     $this->lock();
-                    $data = $this->data->deref();
+                    $data = $this->data->unwrap();
                 } while ($data['locks'] <= 0 || $data['waitQueue'][0] !== $id);
             }
 
@@ -90,10 +90,10 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
             // semaphore is available for us to use, so decrement the lock count
             // to mark it as taken, and return a lock object that represents the
             // lock just acquired.
-            $data = $this->data->deref();
+            $data = $this->data->unwrap();
             --$data['locks'];
             $data['waitQueue'] = array_slice($data['waitQueue'], 1);
-            $this->data->set($data);
+            $this->data->wrap($data);
 
             yield new Lock(function (Lock $lock) {
                 $this->release();
@@ -149,9 +149,9 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     {
         $this->lock();
 
-        $data = $this->data->deref();
+        $data = $this->data->unwrap();
         ++$data['locks'];
-        $this->data->set($data);
+        $this->data->wrap($data);
 
         $this->unlock();
     }
