@@ -16,9 +16,9 @@ A few benchmarks are provided for analysis and study. Can be used to back up imp
     vendor/bin/athletic -p benchmarks -b vendor/autoload.php
 
 ## Installation
-With Composer. What did you expect?
+With [Composer](http://getcomposer.org). What did you expect?
 
-    composer require icicleio/conncurrent
+    composer require icicleio/concurrent
 
 To enable threading, you will need to compile pthreads from source, as this package depends on unstable and unreleased fixes in pthreads.
 
