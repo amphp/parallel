@@ -31,11 +31,24 @@ interface WorkerInterface
     public function kill();
 
     /**
+     * @coroutine
+     *
+     * @return \Generator
+     *
+     * @resolve int Exit code.
+     */
+    public function shutdown();
+
+    /**
+     * @coroutine
+     *
      * Enqueues a task to be executed by the worker.
      *
      * @param TaskInterface $task The task to enqueue.
      *
-     * @return \Icicle\Promise\PromiseInterface
+     * @return \Generator
+     *
+     * @resolve mixed Task return value.
      */
     public function enqueue(TaskInterface $task);
 }

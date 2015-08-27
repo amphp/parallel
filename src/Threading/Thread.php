@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\ChannelInterface;
+use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
@@ -16,7 +16,7 @@ use Icicle\Socket\Stream\DuplexStream;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements ChannelInterface
+class Thread implements ContextInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
@@ -111,10 +111,6 @@ class Thread implements ChannelInterface
      */
     public function join()
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
-        }
-
         try {
             $response = (yield $this->channel->receive());
 
@@ -135,10 +131,6 @@ class Thread implements ChannelInterface
      */
     public function receive()
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
-        }
-
         $data = (yield $this->channel->receive());
 
         if ($data instanceof ExitStatusInterface) {
@@ -157,10 +149,6 @@ class Thread implements ChannelInterface
      */
     public function send($data)
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
-        }
-
         if ($data instanceof ExitStatusInterface) {
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }

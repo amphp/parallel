@@ -12,7 +12,10 @@ Coroutine\create(function () {
     $worker->start();
 
     $returnValue = (yield $worker->enqueue(new HelloTask()));
-    yield $worker->shutdown();
+    printf("Return value: %s\n", $returnValue);
+
+    $code = (yield $worker->shutdown());
+    printf("Code: %d\n", $code);
 })->done();
 
 Loop\run();

@@ -1,9 +1,9 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Exception\PanicError;
+use Icicle\Concurrent\Exception\TaskError;
 
-class ExitFailure implements ExitStatusInterface
+class TaskFailure
 {
     /**
      * @var string
@@ -36,14 +36,10 @@ class ExitFailure implements ExitStatusInterface
     /**
      * {@inheritdoc}
      */
-    public function getResult()
+    public function getException()
     {
-        throw new PanicError(
-            sprintf(
-                'Uncaught exception in execution context of type "%s" with message "%s"',
-                $this->type,
-                $this->message
-            ),
+        return new TaskError(
+            sprintf('Uncaught exception in worker of type "%s" with message "%s"', $this->type, $this->message),
             $this->code,
             $this->trace
         );

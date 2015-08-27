@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\ChannelInterface as ContextChannelInterface;
+use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
@@ -17,7 +17,7 @@ use Icicle\Socket\Stream\DuplexStream;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Fork implements ContextChannelInterface
+class Fork implements ContextInterface
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
