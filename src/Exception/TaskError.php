@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class PanicError extends Error
+class TaskError extends Error
 {
     /**
      * @var string Stack trace of the panic.
@@ -26,7 +26,7 @@ class PanicError extends Error
      *
      * @return string
      */
-    public function getPanicTrace()
+    public function getWorkerTrace()
     {
         return $this->trace;
     }

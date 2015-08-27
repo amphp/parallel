@@ -13,6 +13,7 @@ interface ChannelInterface
      *
      * @resolve mixed
      *
+     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If receiving from the channel fails.
@@ -28,6 +29,7 @@ interface ChannelInterface
      *
      * @resolve int
      *
+     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If sending on the channel fails.

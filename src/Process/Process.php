@@ -2,6 +2,8 @@
 namespace Icicle\Concurrent\Process;
 
 use Exception;
+use Icicle\Concurrent\Exception\ProcessException;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Socket\Stream\ReadableStream;
 use Icicle\Socket\Stream\WritableStream;
@@ -116,12 +118,12 @@ class Process
     }
 
     /**
-     * @throws \Exception
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process is already running.
      */
     public function start()
     {
         if (null !== $this->promise) {
-            throw new Exception('The process has already been started.');
+            throw new StatusError('The process has already been started.');
         }
 
         $fd = [
@@ -136,10 +138,16 @@ class Process
         $this->process = proc_open($command, $fd, $pipes, $this->cwd ?: null, $this->env ?: null, $this->options);
 
         if (!is_resource($this->process)) {
-            throw new Exception('Could not start process.');
+            throw new ProcessException('Could not start process.');
         }
 
         $status = proc_get_status($this->process);
+
+        if (!$status) {
+            proc_close($this->process);
+            $this->process = null;
+            throw new ProcessException('Could not get process status.');
+        }
 
         $this->pid = $status['pid'];
 
@@ -149,8 +157,7 @@ class Process
 
         $stream = new ReadableStream($pipes[3]);
 
-        $this->promise = new Coroutine($stream->read());
-        $this->promise = $this->promise
+        $this->promise = (new Coroutine($stream->read()))
             ->then(function ($code) {
                 if ('' === $code) {
                     throw new Exception('Process ended unexpectedly.');
@@ -168,14 +175,16 @@ class Process
     }
 
     /**
+     * @coroutine
+     *
      * @return \Generator
      *
-     * @throws \Exception
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process has not been started.
      */
     public function join()
     {
         if (null === $this->promise) {
-            throw new Exception('The process has not been started.');
+            throw new StatusError('The process has not been started.');
         }
 
         try {
@@ -192,6 +201,7 @@ class Process
     {
         if (is_resource($this->process)) {
             proc_terminate($this->process, 9); // Sends SIGKILL.
+            proc_close($this->process);
             $this->process = null;
         }
     }
@@ -201,12 +211,12 @@ class Process
      *
      * @param int $signo Signal number to send to process.
      *
-     * @throws Exception
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
     public function signal($signo)
     {
         if (!$this->isRunning()) {
-            throw new Exception('The process is not running.');
+            throw new StatusError('The process is not running.');
         }
 
         proc_terminate($this->process, (int) $signo);
@@ -226,7 +236,7 @@ class Process
     /**
      * Returns the command to execute.
      *
-     * @return  string The command to execute.
+     * @return string The command to execute.
      */
     public function getCommand()
     {
@@ -270,7 +280,7 @@ class Process
     /**
      * Determines if the process is still running.
      *
-     * @return  bool
+     * @return bool
      */
     public function isRunning()
     {
@@ -280,14 +290,14 @@ class Process
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return  \Icicle\Socket\Stream\WritableStream
+     * @return \Icicle\Socket\Stream\WritableStream
      *
-     * @throws  Exception If the process has not been started.
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
     public function getStdIn()
     {
         if (null === $this->stdin) {
-            throw new Exception('The process has not been started.');
+            throw new StatusError('The process has not been started.');
         }
 
         return $this->stdin;
@@ -296,14 +306,14 @@ class Process
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return  \Icicle\Socket\Stream\ReadableStream
+     * @return \Icicle\Socket\Stream\ReadableStream
      *
-     * @throws  Exception If the process has not been started.
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
     public function getStdOut()
     {
         if (null === $this->stdout) {
-            throw new Exception('The process has not been started.');
+            throw new StatusError('The process has not been started.');
         }
 
         return $this->stdout;
@@ -312,14 +322,14 @@ class Process
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return  \Icicle\Socket\Stream\ReadableStream
+     * @return \Icicle\Socket\Stream\ReadableStream
      *
-     * @throws  Exception If the process has not been started.
+     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
     public function getStdErr()
     {
         if (null === $this->stderr) {
-            throw new Exception('The process has not been started.');
+            throw new StatusError('The process has not been started.');
         }
 
         return $this->stderr;

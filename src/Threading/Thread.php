@@ -1,11 +1,13 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\ChannelInterface;
+use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitStatusInterface;
+use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 use Icicle\Socket\Stream\DuplexStream;
 
@@ -16,7 +18,7 @@ use Icicle\Socket\Stream\DuplexStream;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements ChannelInterface
+class Thread implements ContextInterface, SynchronizableInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
@@ -34,6 +36,11 @@ class Thread implements ChannelInterface
      * @var resource
      */
     private $socket;
+
+    /**
+     * @var bool
+     */
+    private $started = false;
 
     /**
      * Spawns a new thread and runs it.
@@ -80,11 +87,13 @@ class Thread implements ChannelInterface
      */
     public function start()
     {
-        if ($this->isRunning()) {
-            throw new SynchronizationError('The thread has already been started.');
+        if ($this->started) {
+            throw new StatusError('The thread has already been started.');
         }
 
         $this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_INHERIT_FUNCTIONS | PTHREADS_INHERIT_CLASSES);
+
+        $this->started = true;
     }
 
     /**
@@ -107,12 +116,13 @@ class Thread implements ChannelInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
+     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
+        if (!$this->started) {
+            throw new StatusError('The context has not been started.');
         }
 
         try {
@@ -135,8 +145,8 @@ class Thread implements ChannelInterface
      */
     public function receive()
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
+        if (!$this->started) {
+            throw new StatusError('The context has not been started.');
         }
 
         $data = (yield $this->channel->receive());
@@ -157,24 +167,26 @@ class Thread implements ChannelInterface
      */
     public function send($data)
     {
-        if (!$this->isRunning()) {
-            throw new SynchronizationError('The thread has not been started or has already finished.');
+        if (!$this->started) {
+            throw new StatusError('The context has not been started.');
         }
 
         if ($data instanceof ExitStatusInterface) {
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
-        return $this->channel->send($data);
+        yield $this->channel->send($data);
     }
 
     /**
-     * @param callable $callback
-     *
-     * @return \Generator
+     * {@inheritdoc}
      */
     public function synchronized(callable $callback)
     {
+        if (!$this->started) {
+            throw new StatusError('The context has not been started.');
+        }
+
         while (!$this->thread->tsl()) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
