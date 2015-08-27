@@ -15,6 +15,19 @@ A few benchmarks are provided for analysis and study. Can be used to back up imp
 
     vendor/bin/athletic -p benchmarks -b vendor/autoload.php
 
+## Installation
+With Composer. What did you expect?
+
+    composer require icicleio/conncurrent
+
+To enable threading, you will need to compile pthreads from source, as this package depends on unstable and unreleased fixes in pthreads.
+
+    git clone https://github.com/krakjoe/pthreads && cd pthreads
+    phpize
+    ./configure
+    make
+    sudo make install
+
 ## Documentation
 Concurrent can use either process forking or true threading to parallelize execution. Threading provides better performance and is compatible with Unix and Windows but requires ZTS (Zend thread-safe) PHP, while forking has no external dependencies but is only compatible with Unix systems. If your environment works meets neither of these requirements, this library won't work.
 
@@ -91,6 +104,17 @@ Loop\run();
 
 ### Synchronization with parcels
 Parcels are shared containers that allow you to store context-safe data inside a shared location so that it can be accessed by multiple contexts. To prevent race conditions, you still need to access a parcel's data exclusively, but Concurrent allows you to acquire a lock on a parcel asynchronously without blocking the context execution, unlike traditional mutexes.
+
+## Development and contributing
+Interested in contributing to Icicle? Please see our [contributing guidelines](https://github.com/icicleio/icicle/blob/master/CONTRIBUTING.md) in the [Icicle repository](https://github.com/icicleio/icicle).
+
+Want to hack on the source? A [Vagrant](http://vagrantup.com) box is provided with the repository to give a common development environment for running concurrent threads and processes, and comes with a bunch of handy tools and scripts for testing and experimentation.
+
+Starting up and logging into the virtual machine is as simple as
+
+    vagrant up && vagrant ssh
+
+Once inside the VM, you can install PHP extensions with [Pickle](https://github.com/FriendsOfPHP/pickle), switch versions with `newphp VERSION`, and test for memory leaks with [Valgrind](http://valgrind.org).
 
 ## License
 All documentation and source code is licensed under the Apache License, Version 2.0 (Apache-2.0). See the [LICENSE](LICENSE) file for details.
