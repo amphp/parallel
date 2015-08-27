@@ -20,7 +20,7 @@ class Lock
     /**
      * @var bool Indicates if the lock has been released.
      */
-    private $released;
+    private $released = false;
 
     /**
      * Creates a new lock permit object.
