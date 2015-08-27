@@ -84,7 +84,7 @@ class Thread implements ChannelInterface
             throw new SynchronizationError('The thread has already been started.');
         }
 
-        $this->thread->start(PTHREADS_INHERIT_ALL);
+        $this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_INHERIT_FUNCTIONS | PTHREADS_INHERIT_CLASSES);
     }
 
     /**
