@@ -4,6 +4,7 @@ namespace Icicle\Concurrent\Forking;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
@@ -79,7 +80,7 @@ class Fork implements ContextInterface
      */
     public function isRunning()
     {
-        return posix_getpgid($this->pid) !== false;
+        return 0 !== $this->pid && posix_getpgid($this->pid) !== false;
     }
 
     /**
@@ -87,6 +88,10 @@ class Fork implements ContextInterface
      */
     public function start()
     {
+        if ($this->channel instanceof ChannelInterface) {
+            throw new StatusError('The context has already been started.');
+        }
+
         list($parent, $child) = Channel::createSocketPair();
 
         switch ($pid = pcntl_fork()) {
@@ -113,7 +118,7 @@ class Fork implements ContextInterface
                     $loop->run();
                     $code = 0;
                 } catch (\Exception $exception) {
-                    $code = -1;
+                    $code = 1;
                 }
 
                 $channel->close();
@@ -207,10 +212,15 @@ class Fork implements ContextInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
+     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
     {
+        if (!$this->channel instanceof ChannelInterface) {
+            throw new StatusError('The context has not been started.');
+        }
+
         try {
             $response = (yield $this->channel->receive());
 
@@ -232,6 +242,10 @@ class Fork implements ContextInterface
      */
     public function receive()
     {
+        if (!$this->channel instanceof ChannelInterface) {
+            throw new StatusError('The context has not been started.');
+        }
+
         $data = (yield $this->channel->receive());
 
         if ($data instanceof ExitStatusInterface) {
@@ -250,6 +264,10 @@ class Fork implements ContextInterface
      */
     public function send($data)
     {
+        if (!$this->channel instanceof ChannelInterface) {
+            throw new StatusError('The context has not been started.');
+        }
+
         if ($data instanceof ExitStatusInterface) {
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }

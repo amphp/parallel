@@ -78,16 +78,16 @@ class Worker implements WorkerInterface
 
         $args = array_slice(func_get_args(), 1);
 
-        yield $this->context->send([$task, $args]);
-
         $this->idle = false;
+
+        yield $this->context->send([$task, $args]);
 
         $result = (yield $this->context->receive());
 
         $this->idle = true;
 
         if ($result instanceof TaskFailure) {
-            //throw $result->getException();
+            throw $result->getException();
         }
 
         yield $result;

@@ -2,9 +2,12 @@
 namespace Icicle\Concurrent\Process;
 
 use Icicle\Concurrent\ContextInterface;
+use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\ExitStatusInterface;
 
 class ChannelledProcess implements ContextInterface
 {
@@ -31,6 +34,15 @@ class ChannelledProcess implements ContextInterface
     }
 
     /**
+     * Resets process values.
+     */
+    public function __clone()
+    {
+        $this->process = clone $this->process;
+        $this->channel = null;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function start()
@@ -54,10 +66,20 @@ class ChannelledProcess implements ContextInterface
     public function receive()
     {
         if (!$this->channel instanceof ChannelInterface) {
-            throw new SynchronizationError('The process has not been started.');
+            throw new StatusError('The process has not been started.');
         }
 
-        yield $this->channel->receive();
+        $data = (yield $this->channel->receive());
+
+        if ($data instanceof ExitStatusInterface) {
+            $data = $data->getResult();
+            throw new SynchronizationError(sprintf(
+                'Thread unexpectedly exited with result of type: %s',
+                is_object($data) ? get_class($data) : gettype($data)
+            ));
+        }
+
+        yield $data;
     }
 
     /**
@@ -66,7 +88,11 @@ class ChannelledProcess implements ContextInterface
     public function send($data)
     {
         if (!$this->channel instanceof ChannelInterface) {
-            throw new SynchronizationError('The process has not been started.');
+            throw new StatusError('The process has not been started.');
+        }
+
+        if ($data instanceof ExitStatusInterface) {
+            throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
         yield $this->channel->send($data);
@@ -77,7 +103,23 @@ class ChannelledProcess implements ContextInterface
      */
     public function join()
     {
-        return $this->process->join();
+        if (!$this->channel instanceof ChannelInterface) {
+            throw new StatusError('The process has not been started.');
+        }
+
+        try {
+            $response = (yield $this->channel->receive());
+
+            yield $this->process->join();
+
+            if (!$response instanceof ExitStatusInterface) {
+                throw new SynchronizationError('Did not receive an exit status from thread.');
+            }
+
+            yield $response->getResult();
+        } finally {
+            $this->channel->close();
+        }
     }
 
     /**
@@ -86,10 +128,5 @@ class ChannelledProcess implements ContextInterface
     public function kill()
     {
         $this->process->kill();
-    }
-
-    public function error()
-    {
-
     }
 }
