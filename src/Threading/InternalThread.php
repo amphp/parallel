@@ -120,9 +120,12 @@ class InternalThread extends \Thread
         $executor = new ThreadExecutor($this, $channel);
 
         try {
-            $function = $this->function;
-            if ($function instanceof \Closure) {
-                $function = $function->bindTo($executor, ThreadExecutor::class);
+            if ($this->function instanceof \Closure) {
+                $function = $this->function->bindTo($executor, ThreadExecutor::class);
+            }
+
+            if (empty($function)) {
+                $function = $this->function;
             }
 
             $result = new ExitSuccess(yield call_user_func_array($function, $this->args));

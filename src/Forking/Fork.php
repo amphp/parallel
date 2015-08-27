@@ -80,7 +80,7 @@ class Fork implements ContextInterface
      */
     public function isRunning()
     {
-        return 0 !== $this->pid && posix_getpgid($this->pid) !== false;
+        return 0 !== $this->pid && false !== posix_getpgid($this->pid);
     }
 
     /**
@@ -146,9 +146,12 @@ class Fork implements ContextInterface
         $executor = new ForkExecutor($this->synchronized, $channel);
 
         try {
-            $function = $this->function;
-            if ($function instanceof \Closure) {
-                $function = $function->bindTo($executor, ForkExecutor::class);
+            if ($this->function instanceof \Closure) {
+                $function = $this->function->bindTo($executor, ForkExecutor::class);
+            }
+
+            if (empty($function)) {
+                $function = $this->function;
             }
 
             $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
