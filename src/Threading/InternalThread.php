@@ -89,17 +89,13 @@ class InternalThread extends \Thread
             return false;
         }
 
-        $this->lock();
-
-        try {
+        return $this->synchronized(function () {
             if ($this->lock) {
                 $this->lock = false;
                 return true;
             }
             return false;
-        } finally {
-            $this->unlock();
-        }
+        });
     }
 
     /**
