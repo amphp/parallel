@@ -66,6 +66,14 @@ class Thread implements ContextInterface, SynchronizableInterface
     {
         $args = array_slice(func_get_args(), 1);
 
+        // Make sure closures don't `use` other variables or have statics.
+        if ($function instanceof \Closure) {
+            $reflector = new \ReflectionFunction($function);
+            if (!empty($reflector->getStaticVariables())) {
+                throw new InvalidArgumentError('Closures with static variables cannot be passed to thread.');
+            }
+        }
+
         list($channel, $this->socket) = Channel::createSocketPair();
 
         $this->thread = new InternalThread($this->socket, $function, $args);
@@ -116,7 +124,7 @@ class Thread implements ContextInterface, SynchronizableInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
+     * @throws \Icicle\Concurrent\Exception\StatusError          Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
