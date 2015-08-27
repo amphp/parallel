@@ -69,17 +69,13 @@ class InternalThread extends \Thread
             }
         }
 
-        // Erase the old event loop inherited from the parent thread and create a new one.
-        $loop = Loop\create();
-        Loop\loop($loop);
-
         // At this point, the thread environment has been prepared so begin using the thread.
         $channel = new Channel(new DuplexStream($this->socket));
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
 
-        $loop->run();
+        Loop\run();
     }
 
     /**
