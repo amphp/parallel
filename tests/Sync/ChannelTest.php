@@ -4,6 +4,7 @@ namespace Icicle\Tests\Concurrent\Sync;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Stream\DuplexStream;
 use Icicle\Tests\Concurrent\TestCase;
 
 class ChannelTest extends TestCase
@@ -19,8 +20,8 @@ class ChannelTest extends TestCase
     public function testClose()
     {
         list($a, $b) = Channel::createSocketPair();
-        $a = new Channel($a);
-        $b = new Channel($b);
+        $a = new Channel(new DuplexStream($a));
+        $b = new Channel(new DuplexStream($b));
 
         // Close $a. $b should close on next read...
         $a->close();
@@ -36,13 +37,13 @@ class ChannelTest extends TestCase
     {
         Coroutine\create(function () {
             list($a, $b) = Channel::createSocketPair();
-            $a = new Channel($a);
-            $b = new Channel($b);
+            $a = new Channel(new DuplexStream($a));
+            $b = new Channel(new DuplexStream($b));
 
             yield $a->send('hello');
             $data = (yield $b->receive());
             $this->assertEquals('hello', $data);
-        });
+        })->done();
 
         Loop\run();
     }
@@ -53,15 +54,14 @@ class ChannelTest extends TestCase
     public function testThreadTransfer()
     {
         list($a, $b) = Channel::createSocketPair();
-        $a = new Channel($a);
-        $b = new Channel($b);
+        $b = new Channel(new DuplexStream($b));
 
         $thread = \Thread::from(function () {
-            $a = $this->a;
+            $a = new Channel(new DuplexStream($this->a));
         });
 
-        $thread->a; // <-- Transfer channel $a to the thread
-        $thread->start(PTHREADS_INHERIT_INI);
+        $thread->a = $a; // <-- Transfer channel $a to the thread
+        $thread->start();
         $thread->join();
     }
 }
