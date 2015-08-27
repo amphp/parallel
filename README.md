@@ -23,6 +23,7 @@ With Composer. What did you expect?
 To enable threading, you will need to compile pthreads from source, as this package depends on unstable and unreleased fixes in pthreads.
 
     git clone https://github.com/krakjoe/pthreads && cd pthreads
+    git checkout master
     phpize
     ./configure
     make
