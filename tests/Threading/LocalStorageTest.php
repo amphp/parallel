@@ -6,6 +6,7 @@ use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group threading
+ * @requires extension pthreads
  */
 class LocalStorageTest extends TestCase
 {

@@ -26,6 +26,8 @@ class ThreadedMutexTest extends TestCase
 
     public function testAcquireMultiple()
     {
+        Loop\loop();
+
         $this->assertRunTimeBetween(function () {
             Coroutine\create(function () {
                 $mutex = new ThreadedMutex();
@@ -47,6 +49,6 @@ class ThreadedMutexTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.7);
+        }, 1.5, 1.65);
     }
 }

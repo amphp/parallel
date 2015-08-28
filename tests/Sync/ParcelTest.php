@@ -2,33 +2,25 @@
 namespace Icicle\Tests\Concurrent\Sync;
 
 use Icicle\Concurrent\Sync\Parcel;
-use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @requires extension shmop
  */
-class ParcelTest extends TestCase
+class ParcelTest extends AbstractParcelTest
 {
-    public function testConstructor()
+    private $parcel;
+
+    protected function createParcel($value)
     {
-        $object = new Parcel(new \stdClass());
-        $this->assertInternalType('object', $object->unwrap());
-        $object->free();
+        $this->parcel = new Parcel($value);
+        return $this->parcel;
     }
 
-    public function testUnwrapIsOfCorrectType()
+    public function tearDown()
     {
-        $object = new Parcel(new \stdClass());
-        $this->assertInstanceOf('stdClass', $object->unwrap());
-        $object->free();
-    }
-
-    public function testUnwrapIsEqual()
-    {
-        $object = new \stdClass();
-        $shared = new Parcel($object);
-        $this->assertEquals($object, $shared->unwrap());
-        $shared->free();
+        if ($this->parcel !== null) {
+            $this->parcel->free();
+        }
     }
 
     public function testNewObjectIsNotFreed()
@@ -43,17 +35,6 @@ class ParcelTest extends TestCase
         $object = new Parcel(new \stdClass());
         $object->free();
         $this->assertTrue($object->isFreed());
-    }
-
-    public function testWrap()
-    {
-        $shared = new Parcel(3);
-        $this->assertEquals(3, $shared->unwrap());
-
-        $shared->wrap(4);
-        $this->assertEquals(4, $shared->unwrap());
-
-        $shared->free();
     }
 
     /**

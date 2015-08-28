@@ -7,6 +7,7 @@ use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group threading
+ * @requires extension pthreads
  */
 class LocalObjectTest extends TestCase
 {
@@ -82,9 +83,6 @@ class LocalObjectTest extends TestCase
         $this->assertSame($object, $local->deref());
     }
 
-    /**
-     * @requires extension pthreads
-     */
     public function testPromiseInThread()
     {
         $thread = \Thread::from(function () {
