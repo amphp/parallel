@@ -140,10 +140,8 @@ class WorkerPool
      */
     public function enqueue(TaskInterface $task)
     {
-        $worker = $this->getIdleWorker();
-
         // Enqueue the task if we have an idle worker.
-        if ($worker) {
+        if ($worker = $this->getIdleWorker()) {
             yield $this->enqueueToWorker($task, $worker);
             return;
         }

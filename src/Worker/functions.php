@@ -5,18 +5,24 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     /**
      * Returns the default worker pool for the current context.
      *
-     * @param WorkerPool $pool The instance to use as the default worker pool.
+     * If the pool has not been initialized, a minimum and maximum size can be given to create the pool with.
+     *
+     * @param int|null                    $minSize The minimum number of workers the pool should spawn.
+     * @param int|null                    $maxSize The maximum number of workers the pool should spawn.
+     * @param WorkerFactoryInterface|null $factory A worker factory to be used to create new workers.
      *
      * @return WorkerPool
      */
-    function pool(WorkerPool $pool = null)
+    function pool($minSize = null, $maxSize = null, WorkerFactoryInterface $factory = null)
     {
         static $instance;
 
-        if (null !== $pool) {
-            $instance = $pool;
-        } elseif (null === $instance) {
-            $instance = new WorkerPool(4, 16);
+        if (null === $instance) {
+            if (null !== $minSize) {
+                $instance = new WorkerPool($minSize, $maxSize, $factory);
+            } else {
+                $instance = new WorkerPool(8, 32);
+            }
         }
 
         return $instance;
