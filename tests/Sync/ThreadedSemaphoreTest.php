@@ -8,6 +8,7 @@ use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group threading
+ * @requires extension pthreads
  */
 class ThreadedSemaphoreTest extends TestCase
 {
@@ -52,6 +53,6 @@ class ThreadedSemaphoreTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.65);
+        }, 1.5, 1.7);
     }
 }

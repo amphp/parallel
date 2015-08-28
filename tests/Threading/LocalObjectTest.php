@@ -82,14 +82,17 @@ class LocalObjectTest extends TestCase
         $this->assertSame($object, $local->deref());
     }
 
+    /**
+     * @requires extension pthreads
+     */
     public function testPromiseInThread()
     {
         $thread = \Thread::from(function () {
             require __DIR__.'/../../vendor/autoload.php';
-            $promise = new LocalObject(new Promise());
+            $promise = new LocalObject(new Promise(function ($resolve, $reject) {}));
         });
 
-        $thread->start(PTHREADS_INHERIT_INI);
+        $thread->start();
         $thread->join();
     }
 

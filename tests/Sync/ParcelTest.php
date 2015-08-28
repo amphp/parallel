@@ -4,6 +4,9 @@ namespace Icicle\Tests\Concurrent\Sync;
 use Icicle\Concurrent\Sync\Parcel;
 use Icicle\Tests\Concurrent\TestCase;
 
+/**
+ * @requires extension shmop
+ */
 class ParcelTest extends TestCase
 {
     public function testConstructor()
@@ -88,6 +91,7 @@ class ParcelTest extends TestCase
 
     /**
      * @group posix
+     * @requires extension pcntl
      */
     public function testSetInSeparateProcess()
     {
@@ -103,6 +107,7 @@ class ParcelTest extends TestCase
 
     /**
      * @group posix
+     * @requires extension pcntl
      */
     public function testFreeInSeparateProcess()
     {

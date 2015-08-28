@@ -8,6 +8,8 @@ use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group posix
+ * @requires extension shmop
+ * @requires extension sysvsem
  */
 class PosixSemaphoreTest extends TestCase
 {

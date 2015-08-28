@@ -8,6 +8,7 @@ use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group threading
+ * @requires extension pthreads
  */
 class ThreadedMutexTest extends TestCase
 {
@@ -46,6 +47,6 @@ class ThreadedMutexTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.65);
+        }, 1.5, 1.7);
     }
 }
