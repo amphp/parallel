@@ -5,6 +5,7 @@ use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ExitStatusInterface;
 use Icicle\Concurrent\SynchronizableInterface;
@@ -87,7 +88,7 @@ class Thread implements ContextInterface, SynchronizableInterface
      */
     public function isRunning()
     {
-        return $this->thread->isRunning();
+        return $this->thread->isRunning() && !$this->thread->isTerminated();
     }
 
     /**
@@ -109,7 +110,10 @@ class Thread implements ContextInterface, SynchronizableInterface
      */
     public function kill()
     {
-        $this->thread->kill();
+        if (!$this->thread->kill()) {
+            throw new ThreadException('Failed to kill the thread.');
+        }
+
         $this->channel->close();
         fclose($this->socket);
     }
