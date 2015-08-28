@@ -18,7 +18,7 @@ class ThreadedMutexTest extends TestCase
             $lock = (yield $mutex->acquire());
             $lock->release();
             $this->assertTrue($lock->isReleased());
-        });
+        })->done();
 
         Loop\run();
     }

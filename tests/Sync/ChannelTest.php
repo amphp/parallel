@@ -50,21 +50,4 @@ class ChannelTest extends TestCase
 
         Loop\run();
     }
-
-    /**
-     * @group threading
-     */
-    public function testThreadTransfer()
-    {
-        list($a, $b) = Channel::createSocketPair();
-        $b = new Channel(new DuplexStream($b));
-
-        $thread = \Thread::from(function () {
-            $a = new Channel(new DuplexStream($this->a));
-        });
-
-        $thread->a = $a; // <-- Transfer channel $a to the thread
-        $thread->start();
-        $thread->join();
-    }
 }

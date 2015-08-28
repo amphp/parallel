@@ -2,6 +2,7 @@
 namespace Icicle\Tests\Concurrent\Threading;
 
 use Icicle\Concurrent\Threading\LocalObject;
+use Icicle\Promise\Promise;
 use Icicle\Tests\Concurrent\TestCase;
 
 /**
@@ -84,7 +85,7 @@ class LocalObjectTest extends TestCase
     public function testPromiseInThread()
     {
         $thread = \Thread::from(function () {
-            require __DIR__.'../../vendor/autoload.php';
+            require __DIR__.'/../../vendor/autoload.php';
             $promise = new LocalObject(new Promise());
         });
 
