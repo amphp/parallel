@@ -43,6 +43,9 @@ class ChannelTest extends TestCase
             yield $a->send('hello');
             $data = (yield $b->receive());
             $this->assertEquals('hello', $data);
+
+            $a->close();
+            $b->close();
         })->done();
 
         Loop\run();
