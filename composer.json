@@ -35,7 +35,10 @@
     "autoload": {
         "psr-4": {
             "Icicle\\Concurrent\\": "src"
-        }
+        },
+        "files": [
+            "src/Worker/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
