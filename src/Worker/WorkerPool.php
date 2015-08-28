@@ -233,7 +233,8 @@ class WorkerPool
 
         // Spawn a new coroutine to process the busy queue if not empty.
         if (!$this->busyQueue->isEmpty()) {
-            new Coroutine($this->processBusyQueue());
+            $coroutine = new Coroutine($this->processBusyQueue());
+            $coroutine->done();
         }
     }
 
