@@ -7,7 +7,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 
 class ChannelledProcess implements ContextInterface
 {

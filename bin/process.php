@@ -27,8 +27,8 @@ if (!isset($autoloadPath)) {
 require $autoloadPath;
 
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ExitFailure;
-use Icicle\Concurrent\Sync\ExitSuccess;
+use Icicle\Concurrent\Sync\Internal\ExitFailure;
+use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Concurrent\Worker\Internal\TaskRunner;
 use Icicle\Coroutine;
 use Icicle\Loop;
