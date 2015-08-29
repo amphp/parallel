@@ -1,13 +1,15 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Threading;
+
+use Icicle\Concurrent\Sync\ParcelInterface;
 
 /**
  * A thread-safe container that shares a value between multiple threads.
  */
-class ThreadedParcel implements ParcelInterface, MutexInterface
+class Parcel implements ParcelInterface
 {
     private $mutex;
-    private $threaded;
+    private $storage;
 
     /**
      * Creates a new shared object container.
@@ -16,10 +18,8 @@ class ThreadedParcel implements ParcelInterface, MutexInterface
      */
     public function __construct($value)
     {
-        $this->threaded = new \Threaded();
-        $this->threaded->value = $value;
-
-        $this->mutex = new ThreadedMutex();
+        $this->mutex = new Mutex();
+        $this->storage = new Internal\Storage();
     }
 
     /**
@@ -27,7 +27,7 @@ class ThreadedParcel implements ParcelInterface, MutexInterface
      */
     public function unwrap()
     {
-        return $this->threaded->value;
+        return $this->storage->get();
     }
 
     /**
@@ -35,18 +35,12 @@ class ThreadedParcel implements ParcelInterface, MutexInterface
      */
     public function wrap($value)
     {
-        $this->threaded->value = $value;
+        $this->storage->set($value);
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function acquire()
-    {
-        return $this->mutex->acquire();
-    }
-
-    /**
+     * @coroutine
+     *
      * Asynchronously invokes a callable while maintaining an exclusive lock on
      * the container.
      *
@@ -58,20 +52,17 @@ class ThreadedParcel implements ParcelInterface, MutexInterface
      */
     public function synchronized(callable $function)
     {
+        /** @var \Icicle\Concurrent\Sync\Lock $lock */
         $lock = (yield $this->mutex->acquire());
-        $instance = $this->get();
 
         try {
-            yield $function($instance);
-
-            // If the value is an object, update the stored instance in case the
-            // object was modified.
-            if (is_object($instance)) {
-                $this->set($instance);
-            }
+            $value = (yield $function($this->storage->get()));
+            $this->storage->set($value);
         } finally {
             $lock->release();
         }
+
+        yield $value;
     }
 
     /**
@@ -79,10 +70,7 @@ class ThreadedParcel implements ParcelInterface, MutexInterface
      */
     public function __clone()
     {
-        $clone = new \Threaded();
-        $clone->value = $this->unwrap();
-        $this->threaded = $clone;
-
+        $this->storage = clone $this->storage;
         $this->mutex = clone $this->mutex;
     }
 }

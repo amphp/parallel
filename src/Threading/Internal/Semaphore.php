@@ -1,6 +1,7 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Threading\Internal;
 
+use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
 
 /**
@@ -8,7 +9,7 @@ use Icicle\Coroutine;
  *
  * @internal
  */
-class InternalThreadedSemaphore extends \Threaded
+class Semaphore extends \Threaded
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 

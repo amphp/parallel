@@ -1,15 +1,17 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Threading;
+
+use Icicle\Concurrent\Sync\MutexInterface;
 
 /**
  * A thread-safe, asynchronous mutex using the pthreads locking mechanism.
  *
  * Compatible with POSIX systems and Microsoft Windows.
  */
-class ThreadedMutex implements MutexInterface
+class Mutex implements MutexInterface
 {
     /**
-     * @var \Icicle\Concurrent\Sync\InternalThreadedMutex
+     * @var \Icicle\Concurrent\Threading\Internal\Mutex
      */
     private $mutex;
 
@@ -20,7 +22,7 @@ class ThreadedMutex implements MutexInterface
      */
     public function __construct($locked = false)
     {
-        $this->mutex = new InternalThreadedMutex();
+        $this->mutex = new Internal\Mutex();
     }
 
     /**

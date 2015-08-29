@@ -1,18 +1,18 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
+use Icicle\Concurrent\ChannelInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
-use Icicle\Concurrent\ExecutorInterface;
-use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
+use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 
-class ThreadExecutor implements ExecutorInterface
+class Executor implements ChannelInterface, SynchronizableInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
     /**
-     * @var \Icicle\Concurrent\Threading\InternalThread
+     * @var \Icicle\Concurrent\Threading\Internal\Thread
      */
     private $thread;
 
@@ -22,10 +22,10 @@ class ThreadExecutor implements ExecutorInterface
     private $channel;
 
     /**
-     * @param \Icicle\Concurrent\Threading\InternalThread
-     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
+     * @param \Icicle\Concurrent\Threading\Internal\Thread $thread
+     * @param \Icicle\Concurrent\ChannelInterface $channel
      */
-    public function __construct(InternalThread $thread, ChannelInterface $channel)
+    public function __construct(Internal\Thread $thread, ChannelInterface $channel)
     {
         $this->thread = $thread;
         $this->channel = $channel;

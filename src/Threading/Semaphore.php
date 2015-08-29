@@ -1,5 +1,7 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Threading;
+
+use Icicle\Concurrent\Sync\SemaphoreInterface;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
@@ -9,10 +11,10 @@ namespace Icicle\Concurrent\Sync;
  * may not acquire a lock immediately when one is available and there may be a
  * small delay. However, the small delay will not block the thread.
  */
-class ThreadedSemaphore implements SemaphoreInterface
+class Semaphore implements SemaphoreInterface
 {
     /**
-     * @var \Icicle\Concurrent\Sync\InternalThreadedSemaphore
+     * @var \Icicle\Concurrent\Threading\Internal\Semaphore
      */
     private $semaphore;
 
@@ -21,7 +23,7 @@ class ThreadedSemaphore implements SemaphoreInterface
      */
     public function __construct($maxLocks)
     {
-        $this->semaphore = new InternalThreadedSemaphore($maxLocks);
+        $this->semaphore = new Internal\Semaphore($maxLocks);
     }
 
     /**

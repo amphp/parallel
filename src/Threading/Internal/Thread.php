@@ -1,10 +1,11 @@
 <?php
-namespace Icicle\Concurrent\Threading;
+namespace Icicle\Concurrent\Threading\Internal;
 
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\ExitFailure;
-use Icicle\Concurrent\Sync\ExitSuccess;
+use Icicle\Concurrent\Sync\Internal\ExitFailure;
+use Icicle\Concurrent\Sync\Internal\ExitSuccess;
+use Icicle\Concurrent\Threading\Executor;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Socket\Stream\DuplexStream;
@@ -14,7 +15,7 @@ use Icicle\Socket\Stream\DuplexStream;
  *
  * @internal
  */
-class InternalThread extends \Thread
+class Thread extends \Thread
 {
     /**
      * @var callable The function to execute in the thread.
@@ -117,11 +118,11 @@ class InternalThread extends \Thread
      */
     private function execute(ChannelInterface $channel)
     {
-        $executor = new ThreadExecutor($this, $channel);
+        $executor = new Executor($this, $channel);
 
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($executor, ThreadExecutor::class);
+                $function = $this->function->bindTo($executor, Executor::class);
             }
 
             if (empty($function)) {

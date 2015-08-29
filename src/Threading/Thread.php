@@ -7,7 +7,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 use Icicle\Socket\Stream\DuplexStream;
@@ -24,7 +24,7 @@ class Thread implements ContextInterface, SynchronizableInterface
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
     /**
-     * @var \Icicle\Concurrent\Threading\InternalThread An internal thread instance.
+     * @var \Icicle\Concurrent\Threading\Internal\Thread An internal thread instance.
      */
     private $thread;
 
@@ -77,7 +77,7 @@ class Thread implements ContextInterface, SynchronizableInterface
 
         list($channel, $this->socket) = Channel::createSocketPair();
 
-        $this->thread = new InternalThread($this->socket, $function, $args);
+        $this->thread = new Internal\Thread($this->socket, $function, $args);
         $this->channel = new Channel(new DuplexStream($channel));
     }
 

@@ -1,12 +1,13 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Threading\Internal;
 
+use Icicle\Concurrent\Sync\Lock;
 use Icicle\Coroutine;
 
 /**
  * @internal
  */
-class InternalThreadedMutex extends \Threaded
+class Mutex extends \Threaded
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 

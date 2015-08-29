@@ -1,5 +1,5 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+namespace Icicle\Concurrent\Sync\Internal;
 
 class ExitSuccess implements ExitStatusInterface
 {
