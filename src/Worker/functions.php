@@ -7,20 +7,21 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     /**
      * Returns the global worker pool for the current context.
      *
-     * If the pool has not been initialized, a minimum and maximum size can be given to create the pool with.
+     * @param PoolInterface|null $pool A worker pool instance.
      *
-     * @param int|null                    $minSize The minimum number of workers the pool should spawn.
-     * @param int|null                    $maxSize The maximum number of workers the pool should spawn.
-     * @param WorkerFactoryInterface|null $factory A worker factory to be used to create new workers.
-     *
-     * @return Pool The global worker pool instance.
+     * @return PoolInterface The global worker pool instance.
      */
-    function pool($minSize = null, $maxSize = null, WorkerFactoryInterface $factory = null)
+    function pool(PoolInterface $pool = null)
     {
         static $instance;
 
-        if (null === $instance) {
-            $instance = new Pool($minSize, $maxSize, $factory);
+        if (null !== $pool) {
+            $instance = $pool;
+        } elseif (null === $instance) {
+            $instance = new Pool();
+        }
+
+        if (!$instance->isRunning()) {
             $instance->start();
         }
 
@@ -36,8 +37,8 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @resolve mixed The return value of the task.
      */
-    function enqueue(TaskInterface $task)
+    function enqueue(TaskInterface $task /* , ...$args */)
     {
-        return new Coroutine(pool()->enqueue($task));
+        return new Coroutine(call_user_func_array([pool(), 'enqueue'], func_get_args()));
     }
 }

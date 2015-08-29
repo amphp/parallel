@@ -15,7 +15,7 @@ use Icicle\Promise\PromiseInterface;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-class Pool implements WorkerInterface
+class Pool implements PoolInterface
 {
     /**
      * @var int The default minimum pool size.
@@ -136,9 +136,7 @@ class Pool implements WorkerInterface
     }
 
     /**
-     * Gets the number of workers currently running in the pool.
-     *
-     * @return int The number of workers.
+     * {@inheritdoc}
      */
     public function getWorkerCount()
     {
@@ -146,9 +144,7 @@ class Pool implements WorkerInterface
     }
 
     /**
-     * Gets the number of workers that are currently idle.
-     *
-     * @return int The number of idle workers.
+     * {@inheritdoc}
      */
     public function getIdleWorkerCount()
     {
