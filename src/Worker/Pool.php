@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Worker;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
@@ -14,8 +15,23 @@ use Icicle\Promise\PromiseInterface;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-class WorkerPool
+class Pool implements WorkerInterface
 {
+    /**
+     * @var int The default minimum pool size.
+     */
+    const DEFAULT_MIN_SIZE = 8;
+
+    /**
+     * @var int The default maximum pool size.
+     */
+    const DEFAULT_MAX_SIZE = 32;
+
+    /**
+     * @var bool Indicates if the pool is currently running.
+     */
+    private $running = false;
+
     /**
      * @var int The minimum number of workers the pool should spawn.
      */
@@ -47,31 +63,29 @@ class WorkerPool
     private $busyQueue;
 
     /**
-     * @var \SplQueue A queue of deferred to be fulfilled for waiting tasks.
-     */
-    private $deferredQueue;
-
-    /**
      * Creates a new worker pool.
      *
-     * @param int                    $minSize The minimum number of workers the pool should spawn.
-     * @param int                    $maxSize The maximum number of workers the pool should spawn.
-     * @param WorkerFactoryInterface $factory A worker factory to be used to create new workers.
+     * @param int|null                    $minSize The minimum number of workers the pool should spawn. Defaults to
+     *                                             `Pool::DEFAULT_MIN_SIZE`.
+     * @param int|null                    $maxSize The maximum number of workers the pool should spawn. Defaults to
+     *                                             `Pool::DEFAULT_MAX_SIZE`.
+     * @param WorkerFactoryInterface|null $factory A worker factory to be used to create new workers.
      */
-    public function __construct($minSize, $maxSize = null, WorkerFactoryInterface $factory = null)
+    public function __construct($minSize = null, $maxSize = null, WorkerFactoryInterface $factory = null)
     {
+        $minSize = $minSize ?: static::DEFAULT_MIN_SIZE;
+        $maxSize = $minSize ?: static::DEFAULT_MAX_SIZE;
+
         if (!is_int($minSize) || $minSize < 0) {
             throw new InvalidArgumentError('Minimum size must be a non-negative integer.');
         }
-        $this->minSize = $minSize;
 
-        if ($maxSize === null) {
-            $this->maxSize = $minSize;
-        } elseif (!is_int($maxSize) || $maxSize < 0) {
-            throw new InvalidArgumentError('Maximum size must be a non-negative integer.');
-        } else {
-            $this->maxSize = $maxSize;
+        if (!is_int($maxSize) || $maxSize < 0 || $maxSize < $minSize) {
+            throw new InvalidArgumentError('Maximum size must be a non-negative integer at least '.$minSize.'.');
         }
+
+        $this->maxSize = $maxSize;
+        $this->minSize = $minSize;
 
         // Create the default factory if none is given.
         $this->factory = $factory ?: new WorkerFactory();
@@ -79,16 +93,30 @@ class WorkerPool
         $this->workers = new \SplObjectStorage();
         $this->idleWorkers = new \SplObjectStorage();
         $this->busyQueue = new \SplQueue();
-        $this->deferredQueue = new \SplQueue();
-
-        // Start up the pool with the minimum number of workers.
-        while (--$minSize >= 0) {
-            $this->createWorker();
-        }
     }
 
     /**
-     * Gets the minimum number of workers the worker pool may have idle.
+     * Checks if the pool is running.
+     *
+     * @return bool True if the pool is running, otherwise false.
+     */
+    public function isRunning()
+    {
+        return $this->running;
+    }
+
+    /**
+     * Checks if the pool has any idle workers.
+     *
+     * @return bool True if the pool has at least one idle worker, otherwise false.
+     */
+    public function isIdle()
+    {
+        return $this->idleWorkers->count() > 0;
+    }
+
+    /**
+     * Gets the minimum number of workers the pool may have idle.
      *
      * @return int The minimum number of workers.
      */
@@ -98,7 +126,7 @@ class WorkerPool
     }
 
     /**
-     * Gets the maximum number of workers the worker pool may spawn to handle concurrent tasks.
+     * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
      *
      * @return int The maximum number of workers.
      */
@@ -128,6 +156,23 @@ class WorkerPool
     }
 
     /**
+     * Starts the worker pool execution.
+     *
+     * When the worker pool starts up, the minimum number of workers will be created. This adds some overhead to
+     * starting the pool, but allows for greater performance during runtime.
+     */
+    public function start()
+    {
+        // Start up the pool with the minimum number of workers.
+        $count = $this->minSize;
+        while (--$count >= 0) {
+            $this->createWorker();
+        }
+
+        $this->running = true;
+    }
+
+    /**
      * Enqueues a task to be executed by the worker pool.
      *
      * @coroutine
@@ -138,11 +183,17 @@ class WorkerPool
      *
      * @resolve mixed The return value of the task.
      */
-    public function enqueue(TaskInterface $task)
+    public function enqueue(TaskInterface $task /* , ...$args */)
     {
+        if (!$this->running) {
+            throw new SynchronizationError('The worker pool has not been started.');
+        }
+
+        $args = array_slice(func_get_args(), 1);
+
         // Enqueue the task if we have an idle worker.
         if ($worker = $this->getIdleWorker()) {
-            yield $this->enqueueToWorker($task, $worker);
+            yield $this->enqueueToWorker($worker, $task, $args);
             return;
         }
 
@@ -172,6 +223,30 @@ class WorkerPool
         }
 
         yield Promise\all($shutdowns);
+        $this->running = false;
+    }
+
+    /**
+     * Kills all workers in the pool and halts the worker pool.
+     */
+    public function kill()
+    {
+        foreach ($this->workers as $worker) {
+            $worker->kill();
+        }
+
+        $this->running = false;
+    }
+
+    /**
+     * Shuts down the pool when it is destroyed.
+     */
+    public function __destruct()
+    {
+        if ($this->isRunning()) {
+            $coroutine = new Coroutine($this->shutdown());
+            $coroutine->done();
+        }
     }
 
     /**
@@ -216,17 +291,18 @@ class WorkerPool
      *
      * @coroutine
      *
-     * @param TaskInterface   $task   The task to enqueue.
      * @param WorkerInterface $worker The worker to enqueue to.
+     * @param TaskInterface   $task   The task to enqueue.
+     * @param array           $args   An array of arguments to pass to the task.
      *
      * @return \Generator
      *
      * @resolve mixed The return value of the task.
      */
-    private function enqueueToWorker(TaskInterface $task, WorkerInterface $worker)
+    private function enqueueToWorker(WorkerInterface $worker, TaskInterface $task, array $args = [])
     {
         $this->idleWorkers->detach($worker);
-        yield $worker->enqueue($task);
+        yield call_user_func_array([$worker, 'enqueue'], array_merge([$task], $args));
         $this->idleWorkers->attach($worker);
 
         // Spawn a new coroutine to process the busy queue if not empty.
@@ -256,7 +332,7 @@ class WorkerPool
             $deferred = $this->deferredQueue->dequeue();
 
             try {
-                $returnValue = (yield $this->enqueueToWorker($task, $worker));
+                $returnValue = (yield $this->enqueueToWorker($worker, $task));
                 $deferred->resolve($returnValue);
             } catch (\Exception $exception) {
                 $deferred->reject($exception);

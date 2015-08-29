@@ -4,6 +4,7 @@ namespace Icicle\Concurrent\Worker;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
+use Icicle\Coroutine\Coroutine;
 
 class Worker implements WorkerInterface
 {
@@ -52,28 +53,10 @@ class Worker implements WorkerInterface
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
-        $this->context->kill();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function shutdown()
-    {
-        yield $this->context->send([null, []]);
-
-        yield $this->context->join();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function enqueue(TaskInterface $task /* , ...$args */)
     {
         if (!$this->context->isRunning()) {
-            throw new SynchronizationError('Worker has not been started.');
+            throw new SynchronizationError('The worker has not been started.');
         }
 
         $args = array_slice(func_get_args(), 1);
@@ -91,5 +74,34 @@ class Worker implements WorkerInterface
         }
 
         yield $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function shutdown()
+    {
+        yield $this->context->send([null, []]);
+
+        yield $this->context->join();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function kill()
+    {
+        $this->context->kill();
+    }
+
+    /**
+     * Shuts down the worker when it is destroyed.
+     */
+    public function __destruct()
+    {
+        if ($this->isRunning()) {
+            $coroutine = new Coroutine($this->shutdown());
+            $coroutine->done();
+        }
     }
 }

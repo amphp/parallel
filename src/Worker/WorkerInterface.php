@@ -7,9 +7,9 @@ namespace Icicle\Concurrent\Worker;
 interface WorkerInterface
 {
     /**
-     * Checks if the context is running.
+     * Checks if the worker is running.
      *
-     * @return bool True if the context is running, otherwise false.
+     * @return bool True if the worker is running, otherwise false.
      */
     public function isRunning();
 
@@ -26,20 +26,6 @@ interface WorkerInterface
     public function start();
 
     /**
-     * Immediately kills the context.
-     */
-    public function kill();
-
-    /**
-     * @coroutine
-     *
-     * @return \Generator
-     *
-     * @resolve int Exit code.
-     */
-    public function shutdown();
-
-    /**
      * @coroutine
      *
      * Enqueues a task to be executed by the worker.
@@ -51,4 +37,18 @@ interface WorkerInterface
      * @resolve mixed Task return value.
      */
     public function enqueue(TaskInterface $task);
+
+    /**
+     * @coroutine
+     *
+     * @return \Generator
+     *
+     * @resolve int Exit code.
+     */
+    public function shutdown();
+
+    /**
+     * Immediately kills the context.
+     */
+    public function kill();
 }
