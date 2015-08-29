@@ -8,9 +8,9 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\ExitFailure;
-use Icicle\Concurrent\Sync\ExitStatusInterface;
-use Icicle\Concurrent\Sync\ExitSuccess;
+use Icicle\Concurrent\Sync\Internal\ExitFailure;
+use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Socket\Stream\DuplexStream;
@@ -36,9 +36,9 @@ class Fork implements ContextInterface
     private $function;
 
     /**
-     * @var \Icicle\Concurrent\Forking\Synchronized
+     * @var mixed[]
      */
-    private $synchronized;
+    private $args;
 
     /**
      * Spawns a new forked process and runs it.
@@ -59,8 +59,12 @@ class Fork implements ContextInterface
     {
         $this->function = $function;
         $this->args = array_slice(func_get_args(), 1);
+    }
 
-        $this->synchronized = new Synchronized();
+    public function __clone()
+    {
+        $this->pid = 0;
+        $this->channel = null;
     }
 
     /**
@@ -143,11 +147,11 @@ class Fork implements ContextInterface
      */
     private function execute(ChannelInterface $channel)
     {
-        $executor = new ForkExecutor($this->synchronized, $channel);
+        $executor = new Executor($channel);
 
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($executor, ForkExecutor::class);
+                $function = $this->function->bindTo($executor, Executor::class);
             }
 
             if (empty($function)) {
@@ -159,35 +163,7 @@ class Fork implements ContextInterface
             $result = new ExitFailure($exception);
         }
 
-        try {
-            yield $channel->send($result);
-        } finally {
-            $channel->close();
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function lock()
-    {
-        return $this->synchronized->lock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unlock()
-    {
-        return $this->synchronized->unlock();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback)
-    {
-        return $this->synchronized->synchronized($callback);
+        yield $channel->send($result);
     }
 
     /**
