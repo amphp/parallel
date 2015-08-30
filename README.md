@@ -1,9 +1,19 @@
-# Concurrency Component for Icicle
+# Concurrency for Icicle
 **Under development -- keep an eye out for things to come in the near future though!**
 
-Concurrent provides a means of parallelizing code without littering your application with complicated lock checking and inter-process communication.
+**True concurrency using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
-To be as flexible as possible, Concurrent comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" task API that allows you to assign units of work to a pool of worker threads or processes.
+This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Promises](https://github.com/icicleio/icicle/wiki/Promises) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) for asynchronous operations that may be used to build [Coroutines](https://github.com/icicleio/icicle/wiki/Coroutines) to make writing asynchronous code more like writing synchronous code.
+
+[![Build Status](https://img.shields.io/travis/icicleio/concurrent/master.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
+[![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/master.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
+[![Semantic Version](https://img.shields.io/github/release/icicleio/concurrent.svg?style=flat-square)](http://semver.org)
+[![Apache 2 License](https://img.shields.io/packagist/l/icicleio/concurrent.svg?style=flat-square)](LICENSE)
+[![@icicleio on Twitter](https://img.shields.io/badge/twitter-%40icicleio-5189c7.svg?style=flat-square)](https://twitter.com/icicleio)
+
+This library provides a means of parallelizing code without littering your application with complicated lock checking and inter-process communication.
+
+To be as flexible as possible, this library comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" task API that allows you to assign units of work to a pool of worker threads or processes.
 
 #### Requirements
 - PHP 5.5+
