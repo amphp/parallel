@@ -15,12 +15,19 @@ class ThreadTest extends TestCase
     public function testIsRunning()
     {
         Coroutine\create(function () {
-            $thread = Thread::spawn(function () {
-                sleep(1);
+            $thread = new Thread(function () {
+                usleep(100);
             });
 
+            $this->assertFalse($thread->isRunning());
+
+            $thread->start();
+
             $this->assertTrue($thread->isRunning());
+
             yield $thread->join();
+
+            $this->assertFalse($thread->isRunning());
         })->done();
 
         Loop\run();
@@ -28,12 +35,64 @@ class ThreadTest extends TestCase
 
     public function testKill()
     {
-        $thread = Thread::spawn(function () {
-            sleep(1);
+        $thread = new Thread(function () {
+            usleep(100);
         });
+
+        $thread->start();
 
         $thread->kill();
         $this->assertFalse($thread->isRunning());
+
+        Loop\run();
+    }
+
+    /**
+     * @expectedException \Icicle\Concurrent\Exception\StatusError
+     */
+    public function testStartWhileRunningThrowsError()
+    {
+        $thread = new Thread(function () {
+            usleep(100);
+        });
+
+        $thread->start();
+        $thread->start();
+    }
+
+    /**
+     * @expectedException \Icicle\Concurrent\Exception\StatusError
+     */
+    public function testStartMultipleTimesThrowsError()
+    {
+        Loop\loop();
+
+        $this->assertRunTimeBetween(function () {
+            Coroutine\create(function () {
+                $thread = new Thread(function () {
+                    sleep(1);
+                });
+
+                $thread->start();
+                yield $thread->join();
+
+                $thread->start();
+                yield $thread->join();
+            })->done();
+
+            Loop\run();
+        }, 2, 2.2);
+    }
+
+    public function testSpawnStartsThread()
+    {
+        Coroutine\create(function () {
+            $thread = Thread::spawn(function () {
+                usleep(100);
+            });
+
+            yield $thread->join();
+        })->done();
 
         Loop\run();
     }
@@ -44,10 +103,11 @@ class ThreadTest extends TestCase
     public function testExceptionInThreadPanics()
     {
         Coroutine\create(function () {
-            $thread = Thread::spawn(function () {
+            $thread = new Thread(function () {
                 throw new \Exception('Exception in thread.');
             });
 
+            $thread->start();
             yield $thread->join();
         })->done();
 
@@ -56,18 +116,49 @@ class ThreadTest extends TestCase
 
     public function testJoinWaitsForChild()
     {
-        Loop\loop(Loop\create());
+        Loop\loop();
 
         $this->assertRunTimeBetween(function () {
             Coroutine\create(function () {
-                $thread = Thread::spawn(function () {
+                $thread = new Thread(function () {
                     sleep(1);
                 });
 
+                $thread->start();
                 yield $thread->join();
             })->done();
 
             Loop\run();
         }, 1, 1.1);
+    }
+
+    /**
+     * @expectedException \Icicle\Concurrent\Exception\StatusError
+     */
+    public function testJoinWithoutStartThrowsError()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                usleep(100);
+            });
+
+            yield $thread->join();
+        })->done();
+
+        Loop\run();
+    }
+
+    public function testJoinResolvesWithThreadReturn()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                return 42;
+            });
+
+            $thread->start();
+            $this->assertEquals(42, (yield $thread->join()));
+        })->done();
+
+        Loop\run();
     }
 }

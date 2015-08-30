@@ -96,7 +96,8 @@ class Thread implements ContextInterface, SynchronizableInterface
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @throws StatusError If the thread has already been started.
+     * @throws StatusError     If the thread has already been started.
+     * @throws ThreadException If starting the thread was unsuccessful.
      */
     public function start()
     {
@@ -104,7 +105,9 @@ class Thread implements ContextInterface, SynchronizableInterface
             throw new StatusError('The thread has already been started.');
         }
 
-        $this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_INHERIT_FUNCTIONS | PTHREADS_INHERIT_CLASSES);
+        if (!$this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_INHERIT_FUNCTIONS | PTHREADS_INHERIT_CLASSES)) {
+            throw new ThreadException('Failed to start the thread.');
+        }
 
         $this->started = true;
     }
@@ -140,7 +143,7 @@ class Thread implements ContextInterface, SynchronizableInterface
     public function join()
     {
         if (!$this->started) {
-            throw new StatusError('The context has not been started.');
+            throw new StatusError('The thread has not been started.');
         }
 
         try {
@@ -164,7 +167,7 @@ class Thread implements ContextInterface, SynchronizableInterface
     public function receive()
     {
         if (!$this->started) {
-            throw new StatusError('The context has not been started.');
+            throw new StatusError('The thread has not been started.');
         }
 
         $data = (yield $this->channel->receive());
@@ -186,7 +189,7 @@ class Thread implements ContextInterface, SynchronizableInterface
     public function send($data)
     {
         if (!$this->started) {
-            throw new StatusError('The context has not been started.');
+            throw new StatusError('The thread has not been started.');
         }
 
         if ($data instanceof ExitStatusInterface) {
@@ -202,7 +205,7 @@ class Thread implements ContextInterface, SynchronizableInterface
     public function synchronized(callable $callback)
     {
         if (!$this->started) {
-            throw new StatusError('The context has not been started.');
+            throw new StatusError('The thread has not been started.');
         }
 
         while (!$this->thread->tsl()) {
