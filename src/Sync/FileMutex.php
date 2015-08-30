@@ -61,7 +61,9 @@ class FileMutex implements MutexInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Releases the lock on the mutex.
+     *
+     * @throws MutexException If the unlock operation failed.
      */
     protected function release()
     {
@@ -78,6 +80,8 @@ class FileMutex implements MutexInterface
      * Opens the mutex file and returns a file resource.
      *
      * @return resource
+     *
+     * @throws MutexException If the mutex file could not be opened.
      */
     private function getFileHandle()
     {

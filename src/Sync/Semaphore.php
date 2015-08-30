@@ -24,12 +24,12 @@ class Semaphore implements SemaphoreInterface, \Serializable
     private $handle;
 
     /**
-     * Creates a new semaphore.
+     * Creates a new semaphore with a given number of locks.
      *
-     * @param int $maxLocks    The maximum number of processes that can lock the semaphore.
+     * @param int $maxLocks    The maximum number of locks that can be acquired from the semaphore.
      * @param int $permissions Permissions to access the semaphore.
      */
-    public function __construct($maxLocks = 1, $permissions = 0666)
+    public function __construct($maxLocks = 1, $permissions = 0600)
     {
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->maxLocks = $maxLocks;
@@ -106,6 +106,6 @@ class Semaphore implements SemaphoreInterface, \Serializable
         // Get the semaphore key and attempt to re-connect to the semaphore in
         // memory.
         list($this->key, $this->maxLocks) = unserialize($serialized);
-        $this->handle = sem_get($this->key, $maxLocks, 0666, 1);
+        $this->handle = sem_get($this->key, $maxLocks, 0600, 1);
     }
 }

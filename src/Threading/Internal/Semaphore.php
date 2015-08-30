@@ -29,9 +29,9 @@ class Semaphore extends \Threaded
     private $waitQueue = [];
 
     /**
-     * Creates a new semaphore.
+     * Creates a new semaphore with a given number of locks.
      *
-     * @param int $maxLocks The maximum number of processes that can lock the semaphore.
+     * @param int $maxLocks The maximum number of locks that can be acquired from the semaphore.
      */
     public function __construct($maxLocks)
     {

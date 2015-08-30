@@ -17,10 +17,8 @@ class Mutex implements MutexInterface
 
     /**
      * Creates a new threaded mutex.
-     *
-     * @param bool $locked Whether the mutex should start out locked.
      */
-    public function __construct($locked = false)
+    public function __construct()
     {
         $this->mutex = new Internal\Mutex();
     }

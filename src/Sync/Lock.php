@@ -45,7 +45,7 @@ class Lock
     /**
      * Releases the lock.
      *
-     * @throws LockAlreadyReleasedError Thrown if the lock was already released.
+     * @throws LockAlreadyReleasedError If the lock was already released.
      */
     public function release()
     {

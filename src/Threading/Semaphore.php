@@ -14,16 +14,18 @@ use Icicle\Concurrent\Sync\SemaphoreInterface;
 class Semaphore implements SemaphoreInterface
 {
     /**
-     * @var \Icicle\Concurrent\Threading\Internal\Semaphore
+     * @var Internal\Semaphore
      */
     private $semaphore;
 
     /**
-     * @param int $maxLocks
+     * Creates a new semaphore with a given number of locks.
+     *
+     * @param int $maxLocks The maximum number of locks that can be acquired from the semaphore.
      */
     public function __construct($maxLocks)
     {
-        $this->semaphore = new Internal\Semaphore($maxLocks);
+        $this->semaphore = new Internal\Semaphore($locks);
     }
 
     /**

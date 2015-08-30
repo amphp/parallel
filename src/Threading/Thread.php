@@ -24,12 +24,12 @@ class Thread implements ContextInterface, SynchronizableInterface
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
     /**
-     * @var \Icicle\Concurrent\Threading\Internal\Thread An internal thread instance.
+     * @var Internal\Thread An internal thread instance.
      */
     private $thread;
 
     /**
-     * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the thread.
+     * @var Channel A channel for communicating with the thread.
      */
     private $channel;
 
@@ -46,9 +46,9 @@ class Thread implements ContextInterface, SynchronizableInterface
     /**
      * Spawns a new thread and runs it.
      *
-     * @param callable $function A callable to invoke in the thread.
+     * @param callable $function The callable to invoke in the thread.
      *
-     * @return \Icicle\Concurrent\Threading\Thread The thread object that was spawned.
+     * @return Thread The thread object that was spawned.
      */
     public static function spawn(callable $function /* , ...$args */)
     {
@@ -59,9 +59,11 @@ class Thread implements ContextInterface, SynchronizableInterface
     }
 
     /**
-     * Creates a new thread context from a thread.
+     * Creates a new thread.
      *
-     * @param callable $function
+     * @param callable $function The callable to invoke in the thread when run.
+     *
+     * @throws InvalidArgumentError If the given function cannot be safely invoked in a thread.
      */
     public function __construct(callable $function /* , ...$args */)
     {
@@ -92,7 +94,9 @@ class Thread implements ContextInterface, SynchronizableInterface
     }
 
     /**
-     * Starts the context execution.
+     * Spawns the thread and begins the thread's execution.
+     *
+     * @throws StatusError If the thread has already been started.
      */
     public function start()
     {
@@ -107,6 +111,8 @@ class Thread implements ContextInterface, SynchronizableInterface
 
     /**
      * Immediately kills the context.
+     *
+     * @throws ThreadException If killing the thread was unsuccessful.
      */
     public function kill()
     {
@@ -128,8 +134,8 @@ class Thread implements ContextInterface, SynchronizableInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError          Thrown if the context has not been started.
-     * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
+     * @throws StatusError          Thrown if the context has not been started.
+     * @throws SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
     {
