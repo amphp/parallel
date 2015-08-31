@@ -31,11 +31,11 @@ class Semaphore extends \Threaded
     /**
      * Creates a new semaphore with a given number of locks.
      *
-     * @param int $maxLocks The maximum number of locks that can be acquired from the semaphore.
+     * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct($maxLocks)
+    public function __construct($locks)
     {
-        $this->locks = (int) $maxLocks;
+        $this->locks = (int) $locks;
         if ($this->locks < 1) {
             $this->locks = 1;
         }

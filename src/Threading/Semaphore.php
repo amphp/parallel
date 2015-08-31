@@ -21,9 +21,9 @@ class Semaphore implements SemaphoreInterface
     /**
      * Creates a new semaphore with a given number of locks.
      *
-     * @param int $maxLocks The maximum number of locks that can be acquired from the semaphore.
+     * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct($maxLocks)
+    public function __construct($locks)
     {
         $this->semaphore = new Internal\Semaphore($locks);
     }
