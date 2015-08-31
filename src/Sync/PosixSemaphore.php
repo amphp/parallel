@@ -137,7 +137,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
                 throw new SemaphoreException('Failed to free the semaphore.');
             }
 
-            unset($this->queue);
+            $this->queue = null;
         }
     }
 
