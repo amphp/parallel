@@ -14,25 +14,32 @@ abstract class AbstractWorkerTest extends TestCase
 
     public function testIsRunning()
     {
-        $worker = $this->createWorker();
-        $this->assertFalse($worker->isRunning());
+        Coroutine\create(function () {
+            $worker = $this->createWorker();
+            $this->assertFalse($worker->isRunning());
 
-        $worker->start();
-        $this->assertTrue($worker->isRunning());
+            $worker->start();
+            $this->assertTrue($worker->isRunning());
 
-        $worker->kill();
-        sleep(1);
-        $this->assertFalse($worker->isRunning());
+            yield $worker->shutdown();
+            $this->assertFalse($worker->isRunning());
+        })->done();
+
+        Loop\run();
     }
 
     public function testIsIdleOnStart()
     {
-        $worker = $this->createWorker();
-        $worker->start();
+        Coroutine\create(function () {
+            $worker = $this->createWorker();
+            $worker->start();
 
-        $this->assertTrue($worker->isIdle());
+            $this->assertTrue($worker->isIdle());
 
-        $worker->kill();
+            yield $worker->shutdown();
+        })->done();
+
+        Loop\run();
     }
 
     public function testEnqueue()
