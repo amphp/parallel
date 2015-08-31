@@ -40,6 +40,11 @@ class Parcel implements ParcelInterface, \Serializable
     private $key;
 
     /**
+     * @var PosixSemaphore A semaphore for synchronizing on the parcel.
+     */
+    private $semaphore;
+
+    /**
      * @var int An open handle to the shared memory segment.
      */
     private $handle;
@@ -62,6 +67,8 @@ class Parcel implements ParcelInterface, \Serializable
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
         $this->setHeader(self::STATE_ALLOCATED, 0, $permissions);
         $this->wrap($value);
+
+        $this->semaphore = new PosixSemaphore(1);
     }
 
     /**
@@ -120,6 +127,20 @@ class Parcel implements ParcelInterface, \Serializable
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function synchronized(callable $callback)
+    {
+        $lock = (yield $this->semaphore->acquire());
+
+        try {
+            yield $callback($this);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
      * Frees the shared object from memory.
      *
      * The memory containing the shared value will be invalidated. When all
@@ -138,6 +159,8 @@ class Parcel implements ParcelInterface, \Serializable
             $this->memDelete();
             shmop_close($this->handle);
             $this->handle = null;
+
+            $this->semaphore->free();
         }
     }
 
@@ -172,7 +195,7 @@ class Parcel implements ParcelInterface, \Serializable
      */
     public function serialize()
     {
-        return serialize($this->key);
+        return serialize([$this->key, $this->semaphore]);
     }
 
     /**
@@ -182,7 +205,7 @@ class Parcel implements ParcelInterface, \Serializable
      */
     public function unserialize($serialized)
     {
-        $this->key = unserialize($serialized);
+        list($this->key, $this->semaphore) = unserialize($serialized);
         $this->memOpen($this->key, 'w', 0, 0);
     }
 
