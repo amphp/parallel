@@ -20,6 +20,7 @@ class Parcel implements ParcelInterface
     {
         $this->mutex = new Mutex();
         $this->storage = new Internal\Storage();
+        $this->storage->set($value);
     }
 
     /**

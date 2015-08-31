@@ -2,8 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 /**
- * A simple mutex that provides asynchronous, atomic locking and unlocking across
- * contexts.
+ * A non-blocking synchronization primitive that can be used for mutual exclusion across contexts.
  *
  * Objects that implement this interface should guarantee that all operations
  * are atomic. Implementations do not have to guarantee that acquiring a lock

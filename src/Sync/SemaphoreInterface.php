@@ -2,19 +2,30 @@
 namespace Icicle\Concurrent\Sync;
 
 /**
- * A counting semaphore interface.
+ * A non-blocking counting semaphore.
  *
  * Objects that implement this interface should guarantee that all operations
- * are atomic.
+ * are atomic. Implementations do not have to guarantee that acquiring a lock
+ * is first-come, first serve.
  */
-interface SemaphoreInterface
+interface SemaphoreInterface extends \Countable
 {
+    /**
+     * Gets the number of currently available locks.
+     *
+     * @return int The number of available locks.
+     */
+    public function count();
+
     /**
      * @coroutine
      *
      * Acquires a lock from the semaphore asynchronously.
      *
-     * @return \Generator
+     * If there are one or more locks available, this function resolve imsmediately with a lock and the lock count is
+     * decreased. If no locks are available, the semaphore waits asynchronously for a lock to become available.
+     *
+     * @return \Generator Resolves with a lock object when the acquire is successful.
      *
      * @resolve \Icicle\Concurrent\Sync\Lock
      */
