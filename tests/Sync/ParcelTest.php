@@ -5,6 +5,7 @@ use Icicle\Concurrent\Sync\Parcel;
 
 /**
  * @requires extension shmop
+ * @requires extension sysvmsg
  */
 class ParcelTest extends AbstractParcelTest
 {
