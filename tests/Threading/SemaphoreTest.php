@@ -55,6 +55,6 @@ class SemaphoreTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.65);
+        }, 1.5, 1.75);
     }
 }

@@ -222,12 +222,14 @@ class Fork implements ContextInterface
     {
         if ($this->isRunning()) {
             // forcefully kill the process using SIGKILL
-            posix_kill($this->getPid(), SIGKILL);
-
-            if (null !== $this->channel && $this->channel->isOpen()) {
-                $this->channel->close();
-            }
+            posix_kill($this->pid, SIGKILL);
         }
+
+        if (null !== $this->channel && $this->channel->isOpen()) {
+            $this->channel->close();
+        }
+
+        $this->pid = 0;
     }
 
     /**

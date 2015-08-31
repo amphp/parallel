@@ -1,5 +1,5 @@
 <?php
-namespace Icicle\Tests\Concurrent\Sync;
+namespace Icicle\Tests\Concurrent\Threading;
 
 use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
@@ -67,7 +67,7 @@ class ThreadTest extends TestCase
     {
         Loop\loop();
 
-        $this->assertRunTimeBetween(function () {
+        $this->assertRunTimeGreaterThan(function () {
             Coroutine\create(function () {
                 $thread = new Thread(function () {
                     sleep(1);
@@ -81,7 +81,7 @@ class ThreadTest extends TestCase
             })->done();
 
             Loop\run();
-        }, 2, 2.2);
+        }, 2);
     }
 
     public function testSpawnStartsThread()
@@ -118,7 +118,7 @@ class ThreadTest extends TestCase
     {
         Loop\loop();
 
-        $this->assertRunTimeBetween(function () {
+        $this->assertRunTimeGreaterThan(function () {
             Coroutine\create(function () {
                 $thread = new Thread(function () {
                     sleep(1);
@@ -129,7 +129,7 @@ class ThreadTest extends TestCase
             })->done();
 
             Loop\run();
-        }, 1, 1.1);
+        }, 1);
     }
 
     /**
