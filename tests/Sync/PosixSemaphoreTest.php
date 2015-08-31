@@ -50,7 +50,7 @@ class PosixSemaphoreTest extends TestCase
 
     public function testAcquireMultiple()
     {
-        $this->assertRunTimeBetween(function () {
+        $this->assertRunTimeGreaterThan(function () {
             $semaphore = new PosixSemaphore(1);
 
             Coroutine\create(function () use ($semaphore) {
@@ -72,7 +72,7 @@ class PosixSemaphoreTest extends TestCase
 
             Loop\run();
             $semaphore->free();
-        }, 1.5, 1.65);
+        }, 1.5);
     }
 
     public function tesCloneIsSameSemaphore()

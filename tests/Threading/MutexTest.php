@@ -28,7 +28,7 @@ class MutexTest extends TestCase
     {
         Loop\loop();
 
-        $this->assertRunTimeBetween(function () {
+        $this->assertRunTimeGreaterThan(function () {
             Coroutine\create(function () {
                 $mutex = new Mutex();
 
@@ -49,6 +49,6 @@ class MutexTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.65);
+        }, 1.5);
     }
 }
