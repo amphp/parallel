@@ -5,12 +5,12 @@ use Icicle\Concurrent\Exception\SemaphoreException;
 use Icicle\Coroutine;
 
 /**
- * An asynchronous semaphore that uses POSIX semaphores.
+ * A non-blocking, interprocess POSIX semaphore.
  *
- * Compatible only with POSIX-compliant systems that provide the System V IPC
- * methods.
+ * Uses a POSIX message queue to store a queue of permits in a lock-free data structure. This semaphore implementation
+ * is preferred over other implementations when available, as it provides the best performance.
  *
- * Requires PHP 5.6.1+.
+ * Not compatible with Windows.
  */
 class PosixSemaphore implements SemaphoreInterface, \Serializable
 {
@@ -22,101 +22,94 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     private $key;
 
     /**
-     * @var resource An open handle to a gatekeeper semaphore.
+     * @var resource A message queue of available locks.
      */
-    private $semaphore;
-
-    /**
-     * @var SharedObject A shared object containing the lock count and queue.
-     */
-    private $data;
+    private $queue;
 
     /**
      * Creates a new semaphore with a given number of locks.
      *
      * @param int $maxLocks    The maximum number of locks that can be acquired from the semaphore.
      * @param int $permissions Permissions to access the semaphore.
+     *
+     * @throws SemaphoreException If the semaphore could not be created due to an internal error.
      */
     public function __construct($maxLocks, $permissions = 0600)
     {
         $this->key = abs(crc32(spl_object_hash($this)));
 
-        $this->semaphore = sem_get($this->key, 1, 0600, 1);
-        if (!$this->semaphore) {
+        $this->queue = msg_get_queue($this->key, $permissions);
+        if (!$this->queue) {
             throw new SemaphoreException('Failed to create the semaphore.');
         }
 
-        $this->data = new Parcel([
-            'locks' => (int)$maxLocks,
-            'waitQueue' => [],
-        ]);
+        // Fill the semaphore with locks.
+        while (--$maxLocks >= 0) {
+            $this->release();
+        }
     }
 
     /**
-     * Acquires a lock from the semaphore.
+     * Checks if the semaphore has been freed.
      *
-     * Blocks until a lock can be acquired.
+     * @return bool True if the semaphore has been freed, otherwise false.
+     */
+    public function isFreed()
+    {
+        return !is_resource($this->queue) || !msg_queue_exists($this->key);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function count()
+    {
+        $stat = msg_stat_queue($this->queue);
+        return $stat['msg_qnum'];
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function acquire()
     {
-        $this->lock();
-
-        try {
-            $data = $this->data->unwrap();
-
-            // Attempt to acquire a lock from the semaphore. If no locks are
-            // available immediately, we have a lot of work to do...
-            if ($data['locks'] <= 0 || !empty($data['waitQueue'])) {
-                // Since there are no free locks that we can claim yet, we need
-                // to add our request to the queue of other threads waiting for
-                // a free lock to make sure we don't steal one from another
-                // thread that has been waiting longer than us.
-                $id = mt_rand();
-                $data['waitQueue'][] = $id;
-                $this->data->wrap($data);
-
-                // Sleep for a while, giving a chance for other threads to release
-                // their locks. After we finish sleeping, we can check again to see
-                // if it is our turn to acquire a lock.
-                do {
-                    $this->unlock();
-                    yield Coroutine\sleep(self::LATENCY_TIMEOUT);
-                    $this->lock();
-                    $data = $this->data->unwrap();
-                } while ($data['locks'] <= 0 || $data['waitQueue'][0] !== $id);
+        while (true) {
+            // Attempt to acquire a lock from the semaphore.
+            if (@msg_receive($this->queue, 0, $type, 1, $chr, false, MSG_IPC_NOWAIT, $errno)) {
+                // A free lock was found, so resolve with a lock object that can
+                // be used to release the lock.
+                yield new Lock(function (Lock $lock) {
+                    $this->release();
+                });
+                return;
             }
 
-            // At this point, we have made sure that one of the locks in the
-            // semaphore is available for us to use, so decrement the lock count
-            // to mark it as taken, and return a lock object that represents the
-            // lock just acquired.
-            $data = $this->data->unwrap();
-            --$data['locks'];
-            $data['waitQueue'] = array_slice($data['waitQueue'], 1);
-            $this->data->wrap($data);
+            // Check for unusual errors.
+            if ($errno !== MSG_ENOMSG) {
+                throw new SemaphoreException('Failed to acquire a lock.');
+            }
 
-            yield new Lock(function (Lock $lock) {
-                $this->release();
-            });
-        } finally {
-            $this->unlock();
+            // Sleep for a while, giving a chance for other threads to release
+            // their locks. After we finish sleeping, we can check again to see
+            // if it is our turn to acquire a lock.
+            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
     }
 
     /**
      * Removes the semaphore if it still exists.
+     *
+     * @throws SemaphoreException If the operation failed.
      */
-    public function destroy()
+    public function free()
     {
-        if (!@sem_remove($this->semaphore)) {
-            $error = error_get_last();
-
-            if ($error['type'] !== E_WARNING) {
-                throw new SemaphoreException('Failed to remove the semaphore.');
+        if (is_resource($this->queue) && msg_queue_exists($this->key)) {
+            if (!msg_remove_queue($this->queue)) {
+                throw new SemaphoreException('Failed to free the semaphore.');
             }
-        }
 
-        $this->data->free();
+            unset($this->queue);
+        }
     }
 
     /**
@@ -126,7 +119,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function serialize()
     {
-        return serialize([$this->key, $this->data]);
+        return serialize($this->key);
     }
 
     /**
@@ -136,43 +129,25 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function unserialize($serialized)
     {
-        // Get the semaphore key and attempt to re-connect to the semaphore in
-        // memory.
-        list($this->key, $this->data) = unserialize($serialized);
-        $this->semaphore = sem_get($this->key, 1, 0600, 1);
-    }
+        // Get the semaphore key and attempt to re-connect to the semaphore in memory.
+        $this->key = unserialize($serialized);
 
-    /**
-     * Releases a lock from the semaphore.
-     */
-    protected function release()
-    {
-        $this->lock();
-
-        $data = $this->data->unwrap();
-        ++$data['locks'];
-        $this->data->wrap($data);
-
-        $this->unlock();
-    }
-
-    /**
-     * Locks the gatekeeper semaphore.
-     */
-    private function lock()
-    {
-        if (!sem_acquire($this->semaphore)) {
-            throw new SemaphoreException('Failed to lock the semaphore.');
+        if (msg_queue_exists($this->key)) {
+            $this->queue = msg_get_queue($this->key);
         }
     }
 
     /**
-     * Unlocks the gatekeeper semaphore.
+     * Releases a lock from the semaphore.
+     *
+     * @throws SemaphoreException If the operation failed.
      */
-    private function unlock()
+    protected function release()
     {
-        if (!sem_release($this->semaphore)) {
-            throw new SemaphoreException('Failed to unlock the semaphore.');
+        // Call send in blocking mode, since it is impossible for the queue to
+        // be more full than when it began.
+        if (!@msg_send($this->queue, 1, "\0", false)) {
+            throw new SemaphoreException('Failed to release the lock.');
         }
     }
 }
