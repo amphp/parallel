@@ -20,17 +20,17 @@ install:
     make;
     make install;
     popd;
-    echo "extension=pthreads.so" >> "$(php -r 'echo php_ini_loaded_file();')";
+    echo "extension=pthreads.so" >> "$(php -r 'echo php_ini_loaded_file();')"
   - composer self-update
   - composer install --no-interaction --prefer-source
 
 script:
   - if [ "$TRAVIS_PHP_VERSION" != "7.0" ]; then
-        vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+        vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml;
     else
-        phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+        phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml;
     fi
 
 after_script:
   - composer require satooshi/php-coveralls dev-master
-  - vendor/bin/coveralls -v --exclude-no-stmt;
+  - vendor/bin/coveralls -v --exclude-no-stmt
