@@ -36,15 +36,14 @@ class ThreadTest extends TestCase
     public function testKill()
     {
         $thread = new Thread(function () {
-            usleep(100);
+            usleep(1e6);
         });
 
         $thread->start();
 
-        $thread->kill();
-        $this->assertFalse($thread->isRunning());
+        $this->assertRunTimeLessThan([$thread, 'kill'], 0.1);
 
-        Loop\run();
+        $this->assertFalse($thread->isRunning());
     }
 
     /**

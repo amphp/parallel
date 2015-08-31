@@ -119,12 +119,16 @@ class Thread implements ContextInterface, SynchronizableInterface
      */
     public function kill()
     {
-        if (!$this->thread->kill()) {
-            throw new ThreadException('Failed to kill the thread.');
+        if ($this->isRunning()) {
+            try {
+                if (!$this->thread->kill()) {
+                    throw new ThreadException('Failed to kill the thread.');
+                }
+            } finally {
+                $this->channel->close();
+                fclose($this->socket);
+            }
         }
-
-        $this->channel->close();
-        fclose($this->socket);
     }
 
     /**
