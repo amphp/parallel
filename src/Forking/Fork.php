@@ -68,6 +68,16 @@ class Fork implements ContextInterface
     }
 
     /**
+     * Checks if the context is running.
+     *
+     * @return bool True if the context is running, otherwise false.
+     */
+    public function isRunning()
+    {
+        return 0 !== $this->pid && false !== posix_getpgid($this->pid);
+    }
+
+    /**
      * Gets the forked process's process ID.
      *
      * @return int The process ID.
@@ -78,13 +88,52 @@ class Fork implements ContextInterface
     }
 
     /**
-     * Checks if the context is running.
+     * Gets the fork's scheduling priority as a percentage.
      *
-     * @return bool True if the context is running, otherwise false.
+     * The priority is a float between 0 and 1 that indicates the relative priority for the forked process, where 0 is
+     * very low priority, 1 is very high priority, and 0.5 is considered a "normal" priority. The value is based on the
+     * forked process's "nice" value. The priority affects the operating system's scheduling of processes. How much the
+     * priority actually affects the amount of CPU time the process gets is ultimately system-specific.
+     *
+     * @return float A priority value between 0 and 1.
+     *
+     * @throws ForkException If the operation failed.
+     *
+     * @see Fork::setPriority()
+     * @see http://linux.die.net/man/2/getpriority
      */
-    public function isRunning()
+    public function getPriority()
     {
-        return 0 !== $this->pid && false !== posix_getpgid($this->pid);
+        if (($nice = pcntl_getpriority($this->pid)) === false) {
+            throw new ForkException('Failed to get the fork\'s priority.');
+        }
+
+        return (19 - $nice) / 39;
+    }
+
+    /**
+     * Sets the fork's scheduling priority as a percentage.
+     *
+     * Note that on many systems, only the superuser can increase the priority of a process.
+     *
+     * @param float $priority A priority value between 0 and 1.
+     *
+     * @throws InvalidArgumentError If the given priority is an invalid value.
+     * @throws ForkException        If the operation failed.
+     *
+     * @see Fork::getPriority()
+     */
+    public function setPriority($priority)
+    {
+        if ($priority < 0 || $priority > 1) {
+            throw new InvalidArgumentError('Priority value must be between 0.0 and 1.0.');
+        }
+
+        $nice = round(19 - ($priority * 39));
+
+        if (!pcntl_setpriority($nice, $this->pid, PRIO_PROCESS)) {
+            throw new ForkException('Failed to set the fork\'s priority.');
+        }
     }
 
     /**
@@ -191,7 +240,7 @@ class Fork implements ContextInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError Thrown if the context has not been started.
+     * @throws \Icicle\Concurrent\Exception\StatusError          Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
