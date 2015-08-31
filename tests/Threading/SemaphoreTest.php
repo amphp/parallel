@@ -34,7 +34,7 @@ class SemaphoreTest extends TestCase
     {
         Loop\loop();
 
-        $this->assertRunTimeBetween(function () {
+        $this->assertRunTimeGreaterThan(function () {
             Coroutine\create(function () {
                 $semaphore = new Semaphore(1);
 
@@ -55,6 +55,6 @@ class SemaphoreTest extends TestCase
             });
 
             Loop\run();
-        }, 1.5, 1.75);
+        }, 1.5);
     }
 }
