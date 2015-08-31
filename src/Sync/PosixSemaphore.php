@@ -144,9 +144,13 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     protected function release()
     {
-        // Call send in blocking mode, since it is impossible for the queue to
-        // be more full than when it began.
-        if (!@msg_send($this->queue, 1, "\0", false)) {
+        // Call send in non-blocking mode. If the call fails because the queue
+        // is full, then the number of locks configured is too large.
+        if (!@msg_send($this->queue, 1, "\0", false, false, $errno)) {
+            if ($errno === MSG_EAGAIN) {
+                throw new SemaphoreException('The semaphore size is larger than the system allows.');
+            }
+
             throw new SemaphoreException('Failed to release the lock.');
         }
     }
