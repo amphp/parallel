@@ -60,6 +60,35 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     }
 
     /**
+     * Gets the access permissions of the semaphore.
+     *
+     * @return int A permissions mode.
+     */
+    public function getPermissions()
+    {
+        $stat = msg_stat_queue($this->queue);
+        return $stat['msg_perm.mode'];
+    }
+
+    /**
+     * Sets the access permissions of the semaphore.
+     *
+     * The current user must have access to the semaphore in order to change the permissions.
+     *
+     * @param int $mode A permissions mode to set.
+     *
+     * @throws SemaphoreException If the operation failed.
+     */
+    public function setPermissions($mode)
+    {
+        if (!msg_set_queue($this->queue, [
+            'msg_perm.mode' => $mode
+        ])) {
+            throw new SemaphoreException('Failed to change the semaphore permissions.');
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function count()
