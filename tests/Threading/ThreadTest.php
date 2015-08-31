@@ -40,11 +40,9 @@ class ThreadTest extends TestCase
         });
 
         $thread->start();
-
         $thread->kill();
-        $this->assertFalse($thread->isRunning());
 
-        Loop\run();
+        $this->assertFalse($thread->isRunning());
     }
 
     /**
