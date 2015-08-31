@@ -17,6 +17,9 @@ use Icicle\Concurrent\Exception\SharedMemoryException;
  *
  * Note that accessing a shared object is not atomic. Access to a shared object
  * should be protected with a mutex to preserve data integrity.
+ *
+ * When used with forking, the object must be created prior to forking for both
+ * processes to access the synchronized object.
  */
 class Parcel implements ParcelInterface, \Serializable
 {

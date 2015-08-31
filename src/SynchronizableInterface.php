@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent;
 
 /**
- * Interface for objects that can be synchronized across contexts.
+ * An object that can be synchronized for exclusive access across contexts.
  */
 interface SynchronizableInterface
 {
@@ -11,11 +11,13 @@ interface SynchronizableInterface
      *
      * Invokes a function while maintaining a lock on the object.
      *
-     * @param callable $callback The function to invoke.
+     * The given callback will be passed the object being synchronized on as the first argument.
+     *
+     * @param callable<self> $callback The synchronized function to invoke.
      *
      * @return \Generator
      *
-     * @resolve mixed Return value of $callback.
+     * @resolve mixed The return value of $callback.
      */
     public function synchronized(callable $callback);
 }
