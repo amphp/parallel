@@ -62,42 +62,18 @@ class Semaphore extends \Threaded
      */
     public function acquire()
     {
-        $tsl = function () use (&$waitId) {
+        $tsl = function () {
             // If there are no locks available or the wait queue is not empty,
             // we need to wait our turn to acquire a lock.
-            if ($this->locks > 0 && empty($this->waitQueue)) {
+            if ($this->locks > 0) {
                 --$this->locks;
                 return false;
             }
-
-            // Since there are no free locks that we can claim yet, we need
-            // to add our request to the queue of other threads waiting for
-            // a free lock to make sure we don't steal one from another
-            // thread that has been waiting longer than us.
-            $waitId = $this->nextId++;
-            $this->waitQueue = array_merge($this->waitQueue, [$waitId]);
-
             return true;
         };
 
-        if ($this->synchronized($tsl)) {
-            $tsl = function () use (&$waitId) {
-                if ($this->locks > 0 && $this->waitQueue[0] === $waitId) {
-                    // At this point, we have made sure that one of the locks in the
-                    // semaphore is available for us to use, so decrement the lock count
-                    // to mark it as taken, and return a lock object that represents the
-                    // lock just acquired.
-                    --$this->locks;
-                    $this->waitQueue = array_slice($this->waitQueue, 1);
-                    return false;
-                }
-
-                return true;
-            };
-
-            do {
-                yield Coroutine\sleep(self::LATENCY_TIMEOUT);
-            } while ($this->synchronized($tsl));
+        while ($this->locks > 0 && $this->synchronized($tsl)) {
+            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
         yield new Lock(function () {
