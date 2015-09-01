@@ -53,17 +53,15 @@ class Worker implements WorkerInterface
     /**
      * {@inheritdoc}
      */
-    public function enqueue(TaskInterface $task /* , ...$args */)
+    public function enqueue(TaskInterface $task)
     {
         if (!$this->context->isRunning()) {
             throw new SynchronizationError('The worker has not been started.');
         }
 
-        $args = array_slice(func_get_args(), 1);
-
         $this->idle = false;
 
-        yield $this->context->send([$task, $args]);
+        yield $this->context->send($task);
 
         $result = (yield $this->context->receive());
 
@@ -81,7 +79,7 @@ class Worker implements WorkerInterface
      */
     public function shutdown()
     {
-        yield $this->context->send([null, []]);
+        yield $this->context->send(0);
 
         yield $this->context->join();
     }

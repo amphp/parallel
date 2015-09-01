@@ -28,13 +28,13 @@ class TaskRunner
      */
     public function run()
     {
-        list($task, $args) = (yield $this->channel->receive());
+        $task = (yield $this->channel->receive());
 
         while ($task instanceof TaskInterface) {
             $this->idle = false;
 
             try {
-                $result = (yield call_user_func_array([$task, 'run'], $args));
+                $result = (yield $task->run());
             } catch (\Exception $exception) {
                 $result = new TaskFailure($exception);
             }
@@ -43,7 +43,7 @@ class TaskRunner
 
             $this->idle = true;
 
-            list($task, $args) = (yield $this->channel->receive());
+            $task = (yield $this->channel->receive());
         }
 
         yield $task;

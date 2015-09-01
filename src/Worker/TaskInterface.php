@@ -11,13 +11,11 @@ interface TaskInterface
      *
      * Runs the task inside the caller's context.
      *
-     * Can accept a varied number of arguments sent by the worker.
-     *
-     * @param ...mixed $args
+     * Does not have to be a coroutine, can also be a regular function returning a value.
      *
      * @return \Generator
      *
      * @resolve mixed
      */
-    public function run(/* ...$args */);
+    public function run();
 }

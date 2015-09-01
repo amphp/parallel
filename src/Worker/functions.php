@@ -1,8 +1,6 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
-use Icicle\Coroutine\Coroutine;
-
 if (!function_exists(__NAMESPACE__ . '\pool')) {
     /**
      * Returns the global worker pool for the current context.
@@ -29,16 +27,18 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     }
 
     /**
+     * @coroutine
+     *
      * Enqueues a task to be executed by the worker pool.
      *
      * @param TaskInterface $task The task to enqueue.
      *
-     * @return \Icicle\Promise\PromiseInterface
+     * @return \Generator
      *
      * @resolve mixed The return value of the task.
      */
-    function enqueue(TaskInterface $task /* , ...$args */)
+    function enqueue(TaskInterface $task)
     {
-        return new Coroutine(call_user_func_array([pool(), 'enqueue'], func_get_args()));
+        return pool()->enqueue($task);
     }
 }
