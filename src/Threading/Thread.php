@@ -118,15 +118,24 @@ class Thread implements ContextInterface
      */
     public function kill()
     {
-        if ($this->isRunning()) {
-            try {
-                if (!$this->thread->kill()) {
-                    throw new ThreadException('Failed to kill the thread.');
-                }
-            } finally {
-                $this->channel->close();
-                fclose($this->socket);
-            }
+        $this->close();
+
+        if ($this->isRunning() && !$this->thread->kill()) {
+            throw new ThreadException('Failed to kill the thread.');
+        }
+    }
+
+    /**
+     * Closes channel and socket if still open.
+     */
+    private function close()
+    {
+        if ($this->started && $this->channel->isOpen()) {
+            $this->channel->close();
+        }
+
+        if (is_resource($this->socket)) {
+            fclose($this->socket);
         }
     }
 
@@ -140,7 +149,7 @@ class Thread implements ContextInterface
      *
      * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
      *
-     * @throws StatusError          Thrown if the context has not been started.
+     * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
      */
     public function join()
@@ -153,16 +162,18 @@ class Thread implements ContextInterface
             $response = (yield $this->channel->receive());
 
             if (!$response instanceof ExitStatusInterface) {
-                $this->kill();
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
             yield $response->getResult();
-        } finally {
+
             $this->thread->join();
-            $this->channel->close();
-            fclose($this->socket);
+        } catch (\Exception $exception) {
+            $this->kill();
+            throw $exception;
         }
+
+        $this->close();
     }
 
     /**
