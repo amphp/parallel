@@ -90,7 +90,7 @@ class Thread implements ContextInterface, SynchronizableInterface
      */
     public function isRunning()
     {
-        return $this->thread->isRunning() && !$this->thread->isTerminated();
+        return $this->thread->isRunning() && $this->channel->isOpen();
     }
 
     /**
