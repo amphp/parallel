@@ -90,7 +90,7 @@ class Thread implements ContextInterface, SynchronizableInterface
      */
     public function isRunning()
     {
-        return $this->thread->isRunning() && $this->channel->isOpen();
+        return $this->started && $this->thread->isRunning() && $this->channel->isOpen();
     }
 
     /**
@@ -154,6 +154,7 @@ class Thread implements ContextInterface, SynchronizableInterface
             $response = (yield $this->channel->receive());
 
             if (!$response instanceof ExitStatusInterface) {
+                $this->kill();
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
@@ -177,6 +178,7 @@ class Thread implements ContextInterface, SynchronizableInterface
         $data = (yield $this->channel->receive());
 
         if ($data instanceof ExitStatusInterface) {
+            $this->kill();
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
                 'Thread unexpectedly exited with result of type: %s',
@@ -197,6 +199,7 @@ class Thread implements ContextInterface, SynchronizableInterface
         }
 
         if ($data instanceof ExitStatusInterface) {
+            $this->kill();
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 

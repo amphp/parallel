@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Threading;
 
+use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
 use Icicle\Loop;
@@ -12,6 +13,18 @@ use Icicle\Tests\Concurrent\TestCase;
  */
 class ThreadTest extends TestCase
 {
+    /**
+     * @expectedException \Icicle\Concurrent\Exception\InvalidArgumentError
+     */
+    public function testConstructWithClosureWithStaticVariables()
+    {
+        $value = 1;
+
+        $thread = new Thread(function () use ($value) {
+            return $value;
+        });
+    }
+
     public function testIsRunning()
     {
         Coroutine\create(function () {
@@ -155,7 +168,123 @@ class ThreadTest extends TestCase
             });
 
             $thread->start();
-            $this->assertEquals(42, (yield $thread->join()));
+            $this->assertSame(42, (yield $thread->join()));
+        })->done();
+
+        Loop\run();
+    }
+
+    public function testSendAndReceive()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                yield $this->send(1);
+                $value = (yield $this->receive());
+                yield $value;
+            });
+
+            $value = 42;
+
+            $thread->start();
+            $this->assertSame(1, (yield $thread->receive()));
+            yield $thread->send($value);
+            $this->assertSame($value, (yield $thread->join()));
+        })->done();
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testSendAndReceive
+     * @expectedException \Icicle\Concurrent\Exception\SynchronizationError
+     */
+    public function testJoinWhenThreadSendingData()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                yield $this->send(0);
+                yield 42;
+            });
+
+            $thread->start();
+            $value = (yield $thread->join());
+        })->done();
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testSendAndReceive
+     * @expectedException \Icicle\Concurrent\Exception\StatusError
+     */
+    public function testReceiveBeforeThreadHasStarted()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                yield $this->send(0);
+                yield 42;
+            });
+
+            $value = (yield $thread->receive());
+        })->done();
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testSendAndReceive
+     * @expectedException \Icicle\Concurrent\Exception\StatusError
+     */
+    public function testSendBeforeThreadHasStarted()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                yield $this->send(0);
+                yield 42;
+            });
+
+            yield $thread->send(0);
+        })->done();
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testSendAndReceive
+     * @expectedException \Icicle\Concurrent\Exception\SynchronizationError
+     */
+    public function testReceiveWhenThreadHasReturned()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                yield $this->send(0);
+                yield 42;
+            });
+
+            $thread->start();
+            $value = (yield $thread->receive());
+            $value = (yield $thread->receive());
+            $value = (yield $thread->join());
+        })->done();
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testSendAndReceive
+     * @expectedException \Icicle\Concurrent\Exception\InvalidArgumentError
+     */
+    public function testSendExitStatus()
+    {
+        Coroutine\create(function () {
+            $thread = new Thread(function () {
+                $value = (yield $this->receive());
+                yield 42;
+            });
+
+            $thread->start();
+            yield $thread->send(new ExitSuccess(0));
+            $value = (yield $thread->join());
         })->done();
 
         Loop\run();
