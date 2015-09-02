@@ -4,18 +4,21 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Icicle\Concurrent\Worker;
 use Icicle\Concurrent\Worker\HelloTask;
-use Icicle\Coroutine;
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Promise;
 
-Coroutine\create(function () {
+$generator = function () {
     $returnValues = (yield Promise\all([
-        Worker\enqueue(new HelloTask()),
-        Worker\enqueue(new HelloTask()),
-        Worker\enqueue(new HelloTask()),
+        new Coroutine(Worker\enqueue(new HelloTask())),
+        new Coroutine(Worker\enqueue(new HelloTask())),
+        new Coroutine(Worker\enqueue(new HelloTask())),
     ]));
 
     var_dump($returnValues);
-})->done();
+};
+
+$coroutine = new Coroutine($generator());
+$coroutine->done();
 
 Loop\run();

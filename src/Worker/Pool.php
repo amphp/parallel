@@ -3,6 +3,7 @@ namespace Icicle\Concurrent\Worker;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
@@ -65,13 +66,11 @@ class Pool implements PoolInterface
     /**
      * Creates a new worker pool.
      *
-     * @param int|null                    $minSize The minimum number of workers the pool should spawn. Defaults to
-     *                                             `Pool::DEFAULT_MIN_SIZE`.
-     * @param int|null                    $maxSize The maximum number of workers the pool should spawn. Defaults to
-     *                                             `Pool::DEFAULT_MAX_SIZE`.
+     * @param int $minSize The minimum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MIN_SIZE`.
+     * @param int $maxSize The maximum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MAX_SIZE`.
      * @param WorkerFactoryInterface|null $factory A worker factory to be used to create new workers.
      */
-    public function __construct($minSize = null, $maxSize = null, WorkerFactoryInterface $factory = null)
+    public function __construct($minSize = 0, $maxSize = 0, WorkerFactoryInterface $factory = null)
     {
         $minSize = $minSize ?: static::DEFAULT_MIN_SIZE;
         $maxSize = $minSize ?: static::DEFAULT_MAX_SIZE;
@@ -179,25 +178,22 @@ class Pool implements PoolInterface
      *
      * @resolve mixed The return value of the task.
      */
-    public function enqueue(TaskInterface $task /* , ...$args */)
+    public function enqueue(TaskInterface $task)
     {
-        if (!$this->running) {
+        if (!$this->isRunning()) {
             throw new SynchronizationError('The worker pool has not been started.');
         }
 
-        $args = array_slice(func_get_args(), 1);
-
         // Enqueue the task if we have an idle worker.
         if ($worker = $this->getIdleWorker()) {
-            yield $this->enqueueToWorker($worker, $task, $args);
+            yield $this->enqueueToWorker($worker, $task);
             return;
         }
 
         // If we're at our limit of busy workers, add the task to the waiting list to be enqueued later when a new
         // worker becomes available.
         $deferred = new Deferred();
-        $this->busyQueue->enqueue($task);
-        $this->deferredQueue->enqueue($deferred);
+        $this->busyQueue->enqueue([$task, $deferred]);
 
         // Yield a promise that will be resolved when the task gets processed later.
         yield $deferred->getPromise();
@@ -212,14 +208,21 @@ class Pool implements PoolInterface
      */
     public function shutdown()
     {
+        if (!$this->isRunning()) {
+            throw new SynchronizationError('The pool is not running.');
+        }
+
+        $this->close();
+
         $shutdowns = [];
 
         foreach ($this->workers as $worker) {
             $shutdowns[] = new Coroutine($worker->shutdown());
         }
 
-        yield Promise\all($shutdowns);
-        $this->running = false;
+        yield Promise\reduce($shutdowns, function ($carry, $value) {
+            return $carry ?: $value;
+        }, 0);
     }
 
     /**
@@ -227,21 +230,29 @@ class Pool implements PoolInterface
      */
     public function kill()
     {
-        foreach ($this->workers as $worker) {
-            $worker->kill();
-        }
+        if ($this->isRunning()) {
+            $this->close();
 
-        $this->running = false;
+            foreach ($this->workers as $worker) {
+                $worker->kill();
+            }
+        }
     }
 
     /**
-     * Shuts down the pool when it is destroyed.
+     * Rejects any queued tasks.
      */
-    public function __destruct()
+    private function close()
     {
-        if ($this->isRunning()) {
-            $coroutine = new Coroutine($this->shutdown());
-            $coroutine->done();
+        $this->running = false;
+
+        if (!$this->busyQueue->isEmpty()) {
+            $exception = new WorkerException('Worker pool was shutdown.');
+            do {
+                /** @var \Icicle\Promise\Deferred $deferred */
+                list(, $deferred) = $this->busyQueue->dequeue();
+                $deferred->reject($exception);
+            } while (!$this->busyQueue->isEmpty());
         }
     }
 
@@ -277,6 +288,8 @@ class Pool implements PoolInterface
         if ($this->getWorkerCount() < $this->maxSize) {
             return $this->createWorker();
         }
+
+        return null; // No idle workers available and cannot spawn more.
     }
 
     /**
@@ -288,17 +301,16 @@ class Pool implements PoolInterface
      * @coroutine
      *
      * @param WorkerInterface $worker The worker to enqueue to.
-     * @param TaskInterface   $task   The task to enqueue.
-     * @param array           $args   An array of arguments to pass to the task.
+     * @param TaskInterface $task The task to enqueue.
      *
      * @return \Generator
      *
      * @resolve mixed The return value of the task.
      */
-    private function enqueueToWorker(WorkerInterface $worker, TaskInterface $task, array $args = [])
+    private function enqueueToWorker(WorkerInterface $worker, TaskInterface $task)
     {
         $this->idleWorkers->detach($worker);
-        yield call_user_func_array([$worker, 'enqueue'], array_merge([$task], $args));
+        yield $worker->enqueue($task);
         $this->idleWorkers->attach($worker);
 
         // Spawn a new coroutine to process the busy queue if not empty.
@@ -324,8 +336,8 @@ class Pool implements PoolInterface
                 break;
             }
 
-            $task = $this->busyQueue->dequeue();
-            $deferred = $this->deferredQueue->dequeue();
+            /** @var \Icicle\Promise\Deferred $deferred */
+            list($task, $deferred) = $this->busyQueue->dequeue();
 
             try {
                 $returnValue = (yield $this->enqueueToWorker($worker, $task));

@@ -41,4 +41,24 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     {
         return pool()->enqueue($task);
     }
+
+    /**
+     * @param \Icicle\Concurrent\Worker\WorkerFactoryInterface|null $factory
+     *
+     * @return \Icicle\Concurrent\Worker\WorkerInterface
+     */
+    function create(WorkerFactoryInterface $factory = null)
+    {
+        static $instance;
+
+        if (null !== $factory) {
+            $instance = $factory;
+        } elseif (null === $instance) {
+            $instance = new WorkerFactory();
+        }
+
+        $worker = $instance->create();
+        $worker->start();
+        return $worker;
+    }
 }

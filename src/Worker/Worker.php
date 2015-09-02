@@ -79,6 +79,10 @@ class Worker implements WorkerInterface
      */
     public function shutdown()
     {
+        if (!$this->context->isRunning()) {
+            throw new SynchronizationError('The worker is not running.');
+        }
+
         yield $this->context->send(0);
 
         yield $this->context->join();

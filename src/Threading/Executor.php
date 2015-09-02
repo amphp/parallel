@@ -4,7 +4,7 @@ namespace Icicle\Concurrent\Threading;
 use Icicle\Concurrent\ChannelInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
-use Icicle\Concurrent\Sync\ChannelInterface as SyncChannelInterface;;
+use Icicle\Concurrent\Sync;
 use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 
@@ -26,7 +26,7 @@ class Executor implements ChannelInterface, SynchronizableInterface
      * @param \Icicle\Concurrent\Threading\Internal\Thread $thread
      * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      */
-    public function __construct(Internal\Thread $thread, SyncChannelInterface $channel)
+    public function __construct(Internal\Thread $thread, Sync\ChannelInterface $channel)
     {
         $this->thread = $thread;
         $this->channel = $channel;
