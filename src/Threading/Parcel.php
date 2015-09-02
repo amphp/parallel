@@ -8,7 +8,14 @@ use Icicle\Concurrent\Sync\ParcelInterface;
  */
 class Parcel implements ParcelInterface
 {
+    /**
+     * @var \Icicle\Concurrent\Threading\Mutex
+     */
     private $mutex;
+
+    /**
+     * @var \Icicle\Concurrent\Threading\Internal\Storage
+     */
     private $storage;
 
     /**

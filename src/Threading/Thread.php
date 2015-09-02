@@ -8,7 +8,6 @@ use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
-use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 use Icicle\Socket\Stream\DuplexStream;
 
@@ -19,7 +18,7 @@ use Icicle\Socket\Stream\DuplexStream;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements ContextInterface, SynchronizableInterface
+class Thread implements ContextInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
@@ -204,25 +203,5 @@ class Thread implements ContextInterface, SynchronizableInterface
         }
 
         yield $this->channel->send($data);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback)
-    {
-        if (!$this->started) {
-            throw new StatusError('The thread has not been started.');
-        }
-
-        while (!$this->thread->tsl()) {
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
-        }
-
-        try {
-            yield $callback($this);
-        } finally {
-            $this->thread->release();
-        }
     }
 }

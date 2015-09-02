@@ -5,10 +5,9 @@ use Icicle\Concurrent\ChannelInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Concurrent\Sync;
-use Icicle\Concurrent\SynchronizableInterface;
 use Icicle\Coroutine;
 
-class Executor implements ChannelInterface, SynchronizableInterface
+class Executor implements ChannelInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
@@ -50,23 +49,5 @@ class Executor implements ChannelInterface, SynchronizableInterface
         }
 
         yield $this->channel->send($data);
-    }
-
-    /**
-     * @param callable $callback
-     *
-     * @return \Generator
-     */
-    public function synchronized(callable $callback)
-    {
-        while (!$this->thread->tsl()) {
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
-        }
-
-        try {
-            yield $callback($this);
-        } finally {
-            $this->thread->release();
-        }
     }
 }

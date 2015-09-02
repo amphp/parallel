@@ -33,11 +33,6 @@ class Thread extends \Thread
     private $socket;
 
     /**
-     * @var bool
-     */
-    private $lock = true;
-
-    /**
      * Creates a new thread object.
      *
      * @param resource $socket   IPC communication socket.
@@ -77,34 +72,6 @@ class Thread extends \Thread
         $coroutine->done();
 
         Loop\run();
-    }
-
-    /**
-     * Attempts to obtain the lock. Returns true if the lock was obtained.
-     *
-     * @return bool
-     */
-    public function tsl()
-    {
-        if (!$this->lock) {
-            return false;
-        }
-
-        return $this->synchronized(function () {
-            if ($this->lock) {
-                $this->lock = false;
-                return true;
-            }
-            return false;
-        });
-    }
-
-    /**
-     * Releases the lock.
-     */
-    public function release()
-    {
-        $this->lock = true;
     }
 
     /**
