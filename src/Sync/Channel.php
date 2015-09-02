@@ -3,7 +3,7 @@ namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\ChannelException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
-use Icicle\Socket\Exception\Exception as SocketException;
+use Icicle\Stream\Exception\Exception as StreamException;
 use Icicle\Stream\DuplexStreamInterface;
 use Icicle\Stream\ReadableStreamInterface;
 use Icicle\Stream\WritableStreamInterface;
@@ -28,6 +28,11 @@ class Channel implements ChannelInterface
     private $write;
 
     /**
+     * @var \Closure
+     */
+    private $errorHandler;
+
+    /**
      * Creates a new channel instance.
      *
      * @param \Icicle\Stream\ReadableStreamInterface $read
@@ -48,6 +53,10 @@ class Channel implements ChannelInterface
         }
 
         $this->read = $read;
+
+        $this->errorHandler = function ($errno, $errstr) {
+            throw new ChannelException(sprintf('Received corrupted data. Errno: %d; %s', $errno, $errstr));
+        };
     }
 
     /**
@@ -93,7 +102,7 @@ class Channel implements ChannelInterface
 
         try {
             yield $this->write->write(pack('L', $length) . $serialized);
-        } catch (SocketException $exception) {
+        } catch (StreamException $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', 0, $exception);
         }
 
@@ -108,29 +117,31 @@ class Channel implements ChannelInterface
         // Read the message length first to determine how much needs to be read from the stream.
         $length = self::HEADER_LENGTH;
         $buffer = '';
-        do {
-            if (!$this->read->isReadable()) {
-                throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
-            }
 
-            $buffer .= (yield $this->read->read($length));
-        } while (($length -= strlen($buffer)) > 0);
+        try {
+            do {
+                $buffer .= (yield $this->read->read($length));
+            } while (($length -= strlen($buffer)) > 0);
 
-        list( , $length) = unpack('L', $buffer);
-        $buffer = '';
-        do {
-            if (!$this->read->isReadable()) {
-                throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
-            }
+            list(, $length) = unpack('L', $buffer);
+            $buffer = '';
 
-            $buffer .= (yield $this->read->read($length));
-        } while (($length -= strlen($buffer)) > 0);
+            do {
+                $buffer .= (yield $this->read->read($length));
+            } while (($length -= strlen($buffer)) > 0);
+        } catch (StreamException $exception) {
+            throw new ChannelException('Reading from the channel failed. Did the context die?', 0, $exception);
+        }
+
+        set_error_handler($this->errorHandler);
 
         // Attempt to unserialize the received data.
         try {
             yield unserialize($buffer);
         } catch (\Exception $exception) {
-            throw new ChannelException('Received corrupt data from peer.', 0, $exception);
+            throw new ChannelException('Exception thrown when unserializing data.', 0, $exception);
+        } finally {
+            restore_error_handler();
         }
     }
 
