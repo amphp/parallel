@@ -14,19 +14,9 @@ class Semaphore extends \Threaded
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
     /**
-     * @var int
-     */
-    private $nextId = 0;
-
-    /**
      * @var int The number of available locks.
      */
     private $locks;
-
-    /**
-     * @var array A queue of lock requests.
-     */
-    private $waitQueue = [];
 
     /**
      * Creates a new semaphore with a given number of locks.
@@ -72,7 +62,7 @@ class Semaphore extends \Threaded
             return true;
         };
 
-        while ($this->locks > 0 && $this->synchronized($tsl)) {
+        while ($this->locks < 1 || $this->synchronized($tsl)) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 

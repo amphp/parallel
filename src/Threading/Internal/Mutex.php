@@ -27,7 +27,7 @@ class Mutex extends \Threaded
             return ($this->lock ? $this->lock = false : true);
         };
 
-        while ($this->lock && $this->synchronized($tsl)) {
+        while (!$this->lock || $this->synchronized($tsl)) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
