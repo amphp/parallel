@@ -1,7 +1,9 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
-use Icicle\Concurrent\Sync\Parcel;
+use Icicle\Concurrent\Sync\ParcelInterface;
+use Icicle\Coroutine\Coroutine;
+use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
 
 abstract class AbstractParcelTest extends TestCase
@@ -30,6 +32,9 @@ abstract class AbstractParcelTest extends TestCase
         $this->assertEquals($object, $shared->unwrap());
     }
 
+    /**
+     * @depends testUnwrapIsEqual
+     */
     public function testWrap()
     {
         $shared = $this->createParcel(3);
@@ -37,5 +42,56 @@ abstract class AbstractParcelTest extends TestCase
 
         $shared->wrap(4);
         $this->assertEquals(4, $shared->unwrap());
+    }
+
+    /**
+     * @depends testWrap
+     */
+    public function testSynchronized()
+    {
+        $parcel = $this->createParcel(0);
+
+        $coroutine = new Coroutine($parcel->synchronized(function (ParcelInterface $parcel) {
+            $this->assertSame(0, $parcel->unwrap());
+            usleep(1e4);
+            $parcel->wrap(1);
+            return -1;
+        }));
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->identicalTo(-1));
+
+        $coroutine->done($callback);
+
+        $coroutine = new Coroutine($parcel->synchronized(function (ParcelInterface $parcel) {
+            $this->assertSame(1, $parcel->unwrap());
+            usleep(1e4);
+            $parcel->wrap(2);
+            return -2;
+        }));
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->identicalTo(-2));
+
+        $coroutine->done($callback);
+
+        Loop\run();
+    }
+
+    /**
+     * @depends testWrap
+     */
+    public function testClone()
+    {
+        $original = $this->createParcel(1);
+
+        $clone = clone $original;
+
+        $clone->wrap(2);
+
+        $this->assertSame(1, $original->unwrap());
+        $this->assertSame(2, $clone->unwrap());
     }
 }

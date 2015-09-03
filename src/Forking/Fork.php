@@ -152,6 +152,8 @@ class Fork implements ContextInterface
                 throw new ForkException('Could not fork process!');
 
             case 0: // Child
+                // @codeCoverageIgnoreStart
+
                 // We will have a cloned event loop from the parent after forking. The
                 // child context by default is synchronous and uses the parent event
                 // loop, so we need to stop the clone before doing any work in case it
@@ -178,6 +180,8 @@ class Fork implements ContextInterface
 
                 exit($code);
 
+                // @codeCoverageIgnoreEnd
+
             default: // Parent
                 $this->pid = $pid;
                 $this->channel = new Channel(new DuplexStream($child));
@@ -193,6 +197,8 @@ class Fork implements ContextInterface
      * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
      *
      * @return \Generator
+     *
+     * @codeCoverageIgnore Only executed in the child.
      */
     private function execute(ChannelInterface $channel)
     {

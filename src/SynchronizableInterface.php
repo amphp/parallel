@@ -14,7 +14,8 @@ interface SynchronizableInterface
      * The given callback will be passed the object being synchronized on as the first argument. If the callback throws
      * an exception, the lock on the object will be immediately released.
      *
-     * @param callable<(mixed $data): mixed> $callback The synchronized callback to invoke.
+     * @param callable<(self $synchronized): \Generator|mixed> $callback The synchronized callback to invoke.
+     *     The callback may be a regular function or a coroutine.
      *
      * @return \Generator
      *

@@ -23,7 +23,7 @@ class Thread extends \Thread
     private $function;
 
     /**
-     * @var
+     * @var mixed[] Arguments to pass to the function.
      */
     private $args;
 
@@ -48,6 +48,8 @@ class Thread extends \Thread
 
     /**
      * Runs the thread code and the initialized function.
+     *
+     * @codeCoverageIgnore Only executed in thread.
      */
     public function run()
     {
@@ -82,6 +84,8 @@ class Thread extends \Thread
      * @return \Generator
      *
      * @resolve int
+     *
+     * @codeCoverageIgnore Only executed in thread.
      */
     private function execute(ChannelInterface $channel)
     {

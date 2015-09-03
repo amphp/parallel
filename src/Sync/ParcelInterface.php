@@ -29,8 +29,6 @@ interface ParcelInterface extends SynchronizableInterface
      * Wraps a value into the parcel, replacing the old value.
      *
      * @param mixed $value The value to wrap into the parcel.
-     *
-     * @return mixed The former value in the parcel.
      */
     public function wrap($value);
 
