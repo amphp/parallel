@@ -67,6 +67,16 @@ class Parcel implements ParcelInterface, \Serializable
      */
     public function __construct($value, $size = 16384, $permissions = 0600)
     {
+        $this->init($value, $size, $permissions);
+    }
+
+    /**
+     * @param mixed $value
+     * @param int   $size
+     * @param int   $permissions
+     */
+    private function init($value, $size = 16384, $permissions = 0600)
+    {
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
         $this->setHeader(self::STATE_ALLOCATED, 0, $permissions);
@@ -164,6 +174,7 @@ class Parcel implements ParcelInterface, \Serializable
      */
     public function synchronized(callable $callback)
     {
+        /** @var \Icicle\Concurrent\Sync\Lock $lock */
         $lock = (yield $this->semaphore->acquire());
 
         try {
@@ -227,7 +238,8 @@ class Parcel implements ParcelInterface, \Serializable
     public function __clone()
     {
         $value = $this->unwrap();
-        $this->__construct($value);
+        $header = $this->getHeader();
+        $this->init($value, $header['size'], $header['permissions']);
     }
 
     /**

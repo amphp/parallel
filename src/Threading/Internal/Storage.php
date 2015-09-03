@@ -12,6 +12,14 @@ class Storage extends \Threaded
     private $value;
 
     /**
+     * @param mixed $value
+     */
+    public function __construct($value)
+    {
+        $this->value = $value;
+    }
+
+    /**
      * @return mixed
      */
     public function get()

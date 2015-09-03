@@ -25,9 +25,16 @@ class Parcel implements ParcelInterface
      */
     public function __construct($value)
     {
+        $this->init($value);
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function init($value)
+    {
         $this->mutex = new Mutex();
-        $this->storage = new Internal\Storage();
-        $this->storage->set($value);
+        $this->storage = new Internal\Storage($value);
     }
 
     /**
@@ -49,28 +56,23 @@ class Parcel implements ParcelInterface
     /**
      * @coroutine
      *
-     * Asynchronously invokes a callable while maintaining an exclusive lock on
-     * the container.
+     * Asynchronously invokes a callable while maintaining an exclusive lock on the container.
      *
-     * @param callable<mixed> $function The function to invoke. The value in the
-     *                                  container will be passed as the first
-     *                                  argument.
+     * @param callable<mixed> $callback The function to invoke. The value in the container will be passed as the first
+     *     argument.
      *
      * @return \Generator
      */
-    public function synchronized(callable $function)
+    public function synchronized(callable $callback)
     {
         /** @var \Icicle\Concurrent\Sync\Lock $lock */
         $lock = (yield $this->mutex->acquire());
 
         try {
-            $value = (yield $function($this->storage->get()));
-            $this->storage->set($value);
+            yield $callback($this);
         } finally {
             $lock->release();
         }
-
-        yield $value;
     }
 
     /**
@@ -78,7 +80,6 @@ class Parcel implements ParcelInterface
      */
     public function __clone()
     {
-        $this->storage = clone $this->storage;
-        $this->mutex = clone $this->mutex;
+        $this->init($this->unwrap());
     }
 }
