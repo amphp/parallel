@@ -25,10 +25,7 @@ class Semaphore extends \Threaded
      */
     public function __construct($locks)
     {
-        $this->locks = (int) $locks;
-        if ($this->locks < 1) {
-            $this->locks = 1;
-        }
+        $this->locks = $locks;
     }
 
     /**

@@ -19,19 +19,38 @@ class Semaphore implements SemaphoreInterface
     private $semaphore;
 
     /**
+     * @var int
+     */
+    private $maxLocks;
+
+    /**
      * Creates a new semaphore with a given number of locks.
      *
      * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
     public function __construct($locks)
     {
-        $this->semaphore = new Internal\Semaphore($locks);
+        $this->init($locks);
     }
 
     /**
-     * Gets the number of currently available locks.
+     * Initializes the semaphore with a given number of locks.
      *
-     * @return int The number of available locks.
+     * @param int $locks
+     */
+    private function init($locks)
+    {
+        $locks = (int) $locks;
+        if ($locks < 1) {
+            $locks = 1;
+        }
+
+        $this->semaphore = new Internal\Semaphore($locks);
+        $this->maxLocks = $locks;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function count()
     {
@@ -41,8 +60,24 @@ class Semaphore implements SemaphoreInterface
     /**
      * {@inheritdoc}
      */
+    public function getSize()
+    {
+        return $this->maxLocks;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function acquire()
     {
         return $this->semaphore->acquire();
+    }
+
+    /**
+     * Clones the semaphore, creating a new instance with the same number of locks, all available.
+     */
+    public function __clone()
+    {
+        $this->init($this->getSize());
     }
 }

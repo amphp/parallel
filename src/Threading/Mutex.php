@@ -20,6 +20,14 @@ class Mutex implements MutexInterface
      */
     public function __construct()
     {
+        $this->init();
+    }
+
+    /**
+     * Initializes the mutex.
+     */
+    private function init()
+    {
         $this->mutex = new Internal\Mutex();
     }
 
@@ -29,5 +37,13 @@ class Mutex implements MutexInterface
     public function acquire()
     {
         return $this->mutex->acquire();
+    }
+
+    /**
+     * Makes a copy of the mutex in the unlocked state.
+     */
+    public function __clone()
+    {
+        $this->init();
     }
 }

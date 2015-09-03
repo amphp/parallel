@@ -41,8 +41,20 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function __construct($maxLocks, $permissions = 0600)
     {
-        if (!is_int($maxLocks) || $maxLocks < 0) {
-            throw new InvalidArgumentError('Max locks must be a non-negative integer.');
+        $this->init($maxLocks, $permissions);
+    }
+
+    /**
+     * @param int $maxLocks    The maximum number of locks that can be acquired from the semaphore.
+     * @param int $permissions Permissions to access the semaphore.
+     *
+     * @throws SemaphoreException If the semaphore could not be created due to an internal error.
+     */
+    private function init($maxLocks, $permissions)
+    {
+        $maxLocks = (int) $maxLocks;
+        if ($maxLocks < 1) {
+            $maxLocks = 1;
         }
 
         $this->key = abs(crc32(spl_object_hash($this)));
@@ -191,7 +203,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function __clone()
     {
-        $this->__construct($this->maxLocks, $this->getPermissions());
+        $this->init($this->maxLocks, $this->getPermissions());
     }
 
     /**

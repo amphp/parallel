@@ -18,6 +18,13 @@ interface SemaphoreInterface extends \Countable
     public function count();
 
     /**
+     * Gets the total number of locks on the semaphore (not the number of available locks).
+     *
+     * @return int The total number of locks.
+     */
+    public function getSize();
+
+    /**
      * @coroutine
      *
      * Acquires a lock from the semaphore asynchronously.
