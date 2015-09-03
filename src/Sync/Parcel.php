@@ -20,6 +20,10 @@ use Icicle\Concurrent\Exception\SharedMemoryException;
  *
  * When used with forking, the object must be created prior to forking for both
  * processes to access the synchronized object.
+ *
+ * @see http://php.net/manual/en/book.shmop.php The shared memory extension.
+ * @see http://man7.org/linux/man-pages/man2/shmctl.2.html How shared memory works on Linux.
+ * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
  */
 class Parcel implements ParcelInterface, \Serializable
 {
@@ -57,7 +61,7 @@ class Parcel implements ParcelInterface, \Serializable
      *
      * @param mixed $value       The value to store in the container.
      * @param int   $size        The number of bytes to allocate for the object.
-     *                           If not specified defaults to 16384.
+     *                           If not specified defaults to 16384 bytes.
      * @param int   $permissions The access permissions to set for the object.
      *                           If not specified defaults to 0600.
      */
@@ -69,6 +73,27 @@ class Parcel implements ParcelInterface, \Serializable
         $this->wrap($value);
 
         $this->semaphore = new PosixSemaphore(1);
+    }
+
+    /**
+     * Checks if the object has been freed.
+     *
+     * Note that this does not check if the object has been destroyed; it only
+     * checks if this handle has freed its reference to the object.
+     *
+     * @return bool True if the object is freed, otherwise false.
+     */
+    public function isFreed()
+    {
+        // If we are no longer connected to the memory segment, check if it has
+        // been invalidated.
+        if ($this->handle !== null) {
+            $this->handleMovedMemory();
+            $header = $this->getHeader();
+            return $header['state'] === static::STATE_FREED;
+        }
+
+        return true;
     }
 
     /**
@@ -94,6 +119,13 @@ class Parcel implements ParcelInterface, \Serializable
 
     /**
      * {@inheritdoc}
+     *
+     * If the value requires more memory to store than currently allocated, a
+     * new shared memory segment will be allocated with a larger size to store
+     * the value in. The previous memory segment will be cleaned up and marked
+     * for deletion. Other processes and threads will be notified of the new
+     * memory segment on the next read attempt. Once all running processes and
+     * threads disconnect from the old segment, it will be freed by the OS.
      */
     public function wrap($value)
     {
@@ -105,12 +137,13 @@ class Parcel implements ParcelInterface, \Serializable
         $size = strlen($serialized);
         $header = $this->getHeader();
 
-        // If we run out of space, we need to allocate a new shared memory
-        // segment that is larger than the current one. To coordinate with other
-        // processes, we will leave a message in the old segment that the segment
-        // has moved and along with the new key. The old segment will be discarded
-        // automatically after all other processes notice the change and close
-        // the old handle.
+        /* If we run out of space, we need to allocate a new shared memory
+           segment that is larger than the current one. To coordinate with other
+           processes, we will leave a message in the old segment that the segment
+           has moved and along with the new key. The old segment will be discarded
+           automatically after all other processes notice the change and close
+           the old handle.
+        */
         if (shmop_size($this->handle) < $size + self::MEM_DATA_OFFSET) {
             $this->key = $this->key < 0xffffffff ? $this->key + 1 : mt_rand(0x10, 0xfffffffe);
             $this->setHeader(self::STATE_MOVED, $this->key, 0);
@@ -145,7 +178,7 @@ class Parcel implements ParcelInterface, \Serializable
      *
      * The memory containing the shared value will be invalidated. When all
      * process disconnect from the object, the shared memory block will be
-     * destroyed.
+     * destroyed by the OS.
      *
      * Calling `free()` on an object already freed will have no effect.
      */
@@ -162,27 +195,6 @@ class Parcel implements ParcelInterface, \Serializable
 
             $this->semaphore->free();
         }
-    }
-
-    /**
-     * Checks if the object has been freed.
-     *
-     * Note that this does not check if the object has been destroyed; it only
-     * checks if this handle has freed its reference to the object.
-     *
-     * @return bool True if the object is freed, otherwise false.
-     */
-    public function isFreed()
-    {
-        // If we are no longer connected to the memory segment, check if it has
-        // been invalidated.
-        if ($this->handle !== null) {
-            $this->handleMovedMemory();
-            $header = $this->getHeader();
-            return $header['state'] === static::STATE_FREED;
-        }
-
-        return true;
     }
 
     /**
@@ -208,7 +220,6 @@ class Parcel implements ParcelInterface, \Serializable
         list($this->key, $this->semaphore) = unserialize($serialized);
         $this->memOpen($this->key, 'w', 0, 0);
     }
-
 
     /**
      * {@inheritdoc}
