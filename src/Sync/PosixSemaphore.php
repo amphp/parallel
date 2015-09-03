@@ -22,6 +22,11 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     private $key;
 
     /**
+     * @var int The number of total locks.
+     */
+    private $maxLocks;
+
+    /**
      * @var resource A message queue of available locks.
      */
     private $queue;
@@ -36,7 +41,12 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function __construct($maxLocks, $permissions = 0600)
     {
+        if (!is_int($maxLocks) || $maxLocks < 0) {
+            throw new InvalidArgumentError('Max locks must be a non-negative integer.');
+        }
+
         $this->key = abs(crc32(spl_object_hash($this)));
+        $this->maxLocks = $maxLocks;
 
         $this->queue = msg_get_queue($this->key, $permissions);
         if (!$this->queue) {
@@ -57,6 +67,16 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     public function isFreed()
     {
         return !is_resource($this->queue) || !msg_queue_exists($this->key);
+    }
+
+    /**
+     * Gets the maximum number of locks held by the semaphore.
+     *
+     * @return int The maximum number of locks held by the semaphore.
+     */
+    public function getSize()
+    {
+        return $this->maxLocks;
     }
 
     /**
@@ -148,7 +168,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function serialize()
     {
-        return serialize($this->key);
+        return serialize([$this->key, $this->maxLocks]);
     }
 
     /**
@@ -159,11 +179,19 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
     public function unserialize($serialized)
     {
         // Get the semaphore key and attempt to re-connect to the semaphore in memory.
-        $this->key = unserialize($serialized);
+        list($this->key, $this->maxLocks) = unserialize($serialized);
 
         if (msg_queue_exists($this->key)) {
             $this->queue = msg_get_queue($this->key);
         }
+    }
+
+    /**
+     * Clones the semaphore, creating a new semaphore with the same size and permissions.
+     */
+    public function __clone()
+    {
+        $this->__construct($this->maxLocks, $this->getPermissions());
     }
 
     /**
