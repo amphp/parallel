@@ -13,6 +13,7 @@ use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket;
 use Icicle\Socket\Stream\DuplexStream;
 
 /**
@@ -138,6 +139,9 @@ class Fork implements ContextInterface
 
     /**
      * Starts the context execution.
+     *
+     * @throws \Icicle\Concurrent\Exception\ForkException If forking fails.
+     * @throws \Icicle\Socket\Exception\FailureException If creating a socket pair fails.
      */
     public function start()
     {
@@ -145,7 +149,7 @@ class Fork implements ContextInterface
             throw new StatusError('The context has already been started.');
         }
 
-        list($parent, $child) = Channel::createSocketPair();
+        list($parent, $child) = Socket\pair();
 
         switch ($pid = pcntl_fork()) {
             case -1: // Failure

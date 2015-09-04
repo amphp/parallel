@@ -60,27 +60,6 @@ class Channel implements ChannelInterface
     }
 
     /**
-     * Returns a pair of connected stream socket resources.
-     *
-     * Creates a new channel connection and returns two connections to the
-     * channel. Each connection is a peer and interacts with the other, even
-     * across threads or processes.
-     *
-     * @return resource[] Pair of socket resources.
-     *
-     * @throws \Icicle\Concurrent\Exception\ChannelException If creating the sockets fails.
-     */
-    public static function createSocketPair()
-    {
-        // Create a socket pair.
-        if (($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
-            throw new ChannelException('Failed to create channel sockets.');
-        }
-
-        return $sockets;
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function send($data)

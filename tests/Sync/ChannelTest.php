@@ -4,6 +4,7 @@ namespace Icicle\Tests\Concurrent\Sync;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket;
 use Icicle\Socket\Stream\DuplexStream;
 use Icicle\Stream\DuplexStreamInterface;
 use Icicle\Stream\ReadableStreamInterface;
@@ -12,14 +13,6 @@ use Icicle\Tests\Concurrent\TestCase;
 
 class ChannelTest extends TestCase
 {
-    public function testCreateSocketPair()
-    {
-        list($a, $b) = Channel::createSocketPair();
-
-        $this->assertInternalType('resource', $a);
-        $this->assertInternalType('resource', $b);
-    }
-
     public function testIsOpen()
     {
         $mock = $this->getMock(DuplexStreamInterface::class);
@@ -82,7 +75,7 @@ class ChannelTest extends TestCase
     public function testSendReceive()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::createSocketPair();
+            list($a, $b) = Socket\pair();
             $a = new Channel(new DuplexStream($a));
             $b = new Channel(new DuplexStream($b));
 
@@ -104,7 +97,7 @@ class ChannelTest extends TestCase
     public function testInvalidDataReceived()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::createSocketPair();
+            list($a, $b) = Socket\pair();
             $a = new Channel($stream = new DuplexStream($a));
             $b = new Channel(new DuplexStream($b));
 
@@ -123,7 +116,7 @@ class ChannelTest extends TestCase
     public function testSendUnserializableData()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::createSocketPair();
+            list($a, $b) = Socket\pair();
             $a = new Channel(new DuplexStream($a));
             $b = new Channel(new DuplexStream($b));
 
@@ -142,7 +135,7 @@ class ChannelTest extends TestCase
     public function testSendAfterClose()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::createSocketPair();
+            list($a, $b) = Socket\pair();
             $a = new Channel(new DuplexStream($a));
             $b = new Channel(new DuplexStream($b));
 
@@ -162,7 +155,7 @@ class ChannelTest extends TestCase
     public function testReceiveAfterClose()
     {
         Coroutine\create(function () {
-            list($a, $b) = Channel::createSocketPair();
+            list($a, $b) = Socket\pair();
             $a = new Channel(new DuplexStream($a));
             $b = new Channel(new DuplexStream($b));
 

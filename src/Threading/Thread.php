@@ -9,6 +9,7 @@ use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Coroutine;
+use Icicle\Socket;
 use Icicle\Socket\Stream\DuplexStream;
 
 /**
@@ -38,9 +39,14 @@ class Thread implements ContextInterface
     private $socket;
 
     /**
-     * @var bool
+     * @var callable
      */
-    private $started = false;
+    private $function;
+
+    /**
+     * @var mixed[]
+     */
+    private $args;
 
     /**
      * Spawns a new thread and runs it.
@@ -76,10 +82,19 @@ class Thread implements ContextInterface
             }
         }
 
-        list($channel, $this->socket) = Channel::createSocketPair();
+        $this->function = $function;
+        $this->args = $args;
+    }
 
-        $this->thread = new Internal\Thread($this->socket, $function, $args);
-        $this->channel = new Channel(new DuplexStream($channel));
+    /**
+     * Returns the thread to the condition before starting. The new thread can be started and run independently of the
+     * first thread.
+     */
+    public function __clone()
+    {
+        $this->thread = null;
+        $this->socket = null;
+        $this->channel = null;
     }
 
     /**
@@ -89,26 +104,31 @@ class Thread implements ContextInterface
      */
     public function isRunning()
     {
-        return $this->started && $this->thread->isRunning() && $this->channel->isOpen();
+        return null !== $this->thread && $this->thread->isRunning() && $this->channel->isOpen();
     }
 
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @throws StatusError     If the thread has already been started.
-     * @throws ThreadException If starting the thread was unsuccessful.
+     * @throws \Icicle\Concurrent\Exception\StatusError If the thread has already been started.
+     * @throws \Icicle\Concurrent\Exception\ThreadException If starting the thread was unsuccessful.
+     * @throws \Icicle\Socket\Exception\FailureException If creating a socket pair fails.
      */
     public function start()
     {
-        if ($this->started) {
+        if (null !== $this->thread) {
             throw new StatusError('The thread has already been started.');
         }
+
+        list($channel, $this->socket) = Socket\pair();
+
+        $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
         if (!$this->thread->start(PTHREADS_INHERIT_INI | PTHREADS_INHERIT_FUNCTIONS | PTHREADS_INHERIT_CLASSES)) {
             throw new ThreadException('Failed to start the thread.');
         }
 
-        $this->started = true;
+        $this->channel = new Channel(new DuplexStream($channel));
     }
 
     /**
@@ -130,7 +150,7 @@ class Thread implements ContextInterface
      */
     private function close()
     {
-        if ($this->started && $this->channel->isOpen()) {
+        if (null !== $this->channel && $this->channel->isOpen()) {
             $this->channel->close();
         }
 
@@ -154,7 +174,7 @@ class Thread implements ContextInterface
      */
     public function join()
     {
-        if (!$this->started) {
+        if (null === $this->thread) {
             throw new StatusError('The thread has not been started.');
         }
 
@@ -181,7 +201,7 @@ class Thread implements ContextInterface
      */
     public function receive()
     {
-        if (!$this->started) {
+        if (null === $this->thread) {
             throw new StatusError('The thread has not been started.');
         }
 
@@ -204,7 +224,7 @@ class Thread implements ContextInterface
      */
     public function send($data)
     {
-        if (!$this->started) {
+        if (null === $this->thread) {
             throw new StatusError('The thread has not been started.');
         }
 
