@@ -1,111 +1,78 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
+use Icicle\Concurrent\Forking\Fork;
 use Icicle\Concurrent\Sync\PosixSemaphore;
+use Icicle\Concurrent\Sync\SemaphoreInterface;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Tests\Concurrent\TestCase;
 
 /**
  * @group posix
  * @requires extension sysvmsg
  */
-class PosixSemaphoreTest extends TestCase
+class PosixSemaphoreTest extends AbstractSemaphoreTest
 {
+    public function createSemaphore($locks)
+    {
+        return new PosixSemaphore($locks);
+    }
+
+    public function tearDown()
+    {
+        if (!$this->semaphore->isFreed()) {
+            $this->semaphore->free();
+        }
+    }
+
     public function testFree()
     {
-        $semaphore = new PosixSemaphore(1);
+        $this->semaphore = $this->createSemaphore(1);
 
-        $this->assertFalse($semaphore->isFreed());
+        $this->assertFalse($this->semaphore->isFreed());
 
-        $semaphore->free();
+        $this->semaphore->free();
 
-        $this->assertTrue($semaphore->isFreed());
+        $this->assertTrue($this->semaphore->isFreed());
     }
 
-    public function testCount()
-    {
-        $semaphore = new PosixSemaphore(4);
-
-        $this->assertCount(4, $semaphore);
-
-        $semaphore->free();
-    }
-
-    public function testAcquire()
+    /**
+     * @requires extension pcntl
+     */
+    public function testAcquireInMultipleForks()
     {
         Coroutine\create(function () {
-            $semaphore = new PosixSemaphore(1);
+            $this->semaphore = $this->createSemaphore(1);
 
-            $lock = (yield $semaphore->acquire());
-            $lock->release();
+            $fork1 = new Fork(function (SemaphoreInterface $semaphore) {
+                $lock = (yield $semaphore->acquire());
 
-            $this->assertTrue($lock->isReleased());
+                usleep(1e5);
 
-            $semaphore->free();
-        });
+                $lock->release();
 
-        Loop\run();
-    }
+                yield 0;
+            }, $this->semaphore);
 
-    public function testAcquireMultiple()
-    {
-        $this->assertRunTimeGreaterThan(function () {
-            $semaphore = new PosixSemaphore(1);
+            $fork2 = new Fork(function (SemaphoreInterface $semaphore) {
+                $lock = (yield $semaphore->acquire());
 
-            Coroutine\create(function () use ($semaphore) {
-                $lock1 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock1) {
-                    $lock1->release();
-                });
+                usleep(1e5);
 
-                $lock2 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock2) {
-                    $lock2->release();
-                });
+                $lock->release();
 
-                $lock3 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock3) {
-                    $lock3->release();
-                });
-            });
+                yield 1;
+            }, $this->semaphore);
 
-            Loop\run();
-            $semaphore->free();
-        }, 1.5);
-    }
+            $start = microtime(true);
 
-    public function tesCloneIsSameSemaphore()
-    {
-        Coroutine\create(function () {
-            $semaphore = new PosixSemaphore(1);
-            $clone = clone $semaphore;
+            $fork1->start();
+            $fork2->start();
 
-            $lock = (yield $clone->acquire());
+            yield $fork1->join();
+            yield $fork2->join();
 
-            $this->assertCount(0, $semaphore);
-            $this->assertCount(0, $clone);
-
-            $lock->release();
-            $semaphore->free();
-        });
-
-        Loop\run();
-    }
-
-    public function testSerializedIsSameSemaphore()
-    {
-        Coroutine\create(function () {
-            $semaphore = new PosixSemaphore(1);
-            $unserialized = unserialize(serialize($semaphore));
-
-            $lock = (yield $unserialized->acquire());
-
-            $this->assertCount(0, $semaphore);
-            $this->assertCount(0, $unserialized);
-
-            $lock->release();
-            $semaphore->free();
+            $this->assertGreaterThan(1, microtime(true) - $start);
         });
 
         Loop\run();

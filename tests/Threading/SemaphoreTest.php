@@ -1,99 +1,30 @@
 <?php
 namespace Icicle\Tests\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\Lock;
+use Icicle\Concurrent\Sync\SemaphoreInterface;
 use Icicle\Concurrent\Threading\Semaphore;
 use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Tests\Concurrent\TestCase;
+use Icicle\Tests\Concurrent\Sync\AbstractSemaphoreTest;
 
 /**
  * @group threading
  * @requires extension pthreads
  */
-class SemaphoreTest extends TestCase
+class SemaphoreTest extends AbstractSemaphoreTest
 {
-    public function testCount()
+    public function createSemaphore($locks)
     {
-        $semaphore = new Semaphore(1);
-        $this->assertEquals(1, $semaphore->count());
+        return new Semaphore($locks);
     }
 
-    /**
-     * @depends testCount
-     */
-    public function testInvalidLockCount()
-    {
-        $semaphore = new Semaphore(0);
-        $this->assertEquals(1, $semaphore->count());
-    }
-
-    public function testAcquire()
-    {
-        Coroutine\create(function () {
-            $semaphore = new Semaphore(1);
-            $lock = (yield $semaphore->acquire());
-            $lock->release();
-            $this->assertTrue($lock->isReleased());
-        });
-
-        Loop\run();
-    }
-
-    public function testAcquireMultiple()
-    {
-        $this->assertRunTimeGreaterThan(function () {
-            Coroutine\create(function () {
-                $semaphore = new Semaphore(1);
-
-                $lock1 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock1) {
-                    $lock1->release();
-                });
-
-                $lock2 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock2) {
-                    $lock2->release();
-                });
-
-                $lock3 = (yield $semaphore->acquire());
-                Loop\timer(0.5, function () use ($lock3) {
-                    $lock3->release();
-                });
-            });
-
-            Loop\run();
-        }, 1.5);
-    }
-
-    public function testSimultaneousAcquire()
-    {
-        $semaphore = new Semaphore(1);
-
-        $coroutine1 = new Coroutine\Coroutine($semaphore->acquire());
-        $coroutine2 = new Coroutine\Coroutine($semaphore->acquire());
-
-        $coroutine1->delay(0.5)->then(function (Lock $lock) {
-            $lock->release();
-        });
-
-        $coroutine2->delay(0.5)->then(function (Lock $lock) {
-            $lock->release();
-        });
-
-        $this->assertRunTimeGreaterThan('Icicle\Loop\run', 1);
-    }
-
-    /**
-     * @depends testAcquireMultiple
-     */
     public function testAcquireInMultipleThreads()
     {
         Coroutine\create(function () {
-            $semaphore = new Semaphore(1);
+            $this->semaphore = $this->createSemaphore(1);
 
-            $thread1 = new Thread(function (Semaphore $semaphore) {
+            $thread1 = new Thread(function (SemaphoreInterface $semaphore) {
                 $lock = (yield $semaphore->acquire());
 
                 usleep(1e5);
@@ -101,9 +32,9 @@ class SemaphoreTest extends TestCase
                 $lock->release();
 
                 yield 0;
-            }, $semaphore);
+            }, $this->semaphore);
 
-            $thread2 = new Thread(function (Semaphore $semaphore) {
+            $thread2 = new Thread(function (SemaphoreInterface $semaphore) {
                 $lock = (yield $semaphore->acquire());
 
                 usleep(1e5);
@@ -111,7 +42,7 @@ class SemaphoreTest extends TestCase
                 $lock->release();
 
                 yield 1;
-            }, $semaphore);
+            }, $this->semaphore);
 
             $start = microtime(true);
 

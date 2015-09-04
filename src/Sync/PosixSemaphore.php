@@ -134,7 +134,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function acquire()
     {
-        while (true) {
+        do {
             // Attempt to acquire a lock from the semaphore.
             if (@msg_receive($this->queue, 0, $type, 1, $chr, false, MSG_IPC_NOWAIT, $errno)) {
                 // A free lock was found, so resolve with a lock object that can
@@ -149,12 +149,7 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
             if ($errno !== MSG_ENOMSG) {
                 throw new SemaphoreException('Failed to acquire a lock.');
             }
-
-            // Sleep for a while, giving a chance for other threads to release
-            // their locks. After we finish sleeping, we can check again to see
-            // if it is our turn to acquire a lock.
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
-        }
+        } while (yield Coroutine\sleep(self::LATENCY_TIMEOUT));
     }
 
     /**
