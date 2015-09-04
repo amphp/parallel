@@ -4,7 +4,6 @@ namespace Icicle\Concurrent\Worker;
 use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
-use Icicle\Coroutine\Coroutine;
 
 class Worker implements WorkerInterface
 {
@@ -97,13 +96,12 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * Shuts down the worker when it is destroyed.
+     * Kills the worker when it is destroyed.
      */
     public function __destruct()
     {
-        if ($this->isRunning()) {
-            $coroutine = new Coroutine($this->shutdown());
-            $coroutine->done();
+        if ($this->context->isRunning()) {
+            $this->context->kill();
         }
     }
 }
