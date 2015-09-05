@@ -2,12 +2,11 @@
 namespace Icicle\Concurrent\Worker;
 
 use Icicle\Concurrent\Exception\InvalidArgumentError;
-use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
-use Icicle\Promise\PromiseInterface;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -49,12 +48,12 @@ class Pool implements PoolInterface
     private $factory;
 
     /**
-     * @var \SplObjectStorage A collection of all workers in the pool.
+     * @var WorkerInterface[] A collection of all workers in the pool.
      */
-    private $workers;
+    private $workers = [];
 
     /**
-     * @var \SplObjectStorage A collection of idle workers.
+     * @var \SplQueue A collection of idle workers.
      */
     private $idleWorkers;
 
@@ -68,12 +67,15 @@ class Pool implements PoolInterface
      *
      * @param int $minSize The minimum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MIN_SIZE`.
      * @param int $maxSize The maximum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MAX_SIZE`.
-     * @param WorkerFactoryInterface|null $factory A worker factory to be used to create new workers.
+     * @param \Icicle\Concurrent\Worker\WorkerFactoryInterface|null $factory A worker factory to be used to create
+     *     new workers.
+     *
+     * @throws \Icicle\Concurrent\Exception\InvalidArgumentError
      */
     public function __construct($minSize = 0, $maxSize = 0, WorkerFactoryInterface $factory = null)
     {
-        $minSize = $minSize ?: static::DEFAULT_MIN_SIZE;
-        $maxSize = $minSize ?: static::DEFAULT_MAX_SIZE;
+        $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
+        $maxSize = $minSize ?: self::DEFAULT_MAX_SIZE;
 
         if (!is_int($minSize) || $minSize < 0) {
             throw new InvalidArgumentError('Minimum size must be a non-negative integer.');
@@ -89,8 +91,7 @@ class Pool implements PoolInterface
         // Create the default factory if none is given.
         $this->factory = $factory ?: new WorkerFactory();
 
-        $this->workers = new \SplObjectStorage();
-        $this->idleWorkers = new \SplObjectStorage();
+        $this->idleWorkers = new \SplQueue();
         $this->busyQueue = new \SplQueue();
     }
 
@@ -139,7 +140,7 @@ class Pool implements PoolInterface
      */
     public function getWorkerCount()
     {
-        return $this->workers->count();
+        return count($this->workers);
     }
 
     /**
@@ -161,7 +162,8 @@ class Pool implements PoolInterface
         // Start up the pool with the minimum number of workers.
         $count = $this->minSize;
         while (--$count >= 0) {
-            $this->createWorker();
+            $worker = $this->createWorker();
+            $this->idleWorkers->push($worker);
         }
 
         $this->running = true;
@@ -181,22 +183,15 @@ class Pool implements PoolInterface
     public function enqueue(TaskInterface $task)
     {
         if (!$this->isRunning()) {
-            throw new SynchronizationError('The worker pool has not been started.');
+            throw new StatusError('The worker pool has not been started.');
         }
 
-        // Enqueue the task if we have an idle worker.
-        if ($worker = $this->getIdleWorker()) {
-            yield $this->enqueueToWorker($worker, $task);
-            return;
-        }
+        /** @var \Icicle\Concurrent\Worker\Worker $worker */
+        $worker = (yield $this->getWorker());
 
-        // If we're at our limit of busy workers, add the task to the waiting list to be enqueued later when a new
-        // worker becomes available.
-        $deferred = new Deferred();
-        $this->busyQueue->enqueue([$task, $deferred]);
+        yield $worker->enqueue($task);
 
-        // Yield a promise that will be resolved when the task gets processed later.
-        yield $deferred->getPromise();
+        $this->pushWorker($worker);
     }
 
     /**
@@ -209,16 +204,14 @@ class Pool implements PoolInterface
     public function shutdown()
     {
         if (!$this->isRunning()) {
-            throw new SynchronizationError('The pool is not running.');
+            throw new StatusError('The pool is not running.');
         }
 
         $this->close();
 
-        $shutdowns = [];
-
-        foreach ($this->workers as $worker) {
-            $shutdowns[] = new Coroutine($worker->shutdown());
-        }
+        $shutdowns = array_map(function (WorkerInterface $worker) {
+            return new Coroutine($worker->shutdown());
+        }, $this->workers);
 
         yield Promise\reduce($shutdowns, function ($carry, $value) {
             return $carry ?: $value;
@@ -250,8 +243,8 @@ class Pool implements PoolInterface
             $exception = new WorkerException('Worker pool was shutdown.');
             do {
                 /** @var \Icicle\Promise\Deferred $deferred */
-                list(, $deferred) = $this->busyQueue->dequeue();
-                $deferred->reject($exception);
+                $deferred = $this->busyQueue->dequeue();
+                $deferred->getPromise()->cancel($exception);
             } while (!$this->busyQueue->isEmpty());
         }
     }
@@ -266,84 +259,48 @@ class Pool implements PoolInterface
         $worker = $this->factory->create();
         $worker->start();
 
-        $this->workers->attach($worker);
-        $this->idleWorkers->attach($worker);
+        $this->workers[] = $worker;
         return $worker;
     }
 
     /**
-     * Gets the first available idle worker, or spawns a new worker if able.
-     *
-     * @return WorkerInterface|null An idle worker, or null if none could be found.
-     */
-    private function getIdleWorker()
-    {
-        // If there are idle workers, select the first one and return it.
-        if ($this->idleWorkers->count() > 0) {
-            $this->idleWorkers->rewind();
-            return $this->idleWorkers->current();
-        }
-
-        // If there are no idle workers and we are allowed to spawn more, do so now.
-        if ($this->getWorkerCount() < $this->maxSize) {
-            return $this->createWorker();
-        }
-
-        return null; // No idle workers available and cannot spawn more.
-    }
-
-    /**
-     * Enqueues a task to a given worker.
-     *
-     * Waits for the task to finish, and resolves with the task's result. When the assigned worker becomes idle again,
-     * a new coroutine is started to process the busy task queue if needed.
+     * Gets the first available idle worker, spawns a new worker if able, or waits until a working becomes available.
      *
      * @coroutine
      *
-     * @param WorkerInterface $worker The worker to enqueue to.
-     * @param TaskInterface $task The task to enqueue.
-     *
-     * @return \Generator
-     *
-     * @resolve mixed The return value of the task.
+     * @return \Icicle\Concurrent\Worker\WorkerInterface An idle worker.
      */
-    private function enqueueToWorker(WorkerInterface $worker, TaskInterface $task)
+    private function getWorker()
     {
-        $this->idleWorkers->detach($worker);
-        yield $worker->enqueue($task);
-        $this->idleWorkers->attach($worker);
-
-        // Spawn a new coroutine to process the busy queue if not empty.
-        if (!$this->busyQueue->isEmpty()) {
-            $coroutine = new Coroutine($this->processBusyQueue());
-            $coroutine->done();
-        }
-    }
-
-    /**
-     * Processes the busy queue until it is empty.
-     *
-     * @coroutine
-     *
-     * @return \Generator
-     */
-    private function processBusyQueue()
-    {
-        while (!$this->busyQueue->isEmpty()) {
-            // If we cannot find an idle worker, give up like a wimp. (Don't worry, some other coroutine will pick up
-            // the slack).
-            if (!($worker = $this->getIdleWorker())) {
-                break;
+        if ($this->idleWorkers->isEmpty()) {
+            if ($this->getWorkerCount() < $this->maxSize) {
+                yield $this->createWorker();
+                return;
             }
 
-            /** @var \Icicle\Promise\Deferred $deferred */
-            list($task, $deferred) = $this->busyQueue->dequeue();
+            $deferred = new Deferred();
+            $this->busyQueue->push($deferred);
 
-            try {
-                $returnValue = (yield $this->enqueueToWorker($worker, $task));
-                $deferred->resolve($returnValue);
-            } catch (\Exception $exception) {
-                $deferred->reject($exception);
+            yield $deferred->getPromise();
+            return;
+        }
+
+        yield $this->idleWorkers->shift();
+    }
+
+    /**
+     * @param \Icicle\Concurrent\Worker\WorkerInterface $worker
+     */
+    private function pushWorker(WorkerInterface $worker)
+    {
+        $this->idleWorkers->push($worker);
+
+        while (!$this->busyQueue->isEmpty() && !$this->idleWorkers->isEmpty()) {
+            /** @var \Icicle\Promise\Deferred $deferred */
+            $deferred = $this->busyQueue->shift();
+
+            if ($deferred->getPromise()->isPending()) {
+                $deferred->resolve($this->idleWorkers->shift());
             }
         }
     }

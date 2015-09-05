@@ -2,8 +2,9 @@
 namespace Icicle\Concurrent\Worker;
 
 use Icicle\Concurrent\ContextInterface;
-use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
+use Icicle\Coroutine\Coroutine;
 
 class Worker implements WorkerInterface
 {
@@ -55,7 +56,7 @@ class Worker implements WorkerInterface
     public function enqueue(TaskInterface $task)
     {
         if (!$this->context->isRunning()) {
-            throw new SynchronizationError('The worker has not been started.');
+            throw new StatusError('The worker has not been started.');
         }
 
         $this->idle = false;
@@ -79,7 +80,7 @@ class Worker implements WorkerInterface
     public function shutdown()
     {
         if (!$this->context->isRunning()) {
-            throw new SynchronizationError('The worker is not running.');
+            throw new StatusError('The worker is not running.');
         }
 
         yield $this->context->send(0);
