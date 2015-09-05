@@ -158,14 +158,9 @@ class Fork implements ContextInterface
             case 0: // Child
                 // @codeCoverageIgnoreStart
 
-                // We will have a cloned event loop from the parent after forking. The
-                // child context by default is synchronous and uses the parent event
-                // loop, so we need to stop the clone before doing any work in case it
-                // is already running.
-                $loop = Loop\loop();
-                $loop->stop();
-                $loop->reInit();
-                $loop->clear();
+                // Create a new event loop in the fork.
+                $loop = Loop\create(false);
+                Loop\loop($loop);
 
                 $channel = new Channel(new DuplexStream($parent));
                 fclose($child);

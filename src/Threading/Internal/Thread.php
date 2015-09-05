@@ -17,6 +17,8 @@ use Icicle\Socket\Stream\DuplexStream;
  */
 class Thread extends \Thread
 {
+    const KILL_CHECK_FREQUENCY = 0.25;
+
     /**
      * @var callable The function to execute in the thread.
      */
@@ -31,6 +33,11 @@ class Thread extends \Thread
      * @var resource
      */
     private $socket;
+
+    /**
+     * @var bool
+     */
+    private $killed = false;
 
     /**
      * Creates a new thread object.
@@ -67,13 +74,32 @@ class Thread extends \Thread
             }
         }
 
+        $loop = Loop\create(false); // Disable signals in thread.
+        Loop\loop($loop);
+
         // At this point, the thread environment has been prepared so begin using the thread.
         $channel = new Channel(new DuplexStream($this->socket));
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
 
-        Loop\run();
+        $timer = $loop->timer(self::KILL_CHECK_FREQUENCY, true, function () use ($loop, $coroutine, $channel) {
+            if ($this->killed) {
+                $loop->stop();
+            }
+        });
+        $timer->unreference();
+
+        $loop->run();
+    }
+
+    /**
+     * Sets a local variable to true so the running event loop can check for a kill signal.
+     */
+    public function kill()
+    {
+        $this->killed = true;
+        parent::kill();
     }
 
     /**

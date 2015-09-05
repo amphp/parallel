@@ -138,11 +138,13 @@ class Thread implements ContextInterface
      */
     public function kill()
     {
+        if (null === $this->thread) {
+            throw new StatusError('The thread has not been started.');
+        }
+
         $this->close();
 
-        if ($this->isRunning() && !$this->thread->kill()) {
-            throw new ThreadException('Failed to kill the thread.');
-        }
+        $this->thread->kill();
     }
 
     /**
