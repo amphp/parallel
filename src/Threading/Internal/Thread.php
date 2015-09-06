@@ -83,7 +83,7 @@ class Thread extends \Thread
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
 
-        $timer = $loop->timer(self::KILL_CHECK_FREQUENCY, true, function () use ($loop, $coroutine, $channel) {
+        $timer = $loop->timer(self::KILL_CHECK_FREQUENCY, true, function () use ($loop) {
             if ($this->killed) {
                 $loop->stop();
             }
@@ -99,7 +99,7 @@ class Thread extends \Thread
     public function kill()
     {
         $this->killed = true;
-        parent::kill();
+        return parent::kill();
     }
 
     /**

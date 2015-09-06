@@ -68,6 +68,11 @@ class Fork implements ContextInterface
         $this->channel = null;
     }
 
+    public function __destruct()
+    {
+        $this->kill(); // Will only terminate if the process is still running.
+    }
+
     /**
      * Checks if the context is running.
      *
