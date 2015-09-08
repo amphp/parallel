@@ -49,6 +49,11 @@ class Thread implements ContextInterface
     private $args;
 
     /**
+     * @var bool
+     */
+    private $started = false;
+
+    /**
      * Spawns a new thread and runs it.
      *
      * @param callable $function The callable to invoke in the thread.
@@ -116,9 +121,11 @@ class Thread implements ContextInterface
      */
     public function start()
     {
-        if (null !== $this->thread) {
+        if ($this->started) {
             throw new StatusError('The thread has already been started.');
         }
+
+        $this->started = true;
 
         list($channel, $this->socket) = Socket\pair();
 
@@ -139,10 +146,12 @@ class Thread implements ContextInterface
     public function kill()
     {
         if (null !== $this->thread) {
-            $this->close();
-
-            if ($this->thread->isRunning() && !$this->thread->kill()) {
-                throw new ThreadException('Could not kill thread.');
+            try {
+                if ($this->thread->isRunning() && !$this->thread->kill()) {
+                    throw new ThreadException('Could not kill thread.');
+                }
+            } finally {
+                $this->close();
             }
         }
     }
@@ -169,6 +178,8 @@ class Thread implements ContextInterface
         if (is_resource($this->socket)) {
             fclose($this->socket);
         }
+
+        $this->thread = null;
     }
 
     /**
@@ -186,8 +197,8 @@ class Thread implements ContextInterface
      */
     public function join()
     {
-        if (null === $this->thread) {
-            throw new StatusError('The thread has not been started.');
+        if (null === $this->channel || null === $this->thread) {
+            throw new StatusError('The thread has not been started or has already finished.');
         }
 
         try {
@@ -213,8 +224,8 @@ class Thread implements ContextInterface
      */
     public function receive()
     {
-        if (null === $this->thread) {
-            throw new StatusError('The thread has not been started.');
+        if (null === $this->channel) {
+            throw new StatusError('The thread has not been started or has already finished.');
         }
 
         $data = (yield $this->channel->receive());
@@ -236,8 +247,8 @@ class Thread implements ContextInterface
      */
     public function send($data)
     {
-        if (null === $this->thread) {
-            throw new StatusError('The thread has not been started.');
+        if (null === $this->channel) {
+            throw new StatusError('The thread has not been started or has already finished.');
         }
 
         if ($data instanceof ExitStatusInterface) {
