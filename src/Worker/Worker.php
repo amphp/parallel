@@ -5,7 +5,7 @@ use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
 
-class Worker implements WorkerInterface
+abstract class Worker implements WorkerInterface
 {
     /**
      * @var \Icicle\Concurrent\ContextInterface

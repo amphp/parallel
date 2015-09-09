@@ -189,9 +189,11 @@ class Pool implements PoolInterface
         /** @var \Icicle\Concurrent\Worker\Worker $worker */
         $worker = (yield $this->getWorker());
 
-        yield $worker->enqueue($task);
+        $result = (yield $worker->enqueue($task));
 
         $this->pushWorker($worker);
+
+        yield $result;
     }
 
     /**
@@ -223,12 +225,10 @@ class Pool implements PoolInterface
      */
     public function kill()
     {
-        if ($this->isRunning()) {
-            $this->close();
+        $this->close();
 
-            foreach ($this->workers as $worker) {
-                $worker->kill();
-            }
+        foreach ($this->workers as $worker) {
+            $worker->kill();
         }
     }
 
