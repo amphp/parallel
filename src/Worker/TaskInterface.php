@@ -13,9 +13,11 @@ interface TaskInterface
      *
      * Does not have to be a coroutine, can also be a regular function returning a value.
      *
+     * @param \Icicle\Concurrent\Worker\Environment
+     *
      * @return \Generator
      *
      * @resolve mixed
      */
-    public function run();
+    public function run(Environment $environment);
 }

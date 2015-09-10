@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Worker\Internal;
 
 use Icicle\Concurrent\ChannelInterface;
+use Icicle\Concurrent\Worker\Environment;
 use Icicle\Concurrent\Worker\TaskInterface;
 
 class TaskRunner
@@ -16,9 +17,15 @@ class TaskRunner
      */
     private $channel;
 
-    public function __construct(ChannelInterface $channel)
+    /**
+     * @var \Icicle\Concurrent\Worker\Environment
+     */
+    private $environment;
+
+    public function __construct(ChannelInterface $channel, Environment $environment)
     {
         $this->channel = $channel;
+        $this->environment = $environment;
     }
 
     /**
@@ -34,7 +41,7 @@ class TaskRunner
             $this->idle = false;
 
             try {
-                $result = (yield $task->run());
+                $result = (yield $task->run($this->environment));
             } catch (\Exception $exception) {
                 $result = new TaskFailure($exception);
             }

@@ -12,6 +12,8 @@ $paths = [
     dirname(__DIR__) . '/vendor/autoload.php',
 ];
 
+$autoloadPath = null;
+
 foreach ($paths as $path) {
     if (file_exists($path)) {
         $autoloadPath = $path;
@@ -19,7 +21,7 @@ foreach ($paths as $path) {
     }
 }
 
-if (!isset($autoloadPath)) {
+if (null === $autoloadPath) {
     fwrite(STDERR, 'Could not locate autoload.php.');
     exit(1);
 }
@@ -29,6 +31,7 @@ require $autoloadPath;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
+use Icicle\Concurrent\Worker\Environment;
 use Icicle\Concurrent\Worker\Internal\TaskRunner;
 use Icicle\Coroutine;
 use Icicle\Loop;
@@ -37,8 +40,9 @@ use Icicle\Socket\Stream\WritableStream;
 
 Coroutine\create(function () {
     $channel = new Channel(new ReadableStream(STDIN), new WritableStream(STDOUT));
+    $environment = new Environment();
 
-    $runner = new TaskRunner($channel);
+    $runner = new TaskRunner($channel, $environment);
 
     try {
         $result = new ExitSuccess(yield $runner->run());

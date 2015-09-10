@@ -12,7 +12,7 @@ class WorkerThread extends Worker
     public function __construct()
     {
         parent::__construct(new Thread(function () {
-            $runner = new TaskRunner($this);
+            $runner = new TaskRunner($this, new Environment());
             yield $runner->run();
         }));
     }

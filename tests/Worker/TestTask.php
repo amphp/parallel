@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
+use Icicle\Concurrent\Worker\Environment;
 use Icicle\Concurrent\Worker\TaskInterface;
 
 class TestTask implements TaskInterface
@@ -12,7 +13,7 @@ class TestTask implements TaskInterface
         $this->returnValue = $returnValue;
     }
 
-    public function run()
+    public function run(Environment $environment)
     {
         return $this->returnValue;
     }
