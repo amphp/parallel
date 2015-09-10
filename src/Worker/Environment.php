@@ -3,12 +3,22 @@ namespace Icicle\Concurrent\Worker;
 
 use Icicle\Loop;
 
-class Environment
+class Environment implements \ArrayAccess, \Countable
 {
     /**
      * @var array
      */
     private $data = [];
+
+    /**
+     * @var array
+     */
+    private $ttl = [];
+
+    /**
+     * @var array
+     */
+    private $expire = [];
 
     /**
      * @var \SplPriorityQueue
@@ -29,14 +39,12 @@ class Environment
             while (!$this->queue->isEmpty()) {
                 $key = $this->queue->top();
 
-                if (isset($this->data[$key])) {
-                    list( , $expire) = $this->data[$key];
-
-                    if ($time < -$expire) {
+                if (isset($this->expire[$key])) {
+                    if ($time <= $this->expire[$key]) {
                         break;
                     }
 
-                    unset($this->data[$key]);
+                    $this->delete($key);
                 }
 
                 $this->queue->extract();
@@ -58,49 +66,56 @@ class Environment
      */
     public function exists($key)
     {
-        return isset($this->data[$key]);
+        return isset($this->data[(string) $key]);
     }
 
     /**
      * @param string $key
      *
-     * @return mixed
+     * @return mixed|null Returns null if the key does not exist.
      */
     public function get($key)
     {
-        list($value, , $ttl) = $this->data[$key];
+        $key = (string) $key;
 
-        if (0 !== $ttl) {
-            $this->data[$key] = [$value, -(time() + $ttl), $ttl];
+        if (!isset($this->ttl[$key]) || 0 !== $this->ttl[$key]) {
+            $this->expire[$key] = time() + $this->ttl[$key];
+            $this->queue->insert($key, -$this->expire[$key]);
         }
 
-        return $value;
+        return isset($this->data[$key]) ? $this->data[$key] : null;
     }
     
     /**
      * @param string $key
-     * @param mixed $value
+     * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl
      */
     public function set($key, $value, $ttl = 0)
     {
+        $key = (string) $key;
+
+        if (null === $value) {
+            $this->delete($key);
+            return;
+        }
+
         $ttl = (int) $ttl;
         if (0 > $ttl) {
             $ttl = 0;
         }
 
         if (0 !== $ttl) {
-            $expire = time() + $ttl;
-            $this->queue->insert($key, -$expire);
+            $this->ttl[$key] = $ttl;
+            $this->expire[$key] = time() + $ttl;
+            $this->queue->insert($key, -$this->expire[$key]);
 
             if (!$this->timer->isPending()) {
                 $this->timer->start();
             }
-        } else {
-            $expire = 0;
         }
 
-        $this->data[$key] = [$value, $expire, $ttl];
+        $this->data[$key] = $value;
     }
 
     /**
@@ -108,7 +123,56 @@ class Environment
      */
     public function delete($key)
     {
+        $key = (string) $key;
+
         unset($this->data[$key]);
+        unset($this->expire[$key]);
+        unset($this->ttl[$key]);
+    }
+
+    /**
+     * Alias of exists().
+     *
+     * @param $key
+     *
+     * @return bool
+     */
+    public function offsetExists($key)
+    {
+        return $this->exists($key);
+    }
+
+    /**
+     * Alias of get().
+     *
+     * @param string $key
+     *
+     * @return mixed
+     */
+    public function offsetGet($key)
+    {
+        return $this->get($key);
+    }
+
+    /**
+     * Alias of set() with $ttl = 0.
+     *
+     * @param string $key
+     * @param mixed $value
+     */
+    public function offsetSet($key, $value)
+    {
+        $this->set($key, $value);
+    }
+
+    /**
+     * Alias of delete().
+     *
+     * @param string $key
+     */
+    public function offsetUnset($key)
+    {
+        $this->delete($key);
     }
 
     /**
@@ -117,5 +181,18 @@ class Environment
     public function count()
     {
         return count($this->data);
+    }
+
+    /**
+     * Removes all values.
+     */
+    public function clear()
+    {
+        $this->data = [];
+        $this->expire = [];
+        $this->ttl = [];
+
+        $this->timer->stop();
+        $this->queue = new \SplPriorityQueue();
     }
 }
