@@ -78,7 +78,7 @@ class Environment implements \ArrayAccess, \Countable
     {
         $key = (string) $key;
 
-        if (!isset($this->ttl[$key]) || 0 !== $this->ttl[$key]) {
+        if (isset($this->ttl[$key]) && 0 !== $this->ttl[$key]) {
             $this->expire[$key] = time() + $this->ttl[$key];
             $this->queue->insert($key, -$this->expire[$key]);
         }
@@ -113,6 +113,9 @@ class Environment implements \ArrayAccess, \Countable
             if (!$this->timer->isPending()) {
                 $this->timer->start();
             }
+        } else {
+            unset($this->expire[$key]);
+            unset($this->ttl[$key]);
         }
 
         $this->data[$key] = $value;
