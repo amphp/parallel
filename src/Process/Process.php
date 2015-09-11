@@ -201,8 +201,6 @@ class Process
     {
         if (is_resource($this->process)) {
             proc_terminate($this->process, 9); // Sends SIGKILL.
-            proc_close($this->process);
-            $this->process = null;
         }
     }
 
