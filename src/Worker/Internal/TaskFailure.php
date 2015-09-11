@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Exception\TaskError;
+use Icicle\Concurrent\Exception\TaskException;
 
 class TaskFailure
 {
@@ -38,7 +38,7 @@ class TaskFailure
      */
     public function getException()
     {
-        return new TaskError(
+        return new TaskException(
             sprintf('Uncaught exception in worker of type "%s" with message "%s"', $this->type, $this->message),
             $this->code,
             $this->trace
