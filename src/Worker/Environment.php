@@ -44,7 +44,7 @@ class Environment implements \ArrayAccess, \Countable
                         break;
                     }
 
-                    $this->delete($key);
+                    unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
                 }
 
                 $this->queue->extract();
@@ -89,7 +89,7 @@ class Environment implements \ArrayAccess, \Countable
     /**
      * @param string $key
      * @param mixed $value Using null for the value deletes the key.
-     * @param int $ttl
+     * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
      */
     public function set($key, $value, $ttl = 0)
     {
@@ -114,8 +114,7 @@ class Environment implements \ArrayAccess, \Countable
                 $this->timer->start();
             }
         } else {
-            unset($this->expire[$key]);
-            unset($this->ttl[$key]);
+            unset($this->expire[$key], $this->ttl[$key]);
         }
 
         $this->data[$key] = $value;
@@ -127,10 +126,7 @@ class Environment implements \ArrayAccess, \Countable
     public function delete($key)
     {
         $key = (string) $key;
-
-        unset($this->data[$key]);
-        unset($this->expire[$key]);
-        unset($this->ttl[$key]);
+        unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
     }
 
     /**
