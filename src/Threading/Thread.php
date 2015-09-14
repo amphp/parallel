@@ -157,16 +157,6 @@ class Thread implements ContextInterface
     }
 
     /**
-     * Kills the thread if it is still running.
-     *
-     * @throws \Icicle\Concurrent\Exception\ThreadException
-     */
-    public function __destruct()
-    {
-        $this->kill();
-    }
-
-    /**
      * Closes channel and socket if still open.
      */
     private function close()

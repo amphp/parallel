@@ -85,26 +85,6 @@ class Process
     }
 
     /**
-     * Stops the process if it is still running.
-     */
-    public function __destruct()
-    {
-        $this->kill(); // Will only terminate if the process is still running.
-
-        if (null !== $this->stdin) {
-            $this->stdin->close();
-        }
-
-        if (null !== $this->stdout) {
-            $this->stdout->close();
-        }
-
-        if (null !== $this->stderr) {
-            $this->stderr->close();
-        }
-    }
-
-    /**
      * Resets process values.
      */
     public function __clone()

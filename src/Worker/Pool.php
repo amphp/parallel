@@ -20,7 +20,7 @@ class Pool implements PoolInterface
     /**
      * @var int The default minimum pool size.
      */
-    const DEFAULT_MIN_SIZE = 8;
+    const DEFAULT_MIN_SIZE = 4;
 
     /**
      * @var int The default maximum pool size.
@@ -159,6 +159,10 @@ class Pool implements PoolInterface
      */
     public function start()
     {
+        if ($this->isRunning()) {
+            throw new StatusError('The worker pool has already been started.');
+        }
+
         // Start up the pool with the minimum number of workers.
         $count = $this->minSize;
         while (--$count >= 0) {
@@ -179,6 +183,9 @@ class Pool implements PoolInterface
      * @return \Generator
      *
      * @resolve mixed The return value of the task.
+     *
+     * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
+     * @throws \Icicle\Concurrent\Exception\TaskException If the task throws an exception.
      */
     public function enqueue(TaskInterface $task)
     {
@@ -189,9 +196,15 @@ class Pool implements PoolInterface
         /** @var \Icicle\Concurrent\Worker\Worker $worker */
         $worker = (yield $this->getWorker());
 
-        $result = (yield $worker->enqueue($task));
-
-        $this->pushWorker($worker);
+        try {
+            $result = (yield $worker->enqueue($task));
+        } finally {
+            if ($worker->isRunning()) {
+                $this->pushWorker($worker);
+            } else { // Worker crashed, spin up a new worker.
+                $this->pushWorker($this->createWorker());
+            }
+        }
 
         yield $result;
     }
@@ -202,6 +215,8 @@ class Pool implements PoolInterface
      * @coroutine
      *
      * @return \Generator
+     *
+     * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
      */
     public function shutdown()
     {
