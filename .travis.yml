@@ -34,3 +34,6 @@ script:
 after_script:
   - composer require satooshi/php-coveralls dev-master
   - vendor/bin/coveralls -v --exclude-no-stmt
+
+notifications:
+  slack: icicleio:zLkB18HsYCz8TbdK7RVqbi48
