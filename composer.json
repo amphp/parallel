@@ -19,7 +19,7 @@
         }
     ],
     "require": {
-        "icicleio/icicle": "^0.8.2",
+        "icicleio/icicle": "^0.8.3",
         "icicleio/socket": "^0.3.1"
     },
     "require-dev": {
