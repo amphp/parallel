@@ -42,6 +42,11 @@ class Fork implements ContextInterface
     private $args;
 
     /**
+     * @var int
+     */
+    private $oid = 0;
+
+    /**
      * Spawns a new forked process and runs it.
      *
      * @param callable $function A callable to invoke in the process.
@@ -65,7 +70,15 @@ class Fork implements ContextInterface
     public function __clone()
     {
         $this->pid = 0;
+        $this->oid = 0;
         $this->channel = null;
+    }
+
+    public function __destruct()
+    {
+        if (0 !== $this->pid && posix_getpid() === $this->oid) { // Only kill in owner process.
+            $this->kill(); // Will only terminate if the process is still running.
+        }
     }
 
     /**
@@ -183,6 +196,7 @@ class Fork implements ContextInterface
 
             default: // Parent
                 $this->pid = $pid;
+                $this->oid = posix_getpid();
                 $this->channel = new Channel(new DuplexStream($child));
                 fclose($parent);
         }

@@ -49,9 +49,9 @@ class Thread implements ContextInterface
     private $args;
 
     /**
-     * @var bool
+     * @var int
      */
-    private $started = false;
+    private $oid = 0;
 
     /**
      * Spawns a new thread and runs it.
@@ -100,6 +100,19 @@ class Thread implements ContextInterface
         $this->thread = null;
         $this->socket = null;
         $this->channel = null;
+        $this->oid = 0;
+    }
+
+    /**
+     * Kills the thread if it is still running.
+     *
+     * @throws \Icicle\Concurrent\Exception\ThreadException
+     */
+    public function __destruct()
+    {
+        if (getmypid() === $this->oid) {
+            $this->kill();
+        }
     }
 
     /**
@@ -121,11 +134,11 @@ class Thread implements ContextInterface
      */
     public function start()
     {
-        if ($this->started) {
+        if (0 !== $this->oid) {
             throw new StatusError('The thread has already been started.');
         }
 
-        $this->started = true;
+        $this->oid = getmypid();
 
         list($channel, $this->socket) = Socket\pair();
 

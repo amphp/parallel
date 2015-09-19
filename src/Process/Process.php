@@ -91,6 +91,28 @@ class Process
     }
 
     /**
+     * Stops the process if it is still running.
+     */
+    public function __destruct()
+    {
+        if (getmypid() === $this->oid) {
+            $this->kill(); // Will only terminate if the process is still running.
+        }
+
+        if (null !== $this->stdin) {
+            $this->stdin->close();
+        }
+
+        if (null !== $this->stdout) {
+            $this->stdout->close();
+        }
+
+        if (null !== $this->stderr) {
+            $this->stderr->close();
+        }
+    }
+
+    /**
      * Resets process values.
      */
     public function __clone()
@@ -127,6 +149,8 @@ class Process
         if (!is_resource($this->process)) {
             throw new ProcessException('Could not start process.');
         }
+
+        $this->oid = getmypid();
 
         $status = proc_get_status($this->process);
 
