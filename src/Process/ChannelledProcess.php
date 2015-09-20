@@ -6,7 +6,6 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 
 class ChannelledProcess implements ContextInterface
@@ -65,7 +64,7 @@ class ChannelledProcess implements ContextInterface
      */
     public function receive()
     {
-        if (!$this->channel instanceof ChannelInterface) {
+        if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -87,7 +86,7 @@ class ChannelledProcess implements ContextInterface
      */
     public function send($data)
     {
-        if (!$this->channel instanceof ChannelInterface) {
+        if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -103,7 +102,7 @@ class ChannelledProcess implements ContextInterface
      */
     public function join()
     {
-        if (!$this->channel instanceof ChannelInterface) {
+        if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -128,5 +127,6 @@ class ChannelledProcess implements ContextInterface
     public function kill()
     {
         $this->process->kill();
+        $this->channel->close();
     }
 }

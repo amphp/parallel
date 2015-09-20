@@ -57,6 +57,11 @@ class Process
     private $pid = 0;
 
     /**
+     * @var int
+     */
+    private $oid = 0;
+
+    /**
      * @var \Icicle\Promise\PromiseInterface|null
      */
     private $promise;
@@ -97,18 +102,18 @@ class Process
     {
         if (getmypid() === $this->oid) {
             $this->kill(); // Will only terminate if the process is still running.
-        }
 
-        if (null !== $this->stdin) {
-            $this->stdin->close();
-        }
+            if (null !== $this->stdin) {
+                $this->stdin->close();
+            }
 
-        if (null !== $this->stdout) {
-            $this->stdout->close();
-        }
+            if (null !== $this->stdout) {
+                $this->stdout->close();
+            }
 
-        if (null !== $this->stderr) {
-            $this->stderr->close();
+            if (null !== $this->stderr) {
+                $this->stderr->close();
+            }
         }
     }
 
@@ -121,6 +126,7 @@ class Process
         $this->promise = null;
         $this->poll = null;
         $this->pid = 0;
+        $this->oid = 0;
         $this->stdin = null;
         $this->stdout = null;
         $this->stderr = null;
