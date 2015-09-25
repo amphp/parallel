@@ -18,6 +18,11 @@ abstract class Worker implements WorkerInterface
     private $idle = true;
 
     /**
+     * @var bool
+     */
+    private $shutdown = false;
+
+    /**
      * @param \Icicle\Concurrent\ContextInterface $context
      */
     public function __construct(ContextInterface $context)
@@ -58,6 +63,10 @@ abstract class Worker implements WorkerInterface
             throw new StatusError('The worker has not been started.');
         }
 
+        if ($this->shutdown) {
+            throw new StatusError('The worker has been shutdown.');
+        }
+
         $this->idle = false;
 
         yield $this->context->send($task);
@@ -78,9 +87,11 @@ abstract class Worker implements WorkerInterface
      */
     public function shutdown()
     {
-        if (!$this->context->isRunning()) {
+        if (!$this->context->isRunning() || $this->shutdown) {
             throw new StatusError('The worker is not running.');
         }
+
+        $this->shutdown = true;
 
         yield $this->context->send(0);
 
