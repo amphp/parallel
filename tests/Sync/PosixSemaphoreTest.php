@@ -20,9 +20,28 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
 
     public function tearDown()
     {
-        if (!$this->semaphore->isFreed()) {
+        if ($this->semaphore && !$this->semaphore->isFreed()) {
             $this->semaphore->free();
         }
+    }
+
+    public function testCloneIsNewSemaphore()
+    {
+        Coroutine\create(function () {
+            $this->semaphore = $this->createSemaphore(1);
+            $clone = clone $this->semaphore;
+
+            $lock = (yield $clone->acquire());
+
+            $this->assertCount(1, $this->semaphore);
+            $this->assertCount(0, $clone);
+
+            $lock->release();
+
+            $clone->free();
+        })->done();
+
+        Loop\run();
     }
 
     public function testFree()

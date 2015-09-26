@@ -83,7 +83,7 @@ abstract class AbstractParcelTest extends TestCase
     /**
      * @depends testWrap
      */
-    public function testClone()
+    public function testCloneIsNewParcel()
     {
         $original = $this->createParcel(1);
 

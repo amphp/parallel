@@ -18,14 +18,12 @@ abstract class AbstractSemaphoreTest extends TestCase
      * @return \Icicle\Concurrent\Sync\SemaphoreInterface
      */
     abstract public function createSemaphore($locks);
-    
+
     public function testCount()
     {
-        $this->semaphore = new PosixSemaphore(4);
+        $this->semaphore = $this->createSemaphore(4);
 
         $this->assertCount(4, $this->semaphore);
-
-        $this->semaphore->free();
     }
 
     public function testAcquire()
@@ -71,7 +69,7 @@ abstract class AbstractSemaphoreTest extends TestCase
         }, 1.5);
     }
 
-    public function tesCloneIsSameSemaphore()
+    public function testCloneIsNewSemaphore()
     {
         Coroutine\create(function () {
             $this->semaphore = $this->createSemaphore(1);

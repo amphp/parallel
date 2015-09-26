@@ -1,31 +1,31 @@
 <?php
-namespace Icicle\Tests\Concurrent\Threading;
+namespace Icicle\Tests\Concurrent\Forking;
 
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
-use Icicle\Concurrent\Threading\Thread;
+use Icicle\Concurrent\Forking\Fork;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\AbstractContextTest;
 
 /**
- * @group threading
- * @requires extension pthreads
+ * @group forking
+ * @requires extension pcntl
  */
-class ThreadTest extends AbstractContextTest
+class ForkTest extends AbstractContextTest
 {
     public function createContext(callable $function)
     {
-        return new Thread($function);
+        return new Fork($function);
     }
 
-    public function testSpawnStartsThread()
+    public function testSpawnStartsFork()
     {
         Coroutine\create(function () {
-            $thread = Thread::spawn(function () {
+            $fork = Fork::spawn(function () {
                 usleep(100);
             });
 
-            yield $thread->join();
+            yield $fork->join();
         })->done();
 
         Loop\run();

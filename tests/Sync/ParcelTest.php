@@ -24,6 +24,23 @@ class ParcelTest extends AbstractParcelTest
         }
     }
 
+    /**
+     * @depends testWrap
+     */
+    public function testCloneIsNewParcel()
+    {
+        $original = $this->createParcel(1);
+
+        $clone = clone $original;
+
+        $clone->wrap(2);
+
+        $this->assertSame(1, $original->unwrap());
+        $this->assertSame(2, $clone->unwrap());
+
+        $clone->free();
+    }
+
     public function testNewObjectIsNotFreed()
     {
         $object = new Parcel(new \stdClass());
@@ -100,20 +117,5 @@ class ParcelTest extends AbstractParcelTest
         });
 
         $this->assertTrue($object->isFreed());
-    }
-
-    private function doInFork(callable $function)
-    {
-        switch (pcntl_fork()) {
-            case -1:
-                $this->fail('Failed to fork process.');
-                break;
-            case 0:
-                $status = (int)$function();
-                exit(0);
-            default:
-                pcntl_wait($status);
-                return $status;
-        }
     }
 }
