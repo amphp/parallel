@@ -95,7 +95,7 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
                 $status = (int)$function();
                 exit(0);
             default:
-                usleep(1e3);
+                usleep(1e6);
                 if (pcntl_wait($status) === -1) {
                     $this->fail('Failed to fork process.');
                 }
