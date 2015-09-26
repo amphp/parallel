@@ -24,9 +24,6 @@ class ParcelTest extends AbstractParcelTest
         }
     }
 
-    /**
-     * @depends testWrap
-     */
     public function testCloneIsNewParcel()
     {
         $original = $this->createParcel(1);

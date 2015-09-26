@@ -2,18 +2,27 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\MutexException;
+use Icicle\Coroutine;
 
 /**
- * A cross-platform mutex that uses file locking as the lock mechanism.
+ * A cross-platform mutex that uses exclusive files as the lock mechanism.
  *
  * This mutex implementation is not always atomic and depends on the operating
- * system's implementation of file locking operations. Use this implementation
+ * system's implementation of file creation operations. Use this implementation
  * only if no other mutex types are available.
  *
- * @see http://php.net/manual/en/function.flock.php
+ * This implementation avoids using [flock()](http://php.net/manual/en/function.fopen.php)
+ * because flock() is known to have some atomicity issues on some systems. In
+ * addition, flock() does not work as expected when trying to lock a file
+ * multiple times in the same process on Linux. Instead, exclusive file creation
+ * is used to create a lock file, which is atomic on most systems.
+ *
+ * @see http://php.net/manual/en/function.fopen.php
  */
 class FileMutex implements MutexInterface
 {
+    const LATENCY_TIMEOUT = 0.01; // 10 ms
+
     /**
      * @var string The full path to the lock file.
      */
@@ -24,11 +33,7 @@ class FileMutex implements MutexInterface
      */
     public function __construct()
     {
-        $this->fileName = sys_get_temp_dir()
-                          .DIRECTORY_SEPARATOR
-                          .spl_object_hash($this)
-                          .'.lock';
-        touch($this->fileName, time());
+        $this->fileName = tempnam(sys_get_temp_dir(), 'mutex-') . '.lock';
     }
 
     /**
@@ -36,11 +41,9 @@ class FileMutex implements MutexInterface
      */
     public function acquire()
     {
-        $handle = $this->getFileHandle();
-
-        // Try to access the lock. If we can't get the lock, set an asynchronous
-        // timer and try again.
-        while (!flock($handle, LOCK_EX | LOCK_NB)) {
+        // Try to create the lock file. If the file already exists, someone else
+        // has the lock, so set an asynchronous timer and try again.
+        while (($handle = @fopen($this->fileName, 'x')) === false) {
             yield Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
@@ -53,44 +56,16 @@ class FileMutex implements MutexInterface
     }
 
     /**
-     * Destroys the mutex.
-     */
-    public function __destruct()
-    {
-        @unlink($this->fileName);
-    }
-
-    /**
      * Releases the lock on the mutex.
      *
      * @throws MutexException If the unlock operation failed.
      */
     protected function release()
     {
-        $handle = $this->getFileHandle();
-        $success = flock($handle, LOCK_UN);
-        fclose($handle);
+        $success = @unlink($this->fileName);
 
         if (!$success) {
             throw new MutexException('Failed to unlock the mutex file.');
         }
-    }
-
-    /**
-     * Opens the mutex file and returns a file resource.
-     *
-     * @return resource
-     *
-     * @throws MutexException If the mutex file could not be opened.
-     */
-    private function getFileHandle()
-    {
-        $handle = @fopen($this->fileName, 'wb');
-
-        if ($handle === false) {
-            throw new MutexException('Failed to open the mutex file.');
-        }
-
-        return $handle;
     }
 }
