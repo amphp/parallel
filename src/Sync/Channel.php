@@ -64,10 +64,6 @@ class Channel implements ChannelInterface
      */
     public function send($data)
     {
-        if (!$this->write->isWritable()) {
-            throw new ChannelException('The channel was unexpectedly closed. Did the context die?');
-        }
-
         // Serialize the data to send into the channel.
         try {
             $serialized = serialize($data);
@@ -96,18 +92,20 @@ class Channel implements ChannelInterface
         // Read the message length first to determine how much needs to be read from the stream.
         $length = self::HEADER_LENGTH;
         $buffer = '';
+        $remaining = $length;
 
         try {
             do {
-                $buffer .= (yield $this->read->read($length));
-            } while (($length -= strlen($buffer)) > 0);
+                $buffer .= (yield $this->read->read($remaining));
+            } while ($remaining = $length - strlen($buffer));
 
             list(, $length) = unpack('L', $buffer);
             $buffer = '';
+            $remaining = $length;
 
             do {
-                $buffer .= (yield $this->read->read($length));
-            } while (($length -= strlen($buffer)) > 0);
+                $buffer .= (yield $this->read->read($remaining));
+            } while ($remaining = $length - strlen($buffer));
         } catch (StreamException $exception) {
             throw new ChannelException('Reading from the channel failed. Did the context die?', 0, $exception);
         }
