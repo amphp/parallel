@@ -87,16 +87,15 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
 
     final protected function doInFork(callable $function)
     {
-        switch (pcntl_fork()) {
+        switch ($pid = pcntl_fork()) {
             case -1:
                 $this->fail('Failed to fork process.');
                 break;
             case 0:
-                $status = (int)$function();
-                exit(0);
+                $status = (int) $function();
+                exit($status);
             default:
-                usleep(1e6);
-                if (pcntl_wait($status) === -1) {
+                if (pcntl_waitpid($pid, $status) === -1) {
                     $this->fail('Failed to fork process.');
                 }
                 return $status;
