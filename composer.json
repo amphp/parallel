@@ -43,6 +43,7 @@
     "autoload-dev": {
         "psr-4": {
             "Icicle\\Benchmarks\\Concurrent\\": "benchmarks",
+            "Icicle\\Examples\\Concurrent\\": "examples",
             "Icicle\\Tests\\Concurrent\\": "tests"
         }
     }
