@@ -8,8 +8,8 @@ ob_start(function ($data) {
 }, 1, 0);
 
 $paths = [
-    dirname(dirname(dirname(__DIR__))) . '/autoload.php',
-    dirname(__DIR__) . '/vendor/autoload.php',
+    dirname(dirname(dirname(__DIR__))) . DIRECTORY_SEPARATOR . 'autoload.php',
+    dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php',
 ];
 
 $autoloadPath = null;

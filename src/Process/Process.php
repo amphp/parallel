@@ -148,7 +148,9 @@ class Process
             ['pipe', 'w'], // exit code pipe
         ];
 
-        $command = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $this->command);
+        $nd = 0 === strncasecmp(PHP_OS, 'WIN', 3) ? 'NUL' : '/dev/null';
+
+        $command = sprintf('(%s) 3>%s; code=$?; echo $code >&3; exit $code', $this->command, $nd);
 
         $this->process = proc_open($command, $fd, $pipes, $this->cwd ?: null, $this->env ?: null, $this->options);
 
