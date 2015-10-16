@@ -35,11 +35,10 @@ use Icicle\Concurrent\Worker\Environment;
 use Icicle\Concurrent\Worker\Internal\TaskRunner;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Stream\ReadableStream;
-use Icicle\Socket\Stream\WritableStream;
+use Icicle\Stream;
 
 Coroutine\create(function () {
-    $channel = new Channel(new ReadableStream(STDIN), new WritableStream(STDOUT));
+    $channel = new Channel(Stream\stdin(), Stream\stdout());
     $environment = new Environment();
 
     $runner = new TaskRunner($channel, $environment);

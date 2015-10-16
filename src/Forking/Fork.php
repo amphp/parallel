@@ -13,8 +13,8 @@ use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket;
-use Icicle\Socket\Stream\DuplexStream;
+use Icicle\Stream;
+use Icicle\Stream\Pipe\DuplexPipe;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -154,7 +154,7 @@ class Fork implements ContextInterface
      * Starts the context execution.
      *
      * @throws \Icicle\Concurrent\Exception\ForkException If forking fails.
-     * @throws \Icicle\Socket\Exception\FailureException If creating a socket pair fails.
+     * @throws \Icicle\Stream\Exception\FailureException If creating a socket pair fails.
      */
     public function start()
     {
@@ -162,7 +162,7 @@ class Fork implements ContextInterface
             throw new StatusError('The context has already been started.');
         }
 
-        list($parent, $child) = Socket\pair();
+        list($parent, $child) = Stream\pair();
 
         switch ($pid = pcntl_fork()) {
             case -1: // Failure
@@ -172,10 +172,9 @@ class Fork implements ContextInterface
                 // @codeCoverageIgnoreStart
 
                 // Create a new event loop in the fork.
-                $loop = Loop\create(false);
-                Loop\loop($loop);
+                Loop\loop($loop = Loop\create(false));
 
-                $channel = new Channel(new DuplexStream($parent));
+                $channel = new Channel(new DuplexPipe($parent));
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
@@ -197,7 +196,7 @@ class Fork implements ContextInterface
             default: // Parent
                 $this->pid = $pid;
                 $this->oid = posix_getpid();
-                $this->channel = new Channel(new DuplexStream($child));
+                $this->channel = new Channel(new DuplexPipe($child));
                 fclose($parent);
         }
     }

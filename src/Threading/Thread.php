@@ -9,8 +9,8 @@ use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Coroutine;
-use Icicle\Socket;
-use Icicle\Socket\Stream\DuplexStream;
+use Icicle\Stream;
+use Icicle\Stream\Pipe\DuplexPipe;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -130,7 +130,7 @@ class Thread implements ContextInterface
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the thread has already been started.
      * @throws \Icicle\Concurrent\Exception\ThreadException If starting the thread was unsuccessful.
-     * @throws \Icicle\Socket\Exception\FailureException If creating a socket pair fails.
+     * @throws \Icicle\Stream\Exception\FailureException If creating a socket pair fails.
      */
     public function start()
     {
@@ -140,7 +140,7 @@ class Thread implements ContextInterface
 
         $this->oid = getmypid();
 
-        list($channel, $this->socket) = Socket\pair();
+        list($channel, $this->socket) = Stream\pair();
 
         $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
@@ -148,7 +148,7 @@ class Thread implements ContextInterface
             throw new ThreadException('Failed to start the thread.');
         }
 
-        $this->channel = new Channel(new DuplexStream($channel));
+        $this->channel = new Channel(new DuplexPipe($channel));
     }
 
     /**

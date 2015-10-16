@@ -6,8 +6,8 @@ use Icicle\Concurrent\Exception\ProcessException;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Loop;
 use Icicle\Promise\Promise;
-use Icicle\Socket\Stream\ReadableStream;
-use Icicle\Socket\Stream\WritableStream;
+use Icicle\Stream\Pipe\ReadablePipe;
+use Icicle\Stream\Pipe\WritablePipe;
 
 class Process
 {
@@ -37,17 +37,17 @@ class Process
     private $options;
 
     /**
-     * @var \Icicle\Socket\Stream\WritableStream|null
+     * @var \Icicle\Stream\Pipe\WritablePipe|null
      */
     private $stdin;
 
     /**
-     * @var \Icicle\Socket\Stream\ReadableStream|null
+     * @var \Icicle\Stream\Pipe\ReadablePipe|null
      */
     private $stdout;
 
     /**
-     * @var \Icicle\Socket\Stream\ReadableStream|null
+     * @var \Icicle\Stream\Pipe\ReadablePipe|null
      */
     private $stderr;
 
@@ -170,9 +170,9 @@ class Process
 
         $this->pid = $status['pid'];
 
-        $this->stdin = new WritableStream($pipes[0]);
-        $this->stdout = new ReadableStream($pipes[1]);
-        $this->stderr = new ReadableStream($pipes[2]);
+        $this->stdin = new WritablePipe($pipes[0]);
+        $this->stdout = new ReadablePipe($pipes[1]);
+        $this->stderr = new ReadablePipe($pipes[2]);
 
         $stream = $pipes[3];
         stream_set_blocking($stream, 0);
@@ -319,7 +319,7 @@ class Process
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return \Icicle\Socket\Stream\WritableStream
+     * @return \Icicle\Stream\WritableStreamInterface
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
@@ -335,7 +335,7 @@ class Process
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return \Icicle\Socket\Stream\ReadableStream
+     * @return \Icicle\Stream\ReadableStreamInterface
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
@@ -351,7 +351,7 @@ class Process
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return \Icicle\Socket\Stream\ReadableStream
+     * @return \Icicle\Stream\ReadableStreamInterface
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
