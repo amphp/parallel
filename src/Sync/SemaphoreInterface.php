@@ -29,7 +29,7 @@ interface SemaphoreInterface extends \Countable
      *
      * Acquires a lock from the semaphore asynchronously.
      *
-     * If there are one or more locks available, this function resolve imsmediately with a lock and the lock count is
+     * If there are one or more locks available, this function resolves immediately with a lock and the lock count is
      * decreased. If no locks are available, the semaphore waits asynchronously for a lock to become available.
      *
      * @return \Generator Resolves with a lock object when the acquire is successful.

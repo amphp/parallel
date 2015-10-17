@@ -11,13 +11,13 @@ use Icicle\Coroutine;
  * system's implementation of file creation operations. Use this implementation
  * only if no other mutex types are available.
  *
- * This implementation avoids using [flock()](http://php.net/manual/en/function.fopen.php)
+ * This implementation avoids using [flock()](http://php.net/flock)
  * because flock() is known to have some atomicity issues on some systems. In
  * addition, flock() does not work as expected when trying to lock a file
  * multiple times in the same process on Linux. Instead, exclusive file creation
  * is used to create a lock file, which is atomic on most systems.
  *
- * @see http://php.net/manual/en/function.fopen.php
+ * @see http://php.net/fopen
  */
 class FileMutex implements MutexInterface
 {
