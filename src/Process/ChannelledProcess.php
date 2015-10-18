@@ -106,19 +106,15 @@ class ChannelledProcess implements ContextInterface
             throw new StatusError('The process has not been started.');
         }
 
-        try {
-            $response = (yield $this->channel->receive());
+        $response = (yield $this->channel->receive());
 
-            yield $this->process->join();
+        yield $this->process->join();
 
-            if (!$response instanceof ExitStatusInterface) {
-                throw new SynchronizationError('Did not receive an exit status from thread.');
-            }
-
-            yield $response->getResult();
-        } finally {
-            $this->channel->close();
+        if (!$response instanceof ExitStatusInterface) {
+            throw new SynchronizationError('Did not receive an exit status from thread.');
         }
+
+        yield $response->getResult();
     }
 
     /**
@@ -127,6 +123,6 @@ class ChannelledProcess implements ContextInterface
     public function kill()
     {
         $this->process->kill();
-        $this->channel->close();
+        $this->channel = null;
     }
 }

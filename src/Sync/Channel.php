@@ -121,24 +121,4 @@ class Channel implements ChannelInterface
             restore_error_handler();
         }
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        $this->read->close();
-
-        if ($this->write !== $this->read) {
-            $this->write->close();
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isOpen()
-    {
-        return $this->read->isOpen() && ($this->read === $this->write || $this->write->isOpen());
-    }
 }

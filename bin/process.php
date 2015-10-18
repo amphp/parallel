@@ -50,8 +50,6 @@ Coroutine\create(function () {
     }
 
     yield $channel->send($result);
-
-    $channel->close();
 })->done();
 
 Loop\run();

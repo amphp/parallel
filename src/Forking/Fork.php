@@ -27,6 +27,11 @@ class Fork implements ContextInterface
     private $channel;
 
     /**
+     * @var \Icicle\Stream\Pipe\DuplexPipe
+     */
+    private $pipe;
+
+    /**
      * @var int
      */
     private $pid = 0;
@@ -71,6 +76,7 @@ class Fork implements ContextInterface
     {
         $this->pid = 0;
         $this->oid = 0;
+        $this->pipe = null;
         $this->channel = null;
     }
 
@@ -158,7 +164,7 @@ class Fork implements ContextInterface
      */
     public function start()
     {
-        if ($this->channel instanceof ChannelInterface) {
+        if (0 !== $this->oid) {
             throw new StatusError('The context has already been started.');
         }
 
@@ -174,7 +180,7 @@ class Fork implements ContextInterface
                 // Create a new event loop in the fork.
                 Loop\loop($loop = Loop\create(false));
 
-                $channel = new Channel(new DuplexPipe($parent));
+                $channel = new Channel($pipe = new DuplexPipe($parent));
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
@@ -187,7 +193,7 @@ class Fork implements ContextInterface
                     $code = 1;
                 }
 
-                $channel->close();
+                $pipe->close();
 
                 exit($code);
 
@@ -196,7 +202,7 @@ class Fork implements ContextInterface
             default: // Parent
                 $this->pid = $pid;
                 $this->oid = posix_getpid();
-                $this->channel = new Channel(new DuplexPipe($child));
+                $this->channel = new Channel($this->pipe = new DuplexPipe($child));
                 fclose($parent);
         }
     }
@@ -214,11 +220,9 @@ class Fork implements ContextInterface
      */
     private function execute(ChannelInterface $channel)
     {
-        $executor = new Executor($channel);
-
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($executor, Executor::class);
+                $function = $this->function->bindTo($channel, Channel::class);
             }
 
             if (empty($function)) {
@@ -243,11 +247,12 @@ class Fork implements ContextInterface
             posix_kill($this->pid, SIGKILL);
         }
 
-        if (null !== $this->channel && $this->channel->isOpen()) {
-            $this->channel->close();
+        if (null !== $this->pipe && $this->pipe->isOpen()) {
+            $this->pipe->close();
         }
 
         $this->pid = 0;
+        $this->channel = null;
     }
 
     /**
@@ -265,8 +270,8 @@ class Fork implements ContextInterface
      */
     public function join()
     {
-        if (!$this->channel instanceof ChannelInterface) {
-            throw new StatusError('The context has not been started.');
+        if (null === $this->channel) {
+            throw new StatusError('The fork has not been started or has already finished.');
         }
 
         try {
@@ -290,8 +295,8 @@ class Fork implements ContextInterface
      */
     public function receive()
     {
-        if (!$this->channel instanceof ChannelInterface) {
-            throw new StatusError('The context has not been started.');
+        if (null === $this->channel) {
+            throw new StatusError('The fork has not been started or has already finished.');
         }
 
         $data = (yield $this->channel->receive());
@@ -312,8 +317,8 @@ class Fork implements ContextInterface
      */
     public function send($data)
     {
-        if (!$this->channel instanceof ChannelInterface) {
-            throw new StatusError('The context has not been started.');
+        if (null === $this->channel) {
+            throw new StatusError('The fork has not been started or has already finished.');
         }
 
         if ($data instanceof ExitStatusInterface) {

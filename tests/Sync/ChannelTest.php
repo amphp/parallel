@@ -38,55 +38,6 @@ class ChannelTest extends TestCase
         return $mock;
     }
 
-    public function testIsOpen()
-    {
-        $mock = $this->getMock(DuplexStreamInterface::class);
-
-        $mock->expects($this->once())
-            ->method('isOpen')
-            ->will($this->returnValue(true));
-
-        $channel = new Channel($mock);
-        $channel->isOpen();
-
-        $readable = $this->getMock(ReadableStreamInterface::class);
-        $writable = $this->getMock(WritableStreamInterface::class);
-
-        $readable->expects($this->once())
-            ->method('isOpen')
-            ->will($this->returnValue(true));
-
-        $writable->expects($this->once())
-            ->method('isOpen')
-            ->will($this->returnValue(true));
-
-        $channel = new Channel($readable, $writable);
-        $channel->isOpen();
-    }
-
-    public function testClose()
-    {
-        $mock = $this->getMock(DuplexStreamInterface::class);
-
-        $mock->expects($this->once())
-            ->method('close');
-
-        $channel = new Channel($mock);
-        $channel->close();
-
-        $readable = $this->getMock(ReadableStreamInterface::class);
-        $writable = $this->getMock(WritableStreamInterface::class);
-
-        $readable->expects($this->once())
-            ->method('close');
-
-        $writable->expects($this->once())
-            ->method('close');
-
-        $channel = new Channel($readable, $writable);
-        $channel->close();
-    }
-
     /**
      * @expectedException \Icicle\Concurrent\Exception\InvalidArgumentError
      */
@@ -109,9 +60,6 @@ class ChannelTest extends TestCase
             yield $a->send($message);
             $data = (yield $b->receive());
             $this->assertSame($message, $data);
-
-            $a->close();
-            $b->close();
         })->done();
 
         Loop\run();
@@ -136,9 +84,6 @@ class ChannelTest extends TestCase
             yield $a->send($message);
             $data = (yield $b->receive());
             $this->assertSame($message, $data);
-
-            $a->close();
-            $b->close();
         })->done();
 
         Loop\run();

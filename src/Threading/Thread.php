@@ -29,9 +29,14 @@ class Thread implements ContextInterface
     private $thread;
 
     /**
-     * @var Channel A channel for communicating with the thread.
+     * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the thread.
      */
     private $channel;
+
+    /**
+     * @var \Icicle\Stream\Pipe\DuplexPipe
+     */
+    private $pipe;
 
     /**
      * @var resource
@@ -99,6 +104,7 @@ class Thread implements ContextInterface
     {
         $this->thread = null;
         $this->socket = null;
+        $this->pipe = null;
         $this->channel = null;
         $this->oid = 0;
     }
@@ -122,7 +128,7 @@ class Thread implements ContextInterface
      */
     public function isRunning()
     {
-        return null !== $this->thread && $this->thread->isRunning() && $this->channel->isOpen();
+        return null !== $this->thread && $this->thread->isRunning() && null !== $this->pipe && $this->pipe->isOpen();
     }
 
     /**
@@ -148,7 +154,7 @@ class Thread implements ContextInterface
             throw new ThreadException('Failed to start the thread.');
         }
 
-        $this->channel = new Channel(new DuplexPipe($channel));
+        $this->channel = new Channel($this->pipe = new DuplexPipe($channel));
     }
 
     /**
@@ -174,8 +180,8 @@ class Thread implements ContextInterface
      */
     private function close()
     {
-        if (null !== $this->channel && $this->channel->isOpen()) {
-            $this->channel->close();
+        if (null !== $this->pipe && $this->pipe->isOpen()) {
+            $this->pipe->close();
         }
 
         if (is_resource($this->socket)) {
@@ -183,6 +189,7 @@ class Thread implements ContextInterface
         }
 
         $this->thread = null;
+        $this->channel = null;
     }
 
     /**

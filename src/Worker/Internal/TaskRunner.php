@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\ChannelInterface;
+use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Worker\Environment;
 use Icicle\Concurrent\Worker\TaskInterface;
 
@@ -13,7 +13,7 @@ class TaskRunner
     private $idle = true;
 
     /**
-     * @var \Icicle\Concurrent\ChannelInterface
+     * @var \Icicle\Concurrent\Sync\ChannelInterface
      */
     private $channel;
 

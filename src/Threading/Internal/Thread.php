@@ -114,11 +114,9 @@ class Thread extends \Thread
      */
     private function execute(ChannelInterface $channel)
     {
-        $executor = new Executor($this, $channel);
-
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($executor, Executor::class);
+                $function = $this->function->bindTo($channel, Channel::class);
             }
 
             if (empty($function)) {
