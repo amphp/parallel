@@ -128,8 +128,6 @@ class Parcel implements ParcelInterface, \Serializable
     }
 
     /**
-     * {@inheritdoc}
-     *
      * If the value requires more memory to store than currently allocated, a
      * new shared memory segment will be allocated with a larger size to store
      * the value in. The previous memory segment will be cleaned up and marked
@@ -137,7 +135,7 @@ class Parcel implements ParcelInterface, \Serializable
      * memory segment on the next read attempt. Once all running processes and
      * threads disconnect from the old segment, it will be freed by the OS.
      */
-    public function wrap($value)
+    protected function wrap($value)
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed.');
@@ -178,7 +176,9 @@ class Parcel implements ParcelInterface, \Serializable
         $lock = (yield $this->semaphore->acquire());
 
         try {
-            yield $callback($this);
+            $value = $this->unwrap();
+            $result = (yield $callback($value));
+            $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }

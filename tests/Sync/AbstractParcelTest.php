@@ -35,45 +35,31 @@ abstract class AbstractParcelTest extends TestCase
     /**
      * @depends testUnwrapIsEqual
      */
-    public function testWrap()
-    {
-        $shared = $this->createParcel(3);
-        $this->assertEquals(3, $shared->unwrap());
-
-        $shared->wrap(4);
-        $this->assertEquals(4, $shared->unwrap());
-    }
-
-    /**
-     * @depends testWrap
-     */
     public function testSynchronized()
     {
         $parcel = $this->createParcel(0);
 
-        $coroutine = new Coroutine($parcel->synchronized(function (ParcelInterface $parcel) {
-            $this->assertSame(0, $parcel->unwrap());
+        $coroutine = new Coroutine($parcel->synchronized(function ($value) {
+            $this->assertSame(0, $value);
             usleep(1e4);
-            $parcel->wrap(1);
-            return -1;
+            return 1;
         }));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->identicalTo(-1));
+            ->with($this->identicalTo(1));
 
         $coroutine->done($callback);
 
-        $coroutine = new Coroutine($parcel->synchronized(function (ParcelInterface $parcel) {
-            $this->assertSame(1, $parcel->unwrap());
+        $coroutine = new Coroutine($parcel->synchronized(function ($value) {
+            $this->assertSame(1, $value);
             usleep(1e4);
-            $parcel->wrap(2);
-            return -2;
+            return 2;
         }));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->identicalTo(-2));
+            ->with($this->identicalTo(2));
 
         $coroutine->done($callback);
 
@@ -81,7 +67,7 @@ abstract class AbstractParcelTest extends TestCase
     }
 
     /**
-     * @depends testWrap
+     * @depends testSynchronized
      */
     public function testCloneIsNewParcel()
     {
@@ -89,7 +75,10 @@ abstract class AbstractParcelTest extends TestCase
 
         $clone = clone $original;
 
-        $clone->wrap(2);
+        $coroutine = new Coroutine($clone->synchronized(function () {
+            return 2;
+        }));
+        $coroutine->wait();
 
         $this->assertSame(1, $original->unwrap());
         $this->assertSame(2, $clone->unwrap());

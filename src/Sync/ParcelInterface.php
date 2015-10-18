@@ -1,8 +1,6 @@
 <?php
 namespace Icicle\Concurrent\Sync;
 
-use Icicle\Concurrent\SynchronizableInterface;
-
 /**
  * A parcel object for sharing data across execution contexts.
  *
@@ -24,13 +22,6 @@ interface ParcelInterface extends SynchronizableInterface
      * @return mixed The value inside the parcel.
      */
     public function unwrap();
-
-    /**
-     * Wraps a value into the parcel, replacing the old value.
-     *
-     * @param mixed $value The value to wrap into the parcel.
-     */
-    public function wrap($value);
 
     /**
      * Clones the parcel object, resulting in a new, independent parcel.

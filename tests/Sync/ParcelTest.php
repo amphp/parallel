@@ -2,6 +2,7 @@
 namespace Icicle\Tests\Concurrent\Sync;
 
 use Icicle\Concurrent\Sync\Parcel;
+use Icicle\Coroutine\Coroutine;
 
 /**
  * @requires extension shmop
@@ -22,20 +23,6 @@ class ParcelTest extends AbstractParcelTest
         if ($this->parcel !== null) {
             $this->parcel->free();
         }
-    }
-
-    public function testCloneIsNewParcel()
-    {
-        $original = $this->createParcel(1);
-
-        $clone = clone $original;
-
-        $clone->wrap(2);
-
-        $this->assertSame(1, $original->unwrap());
-        $this->assertSame(2, $clone->unwrap());
-
-        $clone->free();
     }
 
     public function testNewObjectIsNotFreed()
@@ -79,7 +66,10 @@ class ParcelTest extends AbstractParcelTest
     public function testObjectOverflowMoved()
     {
         $object = new Parcel('hi', 14);
-        $object->wrap('hello world');
+        $coroutine = new Coroutine($object->synchronized(function () {
+            return 'hello world';
+        }));
+        $coroutine->wait();
 
         $this->assertEquals('hello world', $object->unwrap());
         $object->free();
@@ -94,7 +84,10 @@ class ParcelTest extends AbstractParcelTest
         $object = new Parcel(42);
 
         $this->doInFork(function () use ($object) {
-            $object->wrap(43);
+            $coroutine = new Coroutine($object->synchronized(function () {
+                return 43;
+            }));
+            $coroutine->wait();
         });
 
         $this->assertEquals(43, $object->unwrap());

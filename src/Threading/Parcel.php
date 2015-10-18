@@ -48,7 +48,7 @@ class Parcel implements ParcelInterface
     /**
      * {@inheritdoc}
      */
-    public function wrap($value)
+    protected function wrap($value)
     {
         $this->storage->set($value);
     }
@@ -69,7 +69,9 @@ class Parcel implements ParcelInterface
         $lock = (yield $this->mutex->acquire());
 
         try {
-            yield $callback($this);
+            $value = $this->unwrap();
+            $result = (yield $callback($value));
+            $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }
