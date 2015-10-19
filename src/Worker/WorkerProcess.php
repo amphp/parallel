@@ -11,6 +11,6 @@ class WorkerProcess extends Worker
     public function __construct()
     {
         $dir = dirname(dirname(__DIR__)) . '/bin';
-        parent::__construct(new ChannelledProcess($dir . '/process.php', $dir));
+        parent::__construct(new ChannelledProcess($dir . '/worker.php', $dir));
     }
 }
