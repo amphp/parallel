@@ -177,30 +177,34 @@ class Process
         $stream = $pipes[3];
         stream_set_blocking($stream, 0);
 
-        $this->promise = new Promise(function (callable $resolve) use ($stream) {
-            $this->poll = Loop\poll($stream, function ($resource) use ($resolve) {
-                $resolve((string) fread($resource, 1));
+        $this->promise = new Promise(function (callable $resolve, callable $reject) use ($stream) {
+            $this->poll = Loop\poll($stream, function ($resource) use ($resolve, $reject) {
+                if (feof($resource)) {
+                    $reject(new ProcessException('Process ended unexpectedly.'));
+                } else {
+                    $code = fread($resource, 1);
+
+                    if (!strlen($code) || !is_numeric($code)) {
+                        $reject(new ProcessException('Process ended without providing a status code.'));
+                    } else {
+                        $resolve((int) $code);
+                    }
+                }
+
+                fclose($resource);
+
+                if (is_resource($this->process)) {
+                    proc_close($this->process);
+                    $this->process = null;
+                }
+
+                $this->stdin->close();
+                $this->poll->free();
             });
 
             $this->poll->unreference();
             $this->poll->listen();
         });
-
-        $this->promise = $this->promise
-            ->then(function ($code) {
-                if ('' === $code) {
-                    throw new Exception('Process ended unexpectedly without providing a status code.');
-                }
-                return (int) $code;
-            })
-            ->cleanup(function () use ($stream) {
-                if (is_resource($this->process)) {
-                    proc_close($this->process);
-                    $this->process = null;
-                }
-                $this->stdin->close();
-                $this->poll->free();
-            });
     }
 
     /**
