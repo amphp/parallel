@@ -7,6 +7,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 use Icicle\Coroutine;
 use Icicle\Stream;
@@ -19,7 +20,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements ContextInterface
+class Thread implements ChannelInterface, ContextInterface
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 

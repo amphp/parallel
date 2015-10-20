@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent;
 
-interface ContextInterface extends Sync\ChannelInterface
+interface ContextInterface
 {
     /**
      * @return bool

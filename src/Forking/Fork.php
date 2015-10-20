@@ -1,11 +1,11 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\ProcessInterface;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
@@ -19,7 +19,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Fork implements ContextInterface
+class Fork implements ChannelInterface, ProcessInterface
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
@@ -253,6 +253,20 @@ class Fork implements ContextInterface
 
         $this->pid = 0;
         $this->channel = null;
+    }
+
+    /**
+     * @param int $signo
+     *
+     * @throws \Icicle\Concurrent\Exception\StatusError
+     */
+    public function signal($signo)
+    {
+        if (0 === $this->pid) {
+            throw new StatusError('The fork has not been started or has already finished.');
+        }
+
+        posix_kill($this->pid, (int) $signo);
     }
 
     /**

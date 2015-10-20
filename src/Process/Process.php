@@ -1,15 +1,15 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
-use Exception;
 use Icicle\Concurrent\Exception\ProcessException;
 use Icicle\Concurrent\Exception\StatusError;
+use Icicle\Concurrent\ProcessInterface;
 use Icicle\Loop;
 use Icicle\Promise\Promise;
 use Icicle\Stream\Pipe\ReadablePipe;
 use Icicle\Stream\Pipe\WritablePipe;
 
-class Process
+class Process implements ProcessInterface
 {
     /**
      * @var resource|null

@@ -1,14 +1,15 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
-use Icicle\Concurrent\ContextInterface;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\ProcessInterface;
 use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
 
-class ChannelledProcess implements ContextInterface
+class ChannelledProcess implements ChannelInterface, ProcessInterface
 {
     /**
      * @var \Icicle\Concurrent\Process\Process
@@ -124,5 +125,21 @@ class ChannelledProcess implements ContextInterface
     {
         $this->process->kill();
         $this->channel = null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPid()
+    {
+        return $this->process->getPid();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function signal($signo)
+    {
+        $this->process->signal($signo);
     }
 }
