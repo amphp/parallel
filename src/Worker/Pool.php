@@ -75,7 +75,7 @@ class Pool implements PoolInterface
     public function __construct($minSize = 0, $maxSize = 0, WorkerFactoryInterface $factory = null)
     {
         $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
-        $maxSize = $minSize ?: self::DEFAULT_MAX_SIZE;
+        $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;
 
         if (!is_int($minSize) || $minSize < 0) {
             throw new InvalidArgumentError('Minimum size must be a non-negative integer.');
