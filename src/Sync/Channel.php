@@ -114,11 +114,13 @@ class Channel implements ChannelInterface
 
         // Attempt to unserialize the received data.
         try {
-            yield unserialize($buffer);
+            $data = unserialize($buffer);
         } catch (\Exception $exception) {
             throw new ChannelException('Exception thrown when unserializing data.', 0, $exception);
         } finally {
             restore_error_handler();
         }
+
+        yield $data;
     }
 }
