@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SharedMemoryException;
+use Icicle\Concurrent\Exception\UnsupportedError;
 
 /**
  * A container object for sharing a value across contexts.
@@ -67,6 +68,10 @@ class Parcel implements ParcelInterface, \Serializable
      */
     public function __construct($value, $size = 16384, $permissions = 0600)
     {
+        if (!extension_loaded("shmop")) {
+            throw new UnsupportedError(__CLASS__ . " requires the shmop extension.");
+        }
+
         $this->init($value, $size, $permissions);
     }
 

@@ -5,6 +5,7 @@ use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
+use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Concurrent\ProcessInterface;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
@@ -52,6 +53,16 @@ class Fork implements ChannelInterface, ProcessInterface
     private $oid = 0;
 
     /**
+     * Checks if forking is enabled.
+     *
+     * @return bool True if forking is enabled, otherwise false.
+     */
+    public static function enabled()
+    {
+        return extension_loaded('pcntl');
+    }
+
+    /**
      * Spawns a new forked process and runs it.
      *
      * @param callable $function A callable to invoke in the process.
@@ -68,6 +79,10 @@ class Fork implements ChannelInterface, ProcessInterface
 
     public function __construct(callable $function /* , ...$args */)
     {
+        if (!self::enabled()) {
+            throw new UnsupportedError("The pcntl extension is required to create forks.");
+        }
+
         $this->function = $function;
         $this->args = array_slice(func_get_args(), 1);
     }

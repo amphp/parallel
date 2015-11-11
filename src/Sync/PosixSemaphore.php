@@ -2,6 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SemaphoreException;
+use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Coroutine;
 
 /**
@@ -41,6 +42,10 @@ class PosixSemaphore implements SemaphoreInterface, \Serializable
      */
     public function __construct($maxLocks, $permissions = 0600)
     {
+        if (!extension_loaded("sysvmsg")) {
+            throw new UnsupportedError(__CLASS__ . " requires the sysvmsg extension.");
+        }
+
         $this->init($maxLocks, $permissions);
     }
 

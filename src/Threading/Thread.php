@@ -6,6 +6,7 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
+use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelInterface;
 use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
@@ -60,6 +61,16 @@ class Thread implements ChannelInterface, ContextInterface
     private $oid = 0;
 
     /**
+     * Checks if threading is enabled.
+     *
+     * @return bool True if threading is enabled, otherwise false.
+     */
+    public static function enabled()
+    {
+        return extension_loaded('pthreads');
+    }
+
+    /**
      * Spawns a new thread and runs it.
      *
      * @param callable $function The callable to invoke in the thread.
@@ -83,6 +94,10 @@ class Thread implements ChannelInterface, ContextInterface
      */
     public function __construct(callable $function /* , ...$args */)
     {
+        if (!self::enabled()) {
+            throw new UnsupportedError("The pthreads extension is required to create threads.");
+        }
+
         $args = array_slice(func_get_args(), 1);
 
         // Make sure closures don't `use` other variables or have statics.
