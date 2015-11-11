@@ -231,11 +231,16 @@ class Process implements ProcessInterface
     }
 
     /**
+     * {@inheritdoc}
      */
     public function kill()
     {
         if (is_resource($this->process)) {
-            proc_terminate($this->process, 9); // Sends SIGKILL.
+            // Forcefully kill the process using SIGKILL.
+            proc_terminate($this->process, 9);
+
+            // "Detach" from the process and let it die asynchronously.
+            $this->process = null;
         }
     }
 

@@ -253,12 +253,12 @@ class Fork implements ChannelInterface, ProcessInterface
     }
 
     /**
-     * Immediately kills the context.
+     * {@inheritdoc}
      */
     public function kill()
     {
         if ($this->isRunning()) {
-            // forcefully kill the process using SIGKILL
+            // Forcefully kill the process using SIGKILL.
             posix_kill($this->pid, SIGKILL);
         }
 
@@ -266,6 +266,7 @@ class Fork implements ChannelInterface, ProcessInterface
             $this->pipe->close();
         }
 
+        // "Detach" from the process and let it die asynchronously.
         $this->pid = 0;
         $this->channel = null;
     }
