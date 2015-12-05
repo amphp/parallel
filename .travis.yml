@@ -11,9 +11,9 @@ install:
   - git clone https://github.com/krakjoe/pthreads.git;
     pushd pthreads;
     if [ "$TRAVIS_PHP_VERSION" != "7.0" ]; then
-        git checkout master;
+        git checkout PHP5;
     else
-        git checkout seven;
+        git checkout master;
     fi;
     phpize;
     ./configure;
@@ -25,11 +25,7 @@ install:
   - composer install --no-interaction --prefer-source
 
 script:
-  - if [ "$TRAVIS_PHP_VERSION" != "7.0" ]; then
-        vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml;
-    else
-        phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml;
-    fi
+  - vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
 
 after_script:
   - composer require satooshi/php-coveralls dev-master
