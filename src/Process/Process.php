@@ -1,11 +1,11 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
+use Icicle\Awaitable\Promise;
 use Icicle\Concurrent\Exception\ProcessException;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\ProcessInterface;
 use Icicle\Loop;
-use Icicle\Promise\Promise;
 use Icicle\Stream\Pipe\ReadablePipe;
 use Icicle\Stream\Pipe\WritablePipe;
 
@@ -62,7 +62,7 @@ class Process implements ProcessInterface
     private $oid = 0;
 
     /**
-     * @var \Icicle\Promise\PromiseInterface|null
+     * @var \Icicle\Awaitable\PromiseInterface|null
      */
     private $promise;
 

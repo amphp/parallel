@@ -4,22 +4,20 @@ namespace Icicle\Tests\Concurrent\Sync;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket;
-use Icicle\Stream\DuplexStreamInterface;
+use Icicle\Stream\DuplexStream;
 use Icicle\Stream\Exception\UnreadableException;
 use Icicle\Stream\Exception\UnwritableException;
-use Icicle\Stream\ReadableStreamInterface;
-use Icicle\Stream\WritableStreamInterface;
+use Icicle\Stream\ReadableStream;
 use Icicle\Tests\Concurrent\TestCase;
 
 class ChannelTest extends TestCase
 {
     /**
-     * @return \Icicle\Stream\DuplexStreamInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Icicle\Stream\DuplexStream|\PHPUnit_Framework_MockObject_MockObject
      */
     protected function createMockStream()
     {
-        $mock = $this->getMock(DuplexStreamInterface::class);
+        $mock = $this->getMock(DuplexStream::class);
 
         $buffer = '';
 
@@ -43,7 +41,7 @@ class ChannelTest extends TestCase
      */
     public function testReadableWithoutWritable()
     {
-        $mock = $this->getMock(ReadableStreamInterface::class);
+        $mock = $this->getMock(ReadableStream::class);
 
         $channel = new Channel($mock);
     }
@@ -134,13 +132,13 @@ class ChannelTest extends TestCase
     public function testSendAfterClose()
     {
         Coroutine\create(function () {
-            $mock = $this->getMock(DuplexStreamInterface::class);
+            $mock = $this->getMock(DuplexStream::class);
             $mock->expects($this->once())
                 ->method('write')
                 ->will($this->throwException(new UnwritableException()));
 
             $a = new Channel($mock);
-            $b = new Channel($this->getMock(DuplexStreamInterface::class));
+            $b = new Channel($this->getMock(DuplexStream::class));
 
             yield $a->send('hello');
         })->done();
@@ -155,7 +153,7 @@ class ChannelTest extends TestCase
     public function testReceiveAfterClose()
     {
         Coroutine\create(function () {
-            $mock = $this->getMock(DuplexStreamInterface::class);
+            $mock = $this->getMock(DuplexStream::class);
             $mock->expects($this->once())
                 ->method('read')
                 ->will($this->throwException(new UnreadableException()));

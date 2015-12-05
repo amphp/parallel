@@ -4,9 +4,9 @@ namespace Icicle\Concurrent\Sync;
 use Icicle\Concurrent\Exception\ChannelException;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Stream\Exception\Exception as StreamException;
-use Icicle\Stream\DuplexStreamInterface;
-use Icicle\Stream\ReadableStreamInterface;
-use Icicle\Stream\WritableStreamInterface;
+use Icicle\Stream\DuplexStream;
+use Icicle\Stream\ReadableStream;
+use Icicle\Stream\WritableStream;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -18,12 +18,12 @@ class Channel implements ChannelInterface
     const HEADER_LENGTH = 4;
 
     /**
-     * @var \Icicle\Stream\ReadableStreamInterface
+     * @var \Icicle\Stream\ReadableStream
      */
     private $read;
 
     /**
-     * @var \Icicle\Stream\WritableStreamInterface
+     * @var \Icicle\Stream\WritableStream
      */
     private $write;
 
@@ -35,16 +35,16 @@ class Channel implements ChannelInterface
     /**
      * Creates a new channel instance.
      *
-     * @param \Icicle\Stream\ReadableStreamInterface $read
-     * @param \Icicle\Stream\WritableStreamInterface|null $write
+     * @param \Icicle\Stream\ReadableStream $read
+     * @param \Icicle\Stream\WritableStream|null $write
      *
      * @throws \Icicle\Concurrent\Exception\InvalidArgumentError Thrown if no write stream is provided and the read
      *     stream is not a duplex stream.
      */
-    public function __construct(ReadableStreamInterface $read, WritableStreamInterface $write = null)
+    public function __construct(ReadableStream $read, WritableStream $write = null)
     {
         if (null === $write) {
-            if (!$read instanceof DuplexStreamInterface) {
+            if (!$read instanceof DuplexStream) {
                 throw new InvalidArgumentError('Must provide a duplex stream if not providing a write stream.');
             }
             $this->write = $read;

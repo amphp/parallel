@@ -1,12 +1,12 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
+use Icicle\Awaitable;
+use Icicle\Awaitable\Deferred;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Coroutine\Coroutine;
-use Icicle\Promise;
-use Icicle\Promise\Deferred;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -230,7 +230,7 @@ class Pool implements PoolInterface
             return new Coroutine($worker->shutdown());
         }, $this->workers);
 
-        yield Promise\reduce($shutdowns, function ($carry, $value) {
+        yield Awaitable\reduce($shutdowns, function ($carry, $value) {
             return $carry ?: $value;
         }, 0);
     }
@@ -257,7 +257,7 @@ class Pool implements PoolInterface
         if (!$this->busyQueue->isEmpty()) {
             $exception = new WorkerException('Worker pool was shutdown.');
             do {
-                /** @var \Icicle\Promise\Deferred $deferred */
+                /** @var \Icicle\Awaitable\Deferred $deferred */
                 $deferred = $this->busyQueue->dequeue();
                 $deferred->getPromise()->cancel($exception);
             } while (!$this->busyQueue->isEmpty());
@@ -311,7 +311,7 @@ class Pool implements PoolInterface
         $this->idleWorkers->push($worker);
 
         while (!$this->busyQueue->isEmpty() && !$this->idleWorkers->isEmpty()) {
-            /** @var \Icicle\Promise\Deferred $deferred */
+            /** @var \Icicle\Awaitable\Deferred $deferred */
             $deferred = $this->busyQueue->shift();
 
             if ($deferred->getPromise()->isPending()) {
