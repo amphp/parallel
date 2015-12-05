@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent;
 
-interface ContextInterface
+interface Context
 {
     /**
      * @return bool

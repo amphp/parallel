@@ -2,9 +2,9 @@
 namespace Icicle\Tests\Concurrent\Worker;
 
 use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\TaskInterface;
+use Icicle\Concurrent\Worker\Task;
 
-class TestTask implements TaskInterface
+class TestTask implements Task
 {
     private $returnValue;
 

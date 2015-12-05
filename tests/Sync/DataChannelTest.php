@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\DataChannel;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Stream\DuplexStream;
@@ -10,7 +10,7 @@ use Icicle\Stream\Exception\UnwritableException;
 use Icicle\Stream\ReadableStream;
 use Icicle\Tests\Concurrent\TestCase;
 
-class ChannelTest extends TestCase
+class DataChannelTest extends TestCase
 {
     /**
      * @return \Icicle\Stream\DuplexStream|\PHPUnit_Framework_MockObject_MockObject
@@ -43,15 +43,15 @@ class ChannelTest extends TestCase
     {
         $mock = $this->getMock(ReadableStream::class);
 
-        $channel = new Channel($mock);
+        $channel = new DataChannel($mock);
     }
 
     public function testSendReceive()
     {
         Coroutine\create(function () {
             $mock = $this->createMockStream();
-            $a = new Channel($mock);
-            $b = new Channel($mock);
+            $a = new DataChannel($mock);
+            $b = new DataChannel($mock);
 
             $message = 'hello';
 
@@ -70,8 +70,8 @@ class ChannelTest extends TestCase
     {
         Coroutine\create(function () {
             $mock = $this->createMockStream();
-            $a = new Channel($mock);
-            $b = new Channel($mock);
+            $a = new DataChannel($mock);
+            $b = new DataChannel($mock);
 
             $length = 0xffff;
             $message = '';
@@ -95,8 +95,8 @@ class ChannelTest extends TestCase
     {
         Coroutine\create(function () {
             $mock = $this->createMockStream();
-            $a = new Channel($mock);
-            $b = new Channel($mock);
+            $a = new DataChannel($mock);
+            $b = new DataChannel($mock);
 
             // Close $a. $b should close on next read...
             yield $mock->write(pack('L', 10) . '1234567890');
@@ -114,8 +114,8 @@ class ChannelTest extends TestCase
     {
         Coroutine\create(function () {
             $mock = $this->createMockStream();
-            $a = new Channel($mock);
-            $b = new Channel($mock);
+            $a = new DataChannel($mock);
+            $b = new DataChannel($mock);
 
             // Close $a. $b should close on next read...
             yield $a->send(function () {});
@@ -137,8 +137,8 @@ class ChannelTest extends TestCase
                 ->method('write')
                 ->will($this->throwException(new UnwritableException()));
 
-            $a = new Channel($mock);
-            $b = new Channel($this->getMock(DuplexStream::class));
+            $a = new DataChannel($mock);
+            $b = new DataChannel($this->getMock(DuplexStream::class));
 
             yield $a->send('hello');
         })->done();
@@ -158,7 +158,7 @@ class ChannelTest extends TestCase
                 ->method('read')
                 ->will($this->throwException(new UnreadableException()));
 
-            $a = new Channel($mock);
+            $a = new DataChannel($mock);
 
             $data = (yield $a->receive());
         })->done();

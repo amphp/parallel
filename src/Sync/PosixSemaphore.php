@@ -13,7 +13,7 @@ use Icicle\Coroutine;
  *
  * Not compatible with Windows.
  */
-class PosixSemaphore implements SemaphoreInterface, \Serializable
+class PosixSemaphore implements Semaphore, \Serializable
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 

@@ -4,7 +4,7 @@ namespace Icicle\Concurrent\Worker;
 /**
  * A runnable unit of execution.
  */
-interface TaskInterface
+interface Task
 {
     /**
      * @coroutine

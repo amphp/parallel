@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Sync\Internal;
 
-interface ExitStatusInterface
+interface ExitStatus
 {
     /**
      * @return mixed Return value of the callable given to the execution context.

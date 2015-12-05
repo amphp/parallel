@@ -8,7 +8,7 @@ namespace Icicle\Concurrent\Sync;
  * are atomic. Implementations do not have to guarantee that acquiring a lock
  * is first-come, first serve.
  */
-interface SemaphoreInterface extends \Countable
+interface Semaphore extends \Countable
 {
     /**
      * Gets the number of currently available locks.

@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent;
 
-interface ProcessInterface extends ContextInterface
+interface Process extends Context
 {
     /**
      * @return int PID of process.

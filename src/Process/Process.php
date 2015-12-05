@@ -1,15 +1,15 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
-use Icicle\Awaitable\Promise;
+use Icicle\Awaitable\Delayed;
 use Icicle\Concurrent\Exception\ProcessException;
 use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\ProcessInterface;
+use Icicle\Concurrent\Process as ProcessContext;
 use Icicle\Loop;
 use Icicle\Stream\Pipe\ReadablePipe;
 use Icicle\Stream\Pipe\WritablePipe;
 
-class Process implements ProcessInterface
+class Process implements ProcessContext
 {
     /**
      * @var resource|null
@@ -62,12 +62,12 @@ class Process implements ProcessInterface
     private $oid = 0;
 
     /**
-     * @var \Icicle\Awaitable\PromiseInterface|null
+     * @var \Icicle\Awaitable\Delayed|null
      */
-    private $promise;
+    private $delayed;
 
     /**
-     * @var \Icicle\Loop\Events\SocketEventInterface|null
+     * @var \Icicle\Loop\Watcher\Io|null
      */
     private $poll;
 
@@ -123,7 +123,7 @@ class Process implements ProcessInterface
     public function __clone()
     {
         $this->process = null;
-        $this->promise = null;
+        $this->delayed = null;
         $this->poll = null;
         $this->pid = 0;
         $this->oid = 0;
@@ -137,7 +137,7 @@ class Process implements ProcessInterface
      */
     public function start()
     {
-        if (null !== $this->promise) {
+        if (null !== $this->delayed) {
             throw new StatusError('The process has already been started.');
         }
 
@@ -177,33 +177,30 @@ class Process implements ProcessInterface
         $stream = $pipes[3];
         stream_set_blocking($stream, 0);
 
-        $this->promise = new Promise(function (callable $resolve, callable $reject) use ($stream) {
-            $this->poll = Loop\poll($stream, function ($resource) use ($resolve, $reject) {
-                if (feof($resource)) {
-                    $reject(new ProcessException('Process ended unexpectedly.'));
+        $this->delayed = new Delayed();
+
+        $this->poll = Loop\poll($stream, function ($resource) {
+            if (feof($resource)) {
+                $this->delayed->reject(new ProcessException('Process ended unexpectedly.'));
+            } else {
+                $code = fread($resource, 1);
+
+                if (!strlen($code) || !is_numeric($code)) {
+                    $this->delayed->reject(new ProcessException('Process ended without providing a status code.'));
                 } else {
-                    $code = fread($resource, 1);
-
-                    if (!strlen($code) || !is_numeric($code)) {
-                        $reject(new ProcessException('Process ended without providing a status code.'));
-                    } else {
-                        $resolve((int) $code);
-                    }
+                    $this->delayed->resolve((int) $code);
                 }
+            }
 
-                fclose($resource);
+            fclose($resource);
 
-                if (is_resource($this->process)) {
-                    proc_close($this->process);
-                    $this->process = null;
-                }
+            if (is_resource($this->process)) {
+                proc_close($this->process);
+                $this->process = null;
+            }
 
-                $this->stdin->close();
-                $this->poll->free();
-            });
-
-            $this->poll->unreference();
-            $this->poll->listen();
+            $this->stdin->close();
+            $this->poll->free();
         });
     }
 
@@ -216,14 +213,14 @@ class Process implements ProcessInterface
      */
     public function join()
     {
-        if (null === $this->promise) {
+        if (null === $this->delayed) {
             throw new StatusError('The process has not been started.');
         }
 
         $this->poll->reference();
 
         try {
-            yield $this->promise;
+            yield $this->delayed;
         } finally {
             $this->stdout->close();
             $this->stderr->close();
@@ -328,7 +325,7 @@ class Process implements ProcessInterface
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return \Icicle\Stream\WritableStreamInterface
+     * @return \Icicle\Stream\WritableStream
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
@@ -344,7 +341,7 @@ class Process implements ProcessInterface
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return \Icicle\Stream\ReadableStreamInterface
+     * @return \Icicle\Stream\ReadableStream
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
@@ -360,7 +357,7 @@ class Process implements ProcessInterface
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return \Icicle\Stream\ReadableStreamInterface
+     * @return \Icicle\Stream\ReadableStream
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */

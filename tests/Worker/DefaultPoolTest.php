@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\Pool;
+use Icicle\Concurrent\Worker\DefaultPool;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
@@ -10,7 +10,7 @@ class PoolTest extends TestCase
 {
     public function createPool($min = null, $max = null)
     {
-        return new Pool($min, $max);
+        return new DefaultPool($min, $max);
     }
 
     public function testIsRunning()

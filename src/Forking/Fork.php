@@ -6,11 +6,11 @@ use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\UnsupportedError;
-use Icicle\Concurrent\ProcessInterface;
+use Icicle\Concurrent\Process;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\DataChannel;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
-use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
+use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
@@ -20,7 +20,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Fork implements ChannelInterface, ProcessInterface
+class Fork implements Channel, Process
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
@@ -195,7 +195,7 @@ class Fork implements ChannelInterface, ProcessInterface
                 // Create a new event loop in the fork.
                 Loop\loop($loop = Loop\create(false));
 
-                $channel = new Channel($pipe = new DuplexPipe($parent));
+                $channel = new DataChannel($pipe = new DuplexPipe($parent));
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
@@ -217,7 +217,7 @@ class Fork implements ChannelInterface, ProcessInterface
             default: // Parent
                 $this->pid = $pid;
                 $this->oid = posix_getpid();
-                $this->channel = new Channel($this->pipe = new DuplexPipe($child));
+                $this->channel = new DataChannel($this->pipe = new DuplexPipe($child));
                 fclose($parent);
         }
     }
@@ -227,13 +227,13 @@ class Fork implements ChannelInterface, ProcessInterface
      *
      * This method is run only on the child.
      *
-     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
+     * @param \Icicle\Concurrent\Sync\Channel $channel
      *
      * @return \Generator
      *
      * @codeCoverageIgnore Only executed in the child.
      */
-    private function execute(ChannelInterface $channel)
+    private function execute(Channel $channel)
     {
         try {
             if ($this->function instanceof \Closure) {
@@ -307,7 +307,7 @@ class Fork implements ChannelInterface, ProcessInterface
         try {
             $response = (yield $this->channel->receive());
 
-            if (!$response instanceof ExitStatusInterface) {
+            if (!$response instanceof ExitStatus) {
                 throw new SynchronizationError(sprintf(
                     'Did not receive an exit status from fork. Instead received data of type %s',
                     is_object($response) ? get_class($response) : gettype($response)
@@ -331,7 +331,7 @@ class Fork implements ChannelInterface, ProcessInterface
 
         $data = (yield $this->channel->receive());
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
                 'Fork unexpectedly exited with result of type: %s',
@@ -351,7 +351,7 @@ class Fork implements ChannelInterface, ProcessInterface
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 

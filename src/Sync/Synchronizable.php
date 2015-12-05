@@ -4,7 +4,7 @@ namespace Icicle\Concurrent\Sync;
 /**
  * An object that can be synchronized for exclusive access across contexts.
  */
-interface SynchronizableInterface
+interface Synchronizable
 {
     /**
      * @coroutine

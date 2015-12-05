@@ -2,10 +2,9 @@
 namespace Icicle\Concurrent\Threading\Internal;
 
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\DataChannel;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
-use Icicle\Concurrent\Threading\Executor;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Stream\Pipe\DuplexPipe;
@@ -77,7 +76,7 @@ class Thread extends \Thread
         Loop\loop($loop = Loop\create(false)); // Disable signals in thread.
 
         // At this point, the thread environment has been prepared so begin using the thread.
-        $channel = new Channel(new DuplexPipe($this->socket));
+        $channel = new DataChannel(new DuplexPipe($this->socket));
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
@@ -104,7 +103,7 @@ class Thread extends \Thread
     /**
      * @coroutine
      *
-     * @param \Icicle\Concurrent\Sync\ChannelInterface $channel
+     * @param \Icicle\Concurrent\Sync\Channel $channel
      *
      * @return \Generator
      *
@@ -112,7 +111,7 @@ class Thread extends \Thread
      *
      * @codeCoverageIgnore Only executed in thread.
      */
-    private function execute(ChannelInterface $channel)
+    private function execute(Channel $channel)
     {
         try {
             if ($this->function instanceof \Closure) {

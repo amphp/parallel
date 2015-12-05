@@ -1,108 +1,54 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
-use Icicle\Concurrent\ContextInterface;
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Worker\Internal\TaskFailure;
-
-abstract class Worker implements WorkerInterface
+/**
+ * An interface for a parallel worker thread that runs a queue of tasks.
+ */
+interface Worker
 {
     /**
-     * @var \Icicle\Concurrent\ContextInterface
+     * Checks if the worker is running.
+     *
+     * @return bool True if the worker is running, otherwise false.
      */
-    private $context;
+    public function isRunning();
 
     /**
-     * @var bool
+     * Checks if the worker is currently idle.
+     *
+     * @return bool
      */
-    private $idle = true;
+    public function isIdle();
 
     /**
-     * @var bool
+     * Starts the context execution.
      */
-    private $shutdown = false;
+    public function start();
 
     /**
-     * @param \Icicle\Concurrent\ContextInterface $context
+     * @coroutine
+     *
+     * Enqueues a task to be executed by the worker.
+     *
+     * @param Task $task The task to enqueue.
+     *
+     * @return \Generator
+     *
+     * @resolve mixed Task return value.
      */
-    public function __construct(ContextInterface $context)
-    {
-        $this->context = $context;
-    }
+    public function enqueue(Task $task);
 
     /**
-     * {@inheritdoc}
+     * @coroutine
+     *
+     * @return \Generator
+     *
+     * @resolve int Exit code.
      */
-    public function isRunning()
-    {
-        return $this->context->isRunning();
-    }
+    public function shutdown();
 
     /**
-     * {@inheritdoc}
+     * Immediately kills the context.
      */
-    public function isIdle()
-    {
-        return $this->idle;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function start()
-    {
-        $this->context->start();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function enqueue(TaskInterface $task)
-    {
-        if (!$this->context->isRunning()) {
-            throw new StatusError('The worker has not been started.');
-        }
-
-        if ($this->shutdown) {
-            throw new StatusError('The worker has been shutdown.');
-        }
-
-        $this->idle = false;
-
-        yield $this->context->send($task);
-
-        $result = (yield $this->context->receive());
-
-        $this->idle = true;
-
-        if ($result instanceof TaskFailure) {
-            throw $result->getException();
-        }
-
-        yield $result;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function shutdown()
-    {
-        if (!$this->context->isRunning() || $this->shutdown) {
-            throw new StatusError('The worker is not running.');
-        }
-
-        $this->shutdown = true;
-
-        yield $this->context->send(0);
-
-        yield $this->context->join();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function kill()
-    {
-        $this->context->kill();
-    }
+    public function kill();
 }

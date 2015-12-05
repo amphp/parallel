@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\SemaphoreInterface;
+use Icicle\Concurrent\Sync\Semaphore as SyncSemaphore;
 use Icicle\Concurrent\Threading\Semaphore;
 use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
@@ -24,7 +24,7 @@ class SemaphoreTest extends AbstractSemaphoreTest
         Coroutine\create(function () {
             $this->semaphore = $this->createSemaphore(1);
 
-            $thread1 = new Thread(function (SemaphoreInterface $semaphore) {
+            $thread1 = new Thread(function (SyncSemaphore $semaphore) {
                 $lock = (yield $semaphore->acquire());
 
                 usleep(1e5);
@@ -34,7 +34,7 @@ class SemaphoreTest extends AbstractSemaphoreTest
                 yield 0;
             }, $this->semaphore);
 
-            $thread2 = new Thread(function (SemaphoreInterface $semaphore) {
+            $thread2 = new Thread(function (SyncSemaphore $semaphore) {
                 $lock = (yield $semaphore->acquire());
 
                 usleep(1e5);

@@ -1,12 +1,12 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\ParcelInterface;
+use Icicle\Concurrent\Sync\Parcel as SyncParcel;
 
 /**
  * A thread-safe container that shares a value between multiple threads.
  */
-class Parcel implements ParcelInterface
+class Parcel implements SyncParcel
 {
     /**
      * @var \Icicle\Concurrent\Threading\Mutex

@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\SemaphoreInterface;
+use Icicle\Concurrent\Sync\Semaphore as SyncSemaphore;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
@@ -11,7 +11,7 @@ use Icicle\Concurrent\Sync\SemaphoreInterface;
  * may not acquire a lock immediately when one is available and there may be a
  * small delay. However, the small delay will not block the thread.
  */
-class Semaphore implements SemaphoreInterface
+class Semaphore implements SyncSemaphore
 {
     /**
      * @var Internal\Semaphore

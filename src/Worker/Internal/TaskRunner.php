@@ -1,9 +1,9 @@
 <?php
 namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Sync\ChannelInterface;
+use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\TaskInterface;
+use Icicle\Concurrent\Worker\Task;
 
 class TaskRunner
 {
@@ -13,7 +13,7 @@ class TaskRunner
     private $idle = true;
 
     /**
-     * @var \Icicle\Concurrent\Sync\ChannelInterface
+     * @var \Icicle\Concurrent\Sync\Channel
      */
     private $channel;
 
@@ -22,7 +22,7 @@ class TaskRunner
      */
     private $environment;
 
-    public function __construct(ChannelInterface $channel, Environment $environment)
+    public function __construct(Channel $channel, Environment $environment)
     {
         $this->channel = $channel;
         $this->environment = $environment;
@@ -37,7 +37,7 @@ class TaskRunner
     {
         $task = (yield $this->channel->receive());
 
-        while ($task instanceof TaskInterface) {
+        while ($task instanceof Task) {
             $this->idle = false;
 
             try {

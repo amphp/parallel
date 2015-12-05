@@ -7,7 +7,7 @@ use Icicle\Concurrent\Worker\Internal\TaskRunner;
 /**
  * A worker thread that executes task objects.
  */
-class WorkerThread extends Worker
+class WorkerThread extends AbstractWorker
 {
     public function __construct()
     {

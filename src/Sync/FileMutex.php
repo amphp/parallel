@@ -19,7 +19,7 @@ use Icicle\Coroutine;
  *
  * @see http://php.net/fopen
  */
-class FileMutex implements MutexInterface
+class FileMutex implements Mutex
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 

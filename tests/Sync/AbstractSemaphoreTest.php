@@ -2,7 +2,6 @@
 namespace Icicle\Tests\Concurrent\Sync;
 
 use Icicle\Concurrent\Sync\Lock;
-use Icicle\Concurrent\Sync\PosixSemaphore;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
@@ -10,12 +9,12 @@ use Icicle\Tests\Concurrent\TestCase;
 abstract class AbstractSemaphoreTest extends TestCase
 {
     /**
-     * @var \Icicle\Concurrent\Sync\SemaphoreInterface
+     * @var \Icicle\Concurrent\Sync\Semaphore
      */
     protected $semaphore;
 
     /**
-     * @return \Icicle\Concurrent\Sync\SemaphoreInterface
+     * @return \Icicle\Concurrent\Sync\Semaphore
      */
     abstract public function createSemaphore($locks);
 

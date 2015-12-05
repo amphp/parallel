@@ -2,9 +2,9 @@
 namespace Icicle\Examples\Concurrent;
 
 use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\TaskInterface;
+use Icicle\Concurrent\Worker\Task;
 
-class BlockingTask implements TaskInterface
+class BlockingTask implements Task
 {
     /**
      * @var callable

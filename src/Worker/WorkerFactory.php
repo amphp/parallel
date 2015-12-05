@@ -2,27 +2,14 @@
 namespace Icicle\Concurrent\Worker;
 
 /**
- * The built-in worker factory type.
+ * Interface for factories used to create new workers.
  */
-class WorkerFactory implements WorkerFactoryInterface
+interface WorkerFactory
 {
     /**
-     * {@inheritdoc}
+     * Creates a new worker instance.
      *
-     * The type of worker created depends on the extensions available. If multi-threading is enabled, a WorkerThread
-     * will be created. If threads are not available, a WorkerFork will be created if forking is available, otherwise
-     * a WorkerProcess will be created.
+     * @return Worker The newly created worker.
      */
-    public function create()
-    {
-        if (extension_loaded('pthreads')) {
-            return new WorkerThread();
-        }
-
-        if (extension_loaded('pcntl')) {
-            return new WorkerFork();
-        }
-
-        return new WorkerProcess();
-    }
+    public function create();
 }

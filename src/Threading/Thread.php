@@ -1,15 +1,15 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\ContextInterface;
+use Icicle\Concurrent\Context;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
+use Icicle\Concurrent\Sync\DataChannel;
+use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Coroutine;
 use Icicle\Stream;
 use Icicle\Stream\Pipe\DuplexPipe;
@@ -21,7 +21,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements ChannelInterface, ContextInterface
+class Thread implements Channel, Context
 {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
@@ -170,7 +170,7 @@ class Thread implements ChannelInterface, ContextInterface
             throw new ThreadException('Failed to start the thread.');
         }
 
-        $this->channel = new Channel($this->pipe = new DuplexPipe($channel));
+        $this->channel = new DataChannel($this->pipe = new DuplexPipe($channel));
     }
 
     /**
@@ -230,7 +230,7 @@ class Thread implements ChannelInterface, ContextInterface
         try {
             $response = (yield $this->channel->receive());
 
-            if (!$response instanceof ExitStatusInterface) {
+            if (!$response instanceof ExitStatus) {
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
@@ -256,7 +256,7 @@ class Thread implements ChannelInterface, ContextInterface
 
         $data = (yield $this->channel->receive());
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             $this->kill();
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
@@ -277,7 +277,7 @@ class Thread implements ChannelInterface, ContextInterface
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             $this->kill();
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }

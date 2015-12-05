@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
-use Icicle\Concurrent\Sync\ParcelInterface;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
@@ -9,7 +8,7 @@ use Icicle\Tests\Concurrent\TestCase;
 abstract class AbstractParcelTest extends TestCase
 {
     /**
-     * @return \Icicle\Concurrent\Sync\ParcelInterface
+     * @return \Icicle\Concurrent\Sync\Parcel
      */
     abstract protected function createParcel($value);
 

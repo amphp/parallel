@@ -6,7 +6,7 @@ use Icicle\Concurrent\Process\ChannelledProcess;
 /**
  * A worker thread that executes task objects.
  */
-class WorkerProcess extends Worker
+class WorkerProcess extends AbstractWorker
 {
     public function __construct()
     {

@@ -4,12 +4,12 @@ namespace Icicle\Concurrent\Process;
 use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\ProcessInterface;
+use Icicle\Concurrent\Process as ProcessContext;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelInterface;
-use Icicle\Concurrent\Sync\Internal\ExitStatusInterface;
+use Icicle\Concurrent\Sync\DataChannel;
+use Icicle\Concurrent\Sync\Internal\ExitStatus;
 
-class ChannelledProcess implements ChannelInterface, ProcessInterface
+class ChannelledProcess implements Channel, ProcessContext
 {
     /**
      * @var \Icicle\Concurrent\Process\Process
@@ -49,7 +49,7 @@ class ChannelledProcess implements ChannelInterface, ProcessInterface
     {
         $this->process->start();
 
-        $this->channel = new Channel($this->process->getStdOut(), $this->process->getStdIn());
+        $this->channel = new DataChannel($this->process->getStdOut(), $this->process->getStdIn());
     }
 
     /**
@@ -71,7 +71,7 @@ class ChannelledProcess implements ChannelInterface, ProcessInterface
 
         $data = (yield $this->channel->receive());
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             $data = $data->getResult();
             throw new SynchronizationError(sprintf(
                 'Thread unexpectedly exited with result of type: %s',
@@ -91,7 +91,7 @@ class ChannelledProcess implements ChannelInterface, ProcessInterface
             throw new StatusError('The process has not been started.');
         }
 
-        if ($data instanceof ExitStatusInterface) {
+        if ($data instanceof ExitStatus) {
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
@@ -111,7 +111,7 @@ class ChannelledProcess implements ChannelInterface, ProcessInterface
 
         yield $this->process->join();
 
-        if (!$response instanceof ExitStatusInterface) {
+        if (!$response instanceof ExitStatus) {
             throw new SynchronizationError('Did not receive an exit status from thread.');
         }
 

@@ -28,7 +28,7 @@ if (null === $autoloadPath) {
 
 require $autoloadPath;
 
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Sync\DataChannel;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Concurrent\Worker\Environment;
@@ -38,7 +38,7 @@ use Icicle\Loop;
 use Icicle\Stream;
 
 Coroutine\create(function () {
-    $channel = new Channel(Stream\stdin(), Stream\stdout());
+    $channel = new DataChannel(Stream\stdin(), Stream\stdout());
     $environment = new Environment();
 
     $runner = new TaskRunner($channel, $environment);

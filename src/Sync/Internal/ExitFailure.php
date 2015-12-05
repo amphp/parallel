@@ -3,7 +3,7 @@ namespace Icicle\Concurrent\Sync\Internal;
 
 use Icicle\Concurrent\Exception\PanicError;
 
-class ExitFailure implements ExitStatusInterface
+class ExitFailure implements ExitStatus
 {
     /**
      * @var string

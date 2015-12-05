@@ -1,14 +1,14 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\MutexInterface;
+use Icicle\Concurrent\Sync\Mutex as SyncMutex;
 
 /**
  * A thread-safe, asynchronous mutex using the pthreads locking mechanism.
  *
  * Compatible with POSIX systems and Microsoft Windows.
  */
-class Mutex implements MutexInterface
+class Mutex implements SyncMutex
 {
     /**
      * @var \Icicle\Concurrent\Threading\Internal\Mutex

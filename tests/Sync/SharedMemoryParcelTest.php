@@ -1,20 +1,20 @@
 <?php
 namespace Icicle\Tests\Concurrent\Sync;
 
-use Icicle\Concurrent\Sync\Parcel;
+use Icicle\Concurrent\Sync\SharedMemoryParcel;
 use Icicle\Coroutine\Coroutine;
 
 /**
  * @requires extension shmop
  * @requires extension sysvmsg
  */
-class ParcelTest extends AbstractParcelTest
+class SharedMemoryParcelTest extends AbstractParcelTest
 {
     private $parcel;
 
     protected function createParcel($value)
     {
-        $this->parcel = new Parcel($value);
+        $this->parcel = new SharedMemoryParcel($value);
         return $this->parcel;
     }
 
@@ -27,14 +27,14 @@ class ParcelTest extends AbstractParcelTest
 
     public function testNewObjectIsNotFreed()
     {
-        $object = new Parcel(new \stdClass());
+        $object = new SharedMemoryParcel(new \stdClass());
         $this->assertFalse($object->isFreed());
         $object->free();
     }
 
     public function testFreeReleasesObject()
     {
-        $object = new Parcel(new \stdClass());
+        $object = new SharedMemoryParcel(new \stdClass());
         $object->free();
         $this->assertTrue($object->isFreed());
     }
@@ -44,7 +44,7 @@ class ParcelTest extends AbstractParcelTest
      */
     public function testUnwrapThrowsErrorIfFreed()
     {
-        $object = new Parcel(new \stdClass());
+        $object = new SharedMemoryParcel(new \stdClass());
         $object->free();
         $object->unwrap();
     }
@@ -52,7 +52,7 @@ class ParcelTest extends AbstractParcelTest
     public function testCloneIsNewObject()
     {
         $object = new \stdClass();
-        $shared = new Parcel($object);
+        $shared = new SharedMemoryParcel($object);
         $clone = clone $shared;
 
         $this->assertNotSame($shared, $clone);
@@ -65,7 +65,7 @@ class ParcelTest extends AbstractParcelTest
 
     public function testObjectOverflowMoved()
     {
-        $object = new Parcel('hi', 14);
+        $object = new SharedMemoryParcel('hi', 14);
         $coroutine = new Coroutine($object->synchronized(function () {
             return 'hello world';
         }));
@@ -81,7 +81,7 @@ class ParcelTest extends AbstractParcelTest
      */
     public function testSetInSeparateProcess()
     {
-        $object = new Parcel(42);
+        $object = new SharedMemoryParcel(42);
 
         $this->doInFork(function () use ($object) {
             $coroutine = new Coroutine($object->synchronized(function () {
@@ -100,7 +100,7 @@ class ParcelTest extends AbstractParcelTest
      */
     public function testFreeInSeparateProcess()
     {
-        $object = new Parcel(42);
+        $object = new SharedMemoryParcel(42);
 
         $this->doInFork(function () use ($object) {
             $object->free();
