@@ -11,7 +11,7 @@ Vagrant.configure(2) do |config|
     # Install pthreads from master
     git clone https://github.com/krakjoe/pthreads
     cd pthreads
-    git checkout master
+    git checkout PHP5
     phpize
     ./configure
     make
