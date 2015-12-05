@@ -2,10 +2,8 @@
 namespace Icicle\Concurrent\Forking;
 
 use Icicle\Concurrent\Exception\ForkException;
-use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Concurrent\Process;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\DataChannel;
@@ -13,6 +11,8 @@ use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Coroutine\Coroutine;
+use Icicle\Exception\InvalidArgumentError;
+use Icicle\Exception\UnsupportedError;
 use Icicle\Loop;
 use Icicle\Stream;
 use Icicle\Stream\Pipe\DuplexPipe;

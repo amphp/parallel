@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Tests\Concurrent\Forking;
 
-use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Concurrent\Forking\Fork;
 use Icicle\Coroutine;
 use Icicle\Loop;

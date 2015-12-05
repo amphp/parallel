@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Tests\Concurrent\Threading;
 
-use Icicle\Concurrent\Sync\Internal\ExitSuccess;
 use Icicle\Concurrent\Threading\Thread;
 use Icicle\Coroutine;
 use Icicle\Loop;

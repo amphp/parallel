@@ -2,13 +2,13 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Icicle\Concurrent\Worker\WorkerFactory;
+use Icicle\Concurrent\Worker\DefaultWorkerFactory;
 use Icicle\Coroutine;
 use Icicle\Examples\Concurrent\BlockingTask;
 use Icicle\Loop;
 
 Coroutine\create(function () {
-    $factory = new WorkerFactory();
+    $factory = new DefaultWorkerFactory();
 
     $worker = $factory->create();
     $worker->start();

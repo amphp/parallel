@@ -133,6 +133,7 @@ class Process implements ProcessContext
     }
 
     /**
+     * @throws \Icicle\Concurrent\Exception\ProcessException If starting the process fails.
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is already running.
      */
     public function start()
@@ -140,6 +141,8 @@ class Process implements ProcessContext
         if (null !== $this->delayed) {
             throw new StatusError('The process has already been started.');
         }
+
+        $this->delayed = new Delayed();
 
         $fd = [
             ['pipe', 'r'], // stdin
@@ -176,8 +179,6 @@ class Process implements ProcessContext
 
         $stream = $pipes[3];
         stream_set_blocking($stream, 0);
-
-        $this->delayed = new Delayed();
 
         $this->poll = Loop\poll($stream, function ($resource) {
             if (feof($resource)) {

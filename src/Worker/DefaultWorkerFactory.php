@@ -1,6 +1,9 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
+use Icicle\Concurrent\Forking\Fork;
+use Icicle\Concurrent\Threading\Thread;
+
 /**
  * The built-in worker factory type.
  */
@@ -15,11 +18,11 @@ class DefaultWorkerFactory implements WorkerFactory
      */
     public function create()
     {
-        if (extension_loaded('pthreads')) {
+        if (Thread::enabled()) {
             return new WorkerThread();
         }
 
-        if (extension_loaded('pcntl')) {
+        if (Fork::enabled()) {
             return new WorkerFork();
         }
 

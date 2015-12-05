@@ -2,15 +2,15 @@
 namespace Icicle\Concurrent\Threading;
 
 use Icicle\Concurrent\Context;
-use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
-use Icicle\Concurrent\Exception\UnsupportedError;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\DataChannel;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Coroutine;
+use Icicle\Exception\InvalidArgumentError;
+use Icicle\Exception\UnsupportedError;
 use Icicle\Stream;
 use Icicle\Stream\Pipe\DuplexPipe;
 
@@ -91,6 +91,7 @@ class Thread implements Channel, Context
      * @param callable $function The callable to invoke in the thread when run.
      *
      * @throws InvalidArgumentError If the given function cannot be safely invoked in a thread.
+     * @throws UnsupportedError Thrown if the pthreads extension is not available.
      */
     public function __construct(callable $function /* , ...$args */)
     {

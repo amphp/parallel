@@ -2,10 +2,8 @@
 namespace Icicle\Tests\Concurrent;
 
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
-use Icicle\Concurrent\Forking\Fork;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Tests\Concurrent\TestCase;
 
 abstract class AbstractContextTest extends TestCase
 {
@@ -245,7 +243,7 @@ abstract class AbstractContextTest extends TestCase
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Icicle\Concurrent\Exception\InvalidArgumentError
+     * @expectedException \Icicle\Exception\InvalidArgumentError
      */
     public function testSendExitStatus()
     {
