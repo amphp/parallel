@@ -15,7 +15,7 @@ use Icicle\Stream\WritableStream;
  */
 class DataChannel implements Channel
 {
-    const HEADER_LENGTH = 4;
+    const HEADER_LENGTH = 6;
 
     /**
      * @var \Icicle\Stream\ReadableStream
@@ -69,16 +69,16 @@ class DataChannel implements Channel
             $serialized = serialize($data);
         } catch (\Exception $exception) {
             throw new ChannelException(
-                'The given data cannot be sent because it is not serializable.', 0, $exception
+                'The given data cannot be sent because it is not serializable.', $exception
             );
         }
 
         $length = strlen($serialized);
 
         try {
-            yield $this->write->write(pack('L', $length) . $serialized);
+            yield $this->write->write(pack('SL', 0, $length) . $serialized);
         } catch (StreamException $exception) {
-            throw new ChannelException('Sending on the channel failed. Did the context die?', 0, $exception);
+            throw new ChannelException('Sending on the channel failed. Did the context die?', $exception);
         }
 
         yield $length;
@@ -99,15 +99,20 @@ class DataChannel implements Channel
                 $buffer .= (yield $this->read->read($remaining));
             } while ($remaining = $length - strlen($buffer));
 
-            list(, $length) = unpack('L', $buffer);
+            $data = unpack('Sprefix/Llength', $buffer);
+
+            if (0 !== $data['prefix']) {
+                throw new ChannelException('Invalid header received.');
+            }
+
             $buffer = '';
-            $remaining = $length;
+            $remaining = $length = $data['length'];
 
             do {
                 $buffer .= (yield $this->read->read($remaining));
             } while ($remaining = $length - strlen($buffer));
         } catch (StreamException $exception) {
-            throw new ChannelException('Reading from the channel failed. Did the context die?', 0, $exception);
+            throw new ChannelException('Reading from the channel failed. Did the context die?', $exception);
         }
 
         set_error_handler($this->errorHandler);
@@ -116,7 +121,7 @@ class DataChannel implements Channel
         try {
             $data = unserialize($buffer);
         } catch (\Exception $exception) {
-            throw new ChannelException('Exception thrown when unserializing data.', 0, $exception);
+            throw new ChannelException('Exception thrown when unserializing data.', $exception);
         } finally {
             restore_error_handler();
         }
