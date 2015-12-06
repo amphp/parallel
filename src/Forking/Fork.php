@@ -6,7 +6,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Process;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\DataChannel;
+use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
@@ -195,7 +195,7 @@ class Fork implements Channel, Process
                 // Create a new event loop in the fork.
                 Loop\loop($loop = Loop\create(false));
 
-                $channel = new DataChannel($pipe = new DuplexPipe($parent));
+                $channel = new ChannelledStream($pipe = new DuplexPipe($parent));
                 fclose($child);
 
                 $coroutine = new Coroutine($this->execute($channel));
@@ -217,7 +217,7 @@ class Fork implements Channel, Process
             default: // Parent
                 $this->pid = $pid;
                 $this->oid = posix_getpid();
-                $this->channel = new DataChannel($this->pipe = new DuplexPipe($child));
+                $this->channel = new ChannelledStream($this->pipe = new DuplexPipe($child));
                 fclose($parent);
         }
     }

@@ -13,9 +13,9 @@ use Icicle\Stream\WritableStream;
  *
  * Supports full duplex read and write.
  */
-class DataChannel implements Channel
+class ChannelledStream implements Channel
 {
-    const HEADER_LENGTH = 6;
+    const HEADER_LENGTH = 5;
 
     /**
      * @var \Icicle\Stream\ReadableStream
@@ -76,7 +76,7 @@ class DataChannel implements Channel
         $length = strlen($serialized);
 
         try {
-            yield $this->write->write(pack('SL', 0, $length) . $serialized);
+            yield $this->write->write(pack('CL', 0, $length) . $serialized);
         } catch (StreamException $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', $exception);
         }
@@ -99,7 +99,7 @@ class DataChannel implements Channel
                 $buffer .= (yield $this->read->read($remaining));
             } while ($remaining = $length - strlen($buffer));
 
-            $data = unpack('Sprefix/Llength', $buffer);
+            $data = unpack('Cprefix/Llength', $buffer);
 
             if (0 !== $data['prefix']) {
                 throw new ChannelException('Invalid header received.');

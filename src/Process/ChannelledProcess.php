@@ -6,7 +6,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Process as ProcessContext;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\DataChannel;
+use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 
 class ChannelledProcess implements Channel, ProcessContext
@@ -49,7 +49,7 @@ class ChannelledProcess implements Channel, ProcessContext
     {
         $this->process->start();
 
-        $this->channel = new DataChannel($this->process->getStdOut(), $this->process->getStdIn());
+        $this->channel = new ChannelledStream($this->process->getStdOut(), $this->process->getStdIn());
     }
 
     /**

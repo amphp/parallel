@@ -6,7 +6,7 @@ use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
 use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\DataChannel;
+use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Coroutine;
 use Icicle\Exception\InvalidArgumentError;
@@ -171,7 +171,7 @@ class Thread implements Channel, Context
             throw new ThreadException('Failed to start the thread.');
         }
 
-        $this->channel = new DataChannel($this->pipe = new DuplexPipe($channel));
+        $this->channel = new ChannelledStream($this->pipe = new DuplexPipe($channel));
     }
 
     /**
