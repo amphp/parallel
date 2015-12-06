@@ -37,7 +37,7 @@ class ChannelledStreamTest extends TestCase
     }
 
     /**
-     * @expectedException \Icicle\Concurrent\Exception\InvalidArgumentError
+     * @expectedException \Icicle\Exception\InvalidArgumentError
      */
     public function testReadableWithoutWritable()
     {

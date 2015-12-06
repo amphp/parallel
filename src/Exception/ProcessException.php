@@ -1,6 +1,4 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class ProcessException extends Exception
-{
-}
+class ProcessException extends \Exception implements Exception {}

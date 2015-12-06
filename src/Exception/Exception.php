@@ -1,6 +1,4 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class Exception extends \Exception
-{
-}
+interface Exception extends \Icicle\Exception\Exception, Throwable {}

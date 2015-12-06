@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\ChannelException;
-use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Exception\InvalidArgumentError;
 use Icicle\Stream\Exception\Exception as StreamException;
 use Icicle\Stream\DuplexStream;
 use Icicle\Stream\ReadableStream;
@@ -38,7 +38,7 @@ class ChannelledStream implements Channel
      * @param \Icicle\Stream\ReadableStream $read
      * @param \Icicle\Stream\WritableStream|null $write
      *
-     * @throws \Icicle\Concurrent\Exception\InvalidArgumentError Thrown if no write stream is provided and the read
+     * @throws \Icicle\Exception\InvalidArgumentError Thrown if no write stream is provided and the read
      *     stream is not a duplex stream.
      */
     public function __construct(ReadableStream $read, WritableStream $write = null)

@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class TaskException extends Exception
+class TaskException extends \Exception implements Exception
 {
     /**
      * @var string Stack trace of the panic.

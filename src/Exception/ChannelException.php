@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class ChannelException extends Exception
+class ChannelException extends \Exception implements Exception
 {
     public function __construct($message, \Exception $previous = null)
     {

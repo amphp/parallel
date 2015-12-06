@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class PanicError extends Error
+class PanicError extends \Exception implements Error
 {
     /**
      * @var string Stack trace of the panic.

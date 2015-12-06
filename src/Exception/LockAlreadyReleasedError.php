@@ -1,6 +1,4 @@
 <?php
 namespace Icicle\Concurrent\Exception;
 
-class LockAlreadyReleasedError extends Error
-{
-}
+class LockAlreadyReleasedError extends \Exception implements Error {}
