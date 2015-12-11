@@ -23,8 +23,6 @@ use Icicle\Stream\Pipe\DuplexPipe;
  */
 class Thread implements Channel, Context
 {
-    const LATENCY_TIMEOUT = 0.01; // 10 ms
-
     /**
      * @var Internal\Thread An internal thread instance.
      */
