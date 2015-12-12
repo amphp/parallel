@@ -97,6 +97,23 @@ abstract class AbstractContextTest extends TestCase
         Loop\run();
     }
 
+    /**
+     * @expectedException \Icicle\Concurrent\Exception\PanicError
+     */
+    public function testReturnUnserializableDataPanics()
+    {
+        Coroutine\create(function () {
+            $context = $this->createContext(function () {
+                yield function () {};
+            });
+
+            $context->start();
+            yield $context->join();
+        })->done();
+
+        Loop\run();
+    }
+
     public function testJoinWaitsForChild()
     {
         Loop\loop();
