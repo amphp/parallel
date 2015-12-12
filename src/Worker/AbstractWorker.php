@@ -4,6 +4,7 @@ namespace Icicle\Concurrent\Worker;
 use Icicle\Awaitable\Delayed;
 use Icicle\Concurrent\Context;
 use Icicle\Concurrent\Exception\StatusError;
+use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
 
 /**
@@ -27,9 +28,15 @@ abstract class AbstractWorker implements Worker
     private $shutdown = false;
 
     /**
+     * @var \Icicle\Awaitable\Delayed
+     */
+    private $activeDelayed;
+
+    /**
      * @var \SplQueue
      */
     private $busyQueue;
+
 
     /**
      * @param \Icicle\Concurrent\Context $context
@@ -85,11 +92,13 @@ abstract class AbstractWorker implements Worker
         }
 
         $this->idle = false;
+        $this->activeDelayed = new Delayed();
 
         yield $this->context->send($task);
 
         $result = (yield $this->context->receive());
 
+        $this->activeDelayed->resolve();
         $this->idle = true;
 
         // We're no longer busy at the moment, so dequeue a waiting task.
@@ -115,14 +124,16 @@ abstract class AbstractWorker implements Worker
 
         $this->shutdown = true;
 
-        yield $this->context->send(0);
-
-        yield $this->context->join();
-
         // Cancel any waiting tasks.
-        while (!$this->busyQueue->isEmpty()) {
-            $this->busyQueue->dequeue()->reject();
+        $this->cancelPending();
+
+        // If a task is currently running, wait for it to finish.
+        if (!$this->idle) {
+            yield $this->activeDelayed;
         }
+
+        yield $this->context->send(0);
+        yield $this->context->join();
     }
 
     /**
@@ -130,11 +141,19 @@ abstract class AbstractWorker implements Worker
      */
     public function kill()
     {
+        $this->cancelPending();
         $this->context->kill();
+    }
 
-        // Cancel any waiting tasks.
+    /**
+     * Cancels all pending tasks.
+     */
+    private function cancelPending()
+    {
+        $exception = new WorkerException('Worker was shut down.');
+
         while (!$this->busyQueue->isEmpty()) {
-            $this->busyQueue->dequeue()->reject();
+            $this->busyQueue->dequeue()->cancel($exception);
         }
     }
 }
