@@ -1,10 +1,14 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
+use Icicle\Awaitable\Delayed;
 use Icicle\Concurrent\Context;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
 
+/**
+ * Base class for most common types of task workers.
+ */
 abstract class AbstractWorker implements Worker
 {
     /**
@@ -23,11 +27,17 @@ abstract class AbstractWorker implements Worker
     private $shutdown = false;
 
     /**
+     * @var \SplQueue
+     */
+    private $busyQueue;
+
+    /**
      * @param \Icicle\Concurrent\Context $context
      */
     public function __construct(Context $context)
     {
         $this->context = $context;
+        $this->busyQueue = new \SplQueue();
     }
 
     /**
@@ -64,7 +74,14 @@ abstract class AbstractWorker implements Worker
         }
 
         if ($this->shutdown) {
-            throw new StatusError('The worker has been shutdown.');
+            throw new StatusError('The worker has been shut down.');
+        }
+
+        // If the worker is currently busy, store the task in a busy queue.
+        if (!$this->idle) {
+            $delayed = new Delayed();
+            $this->busyQueue->enqueue($delayed);
+            yield $delayed;
         }
 
         $this->idle = false;
@@ -74,6 +91,11 @@ abstract class AbstractWorker implements Worker
         $result = (yield $this->context->receive());
 
         $this->idle = true;
+
+        // We're no longer busy at the moment, so dequeue a waiting task.
+        if (!$this->busyQueue->isEmpty()) {
+            $this->busyQueue->dequeue()->resolve();
+        }
 
         if ($result instanceof TaskFailure) {
             throw $result->getException();
@@ -96,6 +118,11 @@ abstract class AbstractWorker implements Worker
         yield $this->context->send(0);
 
         yield $this->context->join();
+
+        // Cancel any waiting tasks.
+        while (!$this->busyQueue->isEmpty()) {
+            $this->busyQueue->dequeue()->reject();
+        }
     }
 
     /**
@@ -104,5 +131,10 @@ abstract class AbstractWorker implements Worker
     public function kill()
     {
         $this->context->kill();
+
+        // Cancel any waiting tasks.
+        while (!$this->busyQueue->isEmpty()) {
+            $this->busyQueue->dequeue()->reject();
+        }
     }
 }

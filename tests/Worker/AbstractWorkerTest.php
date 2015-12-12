@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
+use Icicle\Awaitable;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
@@ -50,6 +51,26 @@ abstract class AbstractWorkerTest extends TestCase
 
             $returnValue = (yield $worker->enqueue(new TestTask(42)));
             $this->assertEquals(42, $returnValue);
+
+            yield $worker->shutdown();
+        })->done();
+
+        Loop\run();
+    }
+
+    public function testEnqueueMultiple()
+    {
+        Coroutine\create(function () {
+            $worker = $this->createWorker();
+            $worker->start();
+
+            $values = (yield Awaitable\all([
+                new Coroutine\Coroutine($worker->enqueue(new TestTask(42))),
+                new Coroutine\Coroutine($worker->enqueue(new TestTask(56))),
+                new Coroutine\Coroutine($worker->enqueue(new TestTask(72)))
+            ]));
+
+            $this->assertEquals([42, 56, 72], $values);
 
             yield $worker->shutdown();
         })->done();
