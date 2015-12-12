@@ -9,14 +9,14 @@ use Icicle\Tests\Concurrent\TestCase;
 abstract class AbstractWorkerTest extends TestCase
 {
     /**
-     * @return \Icicle\Concurrent\Worker\WorkerInterface
+     * @return \Icicle\Concurrent\Worker\WorkerFactory
      */
-    abstract protected function createWorker();
+    abstract protected function getFactory();
 
     public function testIsRunning()
     {
         Coroutine\create(function () {
-            $worker = $this->createWorker();
+            $worker = $this->getFactory()->create();
             $this->assertFalse($worker->isRunning());
 
             $worker->start();
@@ -32,7 +32,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testIsIdleOnStart()
     {
         Coroutine\create(function () {
-            $worker = $this->createWorker();
+            $worker = $this->getFactory()->create();
             $worker->start();
 
             $this->assertTrue($worker->isIdle());
@@ -46,7 +46,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testEnqueue()
     {
         Coroutine\create(function () {
-            $worker = $this->createWorker();
+            $worker = $this->getFactory()->create();
             $worker->start();
 
             $returnValue = (yield $worker->enqueue(new TestTask(42)));
@@ -61,7 +61,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testEnqueueMultiple()
     {
         Coroutine\create(function () {
-            $worker = $this->createWorker();
+            $worker = $this->getFactory()->create();
             $worker->start();
 
             $values = (yield Awaitable\all([
@@ -81,7 +81,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testNotIdleOnEnqueue()
     {
         Coroutine\create(function () {
-            $worker = $this->createWorker();
+            $worker = $this->getFactory()->create();
             $worker->start();
 
             $coroutine = new Coroutine\Coroutine($worker->enqueue(new TestTask(42)));
@@ -96,7 +96,7 @@ abstract class AbstractWorkerTest extends TestCase
 
     public function testKill()
     {
-        $worker = $this->createWorker();
+        $worker = $this->getFactory()->create();
         $worker->start();
 
         $this->assertRunTimeLessThan([$worker, 'kill'], 0.2);

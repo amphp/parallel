@@ -1,15 +1,16 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\WorkerThread;
+use Icicle\Concurrent\Worker\WorkerThreadFactory;
 
 /**
+ * @group threading
  * @requires extension pthreads
  */
 class WorkerThreadTest extends AbstractWorkerTest
 {
-    protected function createWorker()
+    protected function getFactory()
     {
-        return new WorkerThread();
+        return new WorkerThreadFactory();
     }
 }

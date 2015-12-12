@@ -1,17 +1,15 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
+use Icicle\Awaitable;
 use Icicle\Concurrent\Worker\DefaultPool;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
 
-class PoolTest extends TestCase
+abstract class AbstractPoolTest extends TestCase
 {
-    public function createPool($min = null, $max = null)
-    {
-        return new DefaultPool($min, $max);
-    }
+    abstract protected function createPool($min = null, $max = null);
 
     public function testIsRunning()
     {
@@ -83,6 +81,24 @@ class PoolTest extends TestCase
 
             $returnValue = (yield $pool->enqueue(new TestTask(42)));
             $this->assertEquals(42, $returnValue);
+
+            yield $pool->shutdown();
+        });
+    }
+
+    public function testEnqueueMultiple()
+    {
+        Coroutine\run(function () {
+            $pool = $this->createPool();
+            $pool->start();
+
+            $values = (yield Awaitable\all([
+                new Coroutine\Coroutine($pool->enqueue(new TestTask(42))),
+                new Coroutine\Coroutine($pool->enqueue(new TestTask(56))),
+                new Coroutine\Coroutine($pool->enqueue(new TestTask(72)))
+            ]));
+
+            $this->assertEquals([42, 56, 72], $values);
 
             yield $pool->shutdown();
         });

@@ -48,9 +48,9 @@ class DefaultPool implements Pool
     private $factory;
 
     /**
-     * @var Worker[] A collection of all workers in the pool.
+     * @var \SplObjectStorage A collection of all workers in the pool.
      */
-    private $workers = [];
+    private $workers;
 
     /**
      * @var \SplQueue A collection of idle workers.
@@ -91,6 +91,7 @@ class DefaultPool implements Pool
         // Create the default factory if none is given.
         $this->factory = $factory ?: new DefaultWorkerFactory();
 
+        $this->workers = new \SplObjectStorage();
         $this->idleWorkers = new \SplQueue();
         $this->busyQueue = new \SplQueue();
     }
@@ -167,7 +168,7 @@ class DefaultPool implements Pool
         $count = $this->minSize;
         while (--$count >= 0) {
             $worker = $this->createWorker();
-            $this->idleWorkers->push($worker);
+            $this->idleWorkers->enqueue($worker);
         }
 
         $this->running = true;
@@ -193,16 +194,39 @@ class DefaultPool implements Pool
             throw new StatusError('The worker pool has not been started.');
         }
 
-        /** @var \Icicle\Concurrent\Worker\Worker $worker */
-        $worker = (yield $this->getWorker());
+        // Find a free worker if one is available.
+        if (!$this->idleWorkers->isEmpty()) {
+            $worker = $this->idleWorkers->dequeue();
+        } elseif ($this->getWorkerCount() < $this->maxSize) {
+            // We are allowed to spawn another worker if needed, so do so.
+            $worker = $this->createWorker();
+        } else {
+            // We have no other choice but to wait for a worker to be freed up.
+            $delayed = new Delayed();
+            $this->busyQueue->enqueue($delayed);
+            $worker = (yield $delayed);
+        }
 
         try {
             $result = (yield $worker->enqueue($task));
         } finally {
-            if ($worker->isRunning()) {
-                $this->pushWorker($worker);
-            } else { // Worker crashed, spin up a new worker.
-                $this->pushWorker($this->createWorker());
+            if (!$worker->isRunning()) {
+                // Worker crashed, discard it and spin up a new worker.
+                $this->workers->detach($worker);
+                $worker = $this->createWorker();
+            }
+
+            // If someone is waiting on a worker, give it to them instead.
+            if (!$this->busyQueue->isEmpty()) {
+                /** @var \Icicle\Awaitable\Delayed $delayed */
+                $delayed = $this->busyQueue->dequeue();
+
+                if ($delayed->isPending()) {
+                    $delayed->resolve($worker);
+                }
+            } else {
+                // No tasks are waiting, so add the worker to the idle queue.
+                $this->idleWorkers->enqueue($worker);
             }
         }
 
@@ -226,9 +250,11 @@ class DefaultPool implements Pool
 
         $this->close();
 
-        $shutdowns = array_map(function (Worker $worker) {
-            return new Coroutine($worker->shutdown());
-        }, $this->workers);
+        $shutdowns = [];
+
+        foreach ($this->workers as $worker) {
+            $shutdowns[] = new Coroutine($worker->shutdown());
+        }
 
         yield Awaitable\reduce($shutdowns, function ($carry, $value) {
             return $carry ?: $value;
@@ -254,13 +280,12 @@ class DefaultPool implements Pool
     {
         $this->running = false;
 
-        if (!$this->busyQueue->isEmpty()) {
-            $exception = new WorkerException('Worker pool was shutdown.');
-            do {
-                /** @var \Icicle\Awaitable\Delayed $delayed */
-                $delayed = $this->busyQueue->dequeue();
-                $delayed->cancel($exception);
-            } while (!$this->busyQueue->isEmpty());
+        $exception = new WorkerException('Worker pool was shut down.');
+
+        while (!$this->busyQueue->isEmpty()) {
+            /** @var \Icicle\Awaitable\Delayed $delayed */
+            $delayed = $this->busyQueue->dequeue();
+            $delayed->cancel($exception);
         }
     }
 
@@ -274,49 +299,7 @@ class DefaultPool implements Pool
         $worker = $this->factory->create();
         $worker->start();
 
-        $this->workers[] = $worker;
+        $this->workers->attach($worker);
         return $worker;
-    }
-
-    /**
-     * Gets the first available idle worker, spawns a new worker if able, or waits until a working becomes available.
-     *
-     * @coroutine
-     *
-     * @return \Icicle\Concurrent\Worker\Worker An idle worker.
-     */
-    private function getWorker()
-    {
-        if ($this->idleWorkers->isEmpty()) {
-            if ($this->getWorkerCount() < $this->maxSize) {
-                yield $this->createWorker();
-                return;
-            }
-
-            $delayed = new Delayed();
-            $this->busyQueue->push($delayed);
-
-            yield $delayed;
-            return;
-        }
-
-        yield $this->idleWorkers->shift();
-    }
-
-    /**
-     * @param \Icicle\Concurrent\Worker\Worker $worker
-     */
-    private function pushWorker(Worker $worker)
-    {
-        $this->idleWorkers->push($worker);
-
-        while (!$this->busyQueue->isEmpty() && !$this->idleWorkers->isEmpty()) {
-            /** @var \Icicle\Awaitable\Delayed $delayed */
-            $delayed = $this->busyQueue->shift();
-
-            if ($delayed->isPending()) {
-                $delayed->resolve($this->idleWorkers->shift());
-            }
-        }
     }
 }
