@@ -4,28 +4,26 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Icicle\Awaitable;
 use Icicle\Concurrent\Worker\DefaultPool;
-use Icicle\Coroutine\Coroutine;
+use Icicle\Coroutine;
 use Icicle\Examples\Concurrent\BlockingTask;
 use Icicle\Loop;
 
-$generator = function () {
+Coroutine\create(function() {
     $pool = new DefaultPool();
     $pool->start();
 
-    $results = (yield Awaitable\all([
-        'google.com' => new Coroutine($pool->enqueue(new BlockingTask('file_get_contents', 'https://google.com'))),
-        'icicle.io'  => new Coroutine($pool->enqueue(new BlockingTask('file_get_contents', 'https://icicle.io'))),
-    ]));
+    Coroutine\create(function () use ($pool) {
+        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', 'https://google.com')));
+        printf("Read from google.com: %d bytes\n", strlen($result));
+    });
 
-    foreach ($results as $source => $result) {
-        printf("Read from %s: %d bytes\n", $source, strlen($result));
-    }
+    Coroutine\create(function () use ($pool) {
+        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', 'https://icicle.io')));
+        printf("Read from icicle.io: %d bytes\n", strlen($result));
+    });
 
     yield $pool->shutdown();
-};
-
-$coroutine = new Coroutine($generator());
-$coroutine->done();
+})->done();
 
 Loop\periodic(0.1, function () {
     printf(".\n");
