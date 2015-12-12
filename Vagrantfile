@@ -1,12 +1,8 @@
 Vagrant.configure(2) do |config|
-  config.vm.box = "coderstephen/php-dev"
+  config.vm.box = "rasmus/php7dev"
 
   config.vm.provision "shell", inline: <<-SHELL
-    newphp 56 zts debug
-
-    # Install xdebug
-    sudo pickle install -n xdebug
-    echo 'zend_extension=xdebug.so' >> `php -i | grep php-cli.ini | awk '{print $5}'`
+    newphp 56 zts
 
     # Install pthreads from master
     git clone https://github.com/krakjoe/pthreads
