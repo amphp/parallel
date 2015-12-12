@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file. This projec
 
 
 ## Unreleased
+### Added
+- You can now easily create worker pools that use a fixed worker type with new dedicated worker factories: `Worker\WorkerThreadFactory`, `Worker\WorkerForkFactory`, and `Worker\WorkerProcessFactory`.
+
+### Changed
+- Updated to Icicle `0.9.x` packages.
+
+### Fixed
+- Fixed bug where workers would begin throwing `BusyError`s when tasks are enqueued simultaneously or between multiple coroutines.
+- Fixed bugs with worker shutdowns conflicting with tasks already running.
+- Fixed race conditions with pools occurring when enqueuing many tasks at once.
 
 
 ## [0.1.1] - 2015-11-13
