@@ -3,9 +3,6 @@ All notable changes to this project will be documented in this file. This projec
 
 
 ## Unreleased
-### Added
-- You can now easily create worker pools that use a fixed worker type with new dedicated worker factories: `Worker\WorkerThreadFactory`, `Worker\WorkerForkFactory`, and `Worker\WorkerProcessFactory`.
-
 ### Changed
 - Updated to Icicle `0.9.x` packages.
 
