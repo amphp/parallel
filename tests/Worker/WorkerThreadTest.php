@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\WorkerThreadFactory;
+use Icicle\Concurrent\Worker\WorkerThread;
 
 /**
  * @group threading
@@ -9,8 +9,8 @@ use Icicle\Concurrent\Worker\WorkerThreadFactory;
  */
 class WorkerThreadTest extends AbstractWorkerTest
 {
-    protected function getFactory()
+    protected function createWorker()
     {
-        return new WorkerThreadFactory();
+        return new WorkerThread();
     }
 }

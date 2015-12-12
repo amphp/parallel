@@ -1,12 +1,12 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\WorkerProcessFactory;
+use Icicle\Concurrent\Worker\WorkerProcess;
 
 class WorkerProcessTest extends AbstractWorkerTest
 {
-    protected function getFactory()
+    protected function createWorker()
     {
-        return new WorkerProcessFactory();
+        return new WorkerProcess();
     }
 }

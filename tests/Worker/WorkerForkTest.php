@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\WorkerForkFactory;
+use Icicle\Concurrent\Worker\WorkerFork;
 
 /**
  * @group forking
@@ -9,8 +9,8 @@ use Icicle\Concurrent\Worker\WorkerForkFactory;
  */
 class WorkerForkTest extends AbstractWorkerTest
 {
-    protected function getFactory()
+    protected function createWorker()
     {
-        return new WorkerForkFactory();
+        return new WorkerFork();
     }
 }
