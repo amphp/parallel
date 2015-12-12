@@ -48,7 +48,13 @@ Coroutine\create(function () {
         $result = new ExitFailure($exception);
     }
 
-    yield $channel->send($result);
+    // Attempt to return the result.
+    try {
+        yield $channel->send($result);
+    } catch (Exception $exception) {
+        // The result was not sendable! Try sending the reason why instead.
+        yield $channel->send(new ExitFailure($exception));
+    }
 })->done();
 
 Loop\run();

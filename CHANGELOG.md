@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 - Fixed bug where workers would begin throwing `BusyError`s when tasks are enqueued simultaneously or between multiple coroutines.
 - Fixed bugs with worker shutdowns conflicting with tasks already running.
 - Fixed race conditions with pools occurring when enqueuing many tasks at once.
+- Fixed issue with contexts failing without explanation if the returned value could not be serialized.
 
 
 ## [0.1.1] - 2015-11-13
