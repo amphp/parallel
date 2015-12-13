@@ -2,9 +2,16 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## Unreleased
+## [0.2.0] - 2015-12-13
 ### Changed
 - Updated to Icicle `0.9.x` packages.
+- All exceptions now implement the `Icicle\Exception\Throwable` interface.
+- All interface names have been changed to remove the Interface suffix.
+- `Sync\Channel` was renamed to `Sync\ChannelledStream`.
+- `Sync\Parcel` was renamed to `Sync\SharedMemoryParcel`.
+- `Worker\Worker` has been renamed to `Worker\AbstractWorker`.
+- `Worker\Pool` has been renamed to `Worker\DefaultPool`.
+- `Worker\WorkerFactory` is now an interface, with the default implementation as `Worker\DefaultWorkerFactory`.
 
 ### Fixed
 - Fixed bug where workers would begin throwing `BusyError`s when tasks are enqueued simultaneously or between multiple coroutines.
@@ -53,6 +60,7 @@ First release.
 - Non-blocking mutexes and semaphores for protecting parcels.
 
 
+[0.2.0]: https://github.com/icicleio/concurrent/releases/tag/v0.2.0
 [0.1.1]: https://github.com/icicleio/concurrent/releases/tag/v0.1.1
 [0.1.0]: https://github.com/icicleio/concurrent/releases/tag/v0.1.0
 [0.1.0-beta1]: https://github.com/icicleio/concurrent/releases/tag/v0.1.0-beta1
