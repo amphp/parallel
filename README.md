@@ -29,7 +29,7 @@ To be as flexible as possible, this library comes with a collection of non-block
 
 The recommended way to install is with the [Composer](http://getcomposer.org/) package manager. (See the [Composer installation guide](https://getcomposer.org/doc/00-intro.md) for information on installing and using Composer.)
 
-Run the following command to use Icicle in your project: 
+Run the following command to use Icicle in your project:
 
 ```bash
 composer require icicleio/concurrent
@@ -55,14 +55,6 @@ phpize
 ./configure
 make
 sudo make install
-```
-
-##### Benchmarks
-
-A few benchmarks are provided for analysis and study. Can be used to back up implementation decisions, or to measure performance on different platforms or hardware.
-
-```bash
-vendor/bin/athletic -p benchmarks -b vendor/autoload.php
 ```
 
 ## Documentation
@@ -138,7 +130,7 @@ Coroutine\create(function () {
 
     $message = (yield $thread->receive()); // Receive from the context.
     yield $thread->join();
-    
+
     print $message . "\n";
 });
 
