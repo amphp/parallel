@@ -2,7 +2,7 @@
 
 **True concurrency using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
-This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Promises](https://github.com/icicleio/icicle/wiki/Promises) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) for asynchronous operations that may be used to build [Coroutines](https://github.com/icicleio/icicle/wiki/Coroutines) to make writing asynchronous code more like writing synchronous code.
+This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Coroutines](//github.com/icicleio/icicle/wiki/Coroutines) built from [Awaitables](https://github.com/icicleio/icicle/wiki/Awaitables) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
 [![Build Status](https://img.shields.io/travis/icicleio/concurrent/master.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
 [![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/master.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
@@ -21,7 +21,6 @@ To be as flexible as possible, this library comes with a collection of non-block
 ##### Suggested
 
 - [pthreads extension](https://pecl.php.net/package/pthreads): Best extension option for concurrency in PHP, but it requires PHP to be compiled with `--enable-maintainer-zts` to enable thread-safety.
-  *or*
 - [pcntl extension](http://php.net/manual/en/book.pcntl.php): Enables forking concurrency method.
 - [sysvmsg extension](http://php.net/manual/en/book.sem.php): Required for sharing memory between forks or processes.
 
@@ -41,20 +40,9 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "icicleio/concurrent": "^0.1"
+        "icicleio/concurrent": "^0.2"
     }
 }
-```
-
-While the pthreads is not necessary for this package, it is the fastest and best choice for concurrency in PHP. To enable threading, you will need to compile pthreads from source, as this package depends on unstable and unreleased fixes in pthreads.
-
-```bash
-git clone https://github.com/krakjoe/pthreads && cd pthreads
-git checkout master
-phpize
-./configure
-make
-sudo make install
 ```
 
 ## Documentation
