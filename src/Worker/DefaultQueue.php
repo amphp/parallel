@@ -34,6 +34,11 @@ class DefaultQueue implements Queue
     private $busy;
 
     /**
+     * @var \SplObjectStorage
+     */
+    private $workers;
+
+    /**
      * @var bool
      */
     private $running = false;
@@ -63,6 +68,7 @@ class DefaultQueue implements Queue
         $this->factory = $factory ?: new DefaultWorkerFactory();
         $this->minSize = $minSize;
         $this->maxSize = $maxSize;
+        $this->workers = new \SplObjectStorage();
         $this->idle = new \SplQueue();
         $this->busy = new \SplQueue();
     }
@@ -89,6 +95,7 @@ class DefaultQueue implements Queue
         while (--$count >= 0) {
             $worker = $this->factory->create();
             $worker->start();
+            $this->workers->attach($worker, 0);
             $this->idle->push($worker);
         }
 
@@ -113,6 +120,7 @@ class DefaultQueue implements Queue
                     // Max worker count has not been reached, so create another worker.
                     $worker = $this->factory->create();
                     $worker->start();
+                    $this->workers->attach($worker, 0);
                 }
             } else {
                 // Shift a worker off the idle queue.
@@ -121,6 +129,7 @@ class DefaultQueue implements Queue
         } while (!$worker->isRunning());
 
         $this->busy->push($worker);
+        $this->workers[$worker] += 1;
 
         return $worker;
     }
@@ -134,23 +143,23 @@ class DefaultQueue implements Queue
             throw new StatusError('The queue is not running.');
         }
 
-        $throw = true;
-
-        foreach ($this->busy as $key => $busy) {
-            if ($busy === $worker) {
-                $throw = false;
-                unset($this->busy[$key]);
-                break;
-            }
-        }
-
-        if ($throw) {
+        if (!$this->workers->contains($worker)) {
             throw new InvalidArgumentError(
                 'The provided worker was not part of this queue or was already pushed back into the queue.'
             );
         }
 
-        $this->idle->push($worker);
+        if (0 === ($this->workers[$worker] -= 1)) {
+            // Worker is completely idle, remove from busy queue and add to idle queue.
+            foreach ($this->busy as $key => $busy) {
+                if ($busy === $worker) {
+                    unset($this->busy[$key]);
+                    break;
+                }
+            }
+
+            $this->idle->push($worker);
+        }
     }
 
     /**
@@ -198,13 +207,7 @@ class DefaultQueue implements Queue
 
         $shutdowns = [];
 
-        foreach ($this->idle as $worker) {
-            if ($worker->isRunning()) {
-                $shutdowns[] = new Coroutine($worker->shutdown());
-            }
-        }
-
-        foreach ($this->busy as $worker) {
+        foreach ($this->workers as $worker) {
             if ($worker->isRunning()) {
                 $shutdowns[] = new Coroutine($worker->shutdown());
             }
@@ -222,11 +225,7 @@ class DefaultQueue implements Queue
     {
         $this->running = false;
 
-        foreach ($this->idle as $worker) {
-            $worker->kill();
-        }
-
-        foreach ($this->busy as $worker) {
+        foreach ($this->workers as $worker) {
             $worker->kill();
         }
     }
