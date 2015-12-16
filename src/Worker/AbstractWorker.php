@@ -94,16 +94,18 @@ abstract class AbstractWorker implements Worker
         $this->idle = false;
         $this->activeDelayed = new Delayed();
 
-        yield $this->context->send($task);
+        try {
+            yield $this->context->send($task);
 
-        $result = (yield $this->context->receive());
+            $result = (yield $this->context->receive());
+        } finally {
+            $this->idle = true;
+            $this->activeDelayed->resolve();
 
-        $this->activeDelayed->resolve();
-        $this->idle = true;
-
-        // We're no longer busy at the moment, so dequeue a waiting task.
-        if (!$this->busyQueue->isEmpty()) {
-            $this->busyQueue->dequeue()->resolve();
+            // We're no longer busy at the moment, so dequeue a waiting task.
+            if (!$this->busyQueue->isEmpty()) {
+                $this->busyQueue->dequeue()->resolve();
+            }
         }
 
         if ($result instanceof TaskFailure) {
