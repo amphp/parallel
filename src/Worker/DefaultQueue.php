@@ -1,0 +1,231 @@
+<?php
+namespace Icicle\Concurrent\Worker;
+
+use Icicle\Awaitable;
+use Icicle\Concurrent\Exception\StatusError;
+use Icicle\Coroutine\Coroutine;
+use Icicle\Exception\InvalidArgumentError;
+
+class DefaultQueue implements Queue
+{
+    /**
+     * @var \Icicle\Concurrent\Worker\WorkerFactory
+     */
+    private $factory;
+
+    /**
+     * @var int The minimum number of workers the queue should spawn.
+     */
+    private $minSize;
+
+    /**
+     * @var int The maximum number of workers the queue should spawn.
+     */
+    private $maxSize;
+
+    /**
+     * @var \SplQueue
+     */
+    private $idle;
+
+    /**
+     * @var \SplQueue
+     */
+    private $busy;
+
+    /**
+     * @var bool
+     */
+    private $running = false;
+
+    /**
+     * @param int $minSize
+     * @param int $maxSize
+     * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory Factory used to create new workers.
+     *
+     * @throws \Icicle\Exception\InvalidArgumentError If the min or max size are invalid.
+     */
+    public function __construct($minSize = 0, $maxSize = 0, WorkerFactory $factory = null)
+    {
+        $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
+        $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;
+
+        if (!is_int($minSize) || $minSize < 0) {
+            throw new InvalidArgumentError('Minimum size must be a non-negative integer.');
+        }
+
+        if (!is_int($maxSize) || $maxSize < 0 || $maxSize < $minSize) {
+            throw new InvalidArgumentError('Maximum size must be a non-negative integer at least '.$minSize.'.');
+        }
+
+        $this->factory = $factory ?: new DefaultWorkerFactory();
+        $this->minSize = $minSize;
+        $this->maxSize = $maxSize;
+        $this->idle = new \SplQueue();
+        $this->busy = new \SplQueue();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isRunning()
+    {
+        return $this->running;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function start()
+    {
+        if ($this->isRunning()) {
+            throw new StatusError('The worker queue has already been started.');
+        }
+
+        // Start up the pool with the minimum number of workers.
+        $count = $this->minSize;
+        while (--$count >= 0) {
+            $worker = $this->factory->create();
+            $worker->start();
+            $this->idle->push($worker);
+        }
+
+        $this->running = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function pull()
+    {
+        if (!$this->isRunning()) {
+            throw new StatusError('The queue is not running.');
+        }
+
+        do {
+            if ($this->idle->isEmpty()) {
+                if ($this->busy->count() >= $this->maxSize) {
+                    // All possible workers busy, so shift from head (will be pushed back onto tail below).
+                    $worker = $this->busy->shift();
+                } else {
+                    // Max worker count has not been reached, so create another worker.
+                    $worker = $this->factory->create();
+                    $worker->start();
+                }
+            } else {
+                // Shift a worker off the idle queue.
+                $worker = $this->idle->shift();
+            }
+        } while (!$worker->isRunning());
+
+        $this->busy->push($worker);
+
+        return $worker;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function push(Worker $worker)
+    {
+        if (!$this->isRunning()) {
+            throw new StatusError('The queue is not running.');
+        }
+
+        $throw = true;
+
+        foreach ($this->busy as $key => $busy) {
+            if ($busy === $worker) {
+                $throw = false;
+                unset($this->busy[$key]);
+                break;
+            }
+        }
+
+        if ($throw) {
+            throw new InvalidArgumentError(
+                'The provided worker was not part of this queue or was already pushed back into the queue.'
+            );
+        }
+
+        $this->idle->push($worker);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getMinSize()
+    {
+        return $this->minSize;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getMaxSize()
+    {
+        return $this->maxSize;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getWorkerCount()
+    {
+        return $this->idle->count() + $this->busy->count();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIdleWorkerCount()
+    {
+        return $this->idle->count();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function shutdown()
+    {
+        if (!$this->isRunning()) {
+            throw new StatusError('The queue is not running.');
+        }
+
+        $this->running = false;
+
+        $shutdowns = [];
+
+        foreach ($this->idle as $worker) {
+            if ($worker->isRunning()) {
+                $shutdowns[] = new Coroutine($worker->shutdown());
+            }
+        }
+
+        foreach ($this->busy as $worker) {
+            if ($worker->isRunning()) {
+                $shutdowns[] = new Coroutine($worker->shutdown());
+            }
+        }
+
+        yield Awaitable\reduce($shutdowns, function ($carry, $value) {
+            return $carry ?: $value;
+        }, 0);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function kill()
+    {
+        $this->running = false;
+
+        foreach ($this->idle as $worker) {
+            $worker->kill();
+        }
+
+        foreach ($this->busy as $worker) {
+            $worker->kill();
+        }
+    }
+}
