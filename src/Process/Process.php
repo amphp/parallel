@@ -205,9 +205,6 @@ class Process implements ProcessContext
             $this->stdin->close();
             $this->poll->free();
         });
-
-        $this->poll->unreference();
-        $this->poll->listen();
     }
 
     /**
@@ -223,7 +220,7 @@ class Process implements ProcessContext
             throw new StatusError('The process has not been started.');
         }
 
-        $this->poll->reference();
+        $this->poll->listen();
 
         try {
             yield $this->delayed;
