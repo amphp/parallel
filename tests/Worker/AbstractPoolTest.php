@@ -14,7 +14,7 @@ abstract class AbstractPoolTest extends TestCase
      *
      * @return \Icicle\Concurrent\Worker\Pool
      */
-    abstract protected function createPool($min = 0, $max = 0);
+    abstract protected function createPool($min = null, $max = null);
 
     public function testIsRunning()
     {

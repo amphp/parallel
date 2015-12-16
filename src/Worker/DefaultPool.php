@@ -55,14 +55,16 @@ class DefaultPool implements Pool
     /**
      * Creates a new worker pool.
      *
-     * @param int $minSize The minimum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MIN_SIZE`.
-     * @param int $maxSize The maximum number of workers the pool should spawn. Defaults to `Pool::DEFAULT_MAX_SIZE`.
+     * @param int|null $minSize The minimum number of workers the pool should spawn.
+     *     Defaults to `Pool::DEFAULT_MIN_SIZE`.
+     * @param int|null $maxSize The maximum number of workers the pool should spawn.
+     *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
      * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
      * @throws \Icicle\Exception\InvalidArgumentError
      */
-    public function __construct($minSize = 0, $maxSize = 0, WorkerFactory $factory = null)
+    public function __construct($minSize = null, $maxSize = null, WorkerFactory $factory = null)
     {
         $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
         $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;

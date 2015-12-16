@@ -15,7 +15,7 @@ abstract class AbstractQueueTest extends TestCase
      *
      * @return \Icicle\Concurrent\Worker\Queue
      */
-    abstract protected function createQueue($min = 0, $max = 0);
+    abstract protected function createQueue($min = null, $max = null);
 
     public function testIsRunning()
     {

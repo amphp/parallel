@@ -39,13 +39,15 @@ class DefaultQueue implements Queue
     private $running = false;
 
     /**
-     * @param int $minSize
-     * @param int $maxSize
+     * @param int|null $minSize The minimum number of workers the queue should spawn.
+     *     Defaults to `Queue::DEFAULT_MIN_SIZE`.
+     * @param int|null $maxSize The maximum number of workers the queue should spawn.
+     *     Defaults to `Queue::DEFAULT_MAX_SIZE`.
      * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory Factory used to create new workers.
      *
      * @throws \Icicle\Exception\InvalidArgumentError If the min or max size are invalid.
      */
-    public function __construct($minSize = 0, $maxSize = 0, WorkerFactory $factory = null)
+    public function __construct($minSize = null, $maxSize = null, WorkerFactory $factory = null)
     {
         $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
         $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;

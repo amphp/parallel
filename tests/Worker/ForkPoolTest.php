@@ -11,7 +11,7 @@ use Icicle\Concurrent\Worker\WorkerFork;
  */
 class ForkPoolTest extends AbstractPoolTest
 {
-    protected function createPool($min = 0, $max = 0)
+    protected function createPool($min = null, $max = null)
     {
         $factory = $this->getMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {

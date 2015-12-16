@@ -11,7 +11,7 @@ use Icicle\Concurrent\Worker\WorkerFork;
  */
 class ForkQueueTest extends AbstractQueueTest
 {
-    protected function createQueue($min = 0, $max = 0)
+    protected function createQueue($min = null, $max = null)
     {
         $factory = $this->getMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
