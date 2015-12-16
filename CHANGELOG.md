@@ -1,6 +1,12 @@
 # Change log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.1] - 2015-12-16
+### Added
+- Added `Icicle\Concurrent\Worker\DefaultQueue` implementing `Icicle\Concurrent\Worker\Queue` that provides a queue of workers that can be pulled and pushed from the queue as needed. Pulling a worker marks it as busy and pushing the worker back into the queue marks it as idle. If no idle workers remain in the queue, a worker is selected from those marked as busy. A worker queue allows a set of interdependent tasks (for example, tasks that depend on an environment value in the worker) to be run on a single worker without having to create and start separate workers for each task.
+
+### Fixed
+- Fixed bug where exit status was not being read in `Icicle\Concurrent\Process\Process`, which also caused `Icicle\Concurrent\Worker\WorkerProcess` to fail.
 
 ## [0.2.0] - 2015-12-13
 ### Changed
