@@ -3,7 +3,7 @@ namespace Icicle\Concurrent\Worker;
 
 use Icicle\Awaitable;
 use Icicle\Awaitable\Delayed;
-use Icicle\Concurrent\Exception\InvalidArgumentError;
+use Icicle\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Coroutine\Coroutine;
@@ -70,7 +70,7 @@ class DefaultPool implements Pool
      * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
-     * @throws \Icicle\Concurrent\Exception\InvalidArgumentError
+     * @throws \Icicle\Exception\InvalidArgumentError
      */
     public function __construct($minSize = 0, $maxSize = 0, WorkerFactory $factory = null)
     {

@@ -1,13 +1,13 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
-use Icicle\Concurrent\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Process as ProcessContext;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
+use Icicle\Exception\InvalidArgumentError;
 
 class ChannelledProcess implements Channel, ProcessContext
 {
@@ -103,19 +103,7 @@ class ChannelledProcess implements Channel, ProcessContext
      */
     public function join()
     {
-        if (null === $this->channel) {
-            throw new StatusError('The process has not been started.');
-        }
-
-        $response = (yield $this->channel->receive());
-
-        yield $this->process->join();
-
-        if (!$response instanceof ExitStatus) {
-            throw new SynchronizationError('Did not receive an exit status from thread.');
-        }
-
-        yield $response->getResult();
+        return $this->process->join();
     }
 
     /**
@@ -124,7 +112,6 @@ class ChannelledProcess implements Channel, ProcessContext
     public function kill()
     {
         $this->process->kill();
-        $this->channel = null;
     }
 
     /**

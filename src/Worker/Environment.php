@@ -26,7 +26,7 @@ class Environment implements \ArrayAccess, \Countable
     private $queue;
 
     /**
-     * @var \Icicle\Loop\Events\TimerInterface
+     * @var \Icicle\Loop\Watcher\Timer
      */
     private $timer;
 

@@ -181,7 +181,7 @@ class Process implements ProcessContext
         stream_set_blocking($stream, 0);
 
         $this->poll = Loop\poll($stream, function ($resource) {
-            if (feof($resource)) {
+            if (!is_resource($resource) || feof($resource)) {
                 $this->delayed->reject(new ProcessException('Process ended unexpectedly.'));
             } else {
                 $code = fread($resource, 1);
@@ -193,7 +193,9 @@ class Process implements ProcessContext
                 }
             }
 
-            fclose($resource);
+            if (is_resource($resource)) {
+                fclose($resource);
+            }
 
             if (is_resource($this->process)) {
                 proc_close($this->process);
@@ -203,6 +205,9 @@ class Process implements ProcessContext
             $this->stdin->close();
             $this->poll->free();
         });
+
+        $this->poll->unreference();
+        $this->poll->listen();
     }
 
     /**
