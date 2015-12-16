@@ -2,14 +2,19 @@
 namespace Icicle\Tests\Concurrent\Worker;
 
 use Icicle\Awaitable;
-use Icicle\Concurrent\Worker\DefaultPool;
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
 
 abstract class AbstractPoolTest extends TestCase
 {
-    abstract protected function createPool($min = null, $max = null);
+    /**
+     * @param int $min
+     * @param int $max
+     *
+     * @return \Icicle\Concurrent\Worker\Pool
+     */
+    abstract protected function createPool($min = 0, $max = 0);
 
     public function testIsRunning()
     {

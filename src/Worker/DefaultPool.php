@@ -18,16 +18,6 @@ use Icicle\Coroutine\Coroutine;
 class DefaultPool implements Pool
 {
     /**
-     * @var int The default minimum pool size.
-     */
-    const DEFAULT_MIN_SIZE = 4;
-
-    /**
-     * @var int The default maximum pool size.
-     */
-    const DEFAULT_MAX_SIZE = 32;
-
-    /**
      * @var bool Indicates if the pool is currently running.
      */
     private $running = false;
@@ -117,9 +107,7 @@ class DefaultPool implements Pool
     }
 
     /**
-     * Gets the minimum number of workers the pool may have idle.
-     *
-     * @return int The minimum number of workers.
+     * {@inheritdoc}
      */
     public function getMinSize()
     {
@@ -127,9 +115,7 @@ class DefaultPool implements Pool
     }
 
     /**
-     * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
-     *
-     * @return int The maximum number of workers.
+     * {@inheritdoc}
      */
     public function getMaxSize()
     {
@@ -141,7 +127,7 @@ class DefaultPool implements Pool
      */
     public function getWorkerCount()
     {
-        return count($this->workers);
+        return $this->workers->count();
     }
 
     /**
@@ -253,7 +239,9 @@ class DefaultPool implements Pool
         $shutdowns = [];
 
         foreach ($this->workers as $worker) {
-            $shutdowns[] = new Coroutine($worker->shutdown());
+            if ($worker->isRunning()) {
+                $shutdowns[] = new Coroutine($worker->shutdown());
+            }
         }
 
         yield Awaitable\reduce($shutdowns, function ($carry, $value) {

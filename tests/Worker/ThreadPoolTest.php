@@ -11,7 +11,7 @@ use Icicle\Concurrent\Worker\WorkerThread;
  */
 class ThreadPoolTest extends AbstractPoolTest
 {
-    protected function createPool($min = null, $max = null)
+    protected function createPool($min = 0, $max = 0)
     {
         $factory = $this->getMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
