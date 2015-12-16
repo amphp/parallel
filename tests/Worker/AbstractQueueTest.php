@@ -4,6 +4,7 @@ namespace Icicle\Tests\Concurrent\Worker;
 use Icicle\Awaitable;
 use Icicle\Concurrent\Worker\Worker;
 use Icicle\Coroutine;
+use Icicle\Exception\InvalidArgumentError;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
 
@@ -138,14 +139,21 @@ abstract class AbstractQueueTest extends TestCase
         });
     }
 
-    /**
-     * @expectedException \Icicle\Exception\InvalidArgumentError
-     */
     public function testPushForeignWorker()
     {
-        $queue = $this->createQueue();
-        $queue->start();
-        $queue->push($this->getMock(Worker::class));
+        Coroutine\run(function () {
+            $queue = $this->createQueue(1);
+            $queue->start();
+
+            try {
+                $queue->push($this->getMock(Worker::class));
+                $this->fail('Pushing a worker not from the queue should throw an exception.');
+            } catch (InvalidArgumentError $exception) {
+                $this->assertSame(1, $queue->getIdleWorkerCount());
+            }
+
+            yield $queue->shutdown();
+        });
     }
 
     public function testKill()
