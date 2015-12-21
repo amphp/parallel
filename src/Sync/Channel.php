@@ -33,7 +33,7 @@ interface Channel
      * @throws \Icicle\Concurrent\Exception\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If sending on the channel fails.
-     * @throws \Icicle\Concurrent\Exception\InvalidArgumentError If an ExitStatusInterface object is given.
+     * @throws \Icicle\Exception\InvalidArgumentError If an ExitStatus object is given.
      */
     public function send($data);
 }

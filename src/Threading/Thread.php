@@ -1,11 +1,10 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\Context;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Exception\ThreadException;
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Strand;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Coroutine;
@@ -21,7 +20,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements Channel, Context
+class Thread implements Strand
 {
     /**
      * @var Internal\Thread An internal thread instance.

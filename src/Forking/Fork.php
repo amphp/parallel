@@ -5,6 +5,7 @@ use Icicle\Concurrent\Exception\ForkException;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Process;
+use Icicle\Concurrent\Strand;
 use Icicle\Concurrent\Sync\Channel;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
@@ -20,7 +21,7 @@ use Icicle\Stream\Pipe\DuplexPipe;
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Fork implements Channel, Process
+class Fork implements Process, Strand
 {
     /**
      * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.

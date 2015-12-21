@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Worker;
 
 use Icicle\Awaitable\Delayed;
-use Icicle\Concurrent\Context;
+use Icicle\Concurrent\Strand;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
@@ -13,7 +13,7 @@ use Icicle\Concurrent\Worker\Internal\TaskFailure;
 abstract class AbstractWorker implements Worker
 {
     /**
-     * @var \Icicle\Concurrent\Context
+     * @var \Icicle\Concurrent\Strand
      */
     private $context;
 
@@ -39,11 +39,11 @@ abstract class AbstractWorker implements Worker
 
 
     /**
-     * @param \Icicle\Concurrent\Context $context
+     * @param \Icicle\Concurrent\Strand $strand
      */
-    public function __construct(Context $context)
+    public function __construct(Strand $strand)
     {
-        $this->context = $context;
+        $this->context = $strand;
         $this->busyQueue = new \SplQueue();
     }
 

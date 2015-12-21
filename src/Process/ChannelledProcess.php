@@ -4,12 +4,12 @@ namespace Icicle\Concurrent\Process;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\SynchronizationError;
 use Icicle\Concurrent\Process as ProcessContext;
-use Icicle\Concurrent\Sync\Channel;
+use Icicle\Concurrent\Strand;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitStatus;
 use Icicle\Exception\InvalidArgumentError;
 
-class ChannelledProcess implements Channel, ProcessContext
+class ChannelledProcess implements ProcessContext, Strand
 {
     /**
      * @var \Icicle\Concurrent\Process\Process

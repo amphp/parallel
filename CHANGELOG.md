@@ -1,6 +1,17 @@
 # Change log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.2] - 2015-12-21
+### Added
+- Added the `Icicle\Concurrent\Strand` interface that combines `Icicle\Concurrent\Context` and `Icicle\Concurrent\Sync\Channel`. This interface is implemented by the following classes (note that these classes implemented the two component interface separately, so no changes were made to the implementation):
+    - `Icicle\Concurrent\Forking\Fork`
+    - `Icicle\Concurrent\Threading\Thread`
+    - `Icicle\Concurrent\Process\ChannelledProcess`
+    
+### Changed
+- `Icicle\Concurrent\Strand` interface is now required by the constructor of `Icicle\Concurrent\Worker\AbstractWorker`.
+
+
 ## [0.2.1] - 2015-12-16
 ### Added
 - Added `Icicle\Concurrent\Worker\DefaultQueue` implementing `Icicle\Concurrent\Worker\Queue` that provides a queue of workers that can be pulled and pushed from the queue as needed. Pulling a worker marks it as busy and pushing the worker back into the queue marks it as idle. If no idle workers remain in the queue, a worker is selected from those marked as busy. A worker queue allows a set of interdependent tasks (for example, tasks that depend on an environment value in the worker) to be run on a single worker without having to create and start separate workers for each task.
@@ -66,6 +77,8 @@ First release.
 - Non-blocking mutexes and semaphores for protecting parcels.
 
 
+[0.2.2]: https://github.com/icicleio/concurrent/releases/tag/v0.2.2
+[0.2.1]: https://github.com/icicleio/concurrent/releases/tag/v0.2.1
 [0.2.0]: https://github.com/icicleio/concurrent/releases/tag/v0.2.0
 [0.1.1]: https://github.com/icicleio/concurrent/releases/tag/v0.1.1
 [0.1.0]: https://github.com/icicleio/concurrent/releases/tag/v0.1.0
