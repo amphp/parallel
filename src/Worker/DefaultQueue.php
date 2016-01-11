@@ -65,7 +65,7 @@ class DefaultQueue implements Queue
             throw new InvalidArgumentError('Maximum size must be a non-negative integer at least '.$minSize.'.');
         }
 
-        $this->factory = $factory ?: new DefaultWorkerFactory();
+        $this->factory = $factory ?: factory();
         $this->minSize = $minSize;
         $this->maxSize = $maxSize;
         $this->workers = new \SplObjectStorage();

@@ -29,7 +29,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     /**
      * @coroutine
      *
-     * Enqueues a task to be executed by the worker pool.
+     * Enqueues a task to be executed by the global worker pool.
      *
      * @param \Icicle\Concurrent\Worker\Task $task The task to enqueue.
      *
@@ -43,11 +43,25 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     }
 
     /**
-     * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory
+     * Creates a worker using the global worker factory.
      *
      * @return \Icicle\Concurrent\Worker\Worker
      */
-    function create(WorkerFactory $factory = null)
+    function create()
+    {
+        $worker = factory()->create();
+        $worker->start();
+        return $worker;
+    }
+
+    /**
+     * Gets or sets the global worker factory.
+     *
+     * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory
+     *
+     * @return \Icicle\Concurrent\Worker\WorkerFactory
+     */
+    function factory(WorkerFactory $factory = null)
     {
         static $instance;
 
@@ -57,8 +71,50 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
             $instance = new DefaultWorkerFactory();
         }
 
-        $worker = $instance->create();
-        $worker->start();
-        return $worker;
+        return $factory;
+    }
+
+    /**
+     * Gets or sets the global worker queue instance.
+     *
+     * @param \Icicle\Concurrent\Worker\Queue|null $queue
+     *
+     * @return \Icicle\Concurrent\Worker\Queue
+     */
+    function queue(Queue $queue = null)
+    {
+        static $instance;
+
+        if (null !== $queue) {
+            $instance = $queue;
+        } elseif (null === $instance) {
+            $instance = new DefaultQueue();
+        }
+
+        if (!$instance->isRunning()) {
+            $instance->start();
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Pulls a worker from the global worker queue.
+     *
+     * @return \Icicle\Concurrent\Worker\Worker
+     */
+    function pull()
+    {
+        return queue()->pull();
+    }
+
+    /**
+     * Pushes a worker back onto the global worker queue.
+     *
+     * @param \Icicle\Concurrent\Worker\Worker $worker
+     */
+    function push(Worker $worker)
+    {
+        queue()->push($worker);
     }
 }

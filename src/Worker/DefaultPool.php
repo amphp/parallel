@@ -80,8 +80,8 @@ class DefaultPool implements Pool
         $this->maxSize = $maxSize;
         $this->minSize = $minSize;
 
-        // Create the default factory if none is given.
-        $this->factory = $factory ?: new DefaultWorkerFactory();
+        // Use the global factory if none is given.
+        $this->factory = $factory ?: factory();
 
         $this->workers = new \SplObjectStorage();
         $this->idleWorkers = new \SplQueue();
