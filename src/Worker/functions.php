@@ -107,14 +107,4 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     {
         return queue()->pull();
     }
-
-    /**
-     * Pushes a worker back onto the global worker queue.
-     *
-     * @param \Icicle\Concurrent\Worker\Worker $worker
-     */
-    function push(Worker $worker)
-    {
-        queue()->push($worker);
-    }
 }

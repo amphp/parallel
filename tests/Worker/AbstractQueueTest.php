@@ -2,13 +2,15 @@
 namespace Icicle\Tests\Concurrent\Worker;
 
 use Icicle\Awaitable;
+use Icicle\Concurrent\Worker\DefaultQueue;
+use Icicle\Concurrent\Worker\Task;
 use Icicle\Concurrent\Worker\Worker;
+use Icicle\Concurrent\Worker\WorkerFactory;
 use Icicle\Coroutine;
-use Icicle\Exception\InvalidArgumentError;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\TestCase;
 
-abstract class AbstractQueueTest extends TestCase
+class DefaultQueueTest extends TestCase
 {
     /**
      * @param int $min
@@ -16,7 +18,40 @@ abstract class AbstractQueueTest extends TestCase
      *
      * @return \Icicle\Concurrent\Worker\Queue
      */
-    abstract protected function createQueue($min = null, $max = null);
+    protected function createQueue($min = null, $max = null)
+    {
+        $factory = $this->getMock(WorkerFactory::class);
+        $factory->method('create')->will($this->returnCallback(function () {
+            $running = true;
+
+            $mock = $this->getMock(Worker::class);
+
+            $mock->method('shutdown')
+                ->will($this->returnCallback(function () use (&$running) {
+                    $running = false;
+                    yield 0;
+                }));
+
+            $mock->method('kill')
+                ->will($this->returnCallback(function () use (&$running) {
+                    $running = false;
+                }));
+
+            $mock->method('isRunning')
+                ->will($this->returnCallback(function () use (&$running) {
+                    return $running;
+                }));
+
+            $mock->method('enqueue')
+                ->will($this->returnCallback(function (Task $task) use ($mock) {
+                    yield $mock;
+                }));
+
+            return $mock;
+        }));
+
+        return new DefaultQueue($min, $max, $factory);
+    }
 
     public function testIsRunning()
     {
@@ -75,23 +110,28 @@ abstract class AbstractQueueTest extends TestCase
             $queue->start();
 
             $worker1 = $queue->pull();
-            $queue->push($worker1);
-
             $worker2 = $queue->pull();
-            $queue->push($worker2);
 
             $this->assertNotSame($worker1, $worker2);
+
+            $mock1 = (yield $worker1->enqueue($this->getMock(Task::class)));
+            $mock2 = (yield $worker2->enqueue($this->getMock(Task::class)));
+
+            unset($worker1, $worker2);
+
             $this->assertSame(2, $queue->getWorkerCount());
             $this->assertSame(2, $queue->getIdleWorkerCount());
 
             $worker3 = $queue->pull();
-            $this->assertSame($worker1, $worker3);
             $this->assertSame(1, $queue->getIdleWorkerCount());
+            $mock3 = (yield $worker3->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock3);
 
             $worker4 = $queue->pull();
-            $this->assertSame($worker2, $worker4);
             $this->assertSame(0, $queue->getIdleWorkerCount());
             $this->assertSame(2, $queue->getWorkerCount());
+            $mock4 = (yield $worker4->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock2, $mock4);
 
             yield $queue->shutdown();
         });
@@ -111,13 +151,19 @@ abstract class AbstractQueueTest extends TestCase
             $this->assertSame(2, $queue->getWorkerCount());
             $this->assertSame(0, $queue->getIdleWorkerCount());
 
-            $queue->push($worker2);
+            $mock2 = (yield $worker2->enqueue($this->getMock(Task::class)));
+
+            unset($worker2);
+
             $this->assertSame(1, $queue->getIdleWorkerCount());
 
             $worker3 = $queue->pull();
             $this->assertSame(0, $queue->getIdleWorkerCount());
             $this->assertSame(2, $queue->getWorkerCount());
-            $this->assertSame($worker2, $worker3);
+
+            $mock3 = (yield $worker3->enqueue($this->getMock(Task::class)));
+
+            $this->assertSame($mock2, $mock3);
 
             yield $queue->shutdown();
         });
@@ -136,14 +182,18 @@ abstract class AbstractQueueTest extends TestCase
             $worker2 = $queue->pull();
 
             $worker3 = $queue->pull();
-
-            $this->assertSame($worker1, $worker3);
+            $mock1 = (yield $worker1->enqueue($this->getMock(Task::class)));
+            $mock3 = (yield $worker3->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock3);
 
             $worker4 = $queue->pull();
-            $this->assertSame($worker2, $worker4);
+            $mock2 = (yield $worker2->enqueue($this->getMock(Task::class)));
+            $mock4 = (yield $worker4->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock2, $mock4);
 
             $worker5 = $queue->pull();
-            $this->assertSame($worker1, $worker5);
+            $mock5 = (yield $worker5->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock5);
 
             yield $queue->shutdown();
         });
@@ -164,18 +214,23 @@ abstract class AbstractQueueTest extends TestCase
 
             $worker3 = $queue->pull();
             $this->assertSame(3, $queue->getWorkerCount());
-            $this->assertNotSame($worker1, $worker3);
-            $this->assertNotSame($worker2, $worker3);
+            $mock1 = (yield $worker1->enqueue($this->getMock(Task::class)));
+            $mock2 = (yield $worker2->enqueue($this->getMock(Task::class)));
+            $mock3 = (yield $worker3->enqueue($this->getMock(Task::class)));
+            $this->assertNotSame($mock1, $mock3);
+            $this->assertNotSame($mock2, $mock3);
 
             $worker4 = $queue->pull();
             $this->assertSame(4, $queue->getWorkerCount());
-            $this->assertNotSame($worker1, $worker4);
-            $this->assertNotSame($worker2, $worker4);
-            $this->assertNotSame($worker3, $worker4);
+            $mock4 = (yield $worker4->enqueue($this->getMock(Task::class)));
+            $this->assertNotSame($mock1, $mock4);
+            $this->assertNotSame($mock2, $mock4);
+            $this->assertNotSame($mock3, $mock4);
 
             $worker5 = $queue->pull();
             $this->assertSame(4, $queue->getWorkerCount());
-            $this->assertSame($worker1, $worker5);
+            $mock5 = (yield $worker5->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock5);
 
             yield $queue->shutdown();
         });
@@ -194,40 +249,26 @@ abstract class AbstractQueueTest extends TestCase
             $worker2 = $queue->pull();
 
             $worker3 = $queue->pull();
-            $this->assertSame($worker1, $worker3);
+            $mock1 = (yield $worker1->enqueue($this->getMock(Task::class)));
+            $mock2 = (yield $worker2->enqueue($this->getMock(Task::class)));
+            $mock3 = (yield $worker3->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock3);
 
             // Should only mark $worker2 as idle, not $worker3 even though it's pushed first.
-            $queue->push($worker3);
-            $queue->push($worker2);
+            unset($worker3, $worker2);
 
             // Should pull $worker2 again.
             $worker4 = $queue->pull();
-            $this->assertSame($worker2, $worker4);
+            $mock4 = (yield $worker4->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock2, $mock4);
 
-            // Pushing $worker1 first, which should now be marked as idle (and so should $worker2/4)
-            $queue->push($worker1);
-            $queue->push($worker4);
+            // Unsetting $worker1 first, which should now be marked as idle (and so should $worker2/4)
+            unset($worker1, $worker4);
 
             // Should pull $worker1 now since it was marked idle.
             $worker5 = $queue->pull();
-            $this->assertSame($worker1, $worker5);
-
-            yield $queue->shutdown();
-        });
-    }
-
-    public function testPushForeignWorker()
-    {
-        Coroutine\run(function () {
-            $queue = $this->createQueue(1);
-            $queue->start();
-
-            try {
-                $queue->push($this->getMock(Worker::class));
-                $this->fail('Pushing a worker not from the queue should throw an exception.');
-            } catch (InvalidArgumentError $exception) {
-                $this->assertSame(1, $queue->getIdleWorkerCount());
-            }
+            $mock5 = (yield $worker5->enqueue($this->getMock(Task::class)));
+            $this->assertSame($mock1, $mock5);
 
             yield $queue->shutdown();
         });

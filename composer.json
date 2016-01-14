@@ -20,7 +20,7 @@
     ],
     "require": {
         "icicleio/icicle": "^0.9.1",
-        "icicleio/stream": "^0.5"
+        "icicleio/stream": "^0.5.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.8"

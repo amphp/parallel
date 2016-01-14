@@ -44,6 +44,11 @@ class DefaultQueue implements Queue
     private $running = false;
 
     /**
+     * @var \Closure
+     */
+    private $push;
+
+    /**
      * @param int|null $minSize The minimum number of workers the queue should spawn.
      *     Defaults to `Queue::DEFAULT_MIN_SIZE`.
      * @param int|null $maxSize The maximum number of workers the queue should spawn.
@@ -71,6 +76,10 @@ class DefaultQueue implements Queue
         $this->workers = new \SplObjectStorage();
         $this->idle = new \SplQueue();
         $this->busy = new \SplQueue();
+
+        $this->push = function (Worker $worker) {
+            $this->push($worker);
+        };
     }
 
     /**
@@ -131,21 +140,21 @@ class DefaultQueue implements Queue
         $this->busy->push($worker);
         $this->workers[$worker] += 1;
 
-        return $worker;
+        return new Internal\QueuedWorker($worker, $this->push);
     }
 
     /**
-     * {@inheritdoc}
+     * Pushes the worker back into the queue.
+     *
+     * @param \Icicle\Concurrent\Worker\Worker $worker
+     *
+     * @throws \Icicle\Exception\InvalidArgumentError If the worker was not part of this queue.
      */
-    public function push(Worker $worker)
+    private function push(Worker $worker)
     {
-        if (!$this->isRunning()) {
-            throw new StatusError('The queue is not running.');
-        }
-
         if (!$this->workers->contains($worker)) {
             throw new InvalidArgumentError(
-                'The provided worker was not part of this queue or was already pushed back into the queue.'
+                'The provided worker was not part of this queue.'
             );
         }
 
@@ -160,6 +169,15 @@ class DefaultQueue implements Queue
 
             $this->idle->push($worker);
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function enqueue(Task $task)
+    {
+        $worker = $this->pull();
+        yield $worker->enqueue($task);
     }
 
     /**

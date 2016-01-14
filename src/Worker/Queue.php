@@ -15,7 +15,7 @@ interface Queue
 
     /**
      * Pull a worker from the queue. The worker is marked as busy and will only be reused if the queue runs out of
-     * idle workers.
+     * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
      *
      * @return \Icicle\Concurrent\Worker\Worker
      *
@@ -32,7 +32,7 @@ interface Queue
      * @throws \Icicle\Exception\InvalidArgumentError If the given worker is not part of this queue or was already
      *     pushed into the queue.
      */
-    public function push(Worker $worker);
+    //public function push(Worker $worker);
 
     /**
      * Checks if the queue is running.
