@@ -31,7 +31,7 @@ require $autoloadPath;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
-use Icicle\Concurrent\Worker\Environment;
+use Icicle\Concurrent\Worker\BasicEnvironment;
 use Icicle\Concurrent\Worker\Internal\TaskRunner;
 use Icicle\Coroutine;
 use Icicle\Loop;
@@ -39,7 +39,7 @@ use Icicle\Stream;
 
 Coroutine\create(function () {
     $channel = new ChannelledStream(Stream\stdin(), Stream\stdout());
-    $environment = new Environment();
+    $environment = new BasicEnvironment();
     $runner = new TaskRunner($channel, $environment);
 
     try {

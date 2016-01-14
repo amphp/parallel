@@ -12,7 +12,7 @@ class WorkerThread extends AbstractWorker
     public function __construct()
     {
         parent::__construct(new Thread(function () {
-            $runner = new TaskRunner($this, new Environment());
+            $runner = new TaskRunner($this, new BasicEnvironment());
             yield $runner->run();
         }));
     }
