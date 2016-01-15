@@ -2,10 +2,8 @@
 namespace Icicle\Concurrent\Worker;
 
 use Icicle\Awaitable;
-use Icicle\Awaitable\Delayed;
 use Icicle\Exception\InvalidArgumentError;
 use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Coroutine\Coroutine;
 
 /**
@@ -269,7 +267,13 @@ class DefaultPool implements Pool
                 // Shift a worker off the idle queue.
                 $worker = $this->idleWorkers->shift();
             }
-        } while (!$worker->isRunning());
+
+            if ($worker->isRunning()) {
+                break;
+            }
+
+            $this->workers->detach($worker);
+        } while (true);
 
         $this->busyQueue->push($worker);
         $this->workers[$worker] += 1;

@@ -152,10 +152,12 @@ abstract class AbstractWorker implements Worker
      */
     private function cancelPending()
     {
-        $exception = new WorkerException('Worker was shut down.');
+        if (!$this->busyQueue->isEmpty()) {
+            $exception = new WorkerException('Worker was shut down.');
 
-        while (!$this->busyQueue->isEmpty()) {
-            $this->busyQueue->dequeue()->cancel($exception);
+            do {
+                $this->busyQueue->dequeue()->cancel($exception);
+            } while (!$this->busyQueue->isEmpty());
         }
     }
 }
