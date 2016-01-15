@@ -11,17 +11,7 @@ use Icicle\Tests\Concurrent\TestCase;
 
 class FunctionsTest extends TestCase
 {
-    public function testGetPool()
-    {
-        $pool = Worker\pool();
-
-        $this->assertInstanceOf(Pool::class, $pool);
-    }
-
-    /**
-     * @depends testGetPool
-     */
-    public function testSetPool()
+    public function testPool()
     {
         $pool = $this->getMock(Pool::class);
 
@@ -31,7 +21,7 @@ class FunctionsTest extends TestCase
     }
 
     /**
-     * @depends testSetPool
+     * @depends testPool
      */
     public function testEnqueue()
     {
@@ -53,7 +43,7 @@ class FunctionsTest extends TestCase
     }
 
     /**
-     * @depends testSetPool
+     * @depends testPool
      */
     public function testGet()
     {
@@ -67,17 +57,7 @@ class FunctionsTest extends TestCase
         $worker = Worker\get();
     }
 
-    public function testGetFactory()
-    {
-        $factory = Worker\factory();
-
-        $this->assertInstanceOf(WorkerFactory::class, $factory);
-    }
-
-    /**
-     * @depends testGetFactory
-     */
-    public function testSetFactory()
+    public function testFactory()
     {
         $factory = $this->getMock(WorkerFactory::class);
 
@@ -87,7 +67,7 @@ class FunctionsTest extends TestCase
     }
 
     /**
-     * @depends testSetFactory
+     * @depends testFactory
      */
     public function testCreate()
     {
