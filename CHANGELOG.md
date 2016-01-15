@@ -1,11 +1,10 @@
 # Change log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3.0] - 2016-01-14
+## [0.3.0] - 2016-01-15
 ### Added
 - Added `Icicle\Concurrent\Worker\factory()` function that accesses or sets the global worker factory.
-- Added `Icicle\Concurrent\Worker\queue()` function that accesses or sets the global worker queue.
-- Added `Icicle\Concurrent\Worker\pull()` function that pulls and returns a worker from the global worker queue.
+- Added `Icicle\Concurrent\Worker\get()` function that returns a worker from the global worker pool.
 
 ### Changed
 - `Icicle\Concurrent\Worker\Environment` is now an interface, with `Icicle\Concurrent\Worker\BasicEnvironment` being the default implementation provided to workers that is then provided to `Icicle\Concurrent\Worker\Task::run()`. Workers with different implementations of `Environment` can be easily created for particular applications.
@@ -99,6 +98,7 @@ First release.
 - Non-blocking mutexes and semaphores for protecting parcels.
 
 
+[0.3.0]: https://github.com/icicleio/concurrent/releases/tag/v0.3.0
 [0.2.2]: https://github.com/icicleio/concurrent/releases/tag/v0.2.2
 [0.2.1]: https://github.com/icicleio/concurrent/releases/tag/v0.2.1
 [0.2.0]: https://github.com/icicleio/concurrent/releases/tag/v0.2.0
