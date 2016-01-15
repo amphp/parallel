@@ -39,7 +39,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      */
     function enqueue(Task $task)
     {
-        return pool()->enqueue($task);
+        yield pool()->enqueue($task);
     }
 
     /**
@@ -71,7 +71,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
             $instance = new DefaultWorkerFactory();
         }
 
-        return $factory;
+        return $instance;
     }
 
     /**
