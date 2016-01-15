@@ -12,15 +12,27 @@ Coroutine\create(function() {
     $pool = new DefaultPool();
     $pool->start();
 
-    Coroutine\create(function () use ($pool) {
-        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', 'https://google.com')));
-        printf("Read from google.com: %d bytes\n", strlen($result));
+    $coroutines = [];
+
+    $coroutines[] = Coroutine\create(function () use ($pool) {
+        $url = 'https://google.com';
+        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        printf("Read from %s: %d bytes\n", $url, strlen($result));
     });
 
-    Coroutine\create(function () use ($pool) {
-        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', 'https://icicle.io')));
-        printf("Read from icicle.io: %d bytes\n", strlen($result));
+    $coroutines[] = Coroutine\create(function () use ($pool) {
+        $url = 'https://icicle.io';
+        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        printf("Read from %s: %d bytes\n", $url, strlen($result));
     });
+
+    $coroutines[] = Coroutine\create(function () use ($pool) {
+        $url = 'https://github.com';
+        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        printf("Read from %s: %d bytes\n", $url, strlen($result));
+    });
+
+    yield Awaitable\all($coroutines);
 
     yield $pool->shutdown();
 })->done();
