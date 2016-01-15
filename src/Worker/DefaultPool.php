@@ -53,6 +53,11 @@ class DefaultPool implements Pool
     private $busyQueue;
 
     /**
+     * @var \Closure
+     */
+    private $push;
+
+    /**
      * Creates a new worker pool.
      *
      * @param int|null $minSize The minimum number of workers the pool should spawn.
@@ -86,6 +91,10 @@ class DefaultPool implements Pool
         $this->workers = new \SplObjectStorage();
         $this->idleWorkers = new \SplQueue();
         $this->busyQueue = new \SplQueue();
+
+        $this->push = function (Worker $worker) {
+            $this->push($worker);
+        };
     }
 
     /**
@@ -178,47 +187,8 @@ class DefaultPool implements Pool
      */
     public function enqueue(Task $task)
     {
-        if (!$this->isRunning()) {
-            throw new StatusError('The worker pool has not been started.');
-        }
-
-        // Find a free worker if one is available.
-        if (!$this->idleWorkers->isEmpty()) {
-            $worker = $this->idleWorkers->dequeue();
-        } elseif ($this->getWorkerCount() < $this->maxSize) {
-            // We are allowed to spawn another worker if needed, so do so.
-            $worker = $this->createWorker();
-        } else {
-            // We have no other choice but to wait for a worker to be freed up.
-            $delayed = new Delayed();
-            $this->busyQueue->enqueue($delayed);
-            $worker = (yield $delayed);
-        }
-
-        try {
-            $result = (yield $worker->enqueue($task));
-        } finally {
-            if (!$worker->isRunning()) {
-                // Worker crashed, discard it and spin up a new worker.
-                $this->workers->detach($worker);
-                $worker = $this->createWorker();
-            }
-
-            // If someone is waiting on a worker, give it to them instead.
-            if (!$this->busyQueue->isEmpty()) {
-                /** @var \Icicle\Awaitable\Delayed $delayed */
-                $delayed = $this->busyQueue->dequeue();
-
-                if ($delayed->isPending()) {
-                    $delayed->resolve($worker);
-                }
-            } else {
-                // No tasks are waiting, so add the worker to the idle queue.
-                $this->idleWorkers->enqueue($worker);
-            }
-        }
-
-        yield $result;
+        $worker = $this->get();
+        yield $worker->enqueue($task);
     }
 
     /**
@@ -289,7 +259,65 @@ class DefaultPool implements Pool
         $worker = $this->factory->create();
         $worker->start();
 
-        $this->workers->attach($worker);
+        $this->workers->attach($worker, 0);
         return $worker;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get()
+    {
+        if (!$this->isRunning()) {
+            throw new StatusError('The queue is not running.');
+        }
+
+        do {
+            if ($this->idleWorkers->isEmpty()) {
+                if ($this->getWorkerCount() >= $this->maxSize) {
+                    // All possible workers busy, so shift from head (will be pushed back onto tail below).
+                    $worker = $this->busyQueue->shift();
+                } else {
+                    // Max worker count has not been reached, so create another worker.
+                    $worker = $this->createWorker();
+                }
+            } else {
+                // Shift a worker off the idle queue.
+                $worker = $this->idleWorkers->shift();
+            }
+        } while (!$worker->isRunning());
+
+        $this->busyQueue->push($worker);
+        $this->workers[$worker] += 1;
+
+        return new Internal\PooledWorker($worker, $this->push);
+    }
+
+    /**
+     * Pushes the worker back into the queue.
+     *
+     * @param \Icicle\Concurrent\Worker\Worker $worker
+     *
+     * @throws \Icicle\Exception\InvalidArgumentError If the worker was not part of this queue.
+     */
+    private function push(Worker $worker)
+    {
+        if (!$this->workers->contains($worker)) {
+            throw new InvalidArgumentError(
+                'The provided worker was not part of this queue.'
+            );
+        }
+
+        if (0 === ($this->workers[$worker] -= 1)) {
+            // Worker is completely idle, remove from busy queue and add to idle queue.
+            foreach ($this->busyQueue as $key => $busy) {
+                if ($busy === $worker) {
+                    unset($this->busyQueue[$key]);
+                    break;
+                }
+            }
+
+            $this->idleWorkers->push($worker);
+        }
     }
 }

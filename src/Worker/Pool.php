@@ -17,6 +17,16 @@ interface Pool extends Worker
     const DEFAULT_MAX_SIZE = 32;
 
     /**
+     * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of
+     * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
+     *
+     * @return \Icicle\Concurrent\Worker\Worker
+     *
+     * @throws \Icicle\Concurrent\Exception\StatusError If the queue is not running.
+     */
+    public function get();
+
+    /**
      * Gets the number of workers currently running in the pool.
      *
      * @return int The number of workers.

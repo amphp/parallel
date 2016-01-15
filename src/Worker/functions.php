@@ -75,36 +75,12 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
     }
 
     /**
-     * Gets or sets the global worker queue instance.
-     *
-     * @param \Icicle\Concurrent\Worker\Queue|null $queue
-     *
-     * @return \Icicle\Concurrent\Worker\Queue
-     */
-    function queue(Queue $queue = null)
-    {
-        static $instance;
-
-        if (null !== $queue) {
-            $instance = $queue;
-        } elseif (null === $instance) {
-            $instance = new DefaultQueue();
-        }
-
-        if (!$instance->isRunning()) {
-            $instance->start();
-        }
-
-        return $instance;
-    }
-
-    /**
-     * Pulls a worker from the global worker queue.
+     * Gets a worker from the global worker pool.
      *
      * @return \Icicle\Concurrent\Worker\Worker
      */
-    function pull()
+    function get()
     {
-        return queue()->pull();
+        return pool()->get();
     }
 }

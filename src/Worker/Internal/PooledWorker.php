@@ -4,7 +4,7 @@ namespace Icicle\Concurrent\Worker\Internal;
 use Icicle\Concurrent\Worker\Task;
 use Icicle\Concurrent\Worker\Worker;
 
-class QueuedWorker implements Worker
+class PooledWorker implements Worker
 {
     /**
      * @var callable

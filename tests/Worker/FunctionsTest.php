@@ -3,7 +3,6 @@ namespace Icicle\Tests\Concurrent\Worker;
 
 use Icicle\Concurrent\Worker;
 use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\Queue;
 use Icicle\Concurrent\Worker\Pool;
 use Icicle\Concurrent\Worker\Task;
 use Icicle\Concurrent\Worker\WorkerFactory;
@@ -53,38 +52,19 @@ class FunctionsTest extends TestCase
         $this->assertSame($value, $coroutine->wait());
     }
 
-    public function testGetQueue()
-    {
-        $queue = Worker\queue();
-
-        $this->assertInstanceOf(Queue::class, $queue);
-    }
-
     /**
-     * @depends testGetQueue
+     * @depends testSetPool
      */
-    public function testSetQueue()
+    public function testGet()
     {
-        $queue = $this->getMock(Queue::class);
-
-        Worker\queue($queue);
-
-        $this->assertSame($queue, Worker\queue());
-    }
-
-    /**
-     * @depends testSetQueue
-     */
-    public function testPull()
-    {
-        $queue = $this->getMock(Queue::class);
-        $queue->expects($this->once())
-            ->method('pull')
+        $pool = $this->getMock(Pool::class);
+        $pool->expects($this->once())
+            ->method('get')
             ->will($this->returnValue($this->getMock(Worker\Worker::class)));
 
-        Worker\queue($queue);
+        Worker\pool($pool);
 
-        $worker = Worker\pull();
+        $worker = Worker\get();
     }
 
     public function testGetFactory()
