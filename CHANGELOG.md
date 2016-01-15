@@ -1,6 +1,28 @@
 # Change log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.0] - 2016-01-14
+### Added
+- Added `Icicle\Concurrent\Worker\factory()` function that accesses or sets the global worker factory.
+- Added `Icicle\Concurrent\Worker\queue()` function that accesses or sets the global worker queue.
+- Added `Icicle\Concurrent\Worker\pull()` function that pulls and returns a worker from the global worker queue.
+
+### Changed
+- `Icicle\Concurrent\Worker\Environment` is now an interface, with `Icicle\Concurrent\Worker\BasicEnvironment` being the default implementation provided to workers that is then provided to `Icicle\Concurrent\Worker\Task::run()`. Workers with different implementations of `Environment` can be easily created for particular applications.
+- `Icicle\Concurrent\Worker\Queue` has been removed. The functionality of queues has been merged into `Icicle\Concurrent\Worker\Pool` through a new `get()` method that returns a worker from the pool. The returned worker is marked as busy until all references have been destroyed. See the example code below.
+
+```php
+use Icicle\Concurrent\Worker\DefaultPool;
+
+$pool = new DefaultPool();
+$pool->start();
+$worker = $pool->get(); // Marks $worker as busy in the pool.
+
+// Use $worker for a series of tasks.
+
+$worker = null; // Marks worker as idle in the pool.
+```
+
 ## [0.2.2] - 2015-12-21
 ### Added
 - Added the `Icicle\Concurrent\Strand` interface that combines `Icicle\Concurrent\Context` and `Icicle\Concurrent\Sync\Channel`. This interface is implemented by the following classes (note that these classes implemented the two component interface separately, so no changes were made to the implementation):

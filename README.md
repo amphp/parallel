@@ -40,7 +40,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "icicleio/concurrent": "^0.2"
+        "icicleio/concurrent": "^0.3"
     }
 }
 ```
