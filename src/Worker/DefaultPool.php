@@ -48,7 +48,7 @@ class DefaultPool implements Pool
     private $idleWorkers;
 
     /**
-     * @var \SplQueue A queue of tasks waiting to be submitted.
+     * @var \SplQueue A queue of workers that have been assigned to tasks.
      */
     private $busyQueue;
 
@@ -206,7 +206,7 @@ class DefaultPool implements Pool
             throw new StatusError('The pool is not running.');
         }
 
-        $this->close();
+        $this->running = false;
 
         $shutdowns = [];
 
@@ -226,26 +226,10 @@ class DefaultPool implements Pool
      */
     public function kill()
     {
-        $this->close();
+        $this->running = false;
 
         foreach ($this->workers as $worker) {
             $worker->kill();
-        }
-    }
-
-    /**
-     * Rejects any queued tasks.
-     */
-    private function close()
-    {
-        $this->running = false;
-
-        $exception = new WorkerException('Worker pool was shut down.');
-
-        while (!$this->busyQueue->isEmpty()) {
-            /** @var \Icicle\Awaitable\Delayed $delayed */
-            $delayed = $this->busyQueue->dequeue();
-            $delayed->cancel($exception);
         }
     }
 
