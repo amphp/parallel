@@ -1,7 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\Exception\{ForkException, StatusError, SynchronizationError};
+use Icicle\Concurrent\Exception\{ForkException, ChannelException, SerializationException, StatusError, SynchronizationError};
 use Icicle\Concurrent\{Process, Strand};
 use Icicle\Concurrent\Sync\{Channel, ChannelledStream};
 use Icicle\Concurrent\Sync\Internal\{ExitFailure, ExitStatus, ExitSuccess};
@@ -244,10 +244,15 @@ class Fork implements Process, Strand
 
         // Attempt to return the result.
         try {
-            return yield from $channel->send($result);
-        } catch (\Throwable $exception) {
-            // The result was not sendable! Try sending the reason why instead.
-            return yield from $channel->send(new ExitFailure($exception));
+            try {
+                return yield from $channel->send($result);
+            } catch (SerializationException $exception) {
+                // Serializing the result failed. Send the reason why.
+                return yield from $channel->send(new ExitFailure($exception));
+            }
+        } catch (ChannelException $exception) {
+            // The result was not sendable! The parent context must have died or killed the context.
+            return 0;
         }
     }
 

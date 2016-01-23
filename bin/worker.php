@@ -28,6 +28,7 @@ if (null === $autoloadPath) {
 
 require $autoloadPath;
 
+use Icicle\Concurrent\Exception\{ChannelException, SerializationException};
 use Icicle\Concurrent\Sync\{ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
 use Icicle\Concurrent\Worker\{BasicEnvironment, Internal\TaskRunner};
 use Icicle\Coroutine;
@@ -47,10 +48,15 @@ Coroutine\create(function () {
 
     // Attempt to return the result.
     try {
-        return yield from $channel->send($result);
-    } catch (Throwable $exception) {
-        // The result was not sendable! Try sending the reason why instead.
-        return yield from $channel->send(new ExitFailure($exception));
+        try {
+            return yield from $channel->send($result);
+        } catch (SerializationException $exception) {
+            // Serializing the result failed. Send the reason why.
+            return yield from $channel->send(new ExitFailure($exception));
+        }
+    } catch (ChannelException $exception) {
+        // The result was not sendable! The parent context must have died or killed the context.
+        return 0;
     }
 })->done();
 

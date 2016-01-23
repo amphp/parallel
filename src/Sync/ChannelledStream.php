@@ -1,9 +1,8 @@
 <?php
 namespace Icicle\Concurrent\Sync;
 
-use Icicle\Concurrent\Exception\ChannelException;
+use Icicle\Concurrent\Exception\{ChannelException, SerializationException};
 use Icicle\Exception\InvalidArgumentError;
-use Icicle\Stream\Exception\Exception as StreamException;
 use Icicle\Stream\{DuplexStream, ReadableStream, WritableStream};
 
 /**
@@ -66,7 +65,7 @@ class ChannelledStream implements Channel
         try {
             $serialized = serialize($data);
         } catch (\Throwable $exception) {
-            throw new ChannelException(
+            throw new SerializationException(
                 'The given data cannot be sent because it is not serializable.', $exception
             );
         }
@@ -74,8 +73,8 @@ class ChannelledStream implements Channel
         $length = strlen($serialized);
 
         try {
-            yield from $this->write->write(pack('CL', 0, $length) . $serialized);
-        } catch (StreamException $exception) {
+            yield $this->write->write(pack('CL', 0, $length) . $serialized);
+        } catch (\Throwable $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', $exception);
         }
 
@@ -109,7 +108,7 @@ class ChannelledStream implements Channel
             do {
                 $buffer .= yield from $this->read->read($remaining);
             } while ($remaining = $length - strlen($buffer));
-        } catch (StreamException $exception) {
+        } catch (\Throwable $exception) {
             throw new ChannelException('Reading from the channel failed. Did the context die?', $exception);
         }
 
@@ -119,7 +118,7 @@ class ChannelledStream implements Channel
         try {
             $data = unserialize($buffer);
         } catch (\Throwable $exception) {
-            throw new ChannelException('Exception thrown when unserializing data.', $exception);
+            throw new SerializationException('Exception thrown when unserializing data.', $exception);
         } finally {
             restore_error_handler();
         }

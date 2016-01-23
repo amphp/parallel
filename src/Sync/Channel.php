@@ -17,6 +17,7 @@ interface Channel
      * @throws \Icicle\Concurrent\Exception\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If receiving from the channel fails.
+     * @throws \Icicle\Concurrent\Exception\SerializationException If unserializing the data fails.
      */
     public function receive(): \Generator;
 
@@ -34,6 +35,7 @@ interface Channel
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If sending on the channel fails.
      * @throws \Icicle\Exception\InvalidArgumentError If an ExitStatus object is given.
+     * @throws \Icicle\Concurrent\Exception\SerializationException If serializing the data fails.
      */
     public function send($data): \Generator;
 }
