@@ -1,20 +1,14 @@
 language: php
 
 php:
-  - 5.5
-  - 5.6
-# - 7.0
+  - 7.0
 
 sudo: false
 
 install:
   - git clone https://github.com/krakjoe/pthreads.git;
     pushd pthreads;
-    if [ "$TRAVIS_PHP_VERSION" != "7.0" ]; then
-        git checkout PHP5;
-    else
-        git checkout master;
-    fi;
+    git checkout master;
     phpize;
     ./configure;
     make;
