@@ -28,6 +28,8 @@ if (null === $autoloadPath) {
 
 require $autoloadPath;
 
+use Icicle\Concurrent\Exception\ChannelException;
+use Icicle\Concurrent\Exception\SerializationException;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Concurrent\Sync\Internal\ExitFailure;
 use Icicle\Concurrent\Sync\Internal\ExitSuccess;
@@ -50,8 +52,13 @@ Coroutine\create(function () {
 
     // Attempt to return the result.
     try {
-        yield $channel->send($result);
-    } catch (Exception $exception) {
+        try {
+            yield $channel->send($result);
+        } catch (SerializationException $exception) {
+            // Serializing the result failed. Send the reason why.
+            yield $channel->send(new ExitFailure($exception));
+        }
+    } catch (ChannelException $exception) {
         // The result was not sendable! The parent context must have died or killed the context.
         yield 0;
     }
