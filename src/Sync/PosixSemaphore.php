@@ -187,7 +187,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @param string $serialized The serialized semaphore.
      */
-    public function unserialize(string $serialized)
+    public function unserialize($serialized)
     {
         // Get the semaphore key and attempt to re-connect to the semaphore in memory.
         list($this->key, $this->maxLocks) = unserialize($serialized);

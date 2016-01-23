@@ -233,7 +233,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @param string $serialized The serialized object handle.
      */
-    public function unserialize(string $serialized)
+    public function unserialize($serialized)
     {
         list($this->key, $this->semaphore) = unserialize($serialized);
         $this->memOpen($this->key, 'w', 0, 0);
