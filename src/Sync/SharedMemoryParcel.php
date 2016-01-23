@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SharedMemoryException;
-use Icicle\Concurrent\Exception\UnsupportedError;
+use Icicle\Exception\UnsupportedError;
 
 /**
  * A container object for sharing a value across contexts.

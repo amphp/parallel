@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SemaphoreException;
-use Icicle\Concurrent\Exception\UnsupportedError;
+use Icicle\Exception\UnsupportedError;
 use Icicle\Coroutine;
 
 /**
