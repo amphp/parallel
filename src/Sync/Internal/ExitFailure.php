@@ -25,7 +25,7 @@ class ExitFailure implements ExitStatus
      */
     private $trace;
 
-    public function __construct(\Exception $exception)
+    public function __construct(\Throwable $exception)
     {
         $this->type = get_class($exception);
         $this->message = $exception->getMessage();

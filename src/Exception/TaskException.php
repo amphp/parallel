@@ -15,7 +15,7 @@ class TaskException extends \Exception implements Exception
      * @param int    $code    The panic code.
      * @param string $trace   The panic stack trace.
      */
-    public function __construct($message = '', $code = 0, $trace = '')
+    public function __construct(string $message = '', int $code = 0, string $trace = '')
     {
         parent::__construct($message, $code);
         $this->trace = $trace;
@@ -26,7 +26,7 @@ class TaskException extends \Exception implements Exception
      *
      * @return string
      */
-    public function getWorkerTrace()
+    public function getWorkerTrace(): string
     {
         return $this->trace;
     }

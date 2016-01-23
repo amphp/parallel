@@ -1,15 +1,11 @@
 <?php
 namespace Icicle\Concurrent\Threading;
 
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\Exception\ThreadException;
+use Icicle\Concurrent\Exception\{StatusError, SynchronizationError, ThreadException};
 use Icicle\Concurrent\Strand;
-use Icicle\Concurrent\Sync\ChannelledStream;
-use Icicle\Concurrent\Sync\Internal\ExitStatus;
+use Icicle\Concurrent\Sync\{ChannelledStream, Internal\ExitStatus};
 use Icicle\Coroutine;
-use Icicle\Exception\InvalidArgumentError;
-use Icicle\Exception\UnsupportedError;
+use Icicle\Exception\{InvalidArgumentError, UnsupportedError};
 use Icicle\Stream;
 use Icicle\Stream\Pipe\DuplexPipe;
 
@@ -62,7 +58,7 @@ class Thread implements Strand
      *
      * @return bool True if threading is enabled, otherwise false.
      */
-    public static function enabled()
+    public static function enabled(): bool
     {
         return extension_loaded('pthreads');
     }
@@ -74,10 +70,9 @@ class Thread implements Strand
      *
      * @return Thread The thread object that was spawned.
      */
-    public static function spawn(callable $function /* , ...$args */)
+    public static function spawn(callable $function, ...$args)
     {
-        $class  = new \ReflectionClass(__CLASS__);
-        $thread = $class->newInstanceArgs(func_get_args());
+        $thread = new self($function, ...$args);
         $thread->start();
         return $thread;
     }
@@ -90,13 +85,11 @@ class Thread implements Strand
      * @throws InvalidArgumentError If the given function cannot be safely invoked in a thread.
      * @throws UnsupportedError Thrown if the pthreads extension is not available.
      */
-    public function __construct(callable $function /* , ...$args */)
+    public function __construct(callable $function, ...$args)
     {
         if (!self::enabled()) {
             throw new UnsupportedError("The pthreads extension is required to create threads.");
         }
-
-        $args = array_slice(func_get_args(), 1);
 
         // Make sure closures don't `use` other variables or have statics.
         if ($function instanceof \Closure) {
@@ -140,7 +133,7 @@ class Thread implements Strand
      *
      * @return bool True if the context is running, otherwise false.
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return null !== $this->thread && $this->thread->isRunning() && null !== $this->pipe && $this->pipe->isOpen();
     }
@@ -219,40 +212,42 @@ class Thread implements Strand
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
      */
-    public function join()
+    public function join(): \Generator
     {
         if (null === $this->channel || null === $this->thread) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
         try {
-            $response = (yield $this->channel->receive());
+            $response = yield from $this->channel->receive();
 
             if (!$response instanceof ExitStatus) {
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
 
-            yield $response->getResult();
+            $result = $response->getResult();
 
             $this->thread->join();
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;
         }
 
         $this->close();
+
+        return $result;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receive()
+    public function receive(): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        $data = (yield $this->channel->receive());
+        $data = yield from $this->channel->receive();
 
         if ($data instanceof ExitStatus) {
             $this->kill();
@@ -263,13 +258,13 @@ class Thread implements Strand
             ));
         }
 
-        yield $data;
+        return $data;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data)
+    public function send($data): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The thread has not been started or has already finished.');
@@ -280,6 +275,6 @@ class Thread implements Strand
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
-        yield $this->channel->send($data);
+        return yield from $this->channel->send($data);
     }
 }

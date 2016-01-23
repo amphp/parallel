@@ -11,5 +11,5 @@ interface WorkerFactory
      *
      * @return Worker The newly created worker.
      */
-    public function create();
+    public function create(): Worker;
 }

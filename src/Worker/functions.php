@@ -9,7 +9,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @return \Icicle\Concurrent\Worker\Pool The global worker pool instance.
      */
-    function pool(Pool $pool = null)
+    function pool(Pool $pool = null): Pool
     {
         static $instance;
 
@@ -37,9 +37,9 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @resolve mixed The return value of the task.
      */
-    function enqueue(Task $task)
+    function enqueue(Task $task): \Generator
     {
-        yield pool()->enqueue($task);
+        return pool()->enqueue($task);
     }
 
     /**
@@ -47,7 +47,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @return \Icicle\Concurrent\Worker\Worker
      */
-    function create()
+    function create(): Worker
     {
         $worker = factory()->create();
         $worker->start();
@@ -61,7 +61,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @return \Icicle\Concurrent\Worker\WorkerFactory
      */
-    function factory(WorkerFactory $factory = null)
+    function factory(WorkerFactory $factory = null): WorkerFactory
     {
         static $instance;
 
@@ -79,7 +79,7 @@ if (!function_exists(__NAMESPACE__ . '\pool')) {
      *
      * @return \Icicle\Concurrent\Worker\Worker
      */
-    function get()
+    function get(): Worker
     {
         return pool()->get();
     }

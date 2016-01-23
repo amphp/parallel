@@ -10,26 +10,26 @@ interface Environment extends \ArrayAccess, \Countable
      *
      * @return bool
      */
-    public function exists($key);
+    public function exists(string $key);
 
     /**
      * @param string $key
      *
      * @return mixed|null Returns null if the key does not exist.
      */
-    public function get($key);
+    public function get(string $key);
 
     /**
      * @param string $key
      * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
      */
-    public function set($key, $value, $ttl = 0);
+    public function set(string $key, $value, int $ttl = 0);
 
     /**
      * @param string $key
      */
-    public function delete($key);
+    public function delete(string $key);
 
     /**
      * Removes all values.

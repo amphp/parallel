@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SharedMemoryException;
-use Icicle\Concurrent\Exception\UnsupportedError;
+use Icicle\Exception\UnsupportedError;
 
 /**
  * A container object for sharing a value across contexts.
@@ -66,7 +66,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      * @param int   $permissions The access permissions to set for the object.
      *                           If not specified defaults to 0600.
      */
-    public function __construct($value, $size = 16384, $permissions = 0600)
+    public function __construct($value, int $size = 16384, int $permissions = 0600)
     {
         if (!extension_loaded("shmop")) {
             throw new UnsupportedError(__CLASS__ . " requires the shmop extension.");
@@ -80,7 +80,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      * @param int   $size
      * @param int   $permissions
      */
-    private function init($value, $size = 16384, $permissions = 0600)
+    private function init($value, int $size = 16384, int $permissions = 0600)
     {
         $this->key = abs(crc32(spl_object_hash($this)));
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
@@ -98,7 +98,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @return bool True if the object is freed, otherwise false.
      */
-    public function isFreed()
+    public function isFreed(): bool
     {
         // If we are no longer connected to the memory segment, check if it has
         // been invalidated.
@@ -175,18 +175,20 @@ class SharedMemoryParcel implements Parcel, \Serializable
     /**
      * {@inheritdoc}
      */
-    public function synchronized(callable $callback)
+    public function synchronized(callable $callback): \Generator
     {
         /** @var \Icicle\Concurrent\Sync\Lock $lock */
-        $lock = (yield $this->semaphore->acquire());
+        $lock = yield from $this->semaphore->acquire();
 
         try {
             $value = $this->unwrap();
-            $result = (yield $callback($value));
+            $result = yield $callback($value);
             $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }
+
+        return $result;
     }
 
     /**
@@ -221,7 +223,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @return string The serialized object handle.
      */
-    public function serialize()
+    public function serialize(): string
     {
         return serialize([$this->key, $this->semaphore]);
     }
@@ -231,7 +233,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @param string $serialized The serialized object handle.
      */
-    public function unserialize($serialized)
+    public function unserialize(string $serialized)
     {
         list($this->key, $this->semaphore) = unserialize($serialized);
         $this->memOpen($this->key, 'w', 0, 0);
@@ -297,7 +299,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @return array An associative array of header data.
      */
-    private function getHeader()
+    private function getHeader(): array
     {
         $data = $this->memGet(0, self::MEM_DATA_OFFSET);
         return unpack('Cstate/Lsize/Spermissions', $data);
@@ -310,7 +312,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      * @param int $size        The size of the stored data, or other value.
      * @param int $permissions The permissions mask on the memory segment.
      */
-    private function setHeader($state, $size, $permissions)
+    private function setHeader(int $state, int $size, int $permissions)
     {
         $header = pack('CLS', $state, $size, $permissions);
         $this->memSet(0, $header);
@@ -324,7 +326,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      * @param int    $permissions Process permissions on the shared memory.
      * @param int    $size        The size to crate the shared memory in bytes.
      */
-    private function memOpen($key, $mode, $permissions, $size)
+    private function memOpen(int $key, string $mode, int $permissions, int $size)
     {
         $this->handle = @shmop_open($key, $mode, $permissions, $size);
         if ($this->handle === false) {
@@ -340,7 +342,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      *
      * @return string The binary data at the given offset.
      */
-    private function memGet($offset, $size)
+    private function memGet(int $offset, int $size): string
     {
         $data = shmop_read($this->handle, $offset, $size);
         if ($data === false) {
@@ -355,7 +357,7 @@ class SharedMemoryParcel implements Parcel, \Serializable
      * @param int    $offset The offset to write to.
      * @param string $data   The binary data to write.
      */
-    private function memSet($offset, $data)
+    private function memSet(int $offset, string $data)
     {
         if (!shmop_write($this->handle, $data, $offset)) {
             throw new SharedMemoryException('Failed to write to shared memory block.');

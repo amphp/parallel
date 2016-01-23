@@ -64,9 +64,9 @@ class BasicEnvironment implements Environment
      *
      * @return bool
      */
-    public function exists($key)
+    public function exists(string $key): bool
     {
-        return isset($this->data[(string) $key]);
+        return isset($this->data[$key]);
     }
 
     /**
@@ -74,10 +74,8 @@ class BasicEnvironment implements Environment
      *
      * @return mixed|null Returns null if the key does not exist.
      */
-    public function get($key)
+    public function get(string $key)
     {
-        $key = (string) $key;
-
         if (isset($this->ttl[$key]) && 0 !== $this->ttl[$key]) {
             $this->expire[$key] = time() + $this->ttl[$key];
             $this->queue->insert($key, -$this->expire[$key]);
@@ -91,10 +89,8 @@ class BasicEnvironment implements Environment
      * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
      */
-    public function set($key, $value, $ttl = 0)
+    public function set(string $key, $value, int $ttl = 0)
     {
-        $key = (string) $key;
-
         if (null === $value) {
             $this->delete($key);
             return;
@@ -123,7 +119,7 @@ class BasicEnvironment implements Environment
     /**
      * @param string $key
      */
-    public function delete($key)
+    public function delete(string $key)
     {
         $key = (string) $key;
         unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
@@ -177,7 +173,7 @@ class BasicEnvironment implements Environment
     /**
      * @return int
      */
-    public function count()
+    public function count(): int
     {
         return count($this->data);
     }

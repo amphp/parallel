@@ -24,7 +24,7 @@ class ForkTest extends AbstractContextTest
                 usleep(100);
             });
 
-            yield $fork->join();
+            return yield from $fork->join();
         })->done();
 
         Loop\run();

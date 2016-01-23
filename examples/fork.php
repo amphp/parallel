@@ -11,12 +11,12 @@ Coroutine\create(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
 
-        yield $this->send('Data sent from child.');
+        yield from $this->send('Data sent from child.');
 
         print "Child sleeping for 2 seconds...\n";
         sleep(2);
 
-        yield 42;
+        return 42;
     });
 
     $timer = Loop\periodic(1, function () use ($context) {
@@ -26,8 +26,8 @@ Coroutine\create(function () {
     });
 
     try {
-        printf("Received the following from child: %s\n", (yield $context->receive()));
-        printf("Child ended with value %d!\n", (yield $context->join()));
+        printf("Received the following from child: %s\n", yield from $context->receive());
+        printf("Child ended with value %d!\n", yield from $context->join());
     } catch (Exception $e) {
         print "Error from child!\n";
         print $e."\n";

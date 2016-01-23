@@ -34,7 +34,7 @@ class Mutex implements SyncMutex
     /**
      * {@inheritdoc}
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         return $this->mutex->acquire();
     }

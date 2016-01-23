@@ -21,5 +21,5 @@ interface Synchronizable
      *
      * @resolve mixed The return value of $callback.
      */
-    public function synchronized(callable $callback);
+    public function synchronized(callable $callback): \Generator;
 }

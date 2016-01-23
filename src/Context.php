@@ -6,7 +6,7 @@ interface Context
     /**
      * @return bool
      */
-    public function isRunning();
+    public function isRunning(): bool;
 
     /**
      * Starts the execution context.
@@ -25,5 +25,5 @@ interface Context
      *
      * @resolve mixed
      */
-    public function join();
+    public function join(): \Generator;
 }

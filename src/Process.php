@@ -6,12 +6,12 @@ interface Process extends Context
     /**
      * @return int PID of process.
      */
-    public function getPid();
+    public function getPid(): int;
 
     /**
      * @param int $signo
      *
      * @throws \Icicle\Concurrent\Exception\StatusError
      */
-    public function signal($signo);
+    public function signal(int $signo);
 }

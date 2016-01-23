@@ -2,12 +2,11 @@
 namespace Icicle\Concurrent\Process;
 
 use Icicle\Awaitable\Delayed;
-use Icicle\Concurrent\Exception\ProcessException;
-use Icicle\Concurrent\Exception\StatusError;
+use Icicle\Concurrent\Exception\{ProcessException, StatusError};
 use Icicle\Concurrent\Process as ProcessContext;
 use Icicle\Loop;
-use Icicle\Stream\Pipe\ReadablePipe;
-use Icicle\Stream\Pipe\WritablePipe;
+use Icicle\Stream\Pipe\{ReadablePipe, WritablePipe};
+use Icicle\Stream\{ReadableStream, WritableStream};
 
 class Process implements ProcessContext
 {
@@ -78,12 +77,12 @@ class Process implements ProcessContext
      * @param   mixed[] $env Environment variables or use an empty array to inherit from the current PHP process.
      * @param   mixed[] $options Options for proc_open().
      */
-    public function __construct($command, $cwd = '', array $env = [], array $options = [])
+    public function __construct(string $command, string $cwd = '', array $env = [], array $options = [])
     {
-        $this->command = (string) $command;
+        $this->command = $command;
 
         if ('' !== $cwd) {
-            $this->cwd = (string) $cwd;
+            $this->cwd = $cwd;
         }
 
         foreach ($env as $key => $value) {
@@ -214,7 +213,7 @@ class Process implements ProcessContext
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process has not been started.
      */
-    public function join()
+    public function join(): \Generator
     {
         if (null === $this->delayed) {
             throw new StatusError('The process has not been started.');
@@ -223,7 +222,7 @@ class Process implements ProcessContext
         $this->poll->listen();
 
         try {
-            yield $this->delayed;
+            return yield $this->delayed;
         } finally {
             $this->stdout->close();
             $this->stderr->close();
@@ -251,7 +250,7 @@ class Process implements ProcessContext
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
-    public function signal($signo)
+    public function signal(int $signo)
     {
         if (!$this->isRunning()) {
             throw new StatusError('The process is not running.');
@@ -266,7 +265,7 @@ class Process implements ProcessContext
      *
      * @return int
      */
-    public function getPid()
+    public function getPid(): int
     {
         return $this->pid;
     }
@@ -276,7 +275,7 @@ class Process implements ProcessContext
      *
      * @return string The command to execute.
      */
-    public function getCommand()
+    public function getCommand(): string
     {
         return $this->command;
     }
@@ -286,7 +285,7 @@ class Process implements ProcessContext
      *
      * @return string The current working directory or null if inherited from the current PHP process.
      */
-    public function getWorkingDirectory()
+    public function getWorkingDirectory(): string
     {
         if ('' === $this->cwd) {
             return getcwd() ?: '';
@@ -300,7 +299,7 @@ class Process implements ProcessContext
      *
      * @return mixed[] Array of environment variables.
      */
-    public function getEnv()
+    public function getEnv(): array
     {
         return $this->env;
     }
@@ -310,7 +309,7 @@ class Process implements ProcessContext
      *
      * @return mixed[] Array of options.
      */
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->options;
     }
@@ -320,7 +319,7 @@ class Process implements ProcessContext
      *
      * @return bool
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return is_resource($this->process);
     }
@@ -332,7 +331,7 @@ class Process implements ProcessContext
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
-    public function getStdIn()
+    public function getStdIn(): WritableStream
     {
         if (null === $this->stdin) {
             throw new StatusError('The process has not been started.');
@@ -348,7 +347,7 @@ class Process implements ProcessContext
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
-    public function getStdOut()
+    public function getStdOut(): ReadableStream
     {
         if (null === $this->stdout) {
             throw new StatusError('The process has not been started.');
@@ -364,7 +363,7 @@ class Process implements ProcessContext
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
      */
-    public function getStdErr()
+    public function getStdErr(): ReadableStream
     {
         if (null === $this->stderr) {
             throw new StatusError('The process has not been started.');

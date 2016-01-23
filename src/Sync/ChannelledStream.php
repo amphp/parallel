@@ -4,9 +4,7 @@ namespace Icicle\Concurrent\Sync;
 use Icicle\Concurrent\Exception\ChannelException;
 use Icicle\Exception\InvalidArgumentError;
 use Icicle\Stream\Exception\Exception as StreamException;
-use Icicle\Stream\DuplexStream;
-use Icicle\Stream\ReadableStream;
-use Icicle\Stream\WritableStream;
+use Icicle\Stream\{DuplexStream, ReadableStream, WritableStream};
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -62,12 +60,12 @@ class ChannelledStream implements Channel
     /**
      * {@inheritdoc}
      */
-    public function send($data)
+    public function send($data): \Generator
     {
         // Serialize the data to send into the channel.
         try {
             $serialized = serialize($data);
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             throw new ChannelException(
                 'The given data cannot be sent because it is not serializable.', $exception
             );
@@ -76,18 +74,18 @@ class ChannelledStream implements Channel
         $length = strlen($serialized);
 
         try {
-            yield $this->write->write(pack('CL', 0, $length) . $serialized);
+            yield from $this->write->write(pack('CL', 0, $length) . $serialized);
         } catch (StreamException $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', $exception);
         }
 
-        yield $length;
+        return $length;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receive()
+    public function receive(): \Generator
     {
         // Read the message length first to determine how much needs to be read from the stream.
         $length = self::HEADER_LENGTH;
@@ -96,7 +94,7 @@ class ChannelledStream implements Channel
 
         try {
             do {
-                $buffer .= (yield $this->read->read($remaining));
+                $buffer .= yield from $this->read->read($remaining);
             } while ($remaining = $length - strlen($buffer));
 
             $data = unpack('Cprefix/Llength', $buffer);
@@ -109,7 +107,7 @@ class ChannelledStream implements Channel
             $remaining = $length = $data['length'];
 
             do {
-                $buffer .= (yield $this->read->read($remaining));
+                $buffer .= yield from $this->read->read($remaining);
             } while ($remaining = $length - strlen($buffer));
         } catch (StreamException $exception) {
             throw new ChannelException('Reading from the channel failed. Did the context die?', $exception);
@@ -120,12 +118,12 @@ class ChannelledStream implements Channel
         // Attempt to unserialize the received data.
         try {
             $data = unserialize($buffer);
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             throw new ChannelException('Exception thrown when unserializing data.', $exception);
         } finally {
             restore_error_handler();
         }
 
-        yield $data;
+        return $data;
     }
 }

@@ -30,7 +30,7 @@ abstract class AbstractSemaphoreTest extends TestCase
         Coroutine\create(function () {
             $this->semaphore = $this->createSemaphore(1);
 
-            $lock = (yield $this->semaphore->acquire());
+            $lock = yield from $this->semaphore->acquire();
 
             $this->assertFalse($lock->isReleased());
 
@@ -48,17 +48,17 @@ abstract class AbstractSemaphoreTest extends TestCase
             $this->semaphore = $this->createSemaphore(1);
 
             Coroutine\create(function () {
-                $lock1 = (yield $this->semaphore->acquire());
+                $lock1 = yield from $this->semaphore->acquire();
                 Loop\timer(0.5, function () use ($lock1) {
                     $lock1->release();
                 });
 
-                $lock2 = (yield $this->semaphore->acquire());
+                $lock2 = yield from $this->semaphore->acquire();
                 Loop\timer(0.5, function () use ($lock2) {
                     $lock2->release();
                 });
 
-                $lock3 = (yield $this->semaphore->acquire());
+                $lock3 = yield from $this->semaphore->acquire();
                 Loop\timer(0.5, function () use ($lock3) {
                     $lock3->release();
                 });
@@ -74,7 +74,7 @@ abstract class AbstractSemaphoreTest extends TestCase
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
-            $lock = (yield $clone->acquire());
+            $lock = yield from $clone->acquire();
 
             $this->assertCount(1, $this->semaphore);
             $this->assertCount(0, $clone);
@@ -91,7 +91,7 @@ abstract class AbstractSemaphoreTest extends TestCase
             $this->semaphore = $this->createSemaphore(1);
             $unserialized = unserialize(serialize($this->semaphore));
 
-            $lock = (yield $unserialized->acquire());
+            $lock = yield from $unserialized->acquire();
 
             $this->assertCount(0, $this->semaphore);
             $this->assertCount(0, $unserialized);

@@ -39,20 +39,22 @@ class FileMutex implements Mutex
     /**
      * {@inheritdoc}
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         // Try to create the lock file. If the file already exists, someone else
         // has the lock, so set an asynchronous timer and try again.
         while (($handle = @fopen($this->fileName, 'x')) === false) {
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
+            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
         // Return a lock object that can be used to release the lock on the mutex.
-        yield new Lock(function (Lock $lock) {
+        $lock = new Lock(function (Lock $lock) {
             $this->release();
         });
 
         fclose($handle);
+
+        return $lock;
     }
 
     /**

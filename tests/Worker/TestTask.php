@@ -1,8 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\Task;
+use Icicle\Concurrent\Worker\{Environment, Task};
 
 class TestTask implements Task
 {
@@ -13,8 +12,8 @@ class TestTask implements Task
         $this->returnValue = $returnValue;
     }
 
-    public function run(Environment $environment)
+    public function run(Environment $environment): \Generator
     {
-        return $this->returnValue;
+        return yield $this->returnValue;
     }
 }

@@ -84,7 +84,7 @@ abstract class AbstractPoolTest extends TestCase
             $pool = $this->createPool();
             $pool->start();
 
-            $returnValue = (yield $pool->enqueue(new TestTask(42)));
+            $returnValue = yield from $pool->enqueue(new TestTask(42));
             $this->assertEquals(42, $returnValue);
 
             yield $pool->shutdown();
@@ -97,11 +97,11 @@ abstract class AbstractPoolTest extends TestCase
             $pool = $this->createPool();
             $pool->start();
 
-            $values = (yield Awaitable\all([
+            $values = yield Awaitable\all([
                 new Coroutine\Coroutine($pool->enqueue(new TestTask(42))),
                 new Coroutine\Coroutine($pool->enqueue(new TestTask(56))),
                 new Coroutine\Coroutine($pool->enqueue(new TestTask(72)))
-            ]));
+            ]);
 
             $this->assertEquals([42, 56, 72], $values);
 

@@ -2,7 +2,7 @@
 namespace Icicle\Concurrent\Sync;
 
 use Icicle\Concurrent\Exception\SemaphoreException;
-use Icicle\Concurrent\Exception\UnsupportedError;
+use Icicle\Exception\UnsupportedError;
 use Icicle\Coroutine;
 
 /**
@@ -81,7 +81,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @return bool True if the semaphore has been freed, otherwise false.
      */
-    public function isFreed()
+    public function isFreed(): bool
     {
         return !is_resource($this->queue) || !msg_queue_exists($this->key);
     }
@@ -91,7 +91,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @return int The maximum number of locks held by the semaphore.
      */
-    public function getSize()
+    public function getSize(): int
     {
         return $this->maxLocks;
     }
@@ -101,7 +101,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @return int A permissions mode.
      */
-    public function getPermissions()
+    public function getPermissions(): int
     {
         $stat = msg_stat_queue($this->queue);
         return $stat['msg_perm.mode'];
@@ -116,7 +116,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @throws SemaphoreException If the operation failed.
      */
-    public function setPermissions($mode)
+    public function setPermissions(int $mode)
     {
         if (!msg_set_queue($this->queue, [
             'msg_perm.mode' => $mode
@@ -128,7 +128,7 @@ class PosixSemaphore implements Semaphore, \Serializable
     /**
      * {@inheritdoc}
      */
-    public function count()
+    public function count(): int
     {
         $stat = msg_stat_queue($this->queue);
         return $stat['msg_qnum'];
@@ -137,24 +137,23 @@ class PosixSemaphore implements Semaphore, \Serializable
     /**
      * {@inheritdoc}
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         do {
             // Attempt to acquire a lock from the semaphore.
             if (@msg_receive($this->queue, 0, $type, 1, $chr, false, MSG_IPC_NOWAIT, $errno)) {
                 // A free lock was found, so resolve with a lock object that can
                 // be used to release the lock.
-                yield new Lock(function (Lock $lock) {
+                return new Lock(function (Lock $lock) {
                     $this->release();
                 });
-                return;
             }
 
             // Check for unusual errors.
             if ($errno !== MSG_ENOMSG) {
                 throw new SemaphoreException('Failed to acquire a lock.');
             }
-        } while (yield Coroutine\sleep(self::LATENCY_TIMEOUT));
+        } while (yield from Coroutine\sleep(self::LATENCY_TIMEOUT));
     }
 
     /**
@@ -178,7 +177,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @return string The serialized semaphore.
      */
-    public function serialize()
+    public function serialize(): string
     {
         return serialize([$this->key, $this->maxLocks]);
     }
@@ -188,7 +187,7 @@ class PosixSemaphore implements Semaphore, \Serializable
      *
      * @param string $serialized The serialized semaphore.
      */
-    public function unserialize($serialized)
+    public function unserialize(string $serialized)
     {
         // Get the semaphore key and attempt to re-connect to the semaphore in memory.
         list($this->key, $this->maxLocks) = unserialize($serialized);

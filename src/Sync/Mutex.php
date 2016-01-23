@@ -19,5 +19,5 @@ interface Mutex
      *
      * @resolve \Icicle\Concurrent\Sync\Lock
      */
-    public function acquire();
+    public function acquire(): \Generator;
 }

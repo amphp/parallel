@@ -24,33 +24,33 @@ interface Pool extends Worker
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the queue is not running.
      */
-    public function get();
+    public function get(): Worker;
 
     /**
      * Gets the number of workers currently running in the pool.
      *
      * @return int The number of workers.
      */
-    public function getWorkerCount();
+    public function getWorkerCount(): int;
 
     /**
      * Gets the number of workers that are currently idle.
      *
      * @return int The number of idle workers.
      */
-    public function getIdleWorkerCount();
+    public function getIdleWorkerCount(): int;
 
     /**
      * Gets the minimum number of workers the pool may have idle.
      *
      * @return int The minimum number of workers.
      */
-    public function getMinSize();
+    public function getMinSize(): int;
 
     /**
      * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
      *
      * @return int The maximum number of workers.
      */
-    public function getMaxSize();
+    public function getMaxSize(): int;
 }

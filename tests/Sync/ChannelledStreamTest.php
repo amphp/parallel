@@ -4,10 +4,8 @@ namespace Icicle\Tests\Concurrent\Sync;
 use Icicle\Concurrent\Sync\ChannelledStream;
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Stream\DuplexStream;
-use Icicle\Stream\Exception\UnreadableException;
-use Icicle\Stream\Exception\UnwritableException;
-use Icicle\Stream\ReadableStream;
+use Icicle\Stream\{DuplexStream, ReadableStream};
+use Icicle\Stream\Exception\{UnreadableException, UnwritableException};
 use Icicle\Tests\Concurrent\TestCase;
 
 class ChannelledStreamTest extends TestCase
@@ -24,13 +22,14 @@ class ChannelledStreamTest extends TestCase
         $mock->method('write')
             ->will($this->returnCallback(function ($data) use (&$buffer) {
                 $buffer .= $data;
+                return yield strlen($data);
             }));
 
         $mock->method('read')
             ->will($this->returnCallback(function ($length, $byte = null, $timeout = 0) use (&$buffer) {
                 $result = substr($buffer, 0, $length);
                 $buffer = substr($buffer, $length);
-                return $result;
+                return yield $result;
             }));
 
         return $mock;
@@ -55,8 +54,8 @@ class ChannelledStreamTest extends TestCase
 
             $message = 'hello';
 
-            yield $a->send($message);
-            $data = (yield $b->receive());
+            yield from $a->send($message);
+            $data = yield from $b->receive();
             $this->assertSame($message, $data);
         })->done();
 
@@ -79,8 +78,8 @@ class ChannelledStreamTest extends TestCase
                 $message .= chr(mt_rand(0, 255));
             }
 
-            yield $a->send($message);
-            $data = (yield $b->receive());
+            yield from $a->send($message);
+            $data = yield from $b->receive();
             $this->assertSame($message, $data);
         })->done();
 
@@ -99,8 +98,8 @@ class ChannelledStreamTest extends TestCase
             $b = new ChannelledStream($mock);
 
             // Close $a. $b should close on next read...
-            yield $mock->write(pack('L', 10) . '1234567890');
-            $data = (yield $b->receive());
+            yield from $mock->write(pack('L', 10) . '1234567890');
+            $data = yield from $b->receive();
         })->done();
 
         Loop\run();
@@ -118,8 +117,8 @@ class ChannelledStreamTest extends TestCase
             $b = new ChannelledStream($mock);
 
             // Close $a. $b should close on next read...
-            yield $a->send(function () {});
-            $data = (yield $b->receive());
+            yield from $a->send(function () {});
+            $data = yield from $b->receive();
         })->done();
 
         Loop\run();
@@ -140,7 +139,7 @@ class ChannelledStreamTest extends TestCase
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($this->getMock(DuplexStream::class));
 
-            yield $a->send('hello');
+            yield from $a->send('hello');
         })->done();
 
         Loop\run();
@@ -160,7 +159,7 @@ class ChannelledStreamTest extends TestCase
 
             $a = new ChannelledStream($mock);
 
-            $data = (yield $a->receive());
+            $data = yield from $a->receive();
         })->done();
 
         Loop\run();

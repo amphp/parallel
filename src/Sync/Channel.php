@@ -18,7 +18,7 @@ interface Channel
      *     unexpectedly ends.
      * @throws \Icicle\Concurrent\Exception\ChannelException If receiving from the channel fails.
      */
-    public function receive();
+    public function receive(): \Generator;
 
     /**
      * @coroutine
@@ -35,5 +35,5 @@ interface Channel
      * @throws \Icicle\Concurrent\Exception\ChannelException If sending on the channel fails.
      * @throws \Icicle\Exception\InvalidArgumentError If an ExitStatus object is given.
      */
-    public function send($data);
+    public function send($data): \Generator;
 }

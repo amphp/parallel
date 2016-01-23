@@ -2,8 +2,7 @@
 namespace Icicle\Tests\Concurrent\Sync;
 
 use Icicle\Concurrent\Forking\Fork;
-use Icicle\Concurrent\Sync\PosixSemaphore;
-use Icicle\Concurrent\Sync\Semaphore;
+use Icicle\Concurrent\Sync\{PosixSemaphore, Semaphore};
 use Icicle\Coroutine;
 use Icicle\Loop;
 
@@ -31,7 +30,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
-            $lock = (yield $clone->acquire());
+            $lock = yield from $clone->acquire();
 
             $this->assertCount(1, $this->semaphore);
             $this->assertCount(0, $clone);
@@ -64,7 +63,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             $this->semaphore = $this->createSemaphore(1);
 
             $fork1 = new Fork(function (Semaphore $semaphore) {
-                $lock = (yield $semaphore->acquire());
+                $lock = yield from $semaphore->acquire();
 
                 usleep(1e5);
 
@@ -74,7 +73,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             }, $this->semaphore);
 
             $fork2 = new Fork(function (Semaphore $semaphore) {
-                $lock = (yield $semaphore->acquire());
+                $lock = yield from $semaphore->acquire();
 
                 usleep(1e5);
 

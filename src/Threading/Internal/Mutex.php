@@ -21,17 +21,17 @@ class Mutex extends \Threaded
      *
      * @return \Generator
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         $tsl = function () {
             return ($this->lock ? $this->lock = false : true);
         };
 
         while (!$this->lock || $this->synchronized($tsl)) {
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
+            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
-        yield new Lock(function () {
+        return new Lock(function () {
             $this->release();
         });
     }

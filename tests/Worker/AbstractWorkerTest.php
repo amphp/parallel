@@ -49,7 +49,7 @@ abstract class AbstractWorkerTest extends TestCase
             $worker = $this->createWorker();
             $worker->start();
 
-            $returnValue = (yield $worker->enqueue(new TestTask(42)));
+            $returnValue = yield from $worker->enqueue(new TestTask(42));
             $this->assertEquals(42, $returnValue);
 
             yield $worker->shutdown();
@@ -64,15 +64,15 @@ abstract class AbstractWorkerTest extends TestCase
             $worker = $this->createWorker();
             $worker->start();
 
-            $values = (yield Awaitable\all([
+            $values = yield Awaitable\all([
                 new Coroutine\Coroutine($worker->enqueue(new TestTask(42))),
                 new Coroutine\Coroutine($worker->enqueue(new TestTask(56))),
                 new Coroutine\Coroutine($worker->enqueue(new TestTask(72)))
-            ]));
+            ]);
 
             $this->assertEquals([42, 56, 72], $values);
 
-            yield $worker->shutdown();
+            yield from $worker->shutdown();
         })->done();
 
         Loop\run();

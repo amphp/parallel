@@ -2,8 +2,7 @@
 namespace Icicle\Tests\Concurrent\Threading;
 
 use Icicle\Concurrent\Sync\Semaphore as SyncSemaphore;
-use Icicle\Concurrent\Threading\Semaphore;
-use Icicle\Concurrent\Threading\Thread;
+use Icicle\Concurrent\Threading\{Semaphore, Thread};
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Tests\Concurrent\Sync\AbstractSemaphoreTest;
@@ -25,23 +24,23 @@ class SemaphoreTest extends AbstractSemaphoreTest
             $this->semaphore = $this->createSemaphore(1);
 
             $thread1 = new Thread(function (SyncSemaphore $semaphore) {
-                $lock = (yield $semaphore->acquire());
+                $lock = yield from $semaphore->acquire();
 
                 usleep(1e5);
 
                 $lock->release();
 
-                yield 0;
+                return 0;
             }, $this->semaphore);
 
             $thread2 = new Thread(function (SyncSemaphore $semaphore) {
-                $lock = (yield $semaphore->acquire());
+                $lock = yield from $semaphore->acquire();
 
                 usleep(1e5);
 
                 $lock->release();
 
-                yield 1;
+                return 1;
             }, $this->semaphore);
 
             $start = microtime(true);

@@ -11,9 +11,9 @@ class WorkerFork extends AbstractWorker
 {
     public function __construct()
     {
-        parent::__construct(new Fork(function () {
+        parent::__construct(new Fork(function (): \Generator {
             $runner = new TaskRunner($this, new BasicEnvironment());
-            yield $runner->run();
+            return yield from $runner->run();
         }));
     }
 }

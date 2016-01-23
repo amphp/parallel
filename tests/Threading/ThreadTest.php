@@ -24,7 +24,7 @@ class ThreadTest extends AbstractContextTest
                 usleep(100);
             });
 
-            yield $thread->join();
+            return yield from $thread->join();
         })->done();
 
         Loop\run();

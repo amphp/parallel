@@ -63,18 +63,20 @@ class Parcel implements SyncParcel
      *
      * @return \Generator
      */
-    public function synchronized(callable $callback)
+    public function synchronized(callable $callback): \Generator
     {
         /** @var \Icicle\Concurrent\Sync\Lock $lock */
-        $lock = (yield $this->mutex->acquire());
+        $lock = yield from $this->mutex->acquire();
 
         try {
             $value = $this->unwrap();
-            $result = (yield $callback($value));
+            $result = yield $callback($value);
             $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }
+
+        return $result;
     }
 
     /**

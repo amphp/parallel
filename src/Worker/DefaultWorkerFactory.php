@@ -1,8 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Worker;
 
-use Icicle\Concurrent\Forking\Fork;
-use Icicle\Concurrent\Threading\Thread;
+use Icicle\Concurrent\{Forking\Fork, Threading\Thread};
 
 /**
  * The built-in worker factory type.
@@ -16,7 +15,7 @@ class DefaultWorkerFactory implements WorkerFactory
      * will be created. If threads are not available, a WorkerFork will be created if forking is available, otherwise
      * a WorkerProcess will be created.
      */
-    public function create()
+    public function create(): Worker
     {
         if (Thread::enabled()) {
             return new WorkerThread();

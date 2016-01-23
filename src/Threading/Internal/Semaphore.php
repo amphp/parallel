@@ -23,7 +23,7 @@ class Semaphore extends \Threaded
      *
      * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct($locks)
+    public function __construct(int $locks)
     {
         $this->locks = $locks;
     }
@@ -33,7 +33,7 @@ class Semaphore extends \Threaded
      *
      * @return int The number of available locks.
      */
-    public function count()
+    public function count(): int
     {
         return $this->locks;
     }
@@ -47,7 +47,7 @@ class Semaphore extends \Threaded
      * If a lock is not available, we add the request to a queue and set a timer
      * to check again in the future.
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         $tsl = function () {
             // If there are no locks available or the wait queue is not empty,
@@ -60,10 +60,10 @@ class Semaphore extends \Threaded
         };
 
         while ($this->locks < 1 || $this->synchronized($tsl)) {
-            yield Coroutine\sleep(self::LATENCY_TIMEOUT);
+            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
         }
 
-        yield new Lock(function () {
+        return new Lock(function () {
             $this->release();
         });
     }

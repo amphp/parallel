@@ -1,9 +1,7 @@
 <?php
 namespace Icicle\Tests\Concurrent\Worker;
 
-use Icicle\Concurrent\Worker\DefaultPool;
-use Icicle\Concurrent\Worker\WorkerFactory;
-use Icicle\Concurrent\Worker\WorkerThread;
+use Icicle\Concurrent\Worker\{DefaultPool, WorkerFactory, WorkerThread};
 
 /**
  * @group threading

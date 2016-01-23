@@ -1,10 +1,7 @@
 <?php
 namespace Icicle\Concurrent\Threading\Internal;
 
-use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelledStream;
-use Icicle\Concurrent\Sync\Internal\ExitFailure;
-use Icicle\Concurrent\Sync\Internal\ExitSuccess;
+use Icicle\Concurrent\Sync\{Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Stream\Pipe\DuplexPipe;
@@ -111,7 +108,7 @@ class Thread extends \Thread
      *
      * @codeCoverageIgnore Only executed in thread.
      */
-    private function execute(Channel $channel)
+    private function execute(Channel $channel): \Generator
     {
         try {
             if ($this->function instanceof \Closure) {
@@ -122,17 +119,17 @@ class Thread extends \Thread
                 $function = $this->function;
             }
 
-            $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
-        } catch (\Exception $exception) {
+            $result = new ExitSuccess(yield $function(...$this->args));
+        } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
 
         // Attempt to return the result.
         try {
-            yield $channel->send($result);
-        } catch (\Exception $exception) {
+            return yield from $channel->send($result);
+        } catch (\Throwable $exception) {
             // The result was not sendable! Try sending the reason why instead.
-            yield $channel->send(new ExitFailure($exception));
+            return yield from $channel->send(new ExitFailure($exception));
         }
     }
 }

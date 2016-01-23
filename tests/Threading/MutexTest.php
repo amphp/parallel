@@ -16,7 +16,7 @@ class MutexTest extends TestCase
     {
         Coroutine\create(function () {
             $mutex = new Mutex();
-            $lock = (yield $mutex->acquire());
+            $lock = yield from $mutex->acquire();
             $lock->release();
             $this->assertTrue($lock->isReleased());
         })->done();
@@ -32,17 +32,17 @@ class MutexTest extends TestCase
             Coroutine\create(function () {
                 $mutex = new Mutex();
 
-                $lock1 = (yield $mutex->acquire());
+                $lock1 = yield from $mutex->acquire();
                 Loop\timer(0.5, function () use ($lock1) {
                     $lock1->release();
                 });
 
-                $lock2 = (yield $mutex->acquire());
+                $lock2 = yield from $mutex->acquire();
                 Loop\timer(0.5, function () use ($lock2) {
                     $lock2->release();
                 });
 
-                $lock3 = (yield $mutex->acquire());
+                $lock3 = yield from $mutex->acquire();
                 Loop\timer(0.5, function () use ($lock3) {
                     $lock3->release();
                 });

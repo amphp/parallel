@@ -1,19 +1,12 @@
 <?php
 namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\Exception\ForkException;
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\Process;
-use Icicle\Concurrent\Strand;
-use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Sync\ChannelledStream;
-use Icicle\Concurrent\Sync\Internal\ExitFailure;
-use Icicle\Concurrent\Sync\Internal\ExitStatus;
-use Icicle\Concurrent\Sync\Internal\ExitSuccess;
+use Icicle\Concurrent\Exception\{ForkException, StatusError, SynchronizationError};
+use Icicle\Concurrent\{Process, Strand};
+use Icicle\Concurrent\Sync\{Channel, ChannelledStream};
+use Icicle\Concurrent\Sync\Internal\{ExitFailure, ExitStatus, ExitSuccess};
 use Icicle\Coroutine\Coroutine;
-use Icicle\Exception\InvalidArgumentError;
-use Icicle\Exception\UnsupportedError;
+use Icicle\Exception\{InvalidArgumentError, UnsupportedError};
 use Icicle\Loop;
 use Icicle\Stream;
 use Icicle\Stream\Pipe\DuplexPipe;
@@ -58,7 +51,7 @@ class Fork implements Process, Strand
      *
      * @return bool True if forking is enabled, otherwise false.
      */
-    public static function enabled()
+    public static function enabled(): bool
     {
         return extension_loaded('pcntl');
     }
@@ -70,22 +63,21 @@ class Fork implements Process, Strand
      *
      * @return \Icicle\Concurrent\Forking\Fork The process object that was spawned.
      */
-    public static function spawn(callable $function /* , ...$args */)
+    public static function spawn(callable $function, ...$args): self
     {
-        $class  = new \ReflectionClass(__CLASS__);
-        $fork = $class->newInstanceArgs(func_get_args());
+        $fork = new self($function, ...$args);
         $fork->start();
         return $fork;
     }
 
-    public function __construct(callable $function /* , ...$args */)
+    public function __construct(callable $function, ...$args)
     {
         if (!self::enabled()) {
             throw new UnsupportedError("The pcntl extension is required to create forks.");
         }
 
         $this->function = $function;
-        $this->args = array_slice(func_get_args(), 1);
+        $this->args = $args;
     }
 
     public function __clone()
@@ -108,7 +100,7 @@ class Fork implements Process, Strand
      *
      * @return bool True if the context is running, otherwise false.
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return 0 !== $this->pid && false !== posix_getpgid($this->pid);
     }
@@ -118,7 +110,7 @@ class Fork implements Process, Strand
      *
      * @return int The process ID.
      */
-    public function getPid()
+    public function getPid(): int
     {
         return $this->pid;
     }
@@ -138,7 +130,7 @@ class Fork implements Process, Strand
      * @see Fork::setPriority()
      * @see http://linux.die.net/man/2/getpriority
      */
-    public function getPriority()
+    public function getPriority(): float
     {
         if (($nice = pcntl_getpriority($this->pid)) === false) {
             throw new ForkException('Failed to get the fork\'s priority.');
@@ -159,7 +151,7 @@ class Fork implements Process, Strand
      *
      * @see Fork::getPriority()
      */
-    public function setPriority($priority)
+    public function setPriority(float $priority): float
     {
         if ($priority < 0 || $priority > 1) {
             throw new InvalidArgumentError('Priority value must be between 0.0 and 1.0.');
@@ -205,7 +197,7 @@ class Fork implements Process, Strand
                 try {
                     $loop->run();
                     $code = 0;
-                } catch (\Exception $exception) {
+                } catch (\Throwable $exception) {
                     $code = 1;
                 }
 
@@ -234,7 +226,7 @@ class Fork implements Process, Strand
      *
      * @codeCoverageIgnore Only executed in the child.
      */
-    private function execute(Channel $channel)
+    private function execute(Channel $channel): \Generator
     {
         try {
             if ($this->function instanceof \Closure) {
@@ -245,17 +237,17 @@ class Fork implements Process, Strand
                 $function = $this->function;
             }
 
-            $result = new ExitSuccess(yield call_user_func_array($function, $this->args));
-        } catch (\Exception $exception) {
+            $result = new ExitSuccess(yield $function(...$this->args));
+        } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
 
         // Attempt to return the result.
         try {
-            yield $channel->send($result);
-        } catch (\Exception $exception) {
+            return yield from $channel->send($result);
+        } catch (\Throwable $exception) {
             // The result was not sendable! Try sending the reason why instead.
-            yield $channel->send(new ExitFailure($exception));
+            return yield from $channel->send(new ExitFailure($exception));
         }
     }
 
@@ -283,7 +275,7 @@ class Fork implements Process, Strand
      *
      * @throws \Icicle\Concurrent\Exception\StatusError
      */
-    public function signal($signo)
+    public function signal(int $signo)
     {
         if (0 === $this->pid) {
             throw new StatusError('The fork has not been started or has already finished.');
@@ -305,14 +297,14 @@ class Fork implements Process, Strand
      * @throws \Icicle\Concurrent\Exception\StatusError          Thrown if the context has not been started.
      * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
      */
-    public function join()
+    public function join(): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
         try {
-            $response = (yield $this->channel->receive());
+            $response = yield from $this->channel->receive();
 
             if (!$response instanceof ExitStatus) {
                 throw new SynchronizationError(sprintf(
@@ -321,7 +313,7 @@ class Fork implements Process, Strand
                 ));
             }
 
-            yield $response->getResult();
+            return $response->getResult();
         } finally {
             $this->kill();
         }
@@ -330,13 +322,13 @@ class Fork implements Process, Strand
     /**
      * {@inheritdoc}
      */
-    public function receive()
+    public function receive(): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
-        $data = (yield $this->channel->receive());
+        $data = yield from $this->channel->receive();
 
         if ($data instanceof ExitStatus) {
             $data = $data->getResult();
@@ -346,13 +338,13 @@ class Fork implements Process, Strand
             ));
         }
 
-        yield $data;
+        return $data;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data)
+    public function send($data): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
@@ -362,6 +354,6 @@ class Fork implements Process, Strand
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
-        yield $this->channel->send($data);
+        return yield from $this->channel->send($data);
     }
 }

@@ -13,10 +13,10 @@ Coroutine\create(function () {
     $worker = $factory->create();
     $worker->start();
 
-    $result = (yield $worker->enqueue(new BlockingTask('file_get_contents', 'https://google.com')));
+    $result = yield from $worker->enqueue(new BlockingTask('file_get_contents', 'https://google.com'));
     printf("Read %d bytes\n", strlen($result));
 
-    $code = (yield $worker->shutdown());
+    $code = yield from $worker->shutdown();
     printf("Code: %d\n", $code);
 })->done();
 

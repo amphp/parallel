@@ -3,8 +3,7 @@ namespace Icicle\Concurrent\Worker;
 
 use Icicle\Awaitable\Delayed;
 use Icicle\Concurrent\Strand;
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Exception\WorkerException;
+use Icicle\Concurrent\Exception\{StatusError, WorkerException};
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
 
 /**
@@ -50,7 +49,7 @@ abstract class AbstractWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return $this->context->isRunning();
     }
@@ -58,7 +57,7 @@ abstract class AbstractWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function isIdle()
+    public function isIdle(): bool
     {
         return $this->idle;
     }
@@ -74,7 +73,7 @@ abstract class AbstractWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task)
+    public function enqueue(Task $task): \Generator
     {
         if (!$this->context->isRunning()) {
             throw new StatusError('The worker has not been started.');
@@ -95,9 +94,9 @@ abstract class AbstractWorker implements Worker
         $this->activeDelayed = new Delayed();
 
         try {
-            yield $this->context->send($task);
+            yield from $this->context->send($task);
 
-            $result = (yield $this->context->receive());
+            $result = yield from $this->context->receive();
         } finally {
             $this->idle = true;
             $this->activeDelayed->resolve();
@@ -112,13 +111,13 @@ abstract class AbstractWorker implements Worker
             throw $result->getException();
         }
 
-        yield $result;
+        return $result;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown()
+    public function shutdown(): \Generator
     {
         if (!$this->context->isRunning() || $this->shutdown) {
             throw new StatusError('The worker is not running.');
@@ -134,8 +133,8 @@ abstract class AbstractWorker implements Worker
             yield $this->activeDelayed;
         }
 
-        yield $this->context->send(0);
-        yield $this->context->join();
+        yield from $this->context->send(0);
+        return yield from $this->context->join();
     }
 
     /**

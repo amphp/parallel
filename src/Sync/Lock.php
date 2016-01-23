@@ -37,7 +37,7 @@ class Lock
      *
      * @return bool True if the lock has already been released, otherwise false.
      */
-    public function isReleased()
+    public function isReleased(): bool
     {
         return $this->released;
     }
@@ -55,7 +55,7 @@ class Lock
 
         // Invoke the releaser function given to us by the synchronization source
         // to release the lock.
-        call_user_func($this->releaser, $this);
+        ($this->releaser)($this);
         $this->released = true;
     }
 

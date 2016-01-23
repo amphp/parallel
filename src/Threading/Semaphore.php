@@ -28,7 +28,7 @@ class Semaphore implements SyncSemaphore
      *
      * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct($locks)
+    public function __construct(int $locks)
     {
         $this->init($locks);
     }
@@ -38,7 +38,7 @@ class Semaphore implements SyncSemaphore
      *
      * @param int $locks
      */
-    private function init($locks)
+    private function init(int $locks)
     {
         $locks = (int) $locks;
         if ($locks < 1) {
@@ -52,7 +52,7 @@ class Semaphore implements SyncSemaphore
     /**
      * {@inheritdoc}
      */
-    public function count()
+    public function count(): int
     {
         return $this->semaphore->count();
     }
@@ -60,7 +60,7 @@ class Semaphore implements SyncSemaphore
     /**
      * {@inheritdoc}
      */
-    public function getSize()
+    public function getSize(): int
     {
         return $this->maxLocks;
     }
@@ -68,7 +68,7 @@ class Semaphore implements SyncSemaphore
     /**
      * {@inheritdoc}
      */
-    public function acquire()
+    public function acquire(): \Generator
     {
         return $this->semaphore->acquire();
     }

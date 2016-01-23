@@ -1,12 +1,9 @@
 <?php
 namespace Icicle\Concurrent\Process;
 
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Concurrent\Exception\SynchronizationError;
-use Icicle\Concurrent\Process as ProcessContext;
-use Icicle\Concurrent\Strand;
-use Icicle\Concurrent\Sync\ChannelledStream;
-use Icicle\Concurrent\Sync\Internal\ExitStatus;
+use Icicle\Concurrent\Exception\{StatusError, SynchronizationError};
+use Icicle\Concurrent\{Process as ProcessContext, Strand};
+use Icicle\Concurrent\Sync\{ChannelledStream, Internal\ExitStatus};
 use Icicle\Exception\InvalidArgumentError;
 
 class ChannelledProcess implements ProcessContext, Strand
@@ -26,7 +23,7 @@ class ChannelledProcess implements ProcessContext, Strand
      * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct($path, $cwd = '', array $env = [])
+    public function __construct(string $path, string $cwd = '', array $env = [])
     {
         $command = PHP_BINARY . ' ' . $path;
 
@@ -55,7 +52,7 @@ class ChannelledProcess implements ProcessContext, Strand
     /**
      * {@inheritdoc}
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return $this->process->isRunning();
     }
@@ -63,13 +60,13 @@ class ChannelledProcess implements ProcessContext, Strand
     /**
      * {@inheritdoc}
      */
-    public function receive()
+    public function receive(): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
-        $data = (yield $this->channel->receive());
+        $data = yield from $this->channel->receive();
 
         if ($data instanceof ExitStatus) {
             $data = $data->getResult();
@@ -79,13 +76,13 @@ class ChannelledProcess implements ProcessContext, Strand
             ));
         }
 
-        yield $data;
+        return $data;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data)
+    public function send($data): \Generator
     {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
@@ -95,13 +92,13 @@ class ChannelledProcess implements ProcessContext, Strand
             throw new InvalidArgumentError('Cannot send exit status objects.');
         }
 
-        yield $this->channel->send($data);
+        return yield from $this->channel->send($data);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function join()
+    public function join(): \Generator
     {
         return $this->process->join();
     }
@@ -117,7 +114,7 @@ class ChannelledProcess implements ProcessContext, Strand
     /**
      * {@inheritdoc}
      */
-    public function getPid()
+    public function getPid(): int
     {
         return $this->process->getPid();
     }
@@ -125,7 +122,7 @@ class ChannelledProcess implements ProcessContext, Strand
     /**
      * {@inheritdoc}
      */
-    public function signal($signo)
+    public function signal(int $signo)
     {
         $this->process->signal($signo);
     }

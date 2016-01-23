@@ -67,7 +67,7 @@ class DefaultPool implements Pool
      *
      * @throws \Icicle\Exception\InvalidArgumentError
      */
-    public function __construct($minSize = null, $maxSize = null, WorkerFactory $factory = null)
+    public function __construct(int $minSize = null, int $maxSize = null, WorkerFactory $factory = null)
     {
         $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
         $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;
@@ -100,7 +100,7 @@ class DefaultPool implements Pool
      *
      * @return bool True if the pool is running, otherwise false.
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return $this->running;
     }
@@ -110,7 +110,7 @@ class DefaultPool implements Pool
      *
      * @return bool True if the pool has at least one idle worker, otherwise false.
      */
-    public function isIdle()
+    public function isIdle(): bool
     {
         return $this->idleWorkers->count() > 0;
     }
@@ -118,7 +118,7 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function getMinSize()
+    public function getMinSize(): int
     {
         return $this->minSize;
     }
@@ -126,7 +126,7 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function getMaxSize()
+    public function getMaxSize(): int
     {
         return $this->maxSize;
     }
@@ -134,7 +134,7 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function getWorkerCount()
+    public function getWorkerCount(): int
     {
         return $this->workers->count();
     }
@@ -142,7 +142,7 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function getIdleWorkerCount()
+    public function getIdleWorkerCount(): int
     {
         return $this->idleWorkers->count();
     }
@@ -183,10 +183,10 @@ class DefaultPool implements Pool
      * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
      * @throws \Icicle\Concurrent\Exception\TaskException If the task throws an exception.
      */
-    public function enqueue(Task $task)
+    public function enqueue(Task $task): \Generator
     {
         $worker = $this->get();
-        yield $worker->enqueue($task);
+        return yield from $worker->enqueue($task);
     }
 
     /**
@@ -198,7 +198,7 @@ class DefaultPool implements Pool
      *
      * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
      */
-    public function shutdown()
+    public function shutdown(): \Generator
     {
         if (!$this->isRunning()) {
             throw new StatusError('The pool is not running.');
@@ -214,7 +214,7 @@ class DefaultPool implements Pool
             }
         }
 
-        yield Awaitable\reduce($shutdowns, function ($carry, $value) {
+        return yield Awaitable\reduce($shutdowns, function ($carry, $value) {
             return $carry ?: $value;
         }, 0);
     }
@@ -248,7 +248,7 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function get()
+    public function get(): Worker
     {
         if (!$this->isRunning()) {
             throw new StatusError('The queue is not running.');

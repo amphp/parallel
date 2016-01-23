@@ -20,17 +20,17 @@ class BlockingTask implements Task
      * @param callable $function Do not use a closure or non-serializable object.
      * @param mixed ...$args Arguments to pass to the function. Must be serializable.
      */
-    public function __construct(callable $function /* ...$args */)
+    public function __construct(callable $function, ...$args)
     {
         $this->function = $function;
-        $this->args = array_slice(func_get_args(), 1);
+        $this->args = $args;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function run(Environment $environment)
+    public function run(Environment $environment): \Generator
     {
-        return call_user_func_array($this->function, $this->args);
+        return yield ($this->function)(...$this->args);
     }
 }

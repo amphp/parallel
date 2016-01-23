@@ -2,10 +2,7 @@
 namespace Icicle\Tests\Concurrent\Worker;
 
 use Icicle\Concurrent\Worker;
-use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\Pool;
-use Icicle\Concurrent\Worker\Task;
-use Icicle\Concurrent\Worker\WorkerFactory;
+use Icicle\Concurrent\Worker\{Environment, Pool, Task, WorkerFactory};
 use Icicle\Coroutine\Coroutine;
 use Icicle\Tests\Concurrent\TestCase;
 

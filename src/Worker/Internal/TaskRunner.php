@@ -33,33 +33,33 @@ class TaskRunner
      *
      * @return \Generator
      */
-    public function run()
+    public function run(): \Generator
     {
-        $task = (yield $this->channel->receive());
+        $task = yield from $this->channel->receive();
 
         while ($task instanceof Task) {
             $this->idle = false;
 
             try {
-                $result = (yield $task->run($this->environment));
-            } catch (\Exception $exception) {
+                $result = yield from $task->run($this->environment);
+            } catch (\Throwable $exception) {
                 $result = new TaskFailure($exception);
             }
 
-            yield $this->channel->send($result);
+            yield from $this->channel->send($result);
 
             $this->idle = true;
 
-            $task = (yield $this->channel->receive());
+            $task = yield from $this->channel->receive();
         }
 
-        yield $task;
+        return $task;
     }
 
     /**
      * @return bool
      */
-    public function isIdle()
+    public function isIdle(): bool
     {
         return $this->idle;
     }

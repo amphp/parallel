@@ -31,14 +31,13 @@ class PooledWorker implements Worker
      */
     public function __destruct()
     {
-        $push = $this->push;
-        $push($this->worker);
+        ($this->push)($this->worker);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isRunning()
+    public function isRunning(): bool
     {
         return $this->worker->isRunning();
     }
@@ -46,7 +45,7 @@ class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function isIdle()
+    public function isIdle(): bool
     {
         return $this->worker->isIdle();
     }
@@ -62,7 +61,7 @@ class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task)
+    public function enqueue(Task $task): \Generator
     {
         return $this->worker->enqueue($task);
     }
@@ -70,7 +69,7 @@ class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function shutdown()
+    public function shutdown(): \Generator
     {
         return $this->worker->shutdown();
     }

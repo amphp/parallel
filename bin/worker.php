@@ -28,11 +28,8 @@ if (null === $autoloadPath) {
 
 require $autoloadPath;
 
-use Icicle\Concurrent\Sync\ChannelledStream;
-use Icicle\Concurrent\Sync\Internal\ExitFailure;
-use Icicle\Concurrent\Sync\Internal\ExitSuccess;
-use Icicle\Concurrent\Worker\BasicEnvironment;
-use Icicle\Concurrent\Worker\Internal\TaskRunner;
+use Icicle\Concurrent\Sync\{ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
+use Icicle\Concurrent\Worker\{BasicEnvironment, Internal\TaskRunner};
 use Icicle\Coroutine;
 use Icicle\Loop;
 use Icicle\Stream;
@@ -43,17 +40,17 @@ Coroutine\create(function () {
     $runner = new TaskRunner($channel, $environment);
 
     try {
-        $result = new ExitSuccess(yield $runner->run());
-    } catch (Exception $exception) {
+        $result = new ExitSuccess(yield from $runner->run());
+    } catch (Throwable $exception) {
         $result = new ExitFailure($exception);
     }
 
     // Attempt to return the result.
     try {
-        yield $channel->send($result);
-    } catch (Exception $exception) {
+        return yield from $channel->send($result);
+    } catch (Throwable $exception) {
         // The result was not sendable! Try sending the reason why instead.
-        yield $channel->send(new ExitFailure($exception));
+        return yield from $channel->send(new ExitFailure($exception));
     }
 })->done();
 

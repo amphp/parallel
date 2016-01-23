@@ -16,25 +16,25 @@ Coroutine\create(function() {
 
     $coroutines[] = Coroutine\create(function () use ($pool) {
         $url = 'https://google.com';
-        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
     });
 
     $coroutines[] = Coroutine\create(function () use ($pool) {
         $url = 'https://icicle.io';
-        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
     });
 
     $coroutines[] = Coroutine\create(function () use ($pool) {
         $url = 'https://github.com';
-        $result = (yield $pool->enqueue(new BlockingTask('file_get_contents', $url)));
+        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
     });
 
     yield Awaitable\all($coroutines);
 
-    yield $pool->shutdown();
+    return yield from $pool->shutdown();
 })->done();
 
 Loop\periodic(0.1, function () {

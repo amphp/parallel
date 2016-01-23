@@ -22,7 +22,7 @@ abstract class AbstractContextTest extends TestCase
 
             $this->assertTrue($context->isRunning());
 
-            yield $context->join();
+            yield from $context->join();
 
             $this->assertFalse($context->isRunning());
         })->done();
@@ -70,10 +70,10 @@ abstract class AbstractContextTest extends TestCase
                 });
 
                 $context->start();
-                yield $context->join();
+                yield from $context->join();
 
                 $context->start();
-                yield $context->join();
+                yield from $context->join();
             })->done();
 
             Loop\run();
@@ -91,7 +91,7 @@ abstract class AbstractContextTest extends TestCase
             });
 
             $context->start();
-            yield $context->join();
+            yield from $context->join();
         })->done();
 
         Loop\run();
@@ -104,11 +104,11 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield function () {};
+                return yield function () {};
             });
 
             $context->start();
-            yield $context->join();
+            yield from $context->join();
         })->done();
 
         Loop\run();
@@ -125,7 +125,7 @@ abstract class AbstractContextTest extends TestCase
                 });
 
                 $context->start();
-                yield $context->join();
+                yield from $context->join();
             })->done();
 
             Loop\run();
@@ -142,7 +142,7 @@ abstract class AbstractContextTest extends TestCase
                 usleep(100);
             });
 
-            yield $context->join();
+            yield from $context->join();
         })->done();
 
         Loop\run();
@@ -156,7 +156,7 @@ abstract class AbstractContextTest extends TestCase
             });
 
             $context->start();
-            $this->assertSame(42, (yield $context->join()));
+            $this->assertSame(42, yield from $context->join());
         })->done();
 
         Loop\run();
@@ -166,17 +166,17 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield $this->send(1);
-                $value = (yield $this->receive());
-                yield $value;
+                yield from $this->send(1);
+                $value = yield from $this->receive();
+                return $value;
             });
 
             $value = 42;
 
             $context->start();
-            $this->assertSame(1, (yield $context->receive()));
+            $this->assertSame(1, yield from $context->receive());
             yield $context->send($value);
-            $this->assertSame($value, (yield $context->join()));
+            $this->assertSame($value, yield from $context->join());
         })->done();
 
         Loop\run();
@@ -190,12 +190,12 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield $this->send(0);
-                yield 42;
+                yield from $this->send(0);
+                return 42;
             });
 
             $context->start();
-            $value = (yield $context->join());
+            $value = yield from $context->join();
         })->done();
 
         Loop\run();
@@ -209,11 +209,11 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield $this->send(0);
-                yield 42;
+                yield from $this->send(0);
+                return 42;
             });
 
-            $value = (yield $context->receive());
+            $value = yield from $context->receive();
         })->done();
 
         Loop\run();
@@ -227,11 +227,11 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield $this->send(0);
-                yield 42;
+                yield from $this->send(0);
+                return 42;
             });
 
-            yield $context->send(0);
+            yield from $context->send(0);
         })->done();
 
         Loop\run();
@@ -245,14 +245,14 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                yield $this->send(0);
-                yield 42;
+                yield from $this->send(0);
+                return 42;
             });
 
             $context->start();
-            $value = (yield $context->receive());
-            $value = (yield $context->receive());
-            $value = (yield $context->join());
+            $value = yield from $context->receive();
+            $value = yield from $context->receive();
+            $value = yield from $context->join();
         })->done();
 
         Loop\run();
@@ -266,13 +266,13 @@ abstract class AbstractContextTest extends TestCase
     {
         Coroutine\create(function () {
             $context = $this->createContext(function () {
-                $value = (yield $this->receive());
-                yield 42;
+                $value = yield from $this->receive();
+                return 42;
             });
 
             $context->start();
-            yield $context->send(new ExitSuccess(0));
-            $value = (yield $context->join());
+            yield from $context->send(new ExitSuccess(0));
+            $value = yield from $context->join();
         })->done();
 
         Loop\run();

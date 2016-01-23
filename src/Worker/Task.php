@@ -19,5 +19,5 @@ interface Task
      *
      * @resolve mixed
      */
-    public function run(Environment $environment);
+    public function run(Environment $environment): \Generator;
 }

@@ -11,14 +11,14 @@ interface Worker
      *
      * @return bool True if the worker is running, otherwise false.
      */
-    public function isRunning();
+    public function isRunning(): bool;
 
     /**
      * Checks if the worker is currently idle.
      *
      * @return bool
      */
-    public function isIdle();
+    public function isIdle(): bool;
 
     /**
      * Starts the context execution.
@@ -36,7 +36,7 @@ interface Worker
      *
      * @resolve mixed Task return value.
      */
-    public function enqueue(Task $task);
+    public function enqueue(Task $task): \Generator;
 
     /**
      * @coroutine
@@ -45,7 +45,7 @@ interface Worker
      *
      * @resolve int Exit code.
      */
-    public function shutdown();
+    public function shutdown(): \Generator;
 
     /**
      * Immediately kills the context.
