@@ -32,6 +32,11 @@
         "ext-sysvsem": "Required for fork synchronization",
         "ext-sysvshm": "Required for fork contexts"
     },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    },
     "autoload": {
         "psr-4": {
             "Icicle\\Concurrent\\": "src"
