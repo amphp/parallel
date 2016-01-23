@@ -14,7 +14,7 @@ class FunctionsTest extends TestCase
 
         Worker\pool($pool);
 
-        $this->assertSame($pool, Worker\pool());
+        $this->assertTrue($pool === Worker\pool());
     }
 
     /**
@@ -25,7 +25,7 @@ class FunctionsTest extends TestCase
         $pool = $this->getMock(Pool::class);
         $pool->method('enqueue')
             ->will($this->returnCallback(function (Task $task) {
-                yield $task->run($this->getMock(Environment::class));
+                return yield $task->run($this->getMock(Environment::class));
             }));
 
         Worker\pool($pool);
@@ -60,7 +60,7 @@ class FunctionsTest extends TestCase
 
         Worker\factory($factory);
 
-        $this->assertSame($factory, Worker\factory());
+        $this->assertTrue($factory === Worker\factory());
     }
 
     /**
