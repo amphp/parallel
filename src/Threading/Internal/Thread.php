@@ -93,8 +93,7 @@ class Thread extends \Thread
      */
     public function kill()
     {
-        $this->killed = true;
-        return parent::kill();
+        return $this->killed = true;
     }
 
     /**
