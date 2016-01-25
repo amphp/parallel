@@ -12,8 +12,8 @@ class TestTask implements Task
         $this->returnValue = $returnValue;
     }
 
-    public function run(Environment $environment): \Generator
+    public function run(Environment $environment)
     {
-        return yield $this->returnValue;
+        return $this->returnValue;
     }
 }

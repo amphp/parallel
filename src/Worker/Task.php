@@ -15,9 +15,9 @@ interface Task
      *
      * @param \Icicle\Concurrent\Worker\Environment
      *
-     * @return \Generator
+     * @return mixed|\Icicle\Awaitable\Awaitable|\Generator
      *
      * @resolve mixed
      */
-    public function run(Environment $environment): \Generator;
+    public function run(Environment $environment);
 }

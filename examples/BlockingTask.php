@@ -29,8 +29,8 @@ class BlockingTask implements Task
     /**
      * {@inheritdoc}
      */
-    public function run(Environment $environment): \Generator
+    public function run(Environment $environment)
     {
-        return yield ($this->function)(...$this->args);
+        return ($this->function)(...$this->args);
     }
 }
