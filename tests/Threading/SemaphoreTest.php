@@ -48,8 +48,8 @@ class SemaphoreTest extends AbstractSemaphoreTest
             $thread1->start();
             $thread2->start();
 
-            yield $thread1->join();
-            yield $thread2->join();
+            yield from $thread1->join();
+            yield from $thread2->join();
 
             $this->assertGreaterThan(1, microtime(true) - $start);
         });

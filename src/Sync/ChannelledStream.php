@@ -73,7 +73,7 @@ class ChannelledStream implements Channel
         $length = strlen($serialized);
 
         try {
-            yield $this->write->write(pack('CL', 0, $length) . $serialized);
+            yield from $this->write->write(pack('CL', 0, $length) . $serialized);
         } catch (\Throwable $exception) {
             throw new ChannelException('Sending on the channel failed. Did the context die?', $exception);
         }

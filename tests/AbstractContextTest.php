@@ -175,7 +175,7 @@ abstract class AbstractContextTest extends TestCase
 
             $context->start();
             $this->assertSame(1, yield from $context->receive());
-            yield $context->send($value);
+            yield from $context->send($value);
             $this->assertSame($value, yield from $context->join());
         })->done();
 

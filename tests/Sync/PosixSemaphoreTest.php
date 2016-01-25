@@ -87,8 +87,8 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             $fork1->start();
             $fork2->start();
 
-            yield $fork1->join();
-            yield $fork2->join();
+            yield from $fork1->join();
+            yield from $fork2->join();
 
             $this->assertGreaterThan(1, microtime(true) - $start);
         });

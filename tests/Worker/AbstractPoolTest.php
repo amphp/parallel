@@ -25,7 +25,7 @@ abstract class AbstractPoolTest extends TestCase
             $pool->start();
             $this->assertTrue($pool->isRunning());
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
             $this->assertFalse($pool->isRunning());
         });
     }
@@ -38,7 +38,7 @@ abstract class AbstractPoolTest extends TestCase
 
             $this->assertTrue($pool->isIdle());
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
         });
     }
 
@@ -62,7 +62,7 @@ abstract class AbstractPoolTest extends TestCase
 
             $this->assertEquals(8, $pool->getWorkerCount());
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
         });
     }
 
@@ -74,7 +74,7 @@ abstract class AbstractPoolTest extends TestCase
 
             $this->assertEquals(8, $pool->getIdleWorkerCount());
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
         });
     }
 
@@ -87,7 +87,7 @@ abstract class AbstractPoolTest extends TestCase
             $returnValue = yield from $pool->enqueue(new TestTask(42));
             $this->assertEquals(42, $returnValue);
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
         });
     }
 
@@ -105,7 +105,7 @@ abstract class AbstractPoolTest extends TestCase
 
             $this->assertEquals([42, 56, 72], $values);
 
-            yield $pool->shutdown();
+            yield from $pool->shutdown();
         });
     }
 

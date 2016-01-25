@@ -22,7 +22,7 @@ abstract class AbstractWorkerTest extends TestCase
             $worker->start();
             $this->assertTrue($worker->isRunning());
 
-            yield $worker->shutdown();
+            yield from $worker->shutdown();
             $this->assertFalse($worker->isRunning());
         })->done();
 
@@ -37,7 +37,7 @@ abstract class AbstractWorkerTest extends TestCase
 
             $this->assertTrue($worker->isIdle());
 
-            yield $worker->shutdown();
+            yield from $worker->shutdown();
         })->done();
 
         Loop\run();
@@ -52,7 +52,7 @@ abstract class AbstractWorkerTest extends TestCase
             $returnValue = yield from $worker->enqueue(new TestTask(42));
             $this->assertEquals(42, $returnValue);
 
-            yield $worker->shutdown();
+            yield from $worker->shutdown();
         })->done();
 
         Loop\run();
@@ -88,7 +88,7 @@ abstract class AbstractWorkerTest extends TestCase
             $this->assertFalse($worker->isIdle());
             yield $coroutine;
 
-            yield $worker->shutdown();
+            yield from $worker->shutdown();
         })->done();
 
         Loop\run();
