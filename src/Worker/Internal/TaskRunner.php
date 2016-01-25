@@ -41,7 +41,7 @@ class TaskRunner
             $this->idle = false;
 
             try {
-                $result = yield from $task->run($this->environment);
+                $result = yield $task->run($this->environment);
             } catch (\Throwable $exception) {
                 $result = new TaskFailure($exception);
             }
