@@ -15,14 +15,14 @@ interface Semaphore extends \Countable
      *
      * @return int The number of available locks.
      */
-    public function count();
+    public function count(): int;
 
     /**
      * Gets the total number of locks on the semaphore (not the number of available locks).
      *
      * @return int The total number of locks.
      */
-    public function getSize();
+    public function getSize(): int;
 
     /**
      * @coroutine
@@ -36,5 +36,5 @@ interface Semaphore extends \Countable
      *
      * @resolve \Icicle\Concurrent\Sync\Lock
      */
-    public function acquire();
+    public function acquire(): \Generator;
 }
