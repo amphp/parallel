@@ -6,6 +6,7 @@ use Icicle\Concurrent\Strand;
 use Icicle\Concurrent\Exception\StatusError;
 use Icicle\Concurrent\Exception\WorkerException;
 use Icicle\Concurrent\Worker\Internal\TaskFailure;
+use Icicle\Coroutine\Coroutine;
 
 /**
  * Base class for most common types of task workers.
@@ -20,23 +21,17 @@ abstract class AbstractWorker implements Worker
     /**
      * @var bool
      */
-    private $idle = true;
-
-    /**
-     * @var bool
-     */
     private $shutdown = false;
 
     /**
-     * @var \Icicle\Awaitable\Delayed
+     * @var \Icicle\Coroutine\Coroutine
      */
-    private $activeDelayed;
+    private $active;
 
     /**
      * @var \SplQueue
      */
     private $busyQueue;
-
 
     /**
      * @param \Icicle\Concurrent\Strand $strand
@@ -60,7 +55,7 @@ abstract class AbstractWorker implements Worker
      */
     public function isIdle()
     {
-        return $this->idle;
+        return null === $this->active;
     }
 
     /**
@@ -85,27 +80,26 @@ abstract class AbstractWorker implements Worker
         }
 
         // If the worker is currently busy, store the task in a busy queue.
-        if (!$this->idle) {
+        if (null !== $this->active) {
             $delayed = new Delayed();
             $this->busyQueue->enqueue($delayed);
             yield $delayed;
         }
 
-        $this->idle = false;
-        $this->activeDelayed = new Delayed();
+        $this->active = new Coroutine($this->send($task));
 
         try {
-            yield $this->context->send($task);
-
-            $result = (yield $this->context->receive());
+            $result = (yield $this->active);
+        } catch (\Exception $exception) {
+            $this->kill();
+            throw new WorkerException('Sending the task to the worker failed.', $exception);
         } finally {
-            $this->idle = true;
-            $this->activeDelayed->resolve();
+            $this->active = null;
+        }
 
-            // We're no longer busy at the moment, so dequeue a waiting task.
-            if (!$this->busyQueue->isEmpty()) {
-                $this->busyQueue->dequeue()->resolve();
-            }
+        // We're no longer busy at the moment, so dequeue a waiting task.
+        if (!$this->busyQueue->isEmpty()) {
+            $this->busyQueue->dequeue()->resolve();
         }
 
         if ($result instanceof TaskFailure) {
@@ -113,6 +107,21 @@ abstract class AbstractWorker implements Worker
         }
 
         yield $result;
+    }
+
+    /**
+     * @coroutine
+     *
+     * @param \Icicle\Concurrent\Worker\Task $task
+     *
+     * @return \Generator
+     *
+     * @resolve mixed
+     */
+    private function send(Task $task)
+    {
+        yield $this->context->send($task);
+        yield $this->context->receive();
     }
 
     /**
@@ -130,8 +139,12 @@ abstract class AbstractWorker implements Worker
         $this->cancelPending();
 
         // If a task is currently running, wait for it to finish.
-        if (!$this->idle) {
-            yield $this->activeDelayed;
+        if (null !== $this->active) {
+            try {
+                yield $this->active;
+            } catch (\Exception $exception) {
+                // Ignore failure in this context.
+            }
         }
 
         yield $this->context->send(0);
