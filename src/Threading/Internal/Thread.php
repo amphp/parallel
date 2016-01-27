@@ -74,7 +74,12 @@ class Thread extends \Thread
         Loop\loop($loop = Loop\create(false)); // Disable signals in thread.
 
         // At this point, the thread environment has been prepared so begin using the thread.
-        $channel = new ChannelledStream(new DuplexPipe($this->socket, false));
+
+        try {
+            $channel = new ChannelledStream(new DuplexPipe($this->socket, false));
+        } catch (\Exception $exception) {
+            return; // Parent has destroyed Thread object, so just exit.
+        }
 
         $coroutine = new Coroutine($this->execute($channel));
         $coroutine->done();
