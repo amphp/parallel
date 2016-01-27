@@ -77,7 +77,7 @@ class Thread extends \Thread
 
         try {
             $channel = new ChannelledStream(new DuplexPipe($this->socket, false));
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             return; // Parent has destroyed Thread object, so just exit.
         }
 
