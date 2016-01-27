@@ -91,14 +91,6 @@ class Thread implements Strand
             throw new UnsupportedError("The pthreads extension is required to create threads.");
         }
 
-        // Make sure closures don't `use` other variables or have statics.
-        if ($function instanceof \Closure) {
-            $reflector = new \ReflectionFunction($function);
-            if (!empty($reflector->getStaticVariables())) {
-                throw new InvalidArgumentError('Closures with static variables cannot be passed to thread.');
-            }
-        }
-
         $this->function = $function;
         $this->args = $args;
     }
