@@ -127,7 +127,7 @@ class Thread implements Strand
      */
     public function isRunning(): bool
     {
-        return null !== $this->thread && $this->thread->isRunning() && null !== $this->pipe && $this->pipe->isOpen();
+        return null !== $this->pipe && $this->pipe->isOpen();
     }
 
     /**
