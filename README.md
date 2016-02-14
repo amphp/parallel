@@ -4,8 +4,8 @@
 
 This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Coroutines](//github.com/icicleio/icicle/wiki/Coroutines) built from [Awaitables](https://github.com/icicleio/icicle/wiki/Awaitables) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
-[![Build Status](https://img.shields.io/travis/icicleio/concurrent/master.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
-[![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/master.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
+[![Build Status](https://img.shields.io/travis/icicleio/concurrent/v1.x.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
+[![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/v1.x.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
 [![Semantic Version](https://img.shields.io/github/release/icicleio/concurrent.svg?style=flat-square)](http://semver.org)
 [![MIT License](https://img.shields.io/packagist/l/icicleio/concurrent.svg?style=flat-square)](LICENSE)
 [![@icicleio on Twitter](https://img.shields.io/badge/twitter-%40icicleio-5189c7.svg?style=flat-square)](https://twitter.com/icicleio)
@@ -14,9 +14,16 @@ This library provides a means of parallelizing code without littering your appli
 
 To be as flexible as possible, this library comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" worker API that allows you to assign units of work to a pool of worker threads or processes.
 
+#### Documentation and Support
+
+- [Full API Documentation](https://icicle.io/docs/api/Concurrent/)
+- [Official Twitter](https://twitter.com/icicleio)
+- [Gitter Chat](https://gitter.im/icicleio/icicle)
+
 ##### Requirements
 
-- PHP 5.5+
+- PHP 5.5+ for v0.3.x branch (current stable) and v1.x branch (mirrors current stable)
+- PHP 7 for v2.0 branch (under development) supporting generator delegation and return expressions
 
 ##### Suggested
 
@@ -44,11 +51,6 @@ You can also manually edit `composer.json` to add this library as a project requ
     }
 }
 ```
-
-## Documentation
-
-Documentation is available online at <http://icicle.io/docs>.
-
 
 ## Development and Contributing
 
