@@ -2,7 +2,7 @@
 
 **True concurrency using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
-This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Coroutines](//github.com/icicleio/icicle/wiki/Coroutines) built from [Awaitables](https://github.com/icicleio/icicle/wiki/Awaitables) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
+This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Coroutines](https://icicle.io/docs/manual/coroutines/) built from [Awaitables](https://icicle.io/docs/manual/awaitables/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
 [![Build Status](https://img.shields.io/travis/icicleio/concurrent/v1.x.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
 [![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/v1.x.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
@@ -23,7 +23,7 @@ To be as flexible as possible, this library comes with a collection of non-block
 ##### Requirements
 
 - PHP 5.5+ for v0.3.x branch (current stable) and v1.x branch (mirrors current stable)
-- PHP 7 for v2.0 branch (under development) supporting generator delegation and return expressions
+- PHP 7 for v2.0 (master) branch supporting generator delegation and return expressions
 
 ##### Suggested
 
@@ -35,7 +35,7 @@ To be as flexible as possible, this library comes with a collection of non-block
 
 The recommended way to install is with the [Composer](http://getcomposer.org/) package manager. (See the [Composer installation guide](https://getcomposer.org/doc/00-intro.md) for information on installing and using Composer.)
 
-Run the following command to use Icicle in your project:
+Run the following command to use this package in your project:
 
 ```bash
 composer require icicleio/concurrent
@@ -52,7 +52,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 }
 ```
 
-## Development and Contributing
+### Development and Contributing
 
 Interested in contributing to Icicle? Please see our [contributing guidelines](https://github.com/icicleio/icicle/blob/master/CONTRIBUTING.md) in the [Icicle repository](https://github.com/icicleio/icicle).
 

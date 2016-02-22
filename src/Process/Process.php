@@ -181,10 +181,11 @@ class Process implements ProcessContext
 
         $this->poll = Loop\poll($stream, function ($resource) {
             if (!is_resource($resource) || feof($resource)) {
+                $this->close($resource);
                 $this->delayed->reject(new ProcessException('Process ended unexpectedly.'));
             } else {
                 $code = fread($resource, 1);
-
+                $this->close($resource);
                 if (!strlen($code) || !is_numeric($code)) {
                     $this->delayed->reject(new ProcessException('Process ended without providing a status code.'));
                 } else {
@@ -192,18 +193,27 @@ class Process implements ProcessContext
                 }
             }
 
-            if (is_resource($resource)) {
-                fclose($resource);
-            }
-
-            if (is_resource($this->process)) {
-                proc_close($this->process);
-                $this->process = null;
-            }
-
-            $this->stdin->close();
             $this->poll->free();
         });
+    }
+
+    /**
+     * Closes the stream resource provided, the open process handle, and stdin.
+     *
+     * @param resource $resource
+     */
+    private function close($resource)
+    {
+        if (is_resource($resource)) {
+            fclose($resource);
+        }
+
+        if (is_resource($this->process)) {
+            proc_close($this->process);
+            $this->process = null;
+        }
+
+        $this->stdin->close();
     }
 
     /**
