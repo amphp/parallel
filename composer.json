@@ -1,17 +1,19 @@
 {
-    "name": "icicleio/concurrent",
-    "description": "Concurrency component for Icicle.",
+    "name": "amphp/concurrent",
+    "description": "Concurrency component for Amp.",
     "keywords": [
         "asynchronous",
         "async",
-        "stream"
+        "concurrent",
+        "multi-threading",
+        "multi-processing"
     ],
-    "homepage": "http://icicle.io",
+    "homepage": "https://github.com/amphp/concurrent",
     "license": "MIT",
     "authors": [
         {
             "name": "Aaron Piotrowski",
-            "email": "aaron@icicle.io"
+            "email": "aaron@trowski.com"
         },
         {
             "name": "Stephen Coakley",
@@ -19,10 +21,10 @@
         }
     ],
     "require": {
-        "icicleio/icicle": "^2.0",
-        "icicleio/stream": "^2.0"
+        "amphp/amp": "^2.0"
     },
     "require-dev": {
+        "amphp/loop": "dev-master",
         "phpunit/phpunit": "^5.0"
     },
     "minimum-stability": "dev",
@@ -39,10 +41,10 @@
     },
     "autoload": {
         "psr-4": {
-            "Icicle\\Concurrent\\": "src"
+            "Icicle\\Concurrent\\": "lib"
         },
         "files": [
-            "src/Worker/functions.php"
+            "lib/Worker/functions.php"
         ]
     },
     "autoload-dev": {
