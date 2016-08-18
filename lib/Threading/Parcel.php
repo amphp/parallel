@@ -25,16 +25,14 @@ class Parcel implements SyncParcel {
      *
      * @param mixed $value The value to store in the container.
      */
-    public function __construct($value)
-    {
+    public function __construct($value) {
         $this->init($value);
     }
 
     /**
      * @param mixed $value
      */
-    private function init($value)
-    {
+    private function init($value) {
         $this->mutex = new Mutex();
         $this->storage = new Internal\Storage($value);
     }

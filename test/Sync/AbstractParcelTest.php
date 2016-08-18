@@ -1,32 +1,26 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Sync;
+namespace Amp\Concurrent\Test\Sync;
 
-use Amp\Coroutine;
-use Amp\Loop;
-use Amp\Tests\Concurrent\TestCase;
+use Amp\Concurrent\Test\TestCase;
 
-abstract class AbstractParcelTest extends TestCase
-{
+abstract class AbstractParcelTest extends TestCase {
     /**
      * @return \Amp\Concurrent\Sync\Parcel
      */
     abstract protected function createParcel($value);
 
-    public function testConstructor()
-    {
+    public function testConstructor() {
         $object = $this->createParcel(new \stdClass());
         $this->assertInternalType('object', $object->unwrap());
     }
 
-    public function testUnwrapIsOfCorrectType()
-    {
+    public function testUnwrapIsOfCorrectType() {
         $object = $this->createParcel(new \stdClass());
         $this->assertInstanceOf('stdClass', $object->unwrap());
     }
 
-    public function testUnwrapIsEqual()
-    {
+    public function testUnwrapIsEqual() {
         $object = new \stdClass();
         $shared = $this->createParcel($object);
         $this->assertEquals($object, $shared->unwrap());
@@ -35,50 +29,46 @@ abstract class AbstractParcelTest extends TestCase
     /**
      * @depends testUnwrapIsEqual
      */
-    public function testSynchronized()
-    {
+    public function testSynchronized() {
         $parcel = $this->createParcel(0);
 
-        $coroutine = new Coroutine($parcel->synchronized(function ($value) {
+        $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(0, $value);
             usleep(1e4);
             return 1;
-        }));
+        });
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->identicalTo(1));
+            ->with($this->identicalTo(null), $this->identicalTo(1));
 
-        $coroutine->done($callback);
+        $awaitable->when($callback);
 
-        $coroutine = new Coroutine($parcel->synchronized(function ($value) {
+        $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
             usleep(1e4);
             return 2;
-        }));
+        });
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->identicalTo(2));
+            ->with($this->identicalTo(null), $this->identicalTo(2));
 
-        $coroutine->done($callback);
-
-        Loop\run();
+        $awaitable->when($callback);
     }
 
     /**
      * @depends testSynchronized
      */
-    public function testCloneIsNewParcel()
-    {
+    public function testCloneIsNewParcel() {
         $original = $this->createParcel(1);
 
         $clone = clone $original;
 
-        $coroutine = new Coroutine($clone->synchronized(function () {
+        $awaitable = $clone->synchronized(function () {
             return 2;
-        }));
-        $coroutine->wait();
+        });
+        \Amp\wait($awaitable);
 
         $this->assertSame(1, $original->unwrap());
         $this->assertSame(2, $clone->unwrap());

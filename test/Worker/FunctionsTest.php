@@ -1,17 +1,16 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Worker;
+namespace Amp\Concurrent\Test\Worker;
 
 use Amp\Concurrent\Worker;
-use Amp\Concurrent\Worker\{Environment, Pool, Task, WorkerFactory};
-use Amp\Coroutine;
-use Amp\Tests\Concurrent\TestCase;
+use Amp\Concurrent\Worker\{ Environment, Pool, Task, WorkerFactory };
+use Amp\Concurrent\Test\TestCase;
+use Amp\Success;
+use Interop\Async\Awaitable;
 
-class FunctionsTest extends TestCase
-{
-    public function testPool()
-    {
-        $pool = $this->getMock(Pool::class);
+class FunctionsTest extends TestCase {
+    public function testPool() {
+        $pool = $this->createMock(Pool::class);
 
         Worker\pool($pool);
 
@@ -21,12 +20,11 @@ class FunctionsTest extends TestCase
     /**
      * @depends testPool
      */
-    public function testEnqueue()
-    {
-        $pool = $this->getMock(Pool::class);
+    public function testEnqueue() {
+        $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task) {
-                return yield $task->run($this->getMock(Environment::class));
+            ->will($this->returnCallback(function (Task $task): Awaitable {
+                return new Success($task->run($this->createMock(Environment::class)));
             }));
 
         Worker\pool($pool);
@@ -35,29 +33,27 @@ class FunctionsTest extends TestCase
 
         $task = new TestTask($value);
 
-        $coroutine = new Coroutine(Worker\enqueue($task));
+        $awaitable = Worker\enqueue($task);
 
-        $this->assertSame($value, $coroutine->wait());
+        $this->assertSame($value, \Amp\wait($awaitable));
     }
 
     /**
      * @depends testPool
      */
-    public function testGet()
-    {
-        $pool = $this->getMock(Pool::class);
+    public function testGet() {
+        $pool = $this->createMock(Pool::class);
         $pool->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($this->getMock(Worker\Worker::class)));
+            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\pool($pool);
 
         $worker = Worker\get();
     }
 
-    public function testFactory()
-    {
-        $factory = $this->getMock(WorkerFactory::class);
+    public function testFactory() {
+        $factory = $this->createMock(WorkerFactory::class);
 
         Worker\factory($factory);
 
@@ -67,12 +63,11 @@ class FunctionsTest extends TestCase
     /**
      * @depends testFactory
      */
-    public function testCreate()
-    {
-        $factory = $this->getMock(WorkerFactory::class);
+    public function testCreate() {
+        $factory = $this->createMock(WorkerFactory::class);
         $factory->expects($this->once())
             ->method('create')
-            ->will($this->returnValue($this->getMock(Worker\Worker::class)));
+            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\factory($factory);
 

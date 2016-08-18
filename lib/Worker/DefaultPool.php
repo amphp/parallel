@@ -140,8 +140,7 @@ class DefaultPool implements Pool {
     /**
      * {@inheritdoc}
      */
-    public function getIdleWorkerCount(): int
-    {
+    public function getIdleWorkerCount(): int {
         return $this->idleWorkers->count();
     }
 

@@ -1,8 +1,7 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Stub;
+namespace Amp\Concurrent\Test\Stub;
 
-class CallbackStub
-{
+class CallbackStub {
     public function __invoke() {}
 }

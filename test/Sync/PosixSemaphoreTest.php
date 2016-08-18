@@ -1,37 +1,36 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Sync;
+namespace Amp\Concurrent\Test\Sync;
 
 use Amp\Concurrent\Forking\Fork;
 use Amp\Concurrent\Sync\{PosixSemaphore, Semaphore};
-use Amp\Coroutine;
-use Amp\Loop;
 
 /**
  * @group posix
  * @requires extension sysvmsg
  */
-class PosixSemaphoreTest extends AbstractSemaphoreTest
-{
-    public function createSemaphore($locks)
-    {
+class PosixSemaphoreTest extends AbstractSemaphoreTest {
+    /**
+     * @param $locks
+     *
+     * @return \Amp\Concurrent\Sync\PosixSemaphore
+     */
+    public function createSemaphore(int $locks) {
         return new PosixSemaphore($locks);
     }
 
-    public function tearDown()
-    {
+    public function tearDown() {
         if ($this->semaphore && !$this->semaphore->isFreed()) {
             $this->semaphore->free();
         }
     }
 
-    public function testCloneIsNewSemaphore()
-    {
-        Coroutine\create(function () {
+    public function testCloneIsNewSemaphore() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
-            $lock = yield from $clone->acquire();
+            $lock = yield $clone->acquire();
 
             $this->assertCount(1, $this->semaphore);
             $this->assertCount(0, $clone);
@@ -39,13 +38,11 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             $lock->release();
 
             $clone->free();
-        })->done();
+        });
 
-        Loop\run();
     }
 
-    public function testFree()
-    {
+    public function testFree() {
         $this->semaphore = $this->createSemaphore(1);
 
         $this->assertFalse($this->semaphore->isFreed());
@@ -58,29 +55,28 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
     /**
      * @requires extension pcntl
      */
-    public function testAcquireInMultipleForks()
-    {
-        Coroutine\create(function () {
+    public function testAcquireInMultipleForks() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
 
             $fork1 = new Fork(function (Semaphore $semaphore) {
-                $lock = yield from $semaphore->acquire();
+                $lock = yield $semaphore->acquire();
 
                 usleep(1e5);
 
                 $lock->release();
 
-                yield 0;
+                return 0;
             }, $this->semaphore);
 
             $fork2 = new Fork(function (Semaphore $semaphore) {
-                $lock = yield from $semaphore->acquire();
+                $lock = yield $semaphore->acquire();
 
                 usleep(1e5);
 
                 $lock->release();
 
-                yield 1;
+                return 1;
             }, $this->semaphore);
 
             $start = microtime(true);
@@ -88,12 +84,10 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest
             $fork1->start();
             $fork2->start();
 
-            yield from $fork1->join();
-            yield from $fork2->join();
+            yield $fork1->join();
+            yield $fork2->join();
 
-            $this->assertGreaterThan(1, microtime(true) - $start);
+            $this->assertGreaterThan(0.1, microtime(true) - $start);
         });
-
-        Loop\run();
     }
 }

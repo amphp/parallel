@@ -1,74 +1,57 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Sync;
+namespace Amp\Concurrent\Test\Sync;
 
 use Amp\Concurrent\Sync\ChannelledStream;
-use Amp\Coroutine;
-use Amp\Loop;
-use Amp\Stream\{DuplexStream, ReadableStream};
-use Amp\Stream\Exception\{UnreadableException, UnwritableException};
-use Amp\Tests\Concurrent\TestCase;
+use Amp\Stream\Stream;
+use Amp\Stream\ClosedException;
+use Amp\Concurrent\Test\TestCase;
+use Amp\Success;
 
-class ChannelledStreamTest extends TestCase
-{
+class ChannelledStreamTest extends TestCase {
     /**
-     * @return \Amp\Stream\DuplexStream|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Amp\Stream\Stream|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected function createMockStream()
-    {
-        $mock = $this->getMock(DuplexStream::class);
+    protected function createMockStream() {
+        $mock = $this->createMock(Stream::class);
 
         $buffer = '';
 
         $mock->method('write')
             ->will($this->returnCallback(function ($data) use (&$buffer) {
                 $buffer .= $data;
-                return yield strlen($data);
+                return new Success(\strlen($data));
             }));
 
         $mock->method('read')
             ->will($this->returnCallback(function ($length, $byte = null, $timeout = 0) use (&$buffer) {
-                $result = substr($buffer, 0, $length);
-                $buffer = substr($buffer, $length);
-                return yield $result;
+                $result = \substr($buffer, 0, $length);
+                $buffer = \substr($buffer, $length);
+                return new Success($result);
             }));
 
         return $mock;
     }
-
-    /**
-     * @expectedException \Amp\Exception\InvalidArgumentError
-     */
-    public function testReadableWithoutWritable()
-    {
-        $mock = $this->getMock(ReadableStream::class);
-
-        $channel = new ChannelledStream($mock);
-    }
-
-    public function testSendReceive()
-    {
-        Coroutine\create(function () {
+    
+    public function testSendReceive() {
+        \Amp\execute(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
 
             $message = 'hello';
 
-            yield from $a->send($message);
-            $data = yield from $b->receive();
+            yield $a->send($message);
+            $data = yield $b->receive();
             $this->assertSame($message, $data);
-        })->done();
-
-        Loop\run();
+        });
     }
 
     /**
      * @depends testSendReceive
      */
-    public function testSendReceiveLongData()
-    {
-        Coroutine\create(function () {
+    public function testSendReceiveLongData() {
+        \Amp\execute(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
@@ -79,90 +62,81 @@ class ChannelledStreamTest extends TestCase
                 $message .= chr(mt_rand(0, 255));
             }
 
-            yield from $a->send($message);
-            $data = yield from $b->receive();
+            yield $a->send($message);
+            $data = yield $b->receive();
             $this->assertSame($message, $data);
-        })->done();
+        });
 
-        Loop\run();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\Exception\ChannelException
+     * @expectedException \Amp\Concurrent\ChannelException
      */
-    public function testInvalidDataReceived()
-    {
-        Coroutine\create(function () {
+    public function testInvalidDataReceived() {
+        \Amp\execute(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
 
             // Close $a. $b should close on next read...
-            yield from $mock->write(pack('L', 10) . '1234567890');
-            $data = yield from $b->receive();
-        })->done();
+            yield $mock->write(pack('L', 10) . '1234567890');
+            $data = yield $b->receive();
+        });
 
-        Loop\run();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\Exception\ChannelException
+     * @expectedException \Amp\Concurrent\ChannelException
      */
-    public function testSendUnserializableData()
-    {
-        Coroutine\create(function () {
+    public function testSendUnserializableData() {
+        \Amp\execute(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
 
             // Close $a. $b should close on next read...
-            yield from $a->send(function () {});
-            $data = yield from $b->receive();
-        })->done();
+            yield $a->send(function () {});
+            $data = yield $b->receive();
+        });
 
-        Loop\run();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\Exception\ChannelException
+     * @expectedException \Amp\Concurrent\ChannelException
      */
-    public function testSendAfterClose()
-    {
-        Coroutine\create(function () {
-            $mock = $this->getMock(DuplexStream::class);
+    public function testSendAfterClose() {
+        \Amp\execute(function () {
+            $mock = $this->createMock(Stream::class);
             $mock->expects($this->once())
                 ->method('write')
-                ->will($this->throwException(new UnwritableException()));
+                ->will($this->throwException(new ClosedException));
 
             $a = new ChannelledStream($mock);
-            $b = new ChannelledStream($this->getMock(DuplexStream::class));
+            $b = new ChannelledStream($this->createMock(Stream::class));
 
-            yield from $a->send('hello');
-        })->done();
+            yield $a->send('hello');
+        });
 
-        Loop\run();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\Exception\ChannelException
+     * @expectedException \Amp\Concurrent\ChannelException
      */
-    public function testReceiveAfterClose()
-    {
-        Coroutine\create(function () {
-            $mock = $this->getMock(DuplexStream::class);
+    public function testReceiveAfterClose() {
+        \Amp\execute(function () {
+            $mock = $this->createMock(Stream::class);
             $mock->expects($this->once())
                 ->method('read')
-                ->will($this->throwException(new UnreadableException()));
+                ->will($this->throwException(new ClosedException));
 
             $a = new ChannelledStream($mock);
 
-            $data = yield from $a->receive();
-        })->done();
+            $data = yield $a->receive();
+        });
 
-        Loop\run();
     }
 }

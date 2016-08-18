@@ -50,9 +50,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Benchmarks\\Concurrent\\": "benchmarks",
-            "Amp\\Examples\\Concurrent\\": "examples",
-            "Amp\\Tests\\Concurrent\\": "tests"
+            "Amp\\Concurrent\\Example\\": "examples",
+            "Amp\\Concurrent\\Test\\": "test"
         }
     }
 }

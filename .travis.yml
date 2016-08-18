@@ -2,6 +2,8 @@ language: php
 
 php:
   - 7.0
+  - 7.1
+  - nightly
 
 sudo: false
 
@@ -24,6 +26,3 @@ script:
 after_script:
   - composer require satooshi/php-coveralls dev-master
   - vendor/bin/coveralls -v --exclude-no-stmt
-
-notifications:
-  slack: icicleio:zLkB18HsYCz8TbdK7RVqbi48

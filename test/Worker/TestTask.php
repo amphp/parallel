@@ -1,20 +1,17 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Worker;
+namespace Amp\Concurrent\Test\Worker;
 
-use Amp\Concurrent\Worker\{Environment, Task};
+use Amp\Concurrent\Worker\{ Environment, Task };
 
-class TestTask implements Task
-{
+class TestTask implements Task {
     private $returnValue;
 
-    public function __construct($returnValue)
-    {
+    public function __construct($returnValue) {
         $this->returnValue = $returnValue;
     }
 
-    public function run(Environment $environment)
-    {
+    public function run(Environment $environment) {
         return $this->returnValue;
     }
 }

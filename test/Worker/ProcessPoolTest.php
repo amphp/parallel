@@ -1,17 +1,15 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Worker;
+namespace Amp\Concurrent\Test\Worker;
 
-use Amp\Concurrent\Worker\{DefaultPool, WorkerFactory, WorkerProcess};
+use Amp\Concurrent\Worker\{ DefaultPool, WorkerFactory, WorkerProcess };
 
 /**
  * @group process
  */
-class ProcessPoolTest extends AbstractPoolTest
-{
-    protected function createPool($min = null, $max = null)
-    {
-        $factory = $this->getMock(WorkerFactory::class);
+class ProcessPoolTest extends AbstractPoolTest {
+    protected function createPool($min = null, $max = null) {
+        $factory = $this->createMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
             return new WorkerProcess();
         }));

@@ -1,31 +1,26 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Threading;
+namespace Amp\Concurrent\Test\Threading;
 
 use Amp\Concurrent\Sync\Semaphore as SyncSemaphore;
 use Amp\Concurrent\Threading\{Semaphore, Thread};
-use Amp\Coroutine;
-use Amp\Loop;
-use Amp\Tests\Concurrent\Sync\AbstractSemaphoreTest;
+use Amp\Concurrent\Test\Sync\AbstractSemaphoreTest;
 
 /**
  * @group threading
  * @requires extension pthreads
  */
-class SemaphoreTest extends AbstractSemaphoreTest
-{
-    public function createSemaphore($locks)
-    {
+class SemaphoreTest extends AbstractSemaphoreTest {
+    public function createSemaphore(int $locks) {
         return new Semaphore($locks);
     }
 
-    public function testAcquireInMultipleThreads()
-    {
-        Coroutine\create(function () {
+    public function testAcquireInMultipleThreads() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
 
             $thread1 = new Thread(function (SyncSemaphore $semaphore) {
-                $lock = yield from $semaphore->acquire();
+                $lock = yield $semaphore->acquire();
 
                 usleep(1e5);
 
@@ -35,7 +30,7 @@ class SemaphoreTest extends AbstractSemaphoreTest
             }, $this->semaphore);
 
             $thread2 = new Thread(function (SyncSemaphore $semaphore) {
-                $lock = yield from $semaphore->acquire();
+                $lock = yield $semaphore->acquire();
 
                 usleep(1e5);
 
@@ -49,12 +44,10 @@ class SemaphoreTest extends AbstractSemaphoreTest
             $thread1->start();
             $thread2->start();
 
-            yield from $thread1->join();
-            yield from $thread2->join();
+            yield $thread1->join();
+            yield $thread2->join();
 
-            $this->assertGreaterThan(1, microtime(true) - $start);
+            $this->assertGreaterThan(0.1, microtime(true) - $start);
         });
-
-        Loop\run();
     }
 }

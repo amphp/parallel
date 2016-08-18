@@ -1,11 +1,9 @@
 <?php
-namespace Amp\Examples\Concurrent;
+namespace Amp\Concurrent\Example;
 
-use Amp\Concurrent\Worker\Environment;
-use Amp\Concurrent\Worker\Task;
+use Amp\Concurrent\Worker\{ Environment, Task };
 
-class BlockingTask implements Task
-{
+class BlockingTask implements Task {
     /**
      * @var callable
      */
@@ -20,8 +18,7 @@ class BlockingTask implements Task
      * @param callable $function Do not use a closure or non-serializable object.
      * @param mixed ...$args Arguments to pass to the function. Must be serializable.
      */
-    public function __construct(callable $function, ...$args)
-    {
+    public function __construct(callable $function, ...$args) {
         $this->function = $function;
         $this->args = $args;
     }
@@ -29,8 +26,7 @@ class BlockingTask implements Task
     /**
      * {@inheritdoc}
      */
-    public function run(Environment $environment)
-    {
+    public function run(Environment $environment) {
         return ($this->function)(...$this->args);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Worker;
+namespace Amp\Concurrent\Test\Worker;
 
 use Amp\Concurrent\Worker\WorkerThread;
 
@@ -8,10 +8,8 @@ use Amp\Concurrent\Worker\WorkerThread;
  * @group threading
  * @requires extension pthreads
  */
-class WorkerThreadTest extends AbstractWorkerTest
-{
-    protected function createWorker()
-    {
+class WorkerThreadTest extends AbstractWorkerTest {
+    protected function createWorker() {
         return new WorkerThread();
     }
 }

@@ -149,7 +149,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
             if ($errno !== MSG_ENOMSG) {
                 throw new SemaphoreException('Failed to acquire a lock.');
             }
-        } while (yield new Pause(self::LATENCY_TIMEOUT));
+        } while (yield new Pause(self::LATENCY_TIMEOUT, true));
     }
 
     /**

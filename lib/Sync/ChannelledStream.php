@@ -2,7 +2,7 @@
 
 namespace Amp\Concurrent\Sync;
 
-use Amp\Concurrent\{ChannelException, SerializationException};
+use Amp\Concurrent\{ ChannelException, SerializationException };
 use Amp\Coroutine;
 use Amp\Stream\Stream;
 use Interop\Async\Awaitable;

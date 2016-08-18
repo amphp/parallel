@@ -25,7 +25,7 @@ class PanicError extends \Error {
      *
      * @return string
      */
-    public function getPanicTrace() {
+    public function getPanicTrace(): string {
         return $this->trace;
     }
 }

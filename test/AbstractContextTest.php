@@ -1,18 +1,19 @@
 <?php
 
-namespace Amp\Tests\Concurrent;
+namespace Amp\Concurrent\Test;
 
 use Amp\Concurrent\Sync\Internal\ExitSuccess;
-use Amp\Coroutine;
-use Amp\Loop;
 
-abstract class AbstractContextTest extends TestCase
-{
+abstract class AbstractContextTest extends TestCase {
+    /**
+     * @param callable $function
+     *
+     * @return \Amp\Concurrent\Context
+     */
     abstract public function createContext(callable $function);
 
-    public function testIsRunning()
-    {
-        Coroutine\create(function () {
+    public function testIsRunning() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
                 usleep(100);
             });
@@ -23,16 +24,13 @@ abstract class AbstractContextTest extends TestCase
 
             $this->assertTrue($context->isRunning());
 
-            yield from $context->join();
+            yield $context->join();
 
             $this->assertFalse($context->isRunning());
-        })->done();
-
-        Loop\run();
+        });
     }
 
-    public function testKill()
-    {
+    public function testKill() {
         $context = $this->createContext(function () {
             usleep(1e6);
         });
@@ -45,10 +43,9 @@ abstract class AbstractContextTest extends TestCase
     }
 
     /**
-     * @expectedException \Amp\Concurrent\Exception\StatusError
+     * @expectedException \Amp\Concurrent\StatusError
      */
-    public function testStartWhileRunningThrowsError()
-    {
+    public function testStartWhileRunningThrowsError() {
         $context = $this->createContext(function () {
             usleep(100);
         });
@@ -58,224 +55,185 @@ abstract class AbstractContextTest extends TestCase
     }
 
     /**
-     * @expectedException \Amp\Concurrent\Exception\StatusError
+     * @expectedException \Amp\Concurrent\StatusError
      */
-    public function testStartMultipleTimesThrowsError()
-    {
-        Loop\loop();
-
+    public function testStartMultipleTimesThrowsError() {
         $this->assertRunTimeGreaterThan(function () {
-            Coroutine\create(function () {
+            \Amp\execute(function () {
                 $context = $this->createContext(function () {
                     sleep(1);
                 });
 
                 $context->start();
-                yield from $context->join();
+                yield $context->join();
 
                 $context->start();
-                yield from $context->join();
-            })->done();
-
-            Loop\run();
+                yield $context->join();
+            });
         }, 2);
     }
 
     /**
-     * @expectedException \Amp\Concurrent\Exception\PanicError
+     * @expectedException \Amp\Concurrent\PanicError
      */
-    public function testExceptionInContextPanics()
-    {
-        Coroutine\create(function () {
+    public function testExceptionInContextPanics() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
                 throw new \Exception('Exception in fork.');
             });
 
             $context->start();
-            yield from $context->join();
-        })->done();
-
-        Loop\run();
+            yield $context->join();
+        });
     }
 
     /**
-     * @expectedException \Amp\Concurrent\Exception\PanicError
+     * @expectedException \Amp\Concurrent\PanicError
      */
-    public function testReturnUnserializableDataPanics()
-    {
-        Coroutine\create(function () {
+    public function testReturnUnserializableDataPanics() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
                 return yield function () {};
             });
 
             $context->start();
-            yield from $context->join();
-        })->done();
-
-        Loop\run();
+            yield $context->join();
+        });
     }
 
-    public function testJoinWaitsForChild()
-    {
-        Loop\loop();
-
+    public function testJoinWaitsForChild() {
         $this->assertRunTimeGreaterThan(function () {
-            Coroutine\create(function () {
+            \Amp\execute(function () {
                 $context = $this->createContext(function () {
                     sleep(1);
                 });
 
                 $context->start();
-                yield from $context->join();
-            })->done();
+                yield $context->join();
+            });
 
-            Loop\run();
         }, 1);
     }
 
     /**
-     * @expectedException \Amp\Concurrent\Exception\StatusError
+     * @expectedException \Amp\Concurrent\StatusError
      */
-    public function testJoinWithoutStartThrowsError()
-    {
-        Coroutine\create(function () {
+    public function testJoinWithoutStartThrowsError() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
                 usleep(100);
             });
 
-            yield from $context->join();
-        })->done();
-
-        Loop\run();
+            yield $context->join();
+        });
     }
 
-    public function testJoinResolvesWithContextReturn()
-    {
-        Coroutine\create(function () {
+    public function testJoinResolvesWithContextReturn() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
                 return 42;
             });
 
             $context->start();
-            $this->assertSame(42, yield from $context->join());
-        })->done();
-
-        Loop\run();
+            $this->assertSame(42, yield $context->join());
+        });
     }
 
-    public function testSendAndReceive()
-    {
-        Coroutine\create(function () {
+    public function testSendAndReceive() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                yield from $this->send(1);
-                $value = yield from $this->receive();
+                yield $this->send(1);
+                $value = yield $this->receive();
                 return $value;
             });
 
             $value = 42;
 
             $context->start();
-            $this->assertSame(1, yield from $context->receive());
-            yield from $context->send($value);
-            $this->assertSame($value, yield from $context->join());
-        })->done();
-
-        Loop\run();
+            $this->assertSame(1, yield $context->receive());
+            yield $context->send($value);
+            $this->assertSame($value, yield $context->join());
+        });
     }
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\Exception\SynchronizationError
+     * @expectedException \Amp\Concurrent\SynchronizationError
      */
-    public function testJoinWhenContextSendingData()
-    {
-        Coroutine\create(function () {
+    public function testJoinWhenContextSendingData() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                yield from $this->send(0);
+                yield $this->send(0);
                 return 42;
             });
 
             $context->start();
-            $value = yield from $context->join();
-        })->done();
-
-        Loop\run();
+            $value = yield $context->join();
+        });
     }
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\Exception\StatusError
+     * @expectedException \Amp\Concurrent\StatusError
      */
-    public function testReceiveBeforeContextHasStarted()
-    {
-        Coroutine\create(function () {
+    public function testReceiveBeforeContextHasStarted() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                yield from $this->send(0);
+                yield $this->send(0);
                 return 42;
             });
 
-            $value = yield from $context->receive();
-        })->done();
-
-        Loop\run();
+            $value = yield $context->receive();
+        });
     }
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\Exception\StatusError
+     * @expectedException \Amp\Concurrent\StatusError
      */
-    public function testSendBeforeContextHasStarted()
-    {
-        Coroutine\create(function () {
+    public function testSendBeforeContextHasStarted() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                yield from $this->send(0);
+                yield $this->send(0);
                 return 42;
             });
 
-            yield from $context->send(0);
-        })->done();
-
-        Loop\run();
+            yield $context->send(0);
+        });
     }
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\Exception\SynchronizationError
+     * @expectedException \Amp\Concurrent\SynchronizationError
      */
-    public function testReceiveWhenContextHasReturned()
-    {
-        Coroutine\create(function () {
+    public function testReceiveWhenContextHasReturned() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                yield from $this->send(0);
+                yield $this->send(0);
                 return 42;
             });
 
             $context->start();
-            $value = yield from $context->receive();
-            $value = yield from $context->receive();
-            $value = yield from $context->join();
-        })->done();
-
-        Loop\run();
+            $value = yield $context->receive();
+            $value = yield $context->receive();
+            $value = yield $context->join();
+        });
     }
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Exception\InvalidArgumentError
+     * @expectedException \Error
      */
-    public function testSendExitStatus()
-    {
-        Coroutine\create(function () {
+    public function testSendExitStatus() {
+        \Amp\execute(function () {
             $context = $this->createContext(function () {
-                $value = yield from $this->receive();
+                $value = yield $this->receive();
                 return 42;
             });
 
             $context->start();
-            yield from $context->send(new ExitSuccess(0));
-            $value = yield from $context->join();
-        })->done();
-
-        Loop\run();
+            yield $context->send(new ExitSuccess(0));
+            $value = yield $context->join();
+        });
     }
 }

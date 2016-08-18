@@ -3,7 +3,7 @@
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Concurrent\Worker\DefaultWorkerFactory;
-use Amp\Examples\Concurrent\BlockingTask;
+use Amp\Concurrent\Example\BlockingTask;
 
 Amp\execute(function () {
     $factory = new DefaultWorkerFactory();

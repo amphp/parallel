@@ -1,123 +1,109 @@
 <?php
 
-namespace Amp\Tests\Concurrent\Sync;
+namespace Amp\Concurrent\Test\Sync;
 
 use Amp\Concurrent\Sync\Lock;
-use Amp\Coroutine;
-use Amp\Loop;
-use Amp\Tests\Concurrent\TestCase;
+use Amp\Concurrent\Test\TestCase;
+use Amp\Pause;
 
-abstract class AbstractSemaphoreTest extends TestCase
-{
+abstract class AbstractSemaphoreTest extends TestCase {
     /**
      * @var \Amp\Concurrent\Sync\Semaphore
      */
     protected $semaphore;
 
     /**
+     * @param int $locks Number of locks in the semaphore.
+     *
      * @return \Amp\Concurrent\Sync\Semaphore
      */
-    abstract public function createSemaphore($locks);
+    abstract public function createSemaphore(int $locks);
 
-    public function testCount()
-    {
+    public function testCount() {
         $this->semaphore = $this->createSemaphore(4);
 
         $this->assertCount(4, $this->semaphore);
     }
 
-    public function testAcquire()
-    {
-        Coroutine\create(function () {
+    public function testAcquire() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
 
-            $lock = yield from $this->semaphore->acquire();
+            $lock = yield $this->semaphore->acquire();
 
             $this->assertFalse($lock->isReleased());
 
             $lock->release();
 
             $this->assertTrue($lock->isReleased());
-        })->done();
-
-        Loop\run();
+        });
     }
 
-    public function testAcquireMultiple()
-    {
+    public function testAcquireMultiple() {
         $this->assertRunTimeGreaterThan(function () {
             $this->semaphore = $this->createSemaphore(1);
 
-            Coroutine\create(function () {
-                $lock1 = yield from $this->semaphore->acquire();
-                Loop\timer(0.5, function () use ($lock1) {
+            \Amp\execute(function () {
+                $lock1 = yield $this->semaphore->acquire();
+                \Amp\delay(500, function () use ($lock1) {
                     $lock1->release();
                 });
 
-                $lock2 = yield from $this->semaphore->acquire();
-                Loop\timer(0.5, function () use ($lock2) {
+                $lock2 = yield $this->semaphore->acquire();
+                \Amp\delay(500, function () use ($lock2) {
                     $lock2->release();
                 });
 
-                $lock3 = yield from $this->semaphore->acquire();
-                Loop\timer(0.5, function () use ($lock3) {
+                $lock3 = yield $this->semaphore->acquire();
+                \Amp\delay(500, function () use ($lock3) {
                     $lock3->release();
                 });
-            })->done();
-
-            Loop\run();
+            });
         }, 1.5);
     }
 
-    public function testCloneIsNewSemaphore()
-    {
-        Coroutine\create(function () {
+    public function testCloneIsNewSemaphore() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
-            $lock = yield from $clone->acquire();
+            $lock = yield $clone->acquire();
 
             $this->assertCount(1, $this->semaphore);
             $this->assertCount(0, $clone);
 
             $lock->release();
-        })->done();
-
-        Loop\run();
+        });
     }
 
-    public function testSerializedIsSameSemaphore()
-    {
-        Coroutine\create(function () {
+    public function testSerializedIsSameSemaphore() {
+        \Amp\execute(function () {
             $this->semaphore = $this->createSemaphore(1);
             $unserialized = unserialize(serialize($this->semaphore));
 
-            $lock = yield from $unserialized->acquire();
+            $lock = yield $unserialized->acquire();
 
             $this->assertCount(0, $this->semaphore);
             $this->assertCount(0, $unserialized);
 
             $lock->release();
-        })->done();
-
-        Loop\run();
+        });
     }
 
-    public function testSimultaneousAcquire()
-    {
+    public function testSimultaneousAcquire() {
         $this->semaphore = $this->createSemaphore(1);
 
-        $coroutine1 = new Coroutine\Coroutine($this->semaphore->acquire());
-        $coroutine2 = new Coroutine\Coroutine($this->semaphore->acquire());
-
-        $coroutine1->delay(0.5)->then(function (Lock $lock) {
-            $lock->release();
+        \Amp\execute(function () {
+            $awaitable1 = $this->semaphore->acquire();
+            $awaitable2 = $this->semaphore->acquire();
+            
+            yield new Pause(500);
+            
+            (yield $awaitable1)->release();
+            
+            yield new Pause(500);
+            
+            (yield $awaitable2)->release();
         });
-
-        $coroutine2->delay(0.5)->then(function (Lock $lock) {
-            $lock->release();
-        });
-
-        $this->assertRunTimeGreaterThan('Amp\Loop\run', 1);
     }
 }

@@ -3,6 +3,7 @@
 namespace Amp\Concurrent\Threading;
 
 use Amp\Concurrent\Sync\Semaphore as SyncSemaphore;
+use Interop\Async\Awaitable;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
@@ -28,8 +29,7 @@ class Semaphore implements SyncSemaphore {
      *
      * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct(int $locks)
-    {
+    public function __construct(int $locks) {
         $this->init($locks);
     }
 
@@ -38,8 +38,7 @@ class Semaphore implements SyncSemaphore {
      *
      * @param int $locks
      */
-    private function init(int $locks)
-    {
+    private function init(int $locks) {
         $locks = (int) $locks;
         if ($locks < 1) {
             $locks = 1;
@@ -52,32 +51,28 @@ class Semaphore implements SyncSemaphore {
     /**
      * {@inheritdoc}
      */
-    public function count(): int
-    {
+    public function count(): int {
         return $this->semaphore->count();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getSize(): int
-    {
+    public function getSize(): int {
         return $this->maxLocks;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function acquire(): \Generator
-    {
+    public function acquire(): Awaitable {
         return $this->semaphore->acquire();
     }
 
     /**
      * Clones the semaphore, creating a new instance with the same number of locks, all available.
      */
-    public function __clone()
-    {
+    public function __clone() {
         $this->init($this->getSize());
     }
 }

@@ -75,8 +75,7 @@ class Thread extends \Thread {
         }
     
         if (null === $autoloadPath) {
-            echo 'Could not locate autoload.php.';
-            exit(1);
+            throw new \Error('Could not locate autoload.php');
         }
     
         require $autoloadPath;
@@ -85,11 +84,7 @@ class Thread extends \Thread {
 
         try {
             \Amp\execute(function () {
-                try {
-                    $channel = new ChannelledStream(new Socket($this->socket, false));
-                } catch (\Throwable $exception) {
-                    return 1; // Parent has destroyed Thread object, so just exit.
-                }
+                $channel = new ChannelledStream(new Socket($this->socket, false));
         
                 $watcher = \Amp\repeat(self::KILL_CHECK_FREQUENCY, function () {
                     if ($this->killed) {

@@ -253,7 +253,6 @@ class Thread implements Strand {
         }
 
         if ($data instanceof ExitStatus) {
-            $this->kill();
             throw new \Error('Cannot send exit status objects.');
         }
 

@@ -32,8 +32,7 @@ class FileMutex implements Mutex {
     /**
      * Creates a new mutex.
      */
-    public function __construct()
-    {
+    public function __construct() {
         $this->fileName = \tempnam(\sys_get_temp_dir(), 'mutex-') . '.lock';
     }
 

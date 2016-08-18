@@ -305,8 +305,7 @@ class Process implements ProcessContext {
      *
      * @return mixed[] Array of options.
      */
-    public function getOptions(): array
-    {
+    public function getOptions(): array {
         return $this->options;
     }
 

@@ -216,8 +216,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * Calling `free()` on an object already freed will have no effect.
      */
-    public function free()
-    {
+    public function free() {
         if (!$this->isFreed()) {
             // Invalidate the memory block by setting its state to FREED.
             $this->setHeader(static::STATE_FREED, 0, 0);
@@ -239,8 +238,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @return string The serialized object handle.
      */
-    public function serialize(): string
-    {
+    public function serialize(): string {
         return \serialize([$this->key, $this->semaphore]);
     }
 
@@ -249,8 +247,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @param string $serialized The serialized object handle.
      */
-    public function unserialize($serialized)
-    {
+    public function unserialize($serialized) {
         list($this->key, $this->semaphore) = \unserialize($serialized);
         $this->memOpen($this->key, 'w', 0, 0);
     }
@@ -258,8 +255,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     /**
      * {@inheritdoc}
      */
-    public function __clone()
-    {
+    public function __clone() {
         $value = $this->unwrap();
         $header = $this->getHeader();
         $this->init($value, $header['size'], $header['permissions']);
@@ -270,8 +266,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @return array An array of debugging information.
      */
-    public function __debugInfo()
-    {
+    public function __debugInfo() {
         if ($this->isFreed()) {
             return [
                 'id' => $this->key,
@@ -291,8 +286,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * Updates the current memory segment handle, handling any moves made on the
      * data.
      */
-    private function handleMovedMemory()
-    {
+    private function handleMovedMemory() {
         // Read from the memory block and handle moved blocks until we find the
         // correct block.
         while (true) {
@@ -315,8 +309,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @return array An associative array of header data.
      */
-    private function getHeader(): array
-    {
+    private function getHeader(): array {
         $data = $this->memGet(0, self::MEM_DATA_OFFSET);
         return \unpack('Cstate/Lsize/Spermissions', $data);
     }
@@ -328,8 +321,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @param int $size        The size of the stored data, or other value.
      * @param int $permissions The permissions mask on the memory segment.
      */
-    private function setHeader(int $state, int $size, int $permissions)
-    {
+    private function setHeader(int $state, int $size, int $permissions) {
         $header = \pack('CLS', $state, $size, $permissions);
         $this->memSet(0, $header);
     }
@@ -342,8 +334,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @param int    $permissions Process permissions on the shared memory.
      * @param int    $size        The size to crate the shared memory in bytes.
      */
-    private function memOpen(int $key, string $mode, int $permissions, int $size)
-    {
+    private function memOpen(int $key, string $mode, int $permissions, int $size) {
         $this->handle = @\shmop_open($key, $mode, $permissions, $size);
         if ($this->handle === false) {
             throw new SharedMemoryException('Failed to create shared memory block.');
@@ -358,8 +349,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @return string The binary data at the given offset.
      */
-    private function memGet(int $offset, int $size): string
-    {
+    private function memGet(int $offset, int $size): string {
         $data = \shmop_read($this->handle, $offset, $size);
         if ($data === false) {
             throw new SharedMemoryException('Failed to read from shared memory block.');
@@ -373,8 +363,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @param int    $offset The offset to write to.
      * @param string $data   The binary data to write.
      */
-    private function memSet(int $offset, string $data)
-    {
+    private function memSet(int $offset, string $data) {
         if (!\shmop_write($this->handle, $data, $offset)) {
             throw new SharedMemoryException('Failed to write to shared memory block.');
         }
@@ -383,8 +372,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     /**
      * Requests the shared memory segment to be deleted.
      */
-    private function memDelete()
-    {
+    private function memDelete() {
         if (!\shmop_delete($this->handle)) {
             throw new SharedMemoryException('Failed to discard shared memory block.');
         }
