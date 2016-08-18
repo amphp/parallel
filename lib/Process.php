@@ -1,8 +1,8 @@
 <?php
-namespace Icicle\Concurrent;
 
-interface Process extends Context
-{
+namespace Amp\Concurrent;
+
+interface Process extends Context {
     /**
      * @return int PID of process.
      */
@@ -11,7 +11,7 @@ interface Process extends Context
     /**
      * @param int $signo
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError
+     * @throws \Amp\Concurrent\StatusError
      */
     public function signal(int $signo);
 }

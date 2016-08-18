@@ -1,5 +1,8 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+
+namespace Amp\Concurrent\Sync;
+
+use Interop\Async\Awaitable;
 
 /**
  * A non-blocking counting semaphore.
@@ -8,8 +11,7 @@ namespace Icicle\Concurrent\Sync;
  * are atomic. Implementations do not have to guarantee that acquiring a lock
  * is first-come, first serve.
  */
-interface Semaphore extends \Countable
-{
+interface Semaphore extends \Countable {
     /**
      * Gets the number of currently available locks.
      *
@@ -32,9 +34,8 @@ interface Semaphore extends \Countable
      * If there are one or more locks available, this function resolves immediately with a lock and the lock count is
      * decreased. If no locks are available, the semaphore waits asynchronously for a lock to become available.
      *
-     * @return \Generator Resolves with a lock object when the acquire is successful.
-     *
-     * @resolve \Icicle\Concurrent\Sync\Lock
+     * @return \Interop\Async\Awaitable<\Amp\Concurrent\Sync\Lock> Resolves with a lock object when the acquire is
+     *     successful.
      */
-    public function acquire(): \Generator;
+    public function acquire(): Awaitable;
 }

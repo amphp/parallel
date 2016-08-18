@@ -1,11 +1,11 @@
 <?php
-namespace Icicle\Concurrent\Threading\Internal;
+
+namespace Amp\Concurrent\Threading\Internal;
 
 /**
  * @internal
  */
-class Storage extends \Threaded
-{
+class Storage extends \Threaded {
     /**
      * @var mixed
      */
@@ -14,24 +14,21 @@ class Storage extends \Threaded
     /**
      * @param mixed $value
      */
-    public function __construct($value)
-    {
+    public function __construct($value) {
         $this->value = $value;
     }
 
     /**
      * @return mixed
      */
-    public function get()
-    {
+    public function get() {
         return $this->value;
     }
 
     /**
      * @param mixed $value
      */
-    public function set($value)
-    {
+    public function set($value) {
         $this->value = $value;
     }
 }

@@ -1,17 +1,19 @@
 <?php
-namespace Icicle\Concurrent\Threading\Internal;
 
-use Icicle\Concurrent\Sync\Lock;
-use Icicle\Coroutine;
+namespace Amp\Concurrent\Threading\Internal;
+
+use Amp\Concurrent\Sync\Lock;
+use Amp\Coroutine;
+use Amp\Pause;
+use Interop\Async\Awaitable;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
  *
  * @internal
  */
-class Semaphore extends \Threaded
-{
-    const LATENCY_TIMEOUT = 0.01; // 10 ms
+class Semaphore extends \Threaded {
+    const LATENCY_TIMEOUT = 10;
 
     /**
      * @var int The number of available locks.
@@ -23,8 +25,7 @@ class Semaphore extends \Threaded
      *
      * @param int $locks The maximum number of locks that can be acquired from the semaphore.
      */
-    public function __construct(int $locks)
-    {
+    public function __construct(int $locks) {
         $this->locks = $locks;
     }
 
@@ -33,11 +34,17 @@ class Semaphore extends \Threaded
      *
      * @return int The number of available locks.
      */
-    public function count(): int
-    {
+    public function count(): int {
         return $this->locks;
     }
 
+    /**
+     * @return \Interop\Async\Awaitable
+     */
+    public function acquire(): Awaitable {
+        return new Coroutine($this->doAcquire());
+    }
+    
     /**
      * Uses a double locking mechanism to acquire a lock without blocking. A
      * synchronous mutex is used to make sure that the semaphore is queried one
@@ -47,8 +54,7 @@ class Semaphore extends \Threaded
      * If a lock is not available, we add the request to a queue and set a timer
      * to check again in the future.
      */
-    public function acquire(): \Generator
-    {
+    private function doAcquire(): \Generator {
         $tsl = function () {
             // If there are no locks available or the wait queue is not empty,
             // we need to wait our turn to acquire a lock.
@@ -60,7 +66,7 @@ class Semaphore extends \Threaded
         };
 
         while ($this->locks < 1 || $this->synchronized($tsl)) {
-            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
+            yield new Pause(self::LATENCY_TIMEOUT);
         }
 
         return new Lock(function () {
@@ -71,8 +77,7 @@ class Semaphore extends \Threaded
     /**
      * Releases a lock from the semaphore.
      */
-    protected function release()
-    {
+    protected function release() {
         $this->synchronized(function () {
             ++$this->locks;
         });

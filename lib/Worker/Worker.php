@@ -1,11 +1,13 @@
 <?php
-namespace Icicle\Concurrent\Worker;
+
+namespace Amp\Concurrent\Worker;
+
+use Interop\Async\Awaitable;
 
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
  */
-interface Worker
-{
+interface Worker {
     /**
      * Checks if the worker is running.
      *
@@ -26,26 +28,18 @@ interface Worker
     public function start();
 
     /**
-     * @coroutine
-     *
      * Enqueues a task to be executed by the worker.
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \Generator
-     *
-     * @resolve mixed Task return value.
+     * @return \Interop\Async\Awaitable<mixed> Resolves with the return value of Task::run().
      */
-    public function enqueue(Task $task): \Generator;
+    public function enqueue(Task $task): Awaitable;
 
     /**
-     * @coroutine
-     *
-     * @return \Generator
-     *
-     * @resolve int Exit code.
+     * @return \Interop\Async\Awaitable<int> Exit code.
      */
-    public function shutdown(): \Generator;
+    public function shutdown(): Awaitable;
 
     /**
      * Immediately kills the context.

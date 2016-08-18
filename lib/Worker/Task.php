@@ -1,23 +1,19 @@
 <?php
-namespace Icicle\Concurrent\Worker;
+
+namespace Amp\Concurrent\Worker;
 
 /**
  * A runnable unit of execution.
  */
-interface Task
-{
+interface Task {
     /**
-     * @coroutine
-     *
      * Runs the task inside the caller's context.
      *
      * Does not have to be a coroutine, can also be a regular function returning a value.
      *
-     * @param \Icicle\Concurrent\Worker\Environment
+     * @param \Amp\Concurrent\Worker\Environment
      *
-     * @return mixed|\Icicle\Awaitable\Awaitable|\Generator
-     *
-     * @resolve mixed
+     * @return mixed|\Interop\Async\Awaitable|\Generator
      */
     public function run(Environment $environment);
 }

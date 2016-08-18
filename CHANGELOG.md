@@ -3,15 +3,15 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [0.3.0] - 2016-01-15
 ### Added
-- Added `Icicle\Concurrent\Worker\factory()` function that accesses or sets the global worker factory.
-- Added `Icicle\Concurrent\Worker\get()` function that returns a worker from the global worker pool.
+- Added `Amp\Concurrent\Worker\factory()` function that accesses or sets the global worker factory.
+- Added `Amp\Concurrent\Worker\get()` function that returns a worker from the global worker pool.
 
 ### Changed
-- `Icicle\Concurrent\Worker\Environment` is now an interface, with `Icicle\Concurrent\Worker\BasicEnvironment` being the default implementation provided to workers that is then provided to `Icicle\Concurrent\Worker\Task::run()`. Workers with different implementations of `Environment` can be easily created for particular applications.
-- `Icicle\Concurrent\Worker\Queue` has been removed. The functionality of queues has been merged into `Icicle\Concurrent\Worker\Pool` through a new `get()` method that returns a worker from the pool. The returned worker is marked as busy until all references have been destroyed. See the example code below.
+- `Amp\Concurrent\Worker\Environment` is now an interface, with `Amp\Concurrent\Worker\BasicEnvironment` being the default implementation provided to workers that is then provided to `Amp\Concurrent\Worker\Task::run()`. Workers with different implementations of `Environment` can be easily created for particular applications.
+- `Amp\Concurrent\Worker\Queue` has been removed. The functionality of queues has been merged into `Amp\Concurrent\Worker\Pool` through a new `get()` method that returns a worker from the pool. The returned worker is marked as busy until all references have been destroyed. See the example code below.
 
 ```php
-use Icicle\Concurrent\Worker\DefaultPool;
+use Amp\Concurrent\Worker\DefaultPool;
 
 $pool = new DefaultPool();
 $pool->start();
@@ -24,26 +24,26 @@ $worker = null; // Marks worker as idle in the pool.
 
 ## [0.2.2] - 2015-12-21
 ### Added
-- Added the `Icicle\Concurrent\Strand` interface that combines `Icicle\Concurrent\Context` and `Icicle\Concurrent\Sync\Channel`. This interface is implemented by the following classes (note that these classes implemented the two component interface separately, so no changes were made to the implementation):
-    - `Icicle\Concurrent\Forking\Fork`
-    - `Icicle\Concurrent\Threading\Thread`
-    - `Icicle\Concurrent\Process\ChannelledProcess`
+- Added the `Amp\Concurrent\Strand` interface that combines `Amp\Concurrent\Context` and `Amp\Concurrent\Sync\Channel`. This interface is implemented by the following classes (note that these classes implemented the two component interface separately, so no changes were made to the implementation):
+    - `Amp\Concurrent\Forking\Fork`
+    - `Amp\Concurrent\Threading\Thread`
+    - `Amp\Concurrent\Process\ChannelledProcess`
     
 ### Changed
-- `Icicle\Concurrent\Strand` interface is now required by the constructor of `Icicle\Concurrent\Worker\AbstractWorker`.
+- `Amp\Concurrent\Strand` interface is now required by the constructor of `Amp\Concurrent\Worker\AbstractWorker`.
 
 
 ## [0.2.1] - 2015-12-16
 ### Added
-- Added `Icicle\Concurrent\Worker\DefaultQueue` implementing `Icicle\Concurrent\Worker\Queue` that provides a queue of workers that can be pulled and pushed from the queue as needed. Pulling a worker marks it as busy and pushing the worker back into the queue marks it as idle. If no idle workers remain in the queue, a worker is selected from those marked as busy. A worker queue allows a set of interdependent tasks (for example, tasks that depend on an environment value in the worker) to be run on a single worker without having to create and start separate workers for each task.
+- Added `Amp\Concurrent\Worker\DefaultQueue` implementing `Amp\Concurrent\Worker\Queue` that provides a queue of workers that can be pulled and pushed from the queue as needed. Pulling a worker marks it as busy and pushing the worker back into the queue marks it as idle. If no idle workers remain in the queue, a worker is selected from those marked as busy. A worker queue allows a set of interdependent tasks (for example, tasks that depend on an environment value in the worker) to be run on a single worker without having to create and start separate workers for each task.
 
 ### Fixed
-- Fixed bug where exit status was not being read in `Icicle\Concurrent\Process\Process`, which also caused `Icicle\Concurrent\Worker\WorkerProcess` to fail.
+- Fixed bug where exit status was not being read in `Amp\Concurrent\Process\Process`, which also caused `Amp\Concurrent\Worker\WorkerProcess` to fail.
 
 ## [0.2.0] - 2015-12-13
 ### Changed
-- Updated to Icicle `0.9.x` packages.
-- All exceptions now implement the `Icicle\Exception\Throwable` interface.
+- Updated to Amp `0.9.x` packages.
+- All exceptions now implement the `Amp\Exception\Throwable` interface.
 - All interface names have been changed to remove the Interface suffix.
 - `Sync\Channel` was renamed to `Sync\ChannelledStream`.
 - `Sync\Parcel` was renamed to `Sync\SharedMemoryParcel`.

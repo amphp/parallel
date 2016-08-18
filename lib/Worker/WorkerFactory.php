@@ -1,11 +1,11 @@
 <?php
-namespace Icicle\Concurrent\Worker;
+
+namespace Amp\Concurrent\Worker;
 
 /**
  * Interface for factories used to create new workers.
  */
-interface WorkerFactory
-{
+interface WorkerFactory {
     /**
      * Creates a new worker instance.
      *

@@ -1,10 +1,8 @@
 <?php
-namespace Icicle\Concurrent\Worker;
 
-use Icicle\Loop;
+namespace Amp\Concurrent\Worker;
 
-interface Environment extends \ArrayAccess, \Countable
-{
+interface Environment extends \ArrayAccess, \Countable {
     /**
      * @param string $key
      *

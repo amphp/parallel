@@ -1,27 +1,26 @@
 <?php
-namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Worker\Task;
-use Icicle\Concurrent\Worker\Worker;
+namespace Amp\Concurrent\Worker\Internal;
 
-class PooledWorker implements Worker
-{
+use Amp\Concurrent\Worker\{ Task, Worker };
+use Interop\Async\Awaitable;
+
+class PooledWorker implements Worker {
     /**
      * @var callable
      */
     private $push;
 
     /**
-     * @var \Icicle\Concurrent\Worker\Worker
+     * @var \Amp\Concurrent\Worker\Worker
      */
     private $worker;
 
     /**
-     * @param \Icicle\Concurrent\Worker\Worker $worker
+     * @param \Amp\Concurrent\Worker\Worker $worker
      * @param callable $push Callable to push the worker back into the queue.
      */
-    public function __construct(Worker $worker, callable $push)
-    {
+    public function __construct(Worker $worker, callable $push) {
         $this->worker = $worker;
         $this->push = $push;
     }
@@ -29,56 +28,49 @@ class PooledWorker implements Worker
     /**
      * Automatically pushes the worker back into the queue.
      */
-    public function __destruct()
-    {
+    public function __destruct() {
         ($this->push)($this->worker);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool
-    {
+    public function isRunning(): bool {
         return $this->worker->isRunning();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isIdle(): bool
-    {
+    public function isIdle(): bool {
         return $this->worker->isIdle();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function start()
-    {
+    public function start() {
         $this->worker->start();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task): \Generator
-    {
+    public function enqueue(Task $task): Awaitable {
         return $this->worker->enqueue($task);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): \Generator
-    {
+    public function shutdown(): Awaitable {
         return $this->worker->shutdown();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
+    public function kill() {
         $this->worker->kill();
     }
 }

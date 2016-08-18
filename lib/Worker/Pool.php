@@ -1,11 +1,11 @@
 <?php
-namespace Icicle\Concurrent\Worker;
+
+namespace Amp\Concurrent\Worker;
 
 /**
  * An interface for worker pools.
  */
-interface Pool extends Worker
-{
+interface Pool extends Worker {
     /**
      * @var int The default minimum pool size.
      */
@@ -20,9 +20,9 @@ interface Pool extends Worker
      * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of
      * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
      *
-     * @return \Icicle\Concurrent\Worker\Worker
+     * @return \Amp\Concurrent\Worker\Worker
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the queue is not running.
+     * @throws \Amp\Concurrent\StatusError If the queue is not running.
      */
     public function get(): Worker;
 

@@ -21,7 +21,8 @@
         }
     ],
     "require": {
-        "amphp/amp": "^2.0"
+        "amphp/amp": "^2.0",
+        "amphp/socket": "dev-amp_v2 as 2.0"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
@@ -41,7 +42,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Icicle\\Concurrent\\": "lib"
+            "Amp\\Concurrent\\": "lib"
         },
         "files": [
             "lib/Worker/functions.php"
@@ -49,9 +50,9 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Icicle\\Benchmarks\\Concurrent\\": "benchmarks",
-            "Icicle\\Examples\\Concurrent\\": "examples",
-            "Icicle\\Tests\\Concurrent\\": "tests"
+            "Amp\\Benchmarks\\Concurrent\\": "benchmarks",
+            "Amp\\Examples\\Concurrent\\": "examples",
+            "Amp\\Tests\\Concurrent\\": "tests"
         }
     }
 }

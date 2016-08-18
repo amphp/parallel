@@ -1,86 +1,78 @@
 <?php
-namespace Icicle\Concurrent\Worker;
 
-if (!function_exists(__NAMESPACE__ . '\pool')) {
-    /**
-     * Returns the global worker pool for the current context.
-     *
-     * @param \Icicle\Concurrent\Worker\Pool|null $pool A worker pool instance.
-     *
-     * @return \Icicle\Concurrent\Worker\Pool The global worker pool instance.
-     */
-    function pool(Pool $pool = null): Pool
-    {
-        static $instance;
+namespace Amp\Concurrent\Worker;
 
-        if (null !== $pool) {
-            $instance = $pool;
-        } elseif (null === $instance) {
-            $instance = new DefaultPool();
-        }
+use Interop\Async\Awaitable;
 
-        if (!$instance->isRunning()) {
-            $instance->start();
-        }
+/**
+ * Returns the global worker pool for the current context.
+ *
+ * @param \Amp\Concurrent\Worker\Pool|null $pool A worker pool instance.
+ *
+ * @return \Amp\Concurrent\Worker\Pool The global worker pool instance.
+ */
+function pool(Pool $pool = null): Pool {
+    static $instance;
 
-        return $instance;
+    if (null !== $pool) {
+        $instance = $pool;
+    } elseif (null === $instance) {
+        $instance = new DefaultPool();
     }
 
-    /**
-     * @coroutine
-     *
-     * Enqueues a task to be executed by the global worker pool.
-     *
-     * @param \Icicle\Concurrent\Worker\Task $task The task to enqueue.
-     *
-     * @return \Generator
-     *
-     * @resolve mixed The return value of the task.
-     */
-    function enqueue(Task $task): \Generator
-    {
-        return pool()->enqueue($task);
+    if (!$instance->isRunning()) {
+        $instance->start();
     }
 
-    /**
-     * Creates a worker using the global worker factory.
-     *
-     * @return \Icicle\Concurrent\Worker\Worker
-     */
-    function create(): Worker
-    {
-        $worker = factory()->create();
-        $worker->start();
-        return $worker;
+    return $instance;
+}
+
+/**
+ * Enqueues a task to be executed by the global worker pool.
+ *
+ * @param \Amp\Concurrent\Worker\Task $task The task to enqueue.
+ *
+ * @return \Interop\Async\Awaitable<mixed>
+ */
+function enqueue(Task $task): Awaitable {
+    return pool()->enqueue($task);
+}
+
+/**
+ * Creates a worker using the global worker factory.
+ *
+ * @return \Amp\Concurrent\Worker\Worker
+ */
+function create(): Worker {
+    $worker = factory()->create();
+    $worker->start();
+    return $worker;
+}
+
+/**
+ * Gets or sets the global worker factory.
+ *
+ * @param \Amp\Concurrent\Worker\WorkerFactory|null $factory
+ *
+ * @return \Amp\Concurrent\Worker\WorkerFactory
+ */
+function factory(WorkerFactory $factory = null): WorkerFactory {
+    static $instance;
+
+    if (null !== $factory) {
+        $instance = $factory;
+    } elseif (null === $instance) {
+        $instance = new DefaultWorkerFactory();
     }
 
-    /**
-     * Gets or sets the global worker factory.
-     *
-     * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory
-     *
-     * @return \Icicle\Concurrent\Worker\WorkerFactory
-     */
-    function factory(WorkerFactory $factory = null): WorkerFactory
-    {
-        static $instance;
+    return $instance;
+}
 
-        if (null !== $factory) {
-            $instance = $factory;
-        } elseif (null === $instance) {
-            $instance = new DefaultWorkerFactory();
-        }
-
-        return $instance;
-    }
-
-    /**
-     * Gets a worker from the global worker pool.
-     *
-     * @return \Icicle\Concurrent\Worker\Worker
-     */
-    function get(): Worker
-    {
-        return pool()->get();
-    }
+/**
+ * Gets a worker from the global worker pool.
+ *
+ * @return \Amp\Concurrent\Worker\Worker
+ */
+function get(): Worker {
+    return pool()->get();
 }

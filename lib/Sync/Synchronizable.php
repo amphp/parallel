@@ -1,5 +1,8 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+
+namespace Amp\Concurrent\Sync;
+
+use Interop\Async\Awaitable;
 
 /**
  * An object that can be synchronized for exclusive access across contexts.
@@ -7,8 +10,6 @@ namespace Icicle\Concurrent\Sync;
 interface Synchronizable
 {
     /**
-     * @coroutine
-     *
      * Asynchronously invokes a callback while maintaining an exclusive lock on the object.
      *
      * The arguments passed to the callback depend on the implementing object. If the callback throws an exception,
@@ -17,9 +18,8 @@ interface Synchronizable
      * @param callable<(mixed ...$args): \Generator|mixed> $callback The synchronized callback to invoke.
      *     The callback may be a regular function or a coroutine.
      *
-     * @return \Generator
-     *
-     * @resolve mixed The return value of $callback.
+     * @return \Interop\Async\Awaitable<mixed> Resolves with the return value of $callback or fails if $callback
+     *     throws an exception.
      */
-    public function synchronized(callable $callback): \Generator;
+    public function synchronized(callable $callback): Awaitable;
 }

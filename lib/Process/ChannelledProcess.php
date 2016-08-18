@@ -1,20 +1,19 @@
 <?php
-namespace Icicle\Concurrent\Process;
 
-use Icicle\Concurrent\Exception\{StatusError, SynchronizationError};
-use Icicle\Concurrent\{Process as ProcessContext, Strand};
-use Icicle\Concurrent\Sync\{ChannelledStream, Internal\ExitStatus};
-use Icicle\Exception\InvalidArgumentError;
+namespace Amp\Concurrent\Process;
 
-class ChannelledProcess implements ProcessContext, Strand
-{
+use Amp\Concurrent\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
+use Amp\Concurrent\Sync\{ ChannelledStream, Internal\ExitStatus };
+use Interop\Async\Awaitable;
+
+class ChannelledProcess implements ProcessContext, Strand {
     /**
-     * @var \Icicle\Concurrent\Process\Process
+     * @var \Amp\Concurrent\Process\Process
      */
     private $process;
 
     /**
-     * @var \Icicle\Concurrent\Sync\Channel
+     * @var \Amp\Concurrent\Sync\Channel
      */
     private $channel;
 
@@ -23,18 +22,15 @@ class ChannelledProcess implements ProcessContext, Strand
      * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct(string $path, string $cwd = '', array $env = [])
-    {
-        $command = PHP_BINARY . ' ' . $path;
-
+    public function __construct(string $path, string $cwd = '', array $env = []) {
+        $command = \PHP_BINARY . ' ' . $path;
         $this->process = new Process($command, $cwd, $env);
     }
 
     /**
      * Resets process values.
      */
-    public function __clone()
-    {
+    public function __clone() {
         $this->process = clone $this->process;
         $this->channel = null;
     }
@@ -42,88 +38,79 @@ class ChannelledProcess implements ProcessContext, Strand
     /**
      * {@inheritdoc}
      */
-    public function start()
-    {
+    public function start() {
         $this->process->start();
-
         $this->channel = new ChannelledStream($this->process->getStdOut(), $this->process->getStdIn());
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool
-    {
+    public function isRunning(): bool {
         return $this->process->isRunning();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receive(): \Generator
-    {
+    public function receive(): Awaitable {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
-        $data = yield from $this->channel->receive();
-
-        if ($data instanceof ExitStatus) {
-            $data = $data->getResult();
-            throw new SynchronizationError(sprintf(
-                'Thread unexpectedly exited with result of type: %s',
-                is_object($data) ? get_class($data) : gettype($data)
-            ));
-        }
-
-        return $data;
+        return \Amp\pipe($this->channel->receive(), static function ($data) {
+            if ($data instanceof ExitStatus) {
+                $data = $data->getResult();
+                throw new SynchronizationError(\sprintf(
+                    'Thread unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ));
+            }
+            
+            return $data;
+        });
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data): \Generator
-    {
+    public function send($data): Awaitable {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
 
         if ($data instanceof ExitStatus) {
-            throw new InvalidArgumentError('Cannot send exit status objects.');
+            throw new \Error('Cannot send exit status objects.');
         }
 
-        return yield from $this->channel->send($data);
+        return $this->channel->send($data);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function join(): \Generator
-    {
+    public function join(): Awaitable {
         return $this->process->join();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
+    public function kill() {
         $this->process->kill();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPid(): int
-    {
+    public function getPid(): int {
         return $this->process->getPid();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function signal(int $signo)
-    {
+    public function signal(int $signo) {
         $this->process->signal($signo);
     }
 }

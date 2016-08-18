@@ -1,5 +1,8 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+
+namespace Amp\Concurrent\Sync;
+
+use Interop\Async\Awaitable;
 
 /**
  * A non-blocking synchronization primitive that can be used for mutual exclusion across contexts.
@@ -15,9 +18,8 @@ interface Mutex
      *
      * Acquires a lock on the mutex.
      *
-     * @return \Generator Resolves with a lock object when the acquire is successful.
-     *
-     * @resolve \Icicle\Concurrent\Sync\Lock
+     * @return \Interop\Async\Awaitable<\Amp\Concurrent\Sync\Lock> Resolves with a lock object when the acquire is
+     * successful.
      */
-    public function acquire(): \Generator;
+    public function acquire(): Awaitable;
 }

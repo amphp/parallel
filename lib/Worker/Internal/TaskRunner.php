@@ -1,56 +1,72 @@
 <?php
-namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Sync\Channel;
-use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\Task;
+namespace Amp\Concurrent\Worker\Internal;
 
-class TaskRunner
-{
+use Amp\Concurrent\Sync\Channel;
+use Amp\Concurrent\Worker\{ Environment, Task };
+use Amp\Coroutine;
+use Interop\Async\Awaitable;
+
+class TaskRunner {
     /**
      * @var bool
      */
     private $idle = true;
 
     /**
-     * @var \Icicle\Concurrent\Sync\Channel
+     * @var \Amp\Concurrent\Sync\Channel
      */
     private $channel;
 
     /**
-     * @var \Icicle\Concurrent\Worker\Environment
+     * @var \Amp\Concurrent\Worker\Environment
      */
     private $environment;
 
-    public function __construct(Channel $channel, Environment $environment)
-    {
+    public function __construct(Channel $channel, Environment $environment) {
         $this->channel = $channel;
         $this->environment = $environment;
     }
-
+    
+    /**
+     * Runs the task runner, receiving tasks from the parent and sending the result of those tasks.
+     *
+     * @return \Interop\Async\Awaitable
+     */
+    public function run(): Awaitable {
+        return new Coroutine($this->execute());
+    }
+    
     /**
      * @coroutine
      *
      * @return \Generator
      */
-    public function run(): \Generator
-    {
-        $task = yield from $this->channel->receive();
+    private function execute(): \Generator {
+        $task = yield $this->channel->receive();
 
         while ($task instanceof Task) {
             $this->idle = false;
 
             try {
-                $result = yield $task->run($this->environment);
+                $result = $task->run($this->environment);
+                
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+                
+                if ($result instanceof Awaitable) {
+                    $result = yield $result;
+                }
             } catch (\Throwable $exception) {
                 $result = new TaskFailure($exception);
             }
 
-            yield from $this->channel->send($result);
+            yield $this->channel->send($result);
 
             $this->idle = true;
 
-            $task = yield from $this->channel->receive();
+            $task = yield $this->channel->receive();
         }
 
         return $task;
@@ -59,8 +75,7 @@ class TaskRunner
     /**
      * @return bool
      */
-    public function isIdle(): bool
-    {
+    public function isIdle(): bool {
         return $this->idle;
     }
 }

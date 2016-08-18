@@ -1,10 +1,11 @@
 <?php
-namespace Icicle\Concurrent\Worker;
 
-use Icicle\Awaitable;
-use Icicle\Exception\InvalidArgumentError;
-use Icicle\Concurrent\Exception\StatusError;
-use Icicle\Coroutine\Coroutine;
+namespace Amp\Concurrent\Worker;
+
+use Amp;
+use Amp\Concurrent\StatusError;
+use Amp\Coroutine;
+use Interop\Async\Awaitable;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -13,8 +14,7 @@ use Icicle\Coroutine\Coroutine;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-class DefaultPool implements Pool
-{
+class DefaultPool implements Pool {
     /**
      * @var bool Indicates if the pool is currently running.
      */
@@ -62,22 +62,21 @@ class DefaultPool implements Pool
      *     Defaults to `Pool::DEFAULT_MIN_SIZE`.
      * @param int|null $maxSize The maximum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
-     * @param \Icicle\Concurrent\Worker\WorkerFactory|null $factory A worker factory to be used to create
+     * @param \Amp\Concurrent\Worker\WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
-     * @throws \Icicle\Exception\InvalidArgumentError
+     * @throws \Error
      */
-    public function __construct(int $minSize = null, int $maxSize = null, WorkerFactory $factory = null)
-    {
+    public function __construct(int $minSize = null, int $maxSize = null, WorkerFactory $factory = null) {
         $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
         $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;
 
-        if (!is_int($minSize) || $minSize < 0) {
-            throw new InvalidArgumentError('Minimum size must be a non-negative integer.');
+        if ($minSize < 0) {
+            throw new \Error('Minimum size must be a non-negative integer.');
         }
 
-        if (!is_int($maxSize) || $maxSize < 0 || $maxSize < $minSize) {
-            throw new InvalidArgumentError('Maximum size must be a non-negative integer at least '.$minSize.'.');
+        if ($maxSize < 0 || $maxSize < $minSize) {
+            throw new \Error('Maximum size must be a non-negative integer at least '.$minSize.'.');
         }
 
         $this->maxSize = $maxSize;
@@ -86,13 +85,17 @@ class DefaultPool implements Pool
         // Use the global factory if none is given.
         $this->factory = $factory ?: factory();
 
-        $this->workers = new \SplObjectStorage();
-        $this->idleWorkers = new \SplQueue();
-        $this->busyQueue = new \SplQueue();
+        $this->workers = new \SplObjectStorage;
+        $this->idleWorkers = new \SplQueue;
+        $this->busyQueue = new \SplQueue;
 
-        $this->push = function (Worker $worker) {
-            $this->push($worker);
-        };
+        if (PHP_VERSION_ID >= 70100) {
+            $this->push = \Closure::fromCallable([$this, 'push']);
+        } else {
+            $this->push = function (Worker $worker) {
+                $this->push($worker);
+            };
+        }
     }
 
     /**
@@ -100,8 +103,7 @@ class DefaultPool implements Pool
      *
      * @return bool True if the pool is running, otherwise false.
      */
-    public function isRunning(): bool
-    {
+    public function isRunning(): bool {
         return $this->running;
     }
 
@@ -110,32 +112,28 @@ class DefaultPool implements Pool
      *
      * @return bool True if the pool has at least one idle worker, otherwise false.
      */
-    public function isIdle(): bool
-    {
+    public function isIdle(): bool {
         return $this->idleWorkers->count() > 0;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getMinSize(): int
-    {
+    public function getMinSize(): int {
         return $this->minSize;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getMaxSize(): int
-    {
+    public function getMaxSize(): int {
         return $this->maxSize;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getWorkerCount(): int
-    {
+    public function getWorkerCount(): int {
         return $this->workers->count();
     }
 
@@ -153,8 +151,7 @@ class DefaultPool implements Pool
      * When the worker pool starts up, the minimum number of workers will be created. This adds some overhead to
      * starting the pool, but allows for greater performance during runtime.
      */
-    public function start()
-    {
+    public function start() {
         if ($this->isRunning()) {
             throw new StatusError('The worker pool has already been started.');
         }
@@ -176,17 +173,31 @@ class DefaultPool implements Pool
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \Generator
+     * @return \Interop\Async\Awaitable<mixed> The return value of Task::run().
      *
-     * @resolve mixed The return value of the task.
-     *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
-     * @throws \Icicle\Concurrent\Exception\TaskException If the task throws an exception.
+     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
+     * @throws \Amp\Concurrent\TaskException If the task throws an exception.
      */
-    public function enqueue(Task $task): \Generator
-    {
+    public function enqueue(Task $task): Awaitable {
         $worker = $this->get();
-        return yield from $worker->enqueue($task);
+        return $worker->enqueue($task);
+    }
+
+    /**
+     * Shuts down the pool and all workers in it.
+     *
+     * @coroutine
+     *
+     * @return \Interop\Async\Awaitable<int[]> Array of exit status from all workers.
+     *
+     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
+     */
+    public function shutdown(): Awaitable {
+        if (!$this->isRunning()) {
+            throw new StatusError('The pool is not running.');
+        }
+        
+        return new Coroutine($this->doShutdown());
     }
 
     /**
@@ -196,34 +207,26 @@ class DefaultPool implements Pool
      *
      * @return \Generator
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the pool has not been started.
+     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
      */
-    public function shutdown(): \Generator
-    {
-        if (!$this->isRunning()) {
-            throw new StatusError('The pool is not running.');
-        }
-
+    private function doShutdown(): \Generator {
         $this->running = false;
 
         $shutdowns = [];
 
         foreach ($this->workers as $worker) {
             if ($worker->isRunning()) {
-                $shutdowns[] = new Coroutine($worker->shutdown());
+                $shutdowns[] = $worker->shutdown();
             }
         }
 
-        return yield Awaitable\reduce($shutdowns, function ($carry, $value) {
-            return $carry ?: $value;
-        }, 0);
+        return yield Amp\all($shutdowns);
     }
 
     /**
      * Kills all workers in the pool and halts the worker pool.
      */
-    public function kill()
-    {
+    public function kill() {
         $this->running = false;
 
         foreach ($this->workers as $worker) {
@@ -236,8 +239,7 @@ class DefaultPool implements Pool
      *
      * @return Worker The worker created.
      */
-    private function createWorker()
-    {
+    private function createWorker() {
         $worker = $this->factory->create();
         $worker->start();
 
@@ -248,10 +250,9 @@ class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function get(): Worker
-    {
+    public function get(): Worker {
         if (!$this->isRunning()) {
-            throw new StatusError('The queue is not running.');
+            throw new StatusError("The queue is not running");
         }
 
         do {
@@ -284,16 +285,13 @@ class DefaultPool implements Pool
     /**
      * Pushes the worker back into the queue.
      *
-     * @param \Icicle\Concurrent\Worker\Worker $worker
+     * @param \Amp\Concurrent\Worker\Worker $worker
      *
-     * @throws \Icicle\Exception\InvalidArgumentError If the worker was not part of this queue.
+     * @throws \Error If the worker was not part of this queue.
      */
-    private function push(Worker $worker)
-    {
+    private function push(Worker $worker) {
         if (!$this->workers->contains($worker)) {
-            throw new InvalidArgumentError(
-                'The provided worker was not part of this queue.'
-            );
+            throw new \Error("The provided worker was not part of this queue");
         }
 
         if (0 === ($this->workers[$worker] -= 1)) {

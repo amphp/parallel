@@ -1,15 +1,14 @@
 <?php
-namespace Icicle\Concurrent\Process;
 
-use Icicle\Awaitable\Delayed;
-use Icicle\Concurrent\Exception\{ProcessException, StatusError};
-use Icicle\Concurrent\Process as ProcessContext;
-use Icicle\Loop;
-use Icicle\Stream\Pipe\{ReadablePipe, WritablePipe};
-use Icicle\Stream\{ReadableStream, WritableStream};
+namespace Amp\Concurrent\Process;
 
-class Process implements ProcessContext
-{
+use Amp\Deferred;
+use Amp\Concurrent\{ ContextException, Process as ProcessContext, StatusError };
+use Amp\Socket\Socket;
+use Amp\Stream\Stream;
+use Interop\Async\{ Awaitable, Loop };
+
+class Process implements ProcessContext {
     /**
      * @var resource|null
      */
@@ -36,17 +35,17 @@ class Process implements ProcessContext
     private $options;
 
     /**
-     * @var \Icicle\Stream\Pipe\WritablePipe|null
+     * @var \Amp\Stream\Stream|null
      */
     private $stdin;
 
     /**
-     * @var \Icicle\Stream\Pipe\ReadablePipe|null
+     * @var \Amp\Stream\Stream|null
      */
     private $stdout;
 
     /**
-     * @var \Icicle\Stream\Pipe\ReadablePipe|null
+     * @var \Amp\Stream\Stream|null
      */
     private $stderr;
 
@@ -61,14 +60,14 @@ class Process implements ProcessContext
     private $oid = 0;
 
     /**
-     * @var \Icicle\Awaitable\Delayed|null
+     * @var \Amp\Deferred|null
      */
-    private $delayed;
+    private $deferred;
 
     /**
-     * @var \Icicle\Loop\Watcher\Io|null
+     * @var string
      */
-    private $poll;
+    private $watcher;
 
     /**
      * @param   string $command Command to run.
@@ -77,8 +76,7 @@ class Process implements ProcessContext
      * @param   mixed[] $env Environment variables or use an empty array to inherit from the current PHP process.
      * @param   mixed[] $options Options for proc_open().
      */
-    public function __construct(string $command, string $cwd = '', array $env = [], array $options = [])
-    {
+    public function __construct(string $command, string $cwd = '', array $env = [], array $options = []) {
         $this->command = $command;
 
         if ('' !== $cwd) {
@@ -86,7 +84,7 @@ class Process implements ProcessContext
         }
 
         foreach ($env as $key => $value) {
-            if (!is_array($value)) { // $env cannot accept array values.
+            if (!\is_array($value)) { // $env cannot accept array values.
                 $this->env[(string) $key] = (string) $value;
             }
         }
@@ -97,9 +95,8 @@ class Process implements ProcessContext
     /**
      * Stops the process if it is still running.
      */
-    public function __destruct()
-    {
-        if (getmypid() === $this->oid) {
+    public function __destruct() {
+        if (\getmypid() === $this->oid) {
             $this->kill(); // Will only terminate if the process is still running.
 
             if (null !== $this->stdin) {
@@ -119,11 +116,10 @@ class Process implements ProcessContext
     /**
      * Resets process values.
      */
-    public function __clone()
-    {
+    public function __clone() {
         $this->process = null;
-        $this->delayed = null;
-        $this->poll = null;
+        $this->deferred = null;
+        $this->watcher = null;
         $this->pid = 0;
         $this->oid = 0;
         $this->stdin = null;
@@ -132,16 +128,15 @@ class Process implements ProcessContext
     }
 
     /**
-     * @throws \Icicle\Concurrent\Exception\ProcessException If starting the process fails.
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process is already running.
+     * @throws \Amp\Concurrent\ContextException If starting the process fails.
+     * @throws \Amp\Concurrent\StatusError If the process is already running.
      */
-    public function start()
-    {
-        if (null !== $this->delayed) {
+    public function start() {
+        if (null !== $this->deferred) {
             throw new StatusError('The process has already been started.');
         }
 
-        $this->delayed = new Delayed();
+        $this->deferred = new Deferred;
 
         $fd = [
             ['pipe', 'r'], // stdin
@@ -150,50 +145,49 @@ class Process implements ProcessContext
             ['pipe', 'w'], // exit code pipe
         ];
 
-        $nd = 0 === strncasecmp(PHP_OS, 'WIN', 3) ? 'NUL' : '/dev/null';
+        $nd = 0 === \strncasecmp(PHP_OS, 'WIN', 3) ? 'NUL' : '/dev/null';
 
-        $command = sprintf('(%s) 3>%s; code=$?; echo $code >&3; exit $code', $this->command, $nd);
+        $command = \sprintf('(%s) 3>%s; code=$?; echo $code >&3; exit $code', $this->command, $nd);
 
-        $this->process = proc_open($command, $fd, $pipes, $this->cwd ?: null, $this->env ?: null, $this->options);
+        $this->process = \proc_open($command, $fd, $pipes, $this->cwd ?: null, $this->env ?: null, $this->options);
 
-        if (!is_resource($this->process)) {
-            throw new ProcessException('Could not start process.');
+        if (!\is_resource($this->process)) {
+            throw new ContextException('Could not start process.');
         }
 
-        $this->oid = getmypid();
-
-        $status = proc_get_status($this->process);
+        $this->oid = \getmypid();
+        $status = \proc_get_status($this->process);
 
         if (!$status) {
-            proc_close($this->process);
+            \proc_close($this->process);
             $this->process = null;
-            throw new ProcessException('Could not get process status.');
+            throw new ContextException('Could not get process status.');
         }
 
         $this->pid = $status['pid'];
 
-        $this->stdin = new WritablePipe($pipes[0]);
-        $this->stdout = new ReadablePipe($pipes[1]);
-        $this->stderr = new ReadablePipe($pipes[2]);
+        $this->stdin = new Socket($pipes[0]);
+        $this->stdout = new Socket($pipes[1]);
+        $this->stderr = new Socket($pipes[2]);
 
         $stream = $pipes[3];
-        stream_set_blocking($stream, 0);
+        \stream_set_blocking($stream, false);
 
-        $this->poll = Loop\poll($stream, function ($resource) {
-            if (!is_resource($resource) || feof($resource)) {
+        $this->watcher = Loop::onReadable($stream, function ($watcher, $resource) {
+            if (!\is_resource($resource) || \feof($resource)) {
                 $this->close($resource);
-                $this->delayed->reject(new ProcessException('Process ended unexpectedly.'));
+                $this->deferred->fail(new ContextException('Process ended unexpectedly.'));
             } else {
-                $code = fread($resource, 1);
+                $code = \fread($resource, 1);
                 $this->close($resource);
-                if (!strlen($code) || !is_numeric($code)) {
-                    $this->delayed->reject(new ProcessException('Process ended without providing a status code.'));
+                if (!\strlen($code) || !\is_numeric($code)) {
+                    $this->deferred->fail(new ContextException('Process ended without providing a status code.'));
                 } else {
-                    $this->delayed->resolve((int) $code);
+                    $this->deferred->resolve((int) $code);
                 }
             }
 
-            $this->poll->free();
+            Loop::cancel($this->watcher);
         });
     }
 
@@ -202,14 +196,13 @@ class Process implements ProcessContext
      *
      * @param resource $resource
      */
-    private function close($resource)
-    {
-        if (is_resource($resource)) {
-            fclose($resource);
+    private function close($resource) {
+        if (\is_resource($resource)) {
+            \fclose($resource);
         }
 
-        if (is_resource($this->process)) {
-            proc_close($this->process);
+        if (\is_resource($this->process)) {
+            \proc_close($this->process);
             $this->process = null;
         }
 
@@ -217,36 +210,34 @@ class Process implements ProcessContext
     }
 
     /**
-     * @coroutine
+     * @return \Interop\Async\Awaitable<int> Resolves with exit status.
      *
-     * @return \Generator
-     *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process has not been started.
+     * @throws \Amp\Concurrent\StatusError If the process has not been started.
      */
-    public function join(): \Generator
-    {
-        if (null === $this->delayed) {
+    public function join(): Awaitable {
+        if (null === $this->deferred) {
             throw new StatusError('The process has not been started.');
         }
 
-        $this->poll->listen();
+        Loop::enable($this->watcher);
 
-        try {
-            return yield $this->delayed;
-        } finally {
+        $awaitable = $this->deferred->getAwaitable();
+        
+        $awaitable->when(function () {
             $this->stdout->close();
             $this->stderr->close();
-        }
+        });
+        
+        return $awaitable;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
-        if (is_resource($this->process)) {
+    public function kill() {
+        if (\is_resource($this->process)) {
             // Forcefully kill the process using SIGKILL.
-            proc_terminate($this->process, 9);
+            \proc_terminate($this->process, 9);
 
             // "Detach" from the process and let it die asynchronously.
             $this->process = null;
@@ -258,15 +249,14 @@ class Process implements ProcessContext
      *
      * @param int $signo Signal number to send to process.
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
+     * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
-    public function signal(int $signo)
-    {
+    public function signal(int $signo) {
         if (!$this->isRunning()) {
             throw new StatusError('The process is not running.');
         }
 
-        proc_terminate($this->process, (int) $signo);
+        \proc_terminate($this->process, (int) $signo);
     }
 
     /**
@@ -275,8 +265,7 @@ class Process implements ProcessContext
      *
      * @return int
      */
-    public function getPid(): int
-    {
+    public function getPid(): int {
         return $this->pid;
     }
 
@@ -285,8 +274,7 @@ class Process implements ProcessContext
      *
      * @return string The command to execute.
      */
-    public function getCommand(): string
-    {
+    public function getCommand(): string {
         return $this->command;
     }
 
@@ -295,10 +283,9 @@ class Process implements ProcessContext
      *
      * @return string The current working directory or null if inherited from the current PHP process.
      */
-    public function getWorkingDirectory(): string
-    {
+    public function getWorkingDirectory(): string {
         if ('' === $this->cwd) {
-            return getcwd() ?: '';
+            return \getcwd() ?: '';
         }
 
         return $this->cwd;
@@ -309,8 +296,7 @@ class Process implements ProcessContext
      *
      * @return mixed[] Array of environment variables.
      */
-    public function getEnv(): array
-    {
+    public function getEnv(): array {
         return $this->env;
     }
 
@@ -329,20 +315,18 @@ class Process implements ProcessContext
      *
      * @return bool
      */
-    public function isRunning(): bool
-    {
-        return is_resource($this->process);
+    public function isRunning(): bool {
+        return \is_resource($this->process);
     }
 
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return \Icicle\Stream\WritableStream
+     * @return \Amp\Stream\Stream
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
+     * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
-    public function getStdIn(): WritableStream
-    {
+    public function getStdIn(): Stream {
         if (null === $this->stdin) {
             throw new StatusError('The process has not been started.');
         }
@@ -353,12 +337,11 @@ class Process implements ProcessContext
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return \Icicle\Stream\ReadableStream
+     * @return \Amp\Stream\Stream
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
+     * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
-    public function getStdOut(): ReadableStream
-    {
+    public function getStdOut(): Stream {
         if (null === $this->stdout) {
             throw new StatusError('The process has not been started.');
         }
@@ -369,12 +352,11 @@ class Process implements ProcessContext
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return \Icicle\Stream\ReadableStream
+     * @return \Amp\Stream\Stream
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError If the process is not running.
+     * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
-    public function getStdErr(): ReadableStream
-    {
+    public function getStdErr(): Stream {
         if (null === $this->stderr) {
             throw new StatusError('The process has not been started.');
         }

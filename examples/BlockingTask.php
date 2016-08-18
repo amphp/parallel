@@ -1,8 +1,8 @@
 <?php
-namespace Icicle\Examples\Concurrent;
+namespace Amp\Examples\Concurrent;
 
-use Icicle\Concurrent\Worker\Environment;
-use Icicle\Concurrent\Worker\Task;
+use Amp\Concurrent\Worker\Environment;
+use Amp\Concurrent\Worker\Task;
 
 class BlockingTask implements Task
 {

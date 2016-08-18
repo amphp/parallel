@@ -1,20 +1,20 @@
 <?php
-namespace Icicle\Concurrent\Threading\Internal;
 
-use Icicle\Concurrent\Exception\{ChannelException, SerializationException};
-use Icicle\Concurrent\Sync\{Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
-use Icicle\Coroutine\Coroutine;
-use Icicle\Loop;
-use Icicle\Stream\Pipe\DuplexPipe;
+namespace Amp\Concurrent\Threading\Internal;
+
+use Amp\Concurrent\{ChannelException, SerializationException};
+use Amp\Concurrent\Sync\{Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
+use Amp\Coroutine;
+use Amp\Socket\Socket;
+use Interop\Async\Awaitable;
 
 /**
  * An internal thread that executes a given function concurrently.
  *
  * @internal
  */
-class Thread extends \Thread
-{
-    const KILL_CHECK_FREQUENCY = 0.25;
+class Thread extends \Thread {
+    const KILL_CHECK_FREQUENCY = 250;
 
     /**
      * @var callable The function to execute in the thread.
@@ -43,8 +43,7 @@ class Thread extends \Thread
      * @param callable $function The function to execute in the thread.
      * @param mixed[]  $args     Arguments to pass to the function.
      */
-    public function __construct($socket, callable $function, array $args = [])
-    {
+    public function __construct($socket, callable $function, array $args = []) {
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
@@ -55,66 +54,77 @@ class Thread extends \Thread
      *
      * @codeCoverageIgnore Only executed in thread.
      */
-    public function run()
-    {
+    public function run() {
         /* First thing we need to do is re-initialize the class autoloader. If
          * we don't do this first, any object of a class that was loaded after
          * the thread started will just be garbage data and unserializable
          * values (like resources) will be lost. This happens even with
          * thread-safe objects.
          */
-        foreach (get_declared_classes() as $className) {
-            if (strpos($className, 'ComposerAutoloaderInit') === 0) {
-                // Calling getLoader() will register the class loader for us
-                $className::getLoader();
+        $paths = [
+            \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . 'autoload.php',
+            \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . 'vendor' . \DIRECTORY_SEPARATOR . 'autoload.php',
+        ];
+    
+        $autoloadPath = null;
+        foreach ($paths as $path) {
+            if (\file_exists($path)) {
+                $autoloadPath = $path;
                 break;
             }
         }
-
-        Loop\loop($loop = Loop\create(false)); // Disable signals in thread.
-
+    
+        if (null === $autoloadPath) {
+            echo 'Could not locate autoload.php.';
+            exit(1);
+        }
+    
+        require $autoloadPath;
+        
         // At this point, the thread environment has been prepared so begin using the thread.
 
         try {
-            $channel = new ChannelledStream(new DuplexPipe($this->socket, false));
+            \Amp\execute(function () {
+                try {
+                    $channel = new ChannelledStream(new Socket($this->socket, false));
+                } catch (\Throwable $exception) {
+                    return 1; // Parent has destroyed Thread object, so just exit.
+                }
+        
+                $watcher = \Amp\repeat(self::KILL_CHECK_FREQUENCY, function () {
+                    if ($this->killed) {
+                        \Amp\stop();
+                    }
+                });
+        
+                \Amp\unreference($watcher);
+        
+                return new Coroutine($this->execute($channel));
+            });
         } catch (\Throwable $exception) {
-            return; // Parent has destroyed Thread object, so just exit.
+            return 1;
         }
-
-        $coroutine = new Coroutine($this->execute($channel));
-        $coroutine->done();
-
-        $timer = $loop->timer(self::KILL_CHECK_FREQUENCY, true, function () use ($loop) {
-            if ($this->killed) {
-                $loop->stop();
-            }
-        });
-        $timer->unreference();
-
-        $loop->run();
+        
+        return 0;
     }
 
     /**
      * Sets a local variable to true so the running event loop can check for a kill signal.
      */
-    public function kill()
-    {
+    public function kill() {
         return $this->killed = true;
     }
 
     /**
      * @coroutine
      *
-     * @param \Icicle\Concurrent\Sync\Channel $channel
+     * @param \Amp\Concurrent\Sync\Channel $channel
      *
      * @return \Generator
      *
-     * @resolve int
-     *
      * @codeCoverageIgnore Only executed in thread.
      */
-    private function execute(Channel $channel): \Generator
-    {
+    private function execute(Channel $channel): \Generator {
         try {
             if ($this->function instanceof \Closure) {
                 $function = $this->function->bindTo($channel, Channel::class);
@@ -123,8 +133,18 @@ class Thread extends \Thread
             if (empty($function)) {
                 $function = $this->function;
             }
+    
+            $result = $function(...$this->args);
+            
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+            
+            if ($result instanceof Awaitable) {
+                $result = yield $result;
+            }
 
-            $result = new ExitSuccess(yield $function(...$this->args));
+            $result = new ExitSuccess($result);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
@@ -132,10 +152,10 @@ class Thread extends \Thread
         // Attempt to return the result.
         try {
             try {
-                return yield from $channel->send($result);
+                return yield $channel->send($result);
             } catch (SerializationException $exception) {
                 // Serializing the result failed. Send the reason why.
-                return yield from $channel->send(new ExitFailure($exception));
+                return yield $channel->send(new ExitFailure($exception));
             }
         } catch (ChannelException $exception) {
             // The result was not sendable! The parent context must have died or killed the context.

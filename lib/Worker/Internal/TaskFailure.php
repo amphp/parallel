@@ -1,10 +1,10 @@
 <?php
-namespace Icicle\Concurrent\Worker\Internal;
 
-use Icicle\Concurrent\Exception\TaskException;
+namespace Amp\Concurrent\Worker\Internal;
 
-class TaskFailure
-{
+use Amp\Concurrent\TaskException;
+
+class TaskFailure {
     /**
      * @var string
      */
@@ -25,8 +25,7 @@ class TaskFailure
      */
     private $trace;
 
-    public function __construct(\Throwable $exception)
-    {
+    public function __construct(\Throwable $exception) {
         $this->type = get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
@@ -36,8 +35,7 @@ class TaskFailure
     /**
      * {@inheritdoc}
      */
-    public function getException()
-    {
+    public function getException() {
         return new TaskException(
             sprintf('Uncaught exception in worker of type "%s" with message "%s"', $this->type, $this->message),
             $this->code,

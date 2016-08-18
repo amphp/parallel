@@ -1,8 +1,10 @@
 <?php
-namespace Icicle\Concurrent\Sync;
 
-use Icicle\Concurrent\Exception\MutexException;
-use Icicle\Coroutine;
+namespace Amp\Concurrent\Sync;
+
+use Amp\Concurrent\MutexException;
+use Amp\{ Coroutine, Pause };
+use Interop\Async\Awaitable;
 
 /**
  * A cross-platform mutex that uses exclusive files as the lock mechanism.
@@ -19,8 +21,7 @@ use Icicle\Coroutine;
  *
  * @see http://php.net/fopen
  */
-class FileMutex implements Mutex
-{
+class FileMutex implements Mutex {
     const LATENCY_TIMEOUT = 0.01; // 10 ms
 
     /**
@@ -33,27 +34,35 @@ class FileMutex implements Mutex
      */
     public function __construct()
     {
-        $this->fileName = tempnam(sys_get_temp_dir(), 'mutex-') . '.lock';
+        $this->fileName = \tempnam(\sys_get_temp_dir(), 'mutex-') . '.lock';
     }
 
     /**
      * {@inheritdoc}
      */
-    public function acquire(): \Generator
-    {
+    public function acquire(): Awaitable {
+        return new Coroutine($this->doAcquire());
+    }
+    
+    /**
+     * @coroutine
+     *
+     * @return \Generator
+     */
+    private function doAcquire(): \Generator {
         // Try to create the lock file. If the file already exists, someone else
         // has the lock, so set an asynchronous timer and try again.
-        while (($handle = @fopen($this->fileName, 'x')) === false) {
-            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
+        while (($handle = @\fopen($this->fileName, 'x')) === false) {
+            yield new Pause(self::LATENCY_TIMEOUT);
         }
-
+    
         // Return a lock object that can be used to release the lock on the mutex.
-        $lock = new Lock(function (Lock $lock) {
+        $lock = new Lock(function () {
             $this->release();
         });
-
-        fclose($handle);
-
+    
+        \fclose($handle);
+    
         return $lock;
     }
 
@@ -62,9 +71,8 @@ class FileMutex implements Mutex
      *
      * @throws MutexException If the unlock operation failed.
      */
-    protected function release()
-    {
-        $success = @unlink($this->fileName);
+    protected function release() {
+        $success = @\unlink($this->fileName);
 
         if (!$success) {
             throw new MutexException('Failed to unlock the mutex file.');

@@ -1,10 +1,10 @@
 <?php
-namespace Icicle\Concurrent\Worker;
 
-use Icicle\Loop;
+namespace Amp\Concurrent\Worker;
 
-class BasicEnvironment implements Environment
-{
+use Interop\Async\Loop;
+
+class BasicEnvironment implements Environment {
     /**
      * @var array
      */
@@ -26,16 +26,15 @@ class BasicEnvironment implements Environment
     private $queue;
 
     /**
-     * @var \Icicle\Loop\Watcher\Timer
+     * @var string
      */
     private $timer;
 
-    public function __construct()
-    {
-        $this->queue = new \SplPriorityQueue();
+    public function __construct() {
+        $this->queue = new \SplPriorityQueue;
 
-        $this->timer = Loop\periodic(1, function () {
-            $time = time();
+        $this->timer = Loop::repeat(1000, function () {
+            $time = \time();
             while (!$this->queue->isEmpty()) {
                 $key = $this->queue->top();
 
@@ -51,12 +50,12 @@ class BasicEnvironment implements Environment
             }
 
             if ($this->queue->isEmpty()) {
-                $this->timer->stop();
+                Loop::disable($this->timer);
             }
         });
-
-        $this->timer->stop();
-        $this->timer->unreference();
+    
+        Loop::disable($this->timer);
+        Loop::unreference($this->timer);
     }
 
     /**
@@ -64,8 +63,7 @@ class BasicEnvironment implements Environment
      *
      * @return bool
      */
-    public function exists(string $key): bool
-    {
+    public function exists(string $key): bool {
         return isset($this->data[$key]);
     }
 
@@ -74,8 +72,7 @@ class BasicEnvironment implements Environment
      *
      * @return mixed|null Returns null if the key does not exist.
      */
-    public function get(string $key)
-    {
+    public function get(string $key) {
         if (isset($this->ttl[$key]) && 0 !== $this->ttl[$key]) {
             $this->expire[$key] = time() + $this->ttl[$key];
             $this->queue->insert($key, -$this->expire[$key]);
@@ -89,8 +86,7 @@ class BasicEnvironment implements Environment
      * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
      */
-    public function set(string $key, $value, int $ttl = 0)
-    {
+    public function set(string $key, $value, int $ttl = 0) {
         if (null === $value) {
             $this->delete($key);
             return;
@@ -106,9 +102,7 @@ class BasicEnvironment implements Environment
             $this->expire[$key] = time() + $ttl;
             $this->queue->insert($key, -$this->expire[$key]);
 
-            if (!$this->timer->isPending()) {
-                $this->timer->start();
-            }
+            Loop::enable($this->timer);
         } else {
             unset($this->expire[$key], $this->ttl[$key]);
         }
@@ -119,8 +113,7 @@ class BasicEnvironment implements Environment
     /**
      * @param string $key
      */
-    public function delete(string $key)
-    {
+    public function delete(string $key) {
         $key = (string) $key;
         unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
     }
@@ -132,8 +125,7 @@ class BasicEnvironment implements Environment
      *
      * @return bool
      */
-    public function offsetExists($key)
-    {
+    public function offsetExists($key) {
         return $this->exists($key);
     }
 
@@ -144,8 +136,7 @@ class BasicEnvironment implements Environment
      *
      * @return mixed
      */
-    public function offsetGet($key)
-    {
+    public function offsetGet($key) {
         return $this->get($key);
     }
 
@@ -155,8 +146,7 @@ class BasicEnvironment implements Environment
      * @param string $key
      * @param mixed $value
      */
-    public function offsetSet($key, $value)
-    {
+    public function offsetSet($key, $value) {
         $this->set($key, $value);
     }
 
@@ -165,29 +155,26 @@ class BasicEnvironment implements Environment
      *
      * @param string $key
      */
-    public function offsetUnset($key)
-    {
+    public function offsetUnset($key) {
         $this->delete($key);
     }
 
     /**
      * @return int
      */
-    public function count(): int
-    {
+    public function count(): int {
         return count($this->data);
     }
 
     /**
      * Removes all values.
      */
-    public function clear()
-    {
+    public function clear() {
         $this->data = [];
         $this->expire = [];
         $this->ttl = [];
 
-        $this->timer->stop();
+        Loop::disable($this->timer);
         $this->queue = new \SplPriorityQueue();
     }
 }

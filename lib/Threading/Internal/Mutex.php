@@ -1,34 +1,42 @@
 <?php
-namespace Icicle\Concurrent\Threading\Internal;
 
-use Icicle\Concurrent\Sync\Lock;
-use Icicle\Coroutine;
+namespace Amp\Concurrent\Threading\Internal;
+
+use Amp\Concurrent\Sync\Lock;
+use Amp\Coroutine;
+use Amp\Pause;
+use Interop\Async\Awaitable;
 
 /**
  * @internal
  */
-class Mutex extends \Threaded
-{
-    const LATENCY_TIMEOUT = 0.01; // 10 ms
+class Mutex extends \Threaded {
+    const LATENCY_TIMEOUT =  10;
 
     /**
      * @var bool
      */
     private $lock = true;
-
+    
+    /**
+     * @return \Interop\Async\Awaitable
+     */
+    public function acquire(): Awaitable {
+        return new Coroutine($this->doAcquire());
+    }
+    
     /**
      * Attempts to acquire the lock and sleeps for a time if the lock could not be acquired.
      *
      * @return \Generator
      */
-    public function acquire(): \Generator
-    {
+    public function doAcquire(): \Generator {
         $tsl = function () {
             return ($this->lock ? $this->lock = false : true);
         };
 
         while (!$this->lock || $this->synchronized($tsl)) {
-            yield from Coroutine\sleep(self::LATENCY_TIMEOUT);
+            yield new Pause(self::LATENCY_TIMEOUT);
         }
 
         return new Lock(function () {
@@ -39,8 +47,7 @@ class Mutex extends \Threaded
     /**
      * Releases the lock.
      */
-    protected function release()
-    {
+    protected function release() {
         $this->lock = true;
     }
 }

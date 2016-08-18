@@ -2,43 +2,45 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Icicle\Awaitable;
-use Icicle\Concurrent\Worker\DefaultPool;
-use Icicle\Coroutine;
-use Icicle\Examples\Concurrent\BlockingTask;
-use Icicle\Loop;
+use Amp\Concurrent\Worker\DefaultPool;
+use Amp\Coroutine;
+use Amp\Examples\Concurrent\BlockingTask;
 
-Coroutine\create(function() {
+Amp\execute(function() {
+    $timer = Amp\repeat(100, function () {
+        printf(".\n");
+    });
+    Amp\unreference($timer);
+    
     $pool = new DefaultPool();
     $pool->start();
 
     $coroutines = [];
 
-    $coroutines[] = Coroutine\create(function () use ($pool) {
+    $coroutines[] = function () use ($pool) {
         $url = 'https://google.com';
-        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
+        $result = yield $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
-    });
+    };
 
-    $coroutines[] = Coroutine\create(function () use ($pool) {
-        $url = 'https://icicle.io';
-        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
+    $coroutines[] = function () use ($pool) {
+        $url = 'http://amphp.org';
+        $result = yield $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
-    });
+    };
 
-    $coroutines[] = Coroutine\create(function () use ($pool) {
+    $coroutines[] = function () use ($pool) {
         $url = 'https://github.com';
-        $result = yield from $pool->enqueue(new BlockingTask('file_get_contents', $url));
+        $result = yield $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
-    });
+    };
+    
+    $coroutines = array_map(function (callable $coroutine): Coroutine {
+        return new Coroutine($coroutine());
+    }, $coroutines);
 
-    yield Awaitable\all($coroutines);
+    yield Amp\all($coroutines);
 
-    return yield from $pool->shutdown();
-})->done();
+    return yield $pool->shutdown();
+});
 
-Loop\periodic(0.1, function () {
-    printf(".\n");
-})->unreference();
-
-Loop\run();

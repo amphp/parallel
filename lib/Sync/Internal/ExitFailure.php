@@ -1,10 +1,10 @@
 <?php
-namespace Icicle\Concurrent\Sync\Internal;
 
-use Icicle\Concurrent\Exception\PanicError;
+namespace Amp\Concurrent\Sync\Internal;
 
-class ExitFailure implements ExitStatus
-{
+use Amp\Concurrent\PanicError;
+
+class ExitFailure implements ExitStatus {
     /**
      * @var string
      */
@@ -25,8 +25,7 @@ class ExitFailure implements ExitStatus
      */
     private $trace;
 
-    public function __construct(\Throwable $exception)
-    {
+    public function __construct(\Throwable $exception) {
         $this->type = get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
@@ -36,10 +35,9 @@ class ExitFailure implements ExitStatus
     /**
      * {@inheritdoc}
      */
-    public function getResult()
-    {
+    public function getResult() {
         throw new PanicError(
-            sprintf(
+            \sprintf(
                 'Uncaught exception in execution context of type "%s" with message "%s"',
                 $this->type,
                 $this->message

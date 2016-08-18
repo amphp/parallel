@@ -1,19 +1,19 @@
 <?php
-namespace Icicle\Concurrent\Worker;
 
-use Icicle\Awaitable\Delayed;
-use Icicle\Concurrent\Strand;
-use Icicle\Concurrent\Exception\{StatusError, WorkerException};
-use Icicle\Concurrent\Worker\Internal\TaskFailure;
-use Icicle\Coroutine\Coroutine;
+namespace Amp\Concurrent\Worker;
+
+use Amp\Concurrent\{ StatusError, Strand, WorkerException} ;
+use Amp\Concurrent\Worker\Internal\TaskFailure;
+use Amp\Coroutine;
+use Amp\Deferred;
+use Interop\Async\Awaitable;
 
 /**
  * Base class for most common types of task workers.
  */
-abstract class AbstractWorker implements Worker
-{
+abstract class AbstractWorker implements Worker {
     /**
-     * @var \Icicle\Concurrent\Strand
+     * @var \Amp\Concurrent\Strand
      */
     private $context;
 
@@ -23,7 +23,7 @@ abstract class AbstractWorker implements Worker
     private $shutdown = false;
 
     /**
-     * @var \Icicle\Coroutine\Coroutine
+     * @var \Amp\Coroutine
      */
     private $active;
 
@@ -33,56 +33,65 @@ abstract class AbstractWorker implements Worker
     private $busyQueue;
 
     /**
-     * @param \Icicle\Concurrent\Strand $strand
+     * @param \Amp\Concurrent\Strand $strand
      */
-    public function __construct(Strand $strand)
-    {
+    public function __construct(Strand $strand) {
         $this->context = $strand;
-        $this->busyQueue = new \SplQueue();
+        $this->busyQueue = new \SplQueue;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool
-    {
+    public function isRunning(): bool {
         return $this->context->isRunning();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isIdle(): bool
-    {
+    public function isIdle(): bool {
         return null === $this->active;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function start()
-    {
+    public function start() {
         $this->context->start();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task): \Generator
-    {
+    public function enqueue(Task $task): Awaitable {
         if (!$this->context->isRunning()) {
             throw new StatusError('The worker has not been started.');
         }
-
+    
         if ($this->shutdown) {
             throw new StatusError('The worker has been shut down.');
         }
+    
+        return new Coroutine($this->doEnqueue($task));
+    }
 
+    /**
+     * @coroutine
+     *
+     * @param \Amp\Concurrent\Worker\Task $task
+     *
+     * @return \Generator
+     * @throws \Amp\Concurrent\StatusError
+     * @throws \Amp\Concurrent\TaskException
+     * @throws \Amp\Concurrent\WorkerException
+     */
+    private function doEnqueue(Task $task): \Generator {
         // If the worker is currently busy, store the task in a busy queue.
         if (null !== $this->active) {
-            $delayed = new Delayed();
-            $this->busyQueue->enqueue($delayed);
-            yield $delayed;
+            $deferred = new Deferred;
+            $this->busyQueue->enqueue($deferred);
+            yield $deferred->getAwaitable();
         }
 
         $this->active = new Coroutine($this->send($task));
@@ -111,23 +120,28 @@ abstract class AbstractWorker implements Worker
     /**
      * @coroutine
      *
-     * @param \Icicle\Concurrent\Worker\Task $task
+     * @param \Amp\Concurrent\Worker\Task $task
      *
      * @return \Generator
      *
      * @resolve mixed
      */
-    private function send(Task $task): \Generator
-    {
-        yield from $this->context->send($task);
-        return yield from $this->context->receive();
+    private function send(Task $task): \Generator {
+        yield $this->context->send($task);
+        return yield $this->context->receive();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): \Generator
-    {
+    public function shutdown(): Awaitable {
+        return new Coroutine($this->doShutdown());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    private function doShutdown(): \Generator {
         if (!$this->context->isRunning() || $this->shutdown) {
             throw new StatusError('The worker is not running.');
         }
@@ -146,15 +160,14 @@ abstract class AbstractWorker implements Worker
             }
         }
 
-        yield from $this->context->send(0);
-        return yield from $this->context->join();
+        yield $this->context->send(0);
+        return yield $this->context->join();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
+    public function kill() {
         $this->cancelPending();
         $this->context->kill();
     }
@@ -162,13 +175,12 @@ abstract class AbstractWorker implements Worker
     /**
      * Cancels all pending tasks.
      */
-    private function cancelPending()
-    {
+    private function cancelPending() {
         if (!$this->busyQueue->isEmpty()) {
             $exception = new WorkerException('Worker was shut down.');
 
             do {
-                $this->busyQueue->dequeue()->cancel($exception);
+                $this->busyQueue->dequeue()->fail($exception);
             } while (!$this->busyQueue->isEmpty());
         }
     }

@@ -1,28 +1,33 @@
 <?php
-namespace Icicle\Concurrent\Forking;
 
-use Icicle\Concurrent\Exception\{ForkException, ChannelException, SerializationException, StatusError, SynchronizationError};
-use Icicle\Concurrent\{Process, Strand};
-use Icicle\Concurrent\Sync\{Channel, ChannelledStream};
-use Icicle\Concurrent\Sync\Internal\{ExitFailure, ExitStatus, ExitSuccess};
-use Icicle\Coroutine\Coroutine;
-use Icicle\Exception\{InvalidArgumentError, UnsupportedError};
-use Icicle\Loop;
-use Icicle\Stream;
-use Icicle\Stream\Pipe\DuplexPipe;
+namespace Amp\Concurrent\Forking;
+
+use Amp\Concurrent\{
+    ContextException,
+    ChannelException,
+    Process,
+    SerializationException,
+    StatusError,
+    Strand,
+    SynchronizationError
+};
+use Amp\Concurrent\Sync\{ Channel, ChannelledStream };
+use Amp\Concurrent\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
+use Amp\Coroutine;
+use Amp\Socket\Socket;
+use Interop\Async\Awaitable;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
-class Fork implements Process, Strand
-{
+class Fork implements Process, Strand {
     /**
-     * @var \Icicle\Concurrent\Sync\Channel A channel for communicating with the child.
+     * @var \Amp\Concurrent\Sync\Channel A channel for communicating with the child.
      */
     private $channel;
 
     /**
-     * @var \Icicle\Stream\Pipe\DuplexPipe
+     * @var \Amp\Socket\Socket
      */
     private $pipe;
 
@@ -51,9 +56,8 @@ class Fork implements Process, Strand
      *
      * @return bool True if forking is enabled, otherwise false.
      */
-    public static function enabled(): bool
-    {
-        return extension_loaded('pcntl');
+    public static function supported(): bool {
+        return \extension_loaded('pcntl');
     }
 
     /**
@@ -61,36 +65,32 @@ class Fork implements Process, Strand
      *
      * @param callable $function A callable to invoke in the process.
      *
-     * @return \Icicle\Concurrent\Forking\Fork The process object that was spawned.
+     * @return \Amp\Concurrent\Forking\Fork The process object that was spawned.
      */
-    public static function spawn(callable $function, ...$args): self
-    {
+    public static function spawn(callable $function, ...$args): self {
         $fork = new self($function, ...$args);
         $fork->start();
         return $fork;
     }
 
-    public function __construct(callable $function, ...$args)
-    {
-        if (!self::enabled()) {
-            throw new UnsupportedError("The pcntl extension is required to create forks.");
+    public function __construct(callable $function, ...$args) {
+        if (!self::supported()) {
+            throw new \Error("The pcntl extension is required to create forks.");
         }
 
         $this->function = $function;
         $this->args = $args;
     }
 
-    public function __clone()
-    {
+    public function __clone() {
         $this->pid = 0;
         $this->oid = 0;
         $this->pipe = null;
         $this->channel = null;
     }
 
-    public function __destruct()
-    {
-        if (0 !== $this->pid && posix_getpid() === $this->oid) { // Only kill in owner process.
+    public function __destruct() {
+        if (0 !== $this->pid && \posix_getpid() === $this->oid) { // Only kill in owner process.
             $this->kill(); // Will only terminate if the process is still running.
         }
     }
@@ -100,9 +100,8 @@ class Fork implements Process, Strand
      *
      * @return bool True if the context is running, otherwise false.
      */
-    public function isRunning(): bool
-    {
-        return 0 !== $this->pid && false !== posix_getpgid($this->pid);
+    public function isRunning(): bool {
+        return 0 !== $this->pid && false !== \posix_getpgid($this->pid);
     }
 
     /**
@@ -110,8 +109,7 @@ class Fork implements Process, Strand
      *
      * @return int The process ID.
      */
-    public function getPid(): int
-    {
+    public function getPid(): int {
         return $this->pid;
     }
 
@@ -125,15 +123,14 @@ class Fork implements Process, Strand
      *
      * @return float A priority value between 0 and 1.
      *
-     * @throws ForkException If the operation failed.
+     * @throws ContextException If the operation failed.
      *
      * @see Fork::setPriority()
      * @see http://linux.die.net/man/2/getpriority
      */
-    public function getPriority(): float
-    {
-        if (($nice = pcntl_getpriority($this->pid)) === false) {
-            throw new ForkException('Failed to get the fork\'s priority.');
+    public function getPriority(): float {
+        if (($nice = \pcntl_getpriority($this->pid)) === false) {
+            throw new ContextException('Failed to get the fork\'s priority.');
         }
 
         return (19 - $nice) / 39;
@@ -146,72 +143,61 @@ class Fork implements Process, Strand
      *
      * @param float $priority A priority value between 0 and 1.
      *
-     * @throws InvalidArgumentError If the given priority is an invalid value.
-     * @throws ForkException        If the operation failed.
+     * @throws \Error If the given priority is an invalid value.
+     * @throws ContextException        If the operation failed.
      *
      * @see Fork::getPriority()
      */
-    public function setPriority(float $priority): float
-    {
+    public function setPriority(float $priority): float {
         if ($priority < 0 || $priority > 1) {
-            throw new InvalidArgumentError('Priority value must be between 0.0 and 1.0.');
+            throw new \Error('Priority value must be between 0.0 and 1.0.');
         }
 
-        $nice = round(19 - ($priority * 39));
+        $nice = \round(19 - ($priority * 39));
 
-        if (!pcntl_setpriority($nice, $this->pid, PRIO_PROCESS)) {
-            throw new ForkException('Failed to set the fork\'s priority.');
+        if (!\pcntl_setpriority($nice, $this->pid, \PRIO_PROCESS)) {
+            throw new ContextException('Failed to set the fork\'s priority.');
         }
     }
 
     /**
      * Starts the context execution.
      *
-     * @throws \Icicle\Concurrent\Exception\ForkException If forking fails.
-     * @throws \Icicle\Stream\Exception\FailureException If creating a socket pair fails.
+     * @throws \Amp\Concurrent\ContextException If forking fails.
+     * @throws \Amp\Socket\SocketException If creating a socket pair fails.
      */
-    public function start()
-    {
+    public function start() {
         if (0 !== $this->oid) {
             throw new StatusError('The context has already been started.');
         }
 
-        list($parent, $child) = Stream\pair();
+        list($parent, $child) = \Amp\Socket\pair();
 
-        switch ($pid = pcntl_fork()) {
+        switch ($pid = \pcntl_fork()) {
             case -1: // Failure
-                throw new ForkException('Could not fork process!');
+                throw new ContextException('Could not fork process!');
 
             case 0: // Child
                 // @codeCoverageIgnoreStart
-
-                // Create a new event loop in the fork.
-                Loop\loop($loop = Loop\create(false));
-
-                $channel = new ChannelledStream($pipe = new DuplexPipe($parent));
-                fclose($child);
-
-                $coroutine = new Coroutine($this->execute($channel));
-                $coroutine->done();
+                \fclose($child);
 
                 try {
-                    $loop->run();
+                    \Amp\execute(function () use ($parent) {
+                        $channel = new ChannelledStream(new Socket($parent));
+                        return new Coroutine($this->execute($channel));
+                    });
                     $code = 0;
                 } catch (\Throwable $exception) {
                     $code = 1;
                 }
-
-                $pipe->close();
-
+                
                 exit($code);
-
                 // @codeCoverageIgnoreEnd
-
             default: // Parent
                 $this->pid = $pid;
-                $this->oid = posix_getpid();
-                $this->channel = new ChannelledStream($this->pipe = new DuplexPipe($child));
-                fclose($parent);
+                $this->oid = \posix_getpid();
+                $this->channel = new ChannelledStream($this->pipe = new Socket($child));
+                \fclose($parent);
         }
     }
 
@@ -220,24 +206,33 @@ class Fork implements Process, Strand
      *
      * This method is run only on the child.
      *
-     * @param \Icicle\Concurrent\Sync\Channel $channel
+     * @param \Amp\Concurrent\Sync\Channel $channel
      *
      * @return \Generator
      *
      * @codeCoverageIgnore Only executed in the child.
      */
-    private function execute(Channel $channel): \Generator
-    {
+    private function execute(Channel $channel): \Generator {
         try {
             if ($this->function instanceof \Closure) {
                 $function = $this->function->bindTo($channel, Channel::class);
             }
-
+        
             if (empty($function)) {
                 $function = $this->function;
             }
-
-            $result = new ExitSuccess(yield $function(...$this->args));
+        
+            $result = $function(...$this->args);
+    
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+    
+            if ($result instanceof Awaitable) {
+                $result = yield $result;
+            }
+        
+            $result = new ExitSuccess($result);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
@@ -245,10 +240,10 @@ class Fork implements Process, Strand
         // Attempt to return the result.
         try {
             try {
-                return yield from $channel->send($result);
+                return yield $channel->send($result);
             } catch (SerializationException $exception) {
                 // Serializing the result failed. Send the reason why.
-                return yield from $channel->send(new ExitFailure($exception));
+                return yield $channel->send(new ExitFailure($exception));
             }
         } catch (ChannelException $exception) {
             // The result was not sendable! The parent context must have died or killed the context.
@@ -259,14 +254,13 @@ class Fork implements Process, Strand
     /**
      * {@inheritdoc}
      */
-    public function kill()
-    {
+    public function kill() {
         if ($this->isRunning()) {
             // Forcefully kill the process using SIGKILL.
-            posix_kill($this->pid, SIGKILL);
+            \posix_kill($this->pid, SIGKILL);
         }
 
-        if (null !== $this->pipe && $this->pipe->isOpen()) {
+        if (null !== $this->pipe && $this->pipe->isReadable()) {
             $this->pipe->close();
         }
 
@@ -278,87 +272,91 @@ class Fork implements Process, Strand
     /**
      * @param int $signo
      *
-     * @throws \Icicle\Concurrent\Exception\StatusError
+     * @throws \Amp\Concurrent\StatusError
      */
-    public function signal(int $signo)
-    {
+    public function signal(int $signo) {
         if (0 === $this->pid) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
-        posix_kill($this->pid, (int) $signo);
+        \posix_kill($this->pid, (int) $signo);
     }
 
     /**
-     * @coroutine
-     *
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Generator
+     * @return \Interop\Async\Awaitable<int>
      *
-     * @resolve mixed Resolved with the return or resolution value of the context once it has completed execution.
-     *
-     * @throws \Icicle\Concurrent\Exception\StatusError          Thrown if the context has not been started.
-     * @throws \Icicle\Concurrent\Exception\SynchronizationError Thrown if an exit status object is not received.
+     * @throws \Amp\Concurrent\StatusError          Thrown if the context has not been started.
+     * @throws \Amp\Concurrent\SynchronizationError Thrown if an exit status object is not received.
      */
-    public function join(): \Generator
-    {
+    public function join(): Awaitable {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
-
+        
+        return new Coroutine($this->doJoin());
+    }
+    
+    /**
+     * @coroutine
+     *
+     * @return \Generator
+     *
+     * @throws \Amp\Concurrent\SynchronizationError
+     */
+    private function doJoin(): \Generator {
         try {
-            $response = yield from $this->channel->receive();
-
+            $response = yield $this->channel->receive();
+        
             if (!$response instanceof ExitStatus) {
-                throw new SynchronizationError(sprintf(
+                throw new SynchronizationError(\sprintf(
                     'Did not receive an exit status from fork. Instead received data of type %s',
-                    is_object($response) ? get_class($response) : gettype($response)
+                    \is_object($response) ? \get_class($response) : \gettype($response)
                 ));
             }
-
+        
             return $response->getResult();
         } finally {
             $this->kill();
         }
     }
-
+    
     /**
      * {@inheritdoc}
      */
-    public function receive(): \Generator
-    {
+    public function receive(): Awaitable {
         if (null === $this->channel) {
-            throw new StatusError('The fork has not been started or has already finished.');
+            throw new StatusError('The process has not been started.');
         }
-
-        $data = yield from $this->channel->receive();
-
-        if ($data instanceof ExitStatus) {
-            $data = $data->getResult();
-            throw new SynchronizationError(sprintf(
-                'Fork unexpectedly exited with result of type: %s',
-                is_object($data) ? get_class($data) : gettype($data)
-            ));
-        }
-
-        return $data;
+        
+        return \Amp\pipe($this->channel->receive(), static function ($data) {
+            if ($data instanceof ExitStatus) {
+                $data = $data->getResult();
+                throw new SynchronizationError(\sprintf(
+                    'Forked process unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ));
+            }
+            
+            return $data;
+        });
     }
-
+    
+    
     /**
      * {@inheritdoc}
      */
-    public function send($data): \Generator
-    {
+    public function send($data): Awaitable {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
         if ($data instanceof ExitStatus) {
-            throw new InvalidArgumentError('Cannot send exit status objects.');
+            throw new \Error('Cannot send exit status objects.');
         }
 
-        return yield from $this->channel->send($data);
+        return $this->channel->send($data);
     }
 }

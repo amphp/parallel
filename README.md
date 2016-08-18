@@ -1,8 +1,8 @@
-# Concurrency for Icicle
+# Concurrency for Amp
 
 **True concurrency using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
-This library is a component for [Icicle](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Icicle components, this library uses [Coroutines](https://icicle.io/docs/manual/coroutines/) built from [Awaitables](https://icicle.io/docs/manual/awaitables/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
+This library is a component for [Amp](https://github.com/icicleio/icicle) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Amp components, this library uses [Coroutines](https://icicle.io/docs/manual/coroutines/) built from [Awaitables](https://icicle.io/docs/manual/awaitables/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
 [![Build Status](https://img.shields.io/travis/icicleio/concurrent/v1.x.svg?style=flat-square)](https://travis-ci.org/icicleio/concurrent)
 [![Coverage Status](https://img.shields.io/coveralls/icicleio/concurrent/v1.x.svg?style=flat-square)](https://coveralls.io/r/icicleio/concurrent)
@@ -54,7 +54,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 
 ### Development and Contributing
 
-Interested in contributing to Icicle? Please see our [contributing guidelines](https://github.com/icicleio/icicle/blob/master/CONTRIBUTING.md) in the [Icicle repository](https://github.com/icicleio/icicle).
+Interested in contributing to Amp? Please see our [contributing guidelines](https://github.com/icicleio/icicle/blob/master/CONTRIBUTING.md) in the [Amp repository](https://github.com/icicleio/icicle).
 
 Want to hack on the source? A [Vagrant](http://vagrantup.com) box is provided with the repository to give a common development environment for running concurrent threads and processes, and comes with a bunch of handy tools and scripts for testing and experimentation.
 

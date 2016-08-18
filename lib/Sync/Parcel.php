@@ -1,5 +1,6 @@
 <?php
-namespace Icicle\Concurrent\Sync;
+
+namespace Amp\Concurrent\Sync;
 
 /**
  * A parcel object for sharing data across execution contexts.
@@ -14,8 +15,7 @@ namespace Icicle\Concurrent\Sync;
  * methods to acquire a lock for exclusive access to the parcel first before
  * accessing the contained value.
  */
-interface Parcel extends Synchronizable
-{
+interface Parcel extends Synchronizable {
     /**
      * Unwraps the parcel and returns the value inside the parcel.
      *

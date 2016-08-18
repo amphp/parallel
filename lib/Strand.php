@@ -1,4 +1,5 @@
 <?php
-namespace Icicle\Concurrent;
+
+namespace Amp\Concurrent;
 
 interface Strand extends Context, Sync\Channel {}

@@ -1,8 +1,10 @@
 <?php
-namespace Icicle\Concurrent;
 
-interface Context
-{
+namespace Amp\Concurrent;
+
+use Interop\Async\Awaitable;
+
+interface Context {
     /**
      * @return bool
      */
@@ -19,11 +21,7 @@ interface Context
     public function kill();
 
     /**
-     * @coroutine
-     *
-     * @return \Generator
-     *
-     * @resolve mixed
+     * @return \Interop\Async\Awaitable<mixed> Resolves with the returned from the context.
      */
-    public function join(): \Generator;
+    public function join(): Awaitable;
 }
