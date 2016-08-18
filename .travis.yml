@@ -7,6 +7,11 @@ php:
 
 sudo: false
 
+matrix:
+  allow_failures:
+    - php: nightly
+  fast_finish: true
+
 install:
   - git clone https://github.com/krakjoe/pthreads.git;
     pushd pthreads;
