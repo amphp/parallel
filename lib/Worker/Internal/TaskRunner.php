@@ -2,17 +2,11 @@
 
 namespace Amp\Concurrent\Worker\Internal;
 
-use Amp\Concurrent\Sync\Channel;
-use Amp\Concurrent\Worker\{ Environment, Task };
-use Amp\Coroutine;
+use Amp\Concurrent\{ Sync\Channel, Worker\Environment };
+use Amp\{ Coroutine, Failure, Success };
 use Interop\Async\Awaitable;
 
 class TaskRunner {
-    /**
-     * @var bool
-     */
-    private $idle = true;
-
     /**
      * @var \Amp\Concurrent\Sync\Channel
      */
@@ -43,11 +37,11 @@ class TaskRunner {
      * @return \Generator
      */
     private function execute(): \Generator {
-        $task = yield $this->channel->receive();
+        $job = yield $this->channel->receive();
 
-        while ($task instanceof Task) {
-            $this->idle = false;
-
+        while ($job instanceof Job) {
+            $task = $job->getTask();
+            
             try {
                 $result = $task->run($this->environment);
                 
@@ -55,27 +49,26 @@ class TaskRunner {
                     $result = new Coroutine($result);
                 }
                 
-                if ($result instanceof Awaitable) {
-                    $result = yield $result;
+                if (!$result instanceof Awaitable) {
+                    $result = new Success($result);
                 }
             } catch (\Throwable $exception) {
-                $result = new TaskFailure($exception);
+                $result = new Failure($exception);
             }
+            
+            $result->when(function ($exception, $value) use ($job) {
+                if ($exception) {
+                    $result = new TaskFailure($job->getId(), $exception);
+                } else {
+                    $result = new TaskSuccess($job->getId(), $value);
+                }
+    
+                $this->channel->send($result);
+            });
 
-            yield $this->channel->send($result);
-
-            $this->idle = true;
-
-            $task = yield $this->channel->receive();
+            $job = yield $this->channel->receive();
         }
 
-        return $task;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isIdle(): bool {
-        return $this->idle;
+        return $job;
     }
 }
