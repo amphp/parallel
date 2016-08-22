@@ -7,8 +7,7 @@ use Interop\Async\Awaitable;
 /**
  * An object that can be synchronized for exclusive access across contexts.
  */
-interface Synchronizable
-{
+interface Synchronizable {
     /**
      * Asynchronously invokes a callback while maintaining an exclusive lock on the object.
      *

@@ -175,6 +175,6 @@ class BasicEnvironment implements Environment {
         $this->ttl = [];
 
         Loop::disable($this->timer);
-        $this->queue = new \SplPriorityQueue();
+        $this->queue = new \SplPriorityQueue;
     }
 }

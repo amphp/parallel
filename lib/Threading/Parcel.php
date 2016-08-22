@@ -33,7 +33,7 @@ class Parcel implements SyncParcel {
      * @param mixed $value
      */
     private function init($value) {
-        $this->mutex = new Mutex();
+        $this->mutex = new Mutex;
         $this->storage = new Internal\Storage($value);
     }
 

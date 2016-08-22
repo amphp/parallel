@@ -74,7 +74,7 @@ class Thread extends \Thread {
             }
         }
     
-        if (null === $autoloadPath) {
+        if ($autoloadPath === null) {
             throw new \Error('Could not locate autoload.php');
         }
     

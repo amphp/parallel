@@ -3,8 +3,7 @@
 namespace Amp\Concurrent\Threading\Internal;
 
 use Amp\Concurrent\Sync\Lock;
-use Amp\Coroutine;
-use Amp\Pause;
+use Amp\{ Coroutine, Pause };
 use Interop\Async\Awaitable;
 
 /**

@@ -137,7 +137,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
     private function doAcquire(): \Generator {
         do {
             // Attempt to acquire a lock from the semaphore.
-            if (@\msg_receive($this->queue, 0, $type, 1, $chr, false, MSG_IPC_NOWAIT, $errno)) {
+            if (@\msg_receive($this->queue, 0, $type, 1, $chr, false, \MSG_IPC_NOWAIT, $errno)) {
                 // A free lock was found, so resolve with a lock object that can
                 // be used to release the lock.
                 return new Lock(function (Lock $lock) {
@@ -146,7 +146,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
             }
 
             // Check for unusual errors.
-            if ($errno !== MSG_ENOMSG) {
+            if ($errno !== \MSG_ENOMSG) {
                 throw new SemaphoreException('Failed to acquire a lock.');
             }
         } while (yield new Pause(self::LATENCY_TIMEOUT, true));
@@ -206,7 +206,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
         // Call send in non-blocking mode. If the call fails because the queue
         // is full, then the number of locks configured is too large.
         if (!@\msg_send($this->queue, 1, "\0", false, false, $errno)) {
-            if ($errno === MSG_EAGAIN) {
+            if ($errno === \MSG_EAGAIN) {
                 throw new SemaphoreException('The semaphore size is larger than the system allows.');
             }
 

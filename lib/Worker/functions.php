@@ -17,7 +17,7 @@ function pool(Pool $pool = null): Pool {
     if (null !== $pool) {
         $instance = $pool;
     } elseif (null === $instance) {
-        $instance = new DefaultPool();
+        $instance = new DefaultPool;
     }
 
     if (!$instance->isRunning()) {
@@ -62,7 +62,7 @@ function factory(WorkerFactory $factory = null): WorkerFactory {
     if (null !== $factory) {
         $instance = $factory;
     } elseif (null === $instance) {
-        $instance = new DefaultWorkerFactory();
+        $instance = new DefaultWorkerFactory;
     }
 
     return $instance;

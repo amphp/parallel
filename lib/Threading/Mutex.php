@@ -27,7 +27,7 @@ class Mutex implements SyncMutex {
      * Initializes the mutex.
      */
     private function init() {
-        $this->mutex = new Internal\Mutex();
+        $this->mutex = new Internal\Mutex;
     }
 
     /**

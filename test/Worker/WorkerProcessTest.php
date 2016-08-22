@@ -6,6 +6,6 @@ use Amp\Concurrent\Worker\WorkerProcess;
 
 class WorkerProcessTest extends AbstractWorkerTest {
     protected function createWorker() {
-        return new WorkerProcess();
+        return new WorkerProcess;
     }
 }

@@ -293,7 +293,7 @@ class DefaultPool implements Pool {
             throw new \Error("The provided worker was not part of this queue");
         }
 
-        if (0 === ($this->workers[$worker] -= 1)) {
+        if (($this->workers[$worker] -= 1) === 0) {
             // Worker is completely idle, remove from busy queue and add to idle queue.
             foreach ($this->busyQueue as $key => $busy) {
                 if ($busy === $worker) {

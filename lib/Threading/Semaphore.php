@@ -39,9 +39,8 @@ class Semaphore implements SyncSemaphore {
      * @param int $locks
      */
     private function init(int $locks) {
-        $locks = (int) $locks;
         if ($locks < 1) {
-            $locks = 1;
+            throw new \Error("The number of locks should be a positive integer");
         }
 
         $this->semaphore = new Internal\Semaphore($locks);

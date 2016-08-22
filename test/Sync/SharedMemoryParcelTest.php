@@ -44,7 +44,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
     }
 
     public function testCloneIsNewObject() {
-        $object = new \stdClass();
+        $object = new \stdClass;
         $shared = new SharedMemoryParcel($object);
         $clone = clone $shared;
 

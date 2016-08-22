@@ -10,6 +10,6 @@ use Amp\Concurrent\Worker\WorkerThread;
  */
 class WorkerThreadTest extends AbstractWorkerTest {
     protected function createWorker() {
-        return new WorkerThread();
+        return new WorkerThread;
     }
 }

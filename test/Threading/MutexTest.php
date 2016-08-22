@@ -12,7 +12,7 @@ use Amp\Concurrent\Test\TestCase;
 class MutexTest extends TestCase {
     public function testAcquire() {
         \Amp\execute(function () {
-            $mutex = new Mutex();
+            $mutex = new Mutex;
             $lock = yield $mutex->acquire();
             $lock->release();
             $this->assertTrue($lock->isReleased());
@@ -23,7 +23,7 @@ class MutexTest extends TestCase {
     public function testAcquireMultiple() {
         $this->assertRunTimeGreaterThan(function () {
             \Amp\execute(function () {
-                $mutex = new Mutex();
+                $mutex = new Mutex;
 
                 $lock1 = yield $mutex->acquire();
                 \Amp\delay(500, function () use ($lock1) {

@@ -128,7 +128,7 @@ class Thread implements Strand {
      * @throws \Amp\Concurrent\ContextException If starting the thread was unsuccessful.
      */
     public function start() {
-        if (0 !== $this->oid) {
+        if ($this->oid !== 0) {
             throw new StatusError('The thread has already been started.');
         }
 
@@ -151,7 +151,7 @@ class Thread implements Strand {
      * @throws ContextException If killing the thread was unsuccessful.
      */
     public function kill() {
-        if (null !== $this->thread) {
+        if ($this->thread !== null) {
             try {
                 if ($this->thread->isRunning() && !$this->thread->kill()) {
                     throw new ContextException('Could not kill thread.');
@@ -166,7 +166,7 @@ class Thread implements Strand {
      * Closes channel and socket if still open.
      */
     private function close() {
-        if (null !== $this->pipe && $this->pipe->isReadable()) {
+        if ($this->pipe !== null && $this->pipe->isReadable()) {
             $this->pipe->close();
         }
 
@@ -188,7 +188,7 @@ class Thread implements Strand {
      * @throws SynchronizationError Thrown if an exit status object is not received.
      */
     public function join(): Awaitable {
-        if (null === $this->channel || null === $this->thread) {
+        if ($this->channel == null || $this->thread === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
         
@@ -227,7 +227,7 @@ class Thread implements Strand {
      * {@inheritdoc}
      */
     public function receive(): Awaitable {
-        if (null === $this->channel) {
+        if ($this->channel === null) {
             throw new StatusError('The process has not been started.');
         }
         
@@ -248,7 +248,7 @@ class Thread implements Strand {
      * {@inheritdoc}
      */
     public function send($data): Awaitable {
-        if (null === $this->channel) {
+        if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 

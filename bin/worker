@@ -6,11 +6,14 @@ use Amp\Concurrent\Sync\{ ChannelledStream, Internal\ExitFailure, Internal\ExitS
 use Amp\Concurrent\Worker\{ BasicEnvironment, Internal\TaskRunner };
 use Amp\Socket\Socket;
 
+@cli_set_process_title("amp-worker");
+error_reporting(E_ALL);
+
 // Redirect all output written using echo, print, printf, etc. to STDERR.
 ob_start(function ($data) {
     fwrite(STDERR, $data);
     return '';
-}, 1, 0);
+}, 1, PHP_OUTPUT_HANDLER_CLEANABLE | PHP_OUTPUT_HANDLER_FLUSHABLE);
 
 (function () {
     $paths = [
@@ -26,7 +29,7 @@ ob_start(function ($data) {
         }
     }
     
-    if (null === $autoloadPath) {
+    if ($autoloadPath === null) {
         fwrite(STDERR, 'Could not locate autoload.php.');
         exit(1);
     }

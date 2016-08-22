@@ -10,6 +10,6 @@ use Amp\Concurrent\Worker\WorkerFork;
  */
 class WorkerForkTest extends AbstractWorkerTest {
     protected function createWorker() {
-        return new WorkerFork();
+        return new WorkerFork;
     }
 }

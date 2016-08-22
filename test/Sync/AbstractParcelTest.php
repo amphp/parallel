@@ -21,7 +21,7 @@ abstract class AbstractParcelTest extends TestCase {
     }
 
     public function testUnwrapIsEqual() {
-        $object = new \stdClass();
+        $object = new \stdClass;
         $shared = $this->createParcel($object);
         $this->assertEquals($object, $shared->unwrap());
     }

@@ -79,7 +79,7 @@ class Process implements ProcessContext {
     public function __construct(string $command, string $cwd = '', array $env = [], array $options = []) {
         $this->command = $command;
 
-        if ('' !== $cwd) {
+        if ($cwd !== '') {
             $this->cwd = $cwd;
         }
 
@@ -98,16 +98,16 @@ class Process implements ProcessContext {
     public function __destruct() {
         if (\getmypid() === $this->oid) {
             $this->kill(); // Will only terminate if the process is still running.
-
-            if (null !== $this->stdin) {
+    
+            if ($this->stdin !== null) {
                 $this->stdin->close();
             }
-
-            if (null !== $this->stdout) {
+    
+            if ($this->stdout !== null) {
                 $this->stdout->close();
             }
-
-            if (null !== $this->stderr) {
+    
+            if ($this->stderr !== null) {
                 $this->stderr->close();
             }
         }
@@ -145,7 +145,7 @@ class Process implements ProcessContext {
             ['pipe', 'w'], // exit code pipe
         ];
 
-        $nd = 0 === \strncasecmp(PHP_OS, 'WIN', 3) ? 'NUL' : '/dev/null';
+        $nd = \strncasecmp(\PHP_OS, 'WIN', 3) === 0 ? 'NUL' : '/dev/null';
 
         $command = \sprintf('(%s) 3>%s; code=$?; echo $code >&3; exit $code', $this->command, $nd);
 
@@ -215,7 +215,7 @@ class Process implements ProcessContext {
      * @throws \Amp\Concurrent\StatusError If the process has not been started.
      */
     public function join(): Awaitable {
-        if (null === $this->deferred) {
+        if ($this->deferred === null) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -284,7 +284,7 @@ class Process implements ProcessContext {
      * @return string The current working directory or null if inherited from the current PHP process.
      */
     public function getWorkingDirectory(): string {
-        if ('' === $this->cwd) {
+        if ($this->cwd === '') {
             return \getcwd() ?: '';
         }
 
@@ -326,7 +326,7 @@ class Process implements ProcessContext {
      * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
     public function getStdIn(): Stream {
-        if (null === $this->stdin) {
+        if ($this->stdin === null) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -341,7 +341,7 @@ class Process implements ProcessContext {
      * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
     public function getStdOut(): Stream {
-        if (null === $this->stdout) {
+        if ($this->stdout === null) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -356,7 +356,7 @@ class Process implements ProcessContext {
      * @throws \Amp\Concurrent\StatusError If the process is not running.
      */
     public function getStdErr(): Stream {
-        if (null === $this->stderr) {
+        if ($this->stderr === null) {
             throw new StatusError('The process has not been started.');
         }
 

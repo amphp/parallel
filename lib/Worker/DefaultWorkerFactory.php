@@ -17,13 +17,13 @@ class DefaultWorkerFactory implements WorkerFactory {
      */
     public function create(): Worker {
         if (Thread::supported()) {
-            return new WorkerThread();
+            return new WorkerThread;
         }
 
         if (Fork::supported()) {
-            return new WorkerFork();
+            return new WorkerFork;
         }
 
-        return new WorkerProcess();
+        return new WorkerProcess;
     }
 }

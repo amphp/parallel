@@ -22,7 +22,7 @@ class SemaphoreTest extends AbstractSemaphoreTest {
             $thread1 = new Thread(function (SyncSemaphore $semaphore) {
                 $lock = yield $semaphore->acquire();
 
-                usleep(1e5);
+                usleep(100000);
 
                 $lock->release();
 
@@ -32,7 +32,7 @@ class SemaphoreTest extends AbstractSemaphoreTest {
             $thread2 = new Thread(function (SyncSemaphore $semaphore) {
                 $lock = yield $semaphore->acquire();
 
-                usleep(1e5);
+                usleep(100000);
 
                 $lock->release();
 

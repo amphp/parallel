@@ -37,7 +37,7 @@ class ChannelledStream implements Channel {
      * @param \Amp\Stream\Stream|null $write
      */
     public function __construct(Stream $read, Stream $write = null) {
-        if (null === $write) {
+        if ($write === null) {
             $this->write = $read;
         } else {
             $this->write = $write;

@@ -54,7 +54,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      * {@inheritdoc}
      */
     public function receive(): Awaitable {
-        if (null === $this->channel) {
+        if ($this->channel === null) {
             throw new StatusError('The process has not been started.');
         }
 
@@ -75,7 +75,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      * {@inheritdoc}
      */
     public function send($data): Awaitable {
-        if (null === $this->channel) {
+        if ($this->channel === null) {
             throw new StatusError('The process has not been started.');
         }
 
