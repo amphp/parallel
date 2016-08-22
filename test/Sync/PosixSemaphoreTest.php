@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Amp\Concurrent\Test\Sync;
 
@@ -62,7 +62,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
             $fork1 = new Fork(function (Semaphore $semaphore) {
                 $lock = yield $semaphore->acquire();
 
-                usleep(1e5);
+                usleep(100000);
 
                 $lock->release();
 
@@ -72,7 +72,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
             $fork2 = new Fork(function (Semaphore $semaphore) {
                 $lock = yield $semaphore->acquire();
 
-                usleep(1e5);
+                usleep(100000);
 
                 $lock->release();
 

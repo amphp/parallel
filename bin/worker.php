@@ -1,5 +1,5 @@
 #!/usr/bin/env php
-<?php
+<?php declare(strict_types = 1);
 
 use Amp\Concurrent\{ ChannelException, SerializationException} ;
 use Amp\Concurrent\Sync\{ ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };

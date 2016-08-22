@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Amp\Concurrent\Sync;
 
@@ -22,7 +22,7 @@ use Interop\Async\Awaitable;
  * @see http://php.net/fopen
  */
 class FileMutex implements Mutex {
-    const LATENCY_TIMEOUT = 0.01; // 10 ms
+    const LATENCY_TIMEOUT = 10;
 
     /**
      * @var string The full path to the lock file.

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Amp\Concurrent\Test\Sync;
 
@@ -34,7 +34,7 @@ abstract class AbstractParcelTest extends TestCase {
 
         $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(0, $value);
-            usleep(1e4);
+            usleep(10000);
             return 1;
         });
 
@@ -46,7 +46,7 @@ abstract class AbstractParcelTest extends TestCase {
 
         $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
-            usleep(1e4);
+            usleep(10000);
             return 2;
         });
 
