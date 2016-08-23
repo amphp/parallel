@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Worker;
+namespace Amp\Parallel\Test\Worker;
 
-use Amp\Concurrent\Worker\{ DefaultPool, WorkerFactory, WorkerProcess };
+use Amp\Parallel\Worker\{ DefaultPool, WorkerFactory, WorkerProcess };
 
 /**
  * @group process

@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test;
+namespace Amp\Parallel\Test;
 
-use Amp\Concurrent\Test\Stub\CallbackStub;
+use Amp\Parallel\Test\Stub\CallbackStub;
 
 /**
  * Abstract test class with methods for creating callbacks and asserting runtimes.

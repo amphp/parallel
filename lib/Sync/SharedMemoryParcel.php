@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
-use Amp\Concurrent\SharedMemoryException;
 use Amp\Coroutine;
+use Amp\Parallel\SharedMemoryException;
 use Interop\Async\Awaitable;
 
 /**
@@ -183,7 +183,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @return \Generator
      */
     private function doSynchronized(callable $callback): \Generator {
-        /** @var \Amp\Concurrent\Sync\Lock $lock */
+        /** @var \Amp\Parallel\Sync\Lock $lock */
         $lock = yield $this->semaphore->acquire();
         
         try {

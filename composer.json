@@ -1,6 +1,6 @@
 {
-    "name": "amphp/concurrent",
-    "description": "Concurrency component for Amp.",
+    "name": "amphp/parallel",
+    "description": "Parallel processing component for Amp.",
     "keywords": [
         "asynchronous",
         "async",
@@ -42,7 +42,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Amp\\Concurrent\\": "lib"
+            "Amp\\Parallel\\": "lib"
         },
         "files": [
             "lib/Worker/functions.php"
@@ -50,8 +50,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Concurrent\\Example\\": "examples",
-            "Amp\\Concurrent\\Test\\": "test"
+            "Amp\\Parallel\\Example\\": "examples",
+            "Amp\\Parallel\\Test\\": "test"
         }
     }
 }

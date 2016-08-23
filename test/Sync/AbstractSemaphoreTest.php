@@ -1,21 +1,21 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Sync\Lock;
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Sync\Lock;
+use Amp\Parallel\Test\TestCase;
 use Amp\Pause;
 
 abstract class AbstractSemaphoreTest extends TestCase {
     /**
-     * @var \Amp\Concurrent\Sync\Semaphore
+     * @var \Amp\Parallel\Sync\Semaphore
      */
     protected $semaphore;
 
     /**
      * @param int $locks Number of locks in the semaphore.
      *
-     * @return \Amp\Concurrent\Sync\Semaphore
+     * @return \Amp\Parallel\Sync\Semaphore
      */
     abstract public function createSemaphore(int $locks);
 

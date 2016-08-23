@@ -1,10 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading\Internal;
+namespace Amp\Parallel\Threading\Internal;
 
-use Amp\Concurrent\Sync\Lock;
-use Amp\Coroutine;
-use Amp\Pause;
+use Amp\{ Coroutine, Pause };
+use Amp\Parallel\Sync\Lock;
 use Interop\Async\Awaitable;
 
 /**

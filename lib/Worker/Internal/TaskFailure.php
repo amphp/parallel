@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker\Internal;
+namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Concurrent\TaskException;
 use Amp\Failure;
+use Amp\Parallel\TaskException;
 use Interop\Async\Awaitable;
 
 class TaskFailure implements TaskResult {

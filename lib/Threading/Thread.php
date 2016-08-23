@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading;
+namespace Amp\Parallel\Threading;
 
-use Amp\Concurrent\{ContextException, StatusError, SynchronizationError, Strand};
-use Amp\Concurrent\Sync\{ChannelledStream, Internal\ExitStatus};
 use Amp\Coroutine;
+use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
+use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitStatus };
 use Amp\Socket\Socket;
 use Interop\Async\Awaitable;
 
@@ -22,7 +22,7 @@ class Thread implements Strand {
     private $thread;
 
     /**
-     * @var \Amp\Concurrent\Sync\Channel A channel for communicating with the thread.
+     * @var \Amp\Parallel\Sync\Channel A channel for communicating with the thread.
      */
     private $channel;
 
@@ -104,7 +104,7 @@ class Thread implements Strand {
     /**
      * Kills the thread if it is still running.
      *
-     * @throws \Amp\Concurrent\ContextException
+     * @throws \Amp\Parallel\ContextException
      */
     public function __destruct() {
         if (\getmypid() === $this->oid) {
@@ -124,8 +124,8 @@ class Thread implements Strand {
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @throws \Amp\Concurrent\StatusError If the thread has already been started.
-     * @throws \Amp\Concurrent\ContextException If starting the thread was unsuccessful.
+     * @throws \Amp\Parallel\StatusError If the thread has already been started.
+     * @throws \Amp\Parallel\ContextException If starting the thread was unsuccessful.
      */
     public function start() {
         if ($this->oid !== 0) {
@@ -200,7 +200,7 @@ class Thread implements Strand {
      *
      * @return \Generator
      *
-     * @throws \Amp\Concurrent\SynchronizationError If the thread does not send an exit status.
+     * @throws \Amp\Parallel\SynchronizationError If the thread does not send an exit status.
      */
     private function doJoin(): \Generator {
         try {

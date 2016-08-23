@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
-use Amp\Concurrent\{ ChannelException, SerializationException };
 use Amp\Coroutine;
+use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Stream\Stream;
 use Interop\Async\Awaitable;
 

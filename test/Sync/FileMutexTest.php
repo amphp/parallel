@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Sync\FileMutex;
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Sync\FileMutex;
+use Amp\Parallel\Test\TestCase;
 
 class FileMutexTest extends TestCase {
     public function testAcquire() {

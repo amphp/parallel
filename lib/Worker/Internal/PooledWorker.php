@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker\Internal;
+namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Concurrent\Worker\{ Task, Worker };
+use Amp\Parallel\Worker\{ Task, Worker };
 use Interop\Async\Awaitable;
 
 class PooledWorker implements Worker {
@@ -12,12 +12,12 @@ class PooledWorker implements Worker {
     private $push;
 
     /**
-     * @var \Amp\Concurrent\Worker\Worker
+     * @var \Amp\Parallel\Worker\Worker
      */
     private $worker;
 
     /**
-     * @param \Amp\Concurrent\Worker\Worker $worker
+     * @param \Amp\Parallel\Worker\Worker $worker
      * @param callable $push Callable to push the worker back into the queue.
      */
     public function __construct(Worker $worker, callable $push) {

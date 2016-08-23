@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Worker;
+namespace Amp\Parallel\Test\Worker;
 
-use Amp\Concurrent\Worker\WorkerFork;
+use Amp\Parallel\Worker\WorkerFork;
 
 /**
  * @group forking

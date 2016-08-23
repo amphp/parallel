@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Threading;
+namespace Amp\Parallel\Test\Threading;
 
-use Amp\Concurrent\Threading\Thread;
-use Amp\Concurrent\Test\AbstractContextTest;
+use Amp\Parallel\Threading\Thread;
+use Amp\Parallel\Test\AbstractContextTest;
 
 /**
  * @group threading

@@ -1,9 +1,9 @@
 #!/usr/bin/env php
 <?php declare(strict_types = 1);
 
-use Amp\Concurrent\{ ChannelException, SerializationException} ;
-use Amp\Concurrent\Sync\{ ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };
-use Amp\Concurrent\Worker\{ BasicEnvironment, Internal\TaskRunner };
+use Amp\Parallel\{ ChannelException, SerializationException} ;
+use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };
+use Amp\Parallel\Worker\{ BasicEnvironment, Internal\TaskRunner };
 use Amp\Socket\Socket;
 
 @cli_set_process_title("amp-worker");

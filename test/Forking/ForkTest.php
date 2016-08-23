@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Forking;
+namespace Amp\Parallel\Test\Forking;
 
-use Amp\Concurrent\Forking\Fork;
-use Amp\Concurrent\Test\AbstractContextTest;
+use Amp\Parallel\Forking\Fork;
+use Amp\Parallel\Test\AbstractContextTest;
 
 /**
  * @group forking

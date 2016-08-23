@@ -1,5 +1,5 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent;
+namespace Amp\Parallel;
 
 class StatusError extends \Error {}

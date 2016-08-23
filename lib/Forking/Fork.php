@@ -1,8 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Forking;
+namespace Amp\Parallel\Forking;
 
-use Amp\Concurrent\{
+use Amp\Coroutine;
+use Amp\Parallel\{
     ContextException,
     ChannelException,
     Process,
@@ -11,9 +12,8 @@ use Amp\Concurrent\{
     Strand,
     SynchronizationError
 };
-use Amp\Concurrent\Sync\{ Channel, ChannelledStream };
-use Amp\Concurrent\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
-use Amp\Coroutine;
+use Amp\Parallel\Sync\{ Channel, ChannelledStream };
+use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
 use Amp\Socket\Socket;
 use Interop\Async\Awaitable;
 
@@ -22,7 +22,7 @@ use Interop\Async\Awaitable;
  */
 class Fork implements Process, Strand {
     /**
-     * @var \Amp\Concurrent\Sync\Channel A channel for communicating with the child.
+     * @var \Amp\Parallel\Sync\Channel A channel for communicating with the child.
      */
     private $channel;
 
@@ -65,7 +65,7 @@ class Fork implements Process, Strand {
      *
      * @param callable $function A callable to invoke in the process.
      *
-     * @return \Amp\Concurrent\Forking\Fork The process object that was spawned.
+     * @return \Amp\Parallel\Forking\Fork The process object that was spawned.
      */
     public static function spawn(callable $function, ...$args): self {
         $fork = new self($function, ...$args);
@@ -163,7 +163,7 @@ class Fork implements Process, Strand {
     /**
      * Starts the context execution.
      *
-     * @throws \Amp\Concurrent\ContextException If forking fails.
+     * @throws \Amp\Parallel\ContextException If forking fails.
      * @throws \Amp\Socket\SocketException If creating a socket pair fails.
      */
     public function start() {
@@ -206,7 +206,7 @@ class Fork implements Process, Strand {
      *
      * This method is run only on the child.
      *
-     * @param \Amp\Concurrent\Sync\Channel $channel
+     * @param \Amp\Parallel\Sync\Channel $channel
      *
      * @return \Generator
      *
@@ -272,7 +272,7 @@ class Fork implements Process, Strand {
     /**
      * @param int $signo
      *
-     * @throws \Amp\Concurrent\StatusError
+     * @throws \Amp\Parallel\StatusError
      */
     public function signal(int $signo) {
         if (0 === $this->pid) {
@@ -288,8 +288,8 @@ class Fork implements Process, Strand {
      *
      * @return \Interop\Async\Awaitable<int>
      *
-     * @throws \Amp\Concurrent\StatusError          Thrown if the context has not been started.
-     * @throws \Amp\Concurrent\SynchronizationError Thrown if an exit status object is not received.
+     * @throws \Amp\Parallel\StatusError          Thrown if the context has not been started.
+     * @throws \Amp\Parallel\SynchronizationError Thrown if an exit status object is not received.
      */
     public function join(): Awaitable {
         if (null === $this->channel) {
@@ -304,7 +304,7 @@ class Fork implements Process, Strand {
      *
      * @return \Generator
      *
-     * @throws \Amp\Concurrent\SynchronizationError
+     * @throws \Amp\Parallel\SynchronizationError
      */
     private function doJoin(): \Generator {
         try {

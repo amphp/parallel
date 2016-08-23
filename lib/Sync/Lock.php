@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
-use Amp\Concurrent\LockAlreadyReleasedError;
+use Amp\Parallel\LockAlreadyReleasedError;
 
 /**
  * A handle on an acquired lock from a synchronization object.

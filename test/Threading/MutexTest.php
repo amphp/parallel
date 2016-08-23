@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Threading;
+namespace Amp\Parallel\Test\Threading;
 
-use Amp\Concurrent\Threading\Mutex;
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Threading\Mutex;
+use Amp\Parallel\Test\TestCase;
 
 /**
  * @group threading

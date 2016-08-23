@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
-use Amp\Concurrent\MutexException;
 use Amp\{ Coroutine, Pause };
+use Amp\Parallel\MutexException;
 use Interop\Async\Awaitable;
 
 /**

@@ -2,8 +2,8 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Concurrent\Worker\DefaultWorkerFactory;
-use Amp\Concurrent\Example\BlockingTask;
+use Amp\Parallel\Worker\DefaultWorkerFactory;
+use Amp\Parallel\Example\BlockingTask;
 
 Amp\execute(function () {
     $factory = new DefaultWorkerFactory();

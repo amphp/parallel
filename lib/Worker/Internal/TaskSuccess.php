@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker\Internal;
+namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Success;
 use Interop\Async\Awaitable;

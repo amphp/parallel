@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Threading;
+namespace Amp\Parallel\Test\Threading;
 
-use Amp\Concurrent\Threading\Parcel;
-use Amp\Concurrent\Test\Sync\AbstractParcelTest;
+use Amp\Parallel\Threading\Parcel;
+use Amp\Parallel\Test\Sync\AbstractParcelTest;
 
 /**
  * @requires extension pthreads

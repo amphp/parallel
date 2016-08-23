@@ -1,14 +1,14 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test;
+namespace Amp\Parallel\Test;
 
-use Amp\Concurrent\Sync\Internal\ExitSuccess;
+use Amp\Parallel\Sync\Internal\ExitSuccess;
 
 abstract class AbstractContextTest extends TestCase {
     /**
      * @param callable $function
      *
-     * @return \Amp\Concurrent\Context
+     * @return \Amp\Parallel\Context
      */
     abstract public function createContext(callable $function);
 
@@ -43,7 +43,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\StatusError
+     * @expectedException \Amp\Parallel\StatusError
      */
     public function testStartWhileRunningThrowsError() {
         $context = $this->createContext(function () {
@@ -55,7 +55,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\StatusError
+     * @expectedException \Amp\Parallel\StatusError
      */
     public function testStartMultipleTimesThrowsError() {
         $this->assertRunTimeGreaterThan(function () {
@@ -74,7 +74,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\PanicError
+     * @expectedException \Amp\Parallel\PanicError
      */
     public function testExceptionInContextPanics() {
         \Amp\execute(function () {
@@ -88,7 +88,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\PanicError
+     * @expectedException \Amp\Parallel\PanicError
      */
     public function testReturnUnserializableDataPanics() {
         \Amp\execute(function () {
@@ -116,7 +116,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\StatusError
+     * @expectedException \Amp\Parallel\StatusError
      */
     public function testJoinWithoutStartThrowsError() {
         \Amp\execute(function () {
@@ -158,7 +158,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\SynchronizationError
+     * @expectedException \Amp\Parallel\SynchronizationError
      */
     public function testJoinWhenContextSendingData() {
         \Amp\execute(function () {
@@ -174,7 +174,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\StatusError
+     * @expectedException \Amp\Parallel\StatusError
      */
     public function testReceiveBeforeContextHasStarted() {
         \Amp\execute(function () {
@@ -189,7 +189,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\StatusError
+     * @expectedException \Amp\Parallel\StatusError
      */
     public function testSendBeforeContextHasStarted() {
         \Amp\execute(function () {
@@ -204,7 +204,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Concurrent\SynchronizationError
+     * @expectedException \Amp\Parallel\SynchronizationError
      */
     public function testReceiveWhenContextHasReturned() {
         \Amp\execute(function () {

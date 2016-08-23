@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Forking\Fork;
-use Amp\Concurrent\Sync\{PosixSemaphore, Semaphore};
+use Amp\Parallel\Forking\Fork;
+use Amp\Parallel\Sync\{PosixSemaphore, Semaphore};
 
 /**
  * @group posix
@@ -13,7 +13,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
     /**
      * @param $locks
      *
-     * @return \Amp\Concurrent\Sync\PosixSemaphore
+     * @return \Amp\Parallel\Sync\PosixSemaphore
      */
     public function createSemaphore(int $locks) {
         return new PosixSemaphore($locks);

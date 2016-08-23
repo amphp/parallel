@@ -1,11 +1,11 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Sync\ChannelledStream;
+use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Stream\Stream;
 use Amp\Stream\ClosedException;
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Test\TestCase;
 use Amp\Success;
 
 class ChannelledStreamTest extends TestCase {
@@ -71,7 +71,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\ChannelException
+     * @expectedException \Amp\Parallel\ChannelException
      */
     public function testInvalidDataReceived() {
         \Amp\execute(function () {
@@ -88,7 +88,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\ChannelException
+     * @expectedException \Amp\Parallel\ChannelException
      */
     public function testSendUnserializableData() {
         \Amp\execute(function () {
@@ -105,7 +105,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\ChannelException
+     * @expectedException \Amp\Parallel\ChannelException
      */
     public function testSendAfterClose() {
         \Amp\execute(function () {
@@ -124,7 +124,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Concurrent\ChannelException
+     * @expectedException \Amp\Parallel\ChannelException
      */
     public function testReceiveAfterClose() {
         \Amp\execute(function () {

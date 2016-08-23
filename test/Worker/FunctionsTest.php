@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Worker;
+namespace Amp\Parallel\Test\Worker;
 
-use Amp\Concurrent\Worker;
-use Amp\Concurrent\Worker\{ Environment, Pool, Task, WorkerFactory };
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Worker;
+use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
+use Amp\Parallel\Test\TestCase;
 use Amp\Success;
 use Interop\Async\Awaitable;
 

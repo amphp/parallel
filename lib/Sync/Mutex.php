@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
 use Interop\Async\Awaitable;
 
@@ -18,7 +18,7 @@ interface Mutex
      *
      * Acquires a lock on the mutex.
      *
-     * @return \Interop\Async\Awaitable<\Amp\Concurrent\Sync\Lock> Resolves with a lock object when the acquire is
+     * @return \Interop\Async\Awaitable<\Amp\Parallel\Sync\Lock> Resolves with a lock object when the acquire is
      * successful.
      */
     public function acquire(): Awaitable;

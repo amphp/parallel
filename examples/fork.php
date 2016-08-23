@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Concurrent\Forking\Fork;
+use Amp\Parallel\Forking\Fork;
 
 Amp\execute(function () {
     $context = Fork::spawn(function () {

@@ -1,19 +1,19 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Process;
+namespace Amp\Parallel\Process;
 
-use Amp\Concurrent\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
-use Amp\Concurrent\Sync\{ ChannelledStream, Internal\ExitStatus };
+use Amp\Parallel\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
+use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitStatus };
 use Interop\Async\Awaitable;
 
 class ChannelledProcess implements ProcessContext, Strand {
     /**
-     * @var \Amp\Concurrent\Process\Process
+     * @var \Amp\Parallel\Process\Process
      */
     private $process;
 
     /**
-     * @var \Amp\Concurrent\Sync\Channel
+     * @var \Amp\Parallel\Sync\Channel
      */
     private $channel;
 

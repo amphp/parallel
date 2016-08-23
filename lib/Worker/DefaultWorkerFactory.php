@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker;
+namespace Amp\Parallel\Worker;
 
-use Amp\Concurrent\{ Forking\Fork, Threading\Thread };
+use Amp\Parallel\{ Forking\Fork, Threading\Thread };
 
 /**
  * The built-in worker factory type.

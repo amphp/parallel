@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Threading;
+namespace Amp\Parallel\Test\Threading;
 
-use Amp\Concurrent\Sync\Semaphore as SyncSemaphore;
-use Amp\Concurrent\Threading\{Semaphore, Thread};
-use Amp\Concurrent\Test\Sync\AbstractSemaphoreTest;
+use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
+use Amp\Parallel\Threading\{Semaphore, Thread};
+use Amp\Parallel\Test\Sync\AbstractSemaphoreTest;
 
 /**
  * @group threading

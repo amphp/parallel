@@ -2,9 +2,9 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Concurrent\Worker\DefaultPool;
+use Amp\Parallel\Worker\DefaultPool;
 use Amp\Coroutine;
-use Amp\Concurrent\Example\BlockingTask;
+use Amp\Parallel\Example\BlockingTask;
 
 Amp\execute(function() {
     $timer = Amp\repeat(100, function () {

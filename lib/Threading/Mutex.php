@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading;
+namespace Amp\Parallel\Threading;
 
-use Amp\Concurrent\Sync\Mutex as SyncMutex;
+use Amp\Parallel\Sync\Mutex as SyncMutex;
 use Interop\Async\Awaitable;
 
 /**
@@ -12,7 +12,7 @@ use Interop\Async\Awaitable;
  */
 class Mutex implements SyncMutex {
     /**
-     * @var \Amp\Concurrent\Threading\Internal\Mutex
+     * @var \Amp\Parallel\Threading\Internal\Mutex
      */
     private $mutex;
 

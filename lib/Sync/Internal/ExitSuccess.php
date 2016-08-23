@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync\Internal;
+namespace Amp\Parallel\Sync\Internal;
 
 class ExitSuccess implements ExitStatus {
     /**

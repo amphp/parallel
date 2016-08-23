@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Sync\Lock;
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Sync\Lock;
+use Amp\Parallel\Test\TestCase;
 
 class LockTest extends TestCase {
     public function testIsReleased() {
@@ -19,7 +19,7 @@ class LockTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\LockAlreadyReleasedError
+     * @expectedException \Amp\Parallel\LockAlreadyReleasedError
      */
     public function testThrowsOnMultiRelease() {
         $lock = new Lock($this->createCallback(1));

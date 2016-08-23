@@ -1,12 +1,12 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Test\TestCase;
 
 abstract class AbstractParcelTest extends TestCase {
     /**
-     * @return \Amp\Concurrent\Sync\Parcel
+     * @return \Amp\Parallel\Sync\Parcel
      */
     abstract protected function createParcel($value);
 

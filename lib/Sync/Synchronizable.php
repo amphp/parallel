@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
 use Interop\Async\Awaitable;
 

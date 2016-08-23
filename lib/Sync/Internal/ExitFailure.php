@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync\Internal;
+namespace Amp\Parallel\Sync\Internal;
 
-use Amp\Concurrent\PanicError;
+use Amp\Parallel\PanicError;
 
 class ExitFailure implements ExitStatus {
     /**

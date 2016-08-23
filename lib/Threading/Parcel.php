@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading;
+namespace Amp\Parallel\Threading;
 
-use Amp\Concurrent\Sync\Parcel as SyncParcel;
 use Amp\Coroutine;
+use Amp\Parallel\Sync\Parcel as SyncParcel;
 use Interop\Async\Awaitable;
 
 /**
@@ -11,12 +11,12 @@ use Interop\Async\Awaitable;
  */
 class Parcel implements SyncParcel {
     /**
-     * @var \Amp\Concurrent\Threading\Mutex
+     * @var \Amp\Parallel\Threading\Mutex
      */
     private $mutex;
 
     /**
-     * @var \Amp\Concurrent\Threading\Internal\Storage
+     * @var \Amp\Parallel\Threading\Internal\Storage
      */
     private $storage;
 
@@ -69,7 +69,7 @@ class Parcel implements SyncParcel {
      * @return \Generator
      */
     private function doSynchronized(callable $callback): \Generator {
-        /** @var \Amp\Concurrent\Sync\Lock $lock */
+        /** @var \Amp\Parallel\Sync\Lock $lock */
         $lock = yield $this->mutex->acquire();
 
         try {

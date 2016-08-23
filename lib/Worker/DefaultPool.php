@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker;
+namespace Amp\Parallel\Worker;
 
 use Amp;
-use Amp\Concurrent\StatusError;
 use Amp\Coroutine;
+use Amp\Parallel\StatusError;
 use Interop\Async\Awaitable;
 
 /**
@@ -62,7 +62,7 @@ class DefaultPool implements Pool {
      *     Defaults to `Pool::DEFAULT_MIN_SIZE`.
      * @param int|null $maxSize The maximum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
-     * @param \Amp\Concurrent\Worker\WorkerFactory|null $factory A worker factory to be used to create
+     * @param \Amp\Parallel\Worker\WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
      * @throws \Error
@@ -174,8 +174,8 @@ class DefaultPool implements Pool {
      *
      * @return \Interop\Async\Awaitable<mixed> The return value of Task::run().
      *
-     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
-     * @throws \Amp\Concurrent\TaskException If the task throws an exception.
+     * @throws \Amp\Parallel\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Awaitable {
         $worker = $this->get();
@@ -189,7 +189,7 @@ class DefaultPool implements Pool {
      *
      * @return \Interop\Async\Awaitable<int[]> Array of exit status from all workers.
      *
-     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\StatusError If the pool has not been started.
      */
     public function shutdown(): Awaitable {
         if (!$this->isRunning()) {
@@ -206,7 +206,7 @@ class DefaultPool implements Pool {
      *
      * @return \Generator
      *
-     * @throws \Amp\Concurrent\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\StatusError If the pool has not been started.
      */
     private function doShutdown(): \Generator {
         $this->running = false;
@@ -284,7 +284,7 @@ class DefaultPool implements Pool {
     /**
      * Pushes the worker back into the queue.
      *
-     * @param \Amp\Concurrent\Worker\Worker $worker
+     * @param \Amp\Parallel\Worker\Worker $worker
      *
      * @throws \Error If the worker was not part of this queue.
      */

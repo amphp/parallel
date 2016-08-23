@@ -1,7 +1,7 @@
 <?php
-namespace Amp\Concurrent\Example;
+namespace Amp\Parallel\Example;
 
-use Amp\Concurrent\Worker\{ Environment, Task };
+use Amp\Parallel\Worker\{ Environment, Task };
 
 class BlockingTask implements Task {
     /**

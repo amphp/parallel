@@ -1,14 +1,14 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker\Internal;
+namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Concurrent\Worker\Task;
+use Amp\Parallel\Worker\Task;
 
 class Job {
     /** @var string */
     private $id;
     
-    /** @var \Amp\Concurrent\Worker\Task */
+    /** @var \Amp\Parallel\Worker\Task */
     private $task;
     
     public function __construct(Task $task) {

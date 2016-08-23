@@ -1,17 +1,17 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker;
+namespace Amp\Parallel\Worker;
 
-use Amp\Concurrent\{ StatusError, Strand, WorkerException} ;
-use Amp\Concurrent\Worker\Internal\{ Job, TaskResult };
 use Amp\{ Coroutine, Deferred };
+use Amp\Parallel\{ StatusError, Strand, WorkerException} ;
+use Amp\Parallel\Worker\Internal\{ Job, TaskResult };
 use Interop\Async\Awaitable;
 
 /**
  * Base class for most common types of task workers.
  */
 abstract class AbstractWorker implements Worker {
-    /** @var \Amp\Concurrent\Strand */
+    /** @var \Amp\Parallel\Strand */
     private $context;
 
     /** @var bool */
@@ -24,7 +24,7 @@ abstract class AbstractWorker implements Worker {
     private $when;
 
     /**
-     * @param \Amp\Concurrent\Strand $strand
+     * @param \Amp\Parallel\Strand $strand
      */
     public function __construct(Strand $strand) {
         $this->context = $strand;
@@ -97,12 +97,12 @@ abstract class AbstractWorker implements Worker {
     /**
      * @coroutine
      *
-     * @param \Amp\Concurrent\Worker\Task $task
+     * @param \Amp\Parallel\Worker\Task $task
      *
      * @return \Generator
-     * @throws \Amp\Concurrent\StatusError
-     * @throws \Amp\Concurrent\TaskException
-     * @throws \Amp\Concurrent\WorkerException
+     * @throws \Amp\Parallel\StatusError
+     * @throws \Amp\Parallel\TaskException
+     * @throws \Amp\Parallel\WorkerException
      */
     private function doEnqueue(Task $task): \Generator {
         if (empty($this->jobQueue)) {

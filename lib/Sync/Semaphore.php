@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
 use Interop\Async\Awaitable;
 
@@ -34,7 +34,7 @@ interface Semaphore extends \Countable {
      * If there are one or more locks available, this function resolves immediately with a lock and the lock count is
      * decreased. If no locks are available, the semaphore waits asynchronously for a lock to become available.
      *
-     * @return \Interop\Async\Awaitable<\Amp\Concurrent\Sync\Lock> Resolves with a lock object when the acquire is
+     * @return \Interop\Async\Awaitable<\Amp\Parallel\Sync\Lock> Resolves with a lock object when the acquire is
      *     successful.
      */
     public function acquire(): Awaitable;

@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Sync;
+namespace Amp\Parallel\Test\Sync;
 
-use Amp\Concurrent\Sync\SharedMemoryParcel;
+use Amp\Parallel\Sync\SharedMemoryParcel;
 
 /**
  * @requires extension shmop
@@ -35,7 +35,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
     }
 
     /**
-     * @expectedException \Amp\Concurrent\SharedMemoryException
+     * @expectedException \Amp\Parallel\SharedMemoryException
      */
     public function testUnwrapThrowsErrorIfFreed() {
         $object = new SharedMemoryParcel(new \stdClass());

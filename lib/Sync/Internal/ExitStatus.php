@@ -1,12 +1,12 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync\Internal;
+namespace Amp\Parallel\Sync\Internal;
 
 interface ExitStatus {
     /**
      * @return mixed Return value of the callable given to the execution context.
      *
-     * @throws \Amp\Concurrent\PanicError If the context exited with an uncaught exception.
+     * @throws \Amp\Parallel\PanicError If the context exited with an uncaught exception.
      */
     public function getResult();
 }

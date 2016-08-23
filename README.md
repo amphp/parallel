@@ -1,6 +1,6 @@
-# Concurrency for Amp
+# Parallel Processing for Amp
 
-**True concurrency using native threading and multiprocessing for parallelizing code, *without* blocking.**
+**True parallel processing using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
 This library is a component for [Amp](https://amphp.org) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Amp components, this library uses Coroutines built from Awaitables and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
@@ -25,7 +25,7 @@ The recommended way to install is with the [Composer](http://getcomposer.org/) p
 Run the following command to use this package in your project:
 
 ```bash
-composer require amphp/concurrent
+composer require amphp/parallel
 ```
 
 You can also manually edit `composer.json` to add this library as a project requirement.
@@ -34,7 +34,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "amphp/concurrent": "dev-master"
+        "amphp/parallel": "dev-master"
     }
 }
 ```

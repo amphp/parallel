@@ -1,19 +1,19 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker\Internal;
+namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Concurrent\{ Sync\Channel, Worker\Environment };
 use Amp\{ Coroutine, Failure, Success };
+use Amp\Parallel\{ Sync\Channel, Worker\Environment };
 use Interop\Async\Awaitable;
 
 class TaskRunner {
     /**
-     * @var \Amp\Concurrent\Sync\Channel
+     * @var \Amp\Parallel\Sync\Channel
      */
     private $channel;
 
     /**
-     * @var \Amp\Concurrent\Worker\Environment
+     * @var \Amp\Parallel\Worker\Environment
      */
     private $environment;
 

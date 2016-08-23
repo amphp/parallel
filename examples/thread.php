@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Concurrent\Threading\Thread;
+use Amp\Parallel\Threading\Thread;
 use Amp\Pause;
 
 Amp\execute(function () {

@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Sync;
+namespace Amp\Parallel\Sync;
 
-use Amp\Concurrent\SemaphoreException;
 use Amp\{ Coroutine, Pause };
+use Amp\Parallel\SemaphoreException;
 use Interop\Async\Awaitable;
 
 /**

@@ -1,8 +1,8 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading;
+namespace Amp\Parallel\Threading;
 
-use Amp\Concurrent\Sync\Semaphore as SyncSemaphore;
+use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
 use Interop\Async\Awaitable;
 
 /**

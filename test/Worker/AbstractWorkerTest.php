@@ -1,12 +1,12 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Worker;
+namespace Amp\Parallel\Test\Worker;
 
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Test\TestCase;
 
 abstract class AbstractWorkerTest extends TestCase {
     /**
-     * @return \Amp\Concurrent\Worker\Worker
+     * @return \Amp\Parallel\Worker\Worker
      */
     abstract protected function createWorker();
 

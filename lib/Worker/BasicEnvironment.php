@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker;
+namespace Amp\Parallel\Worker;
 
 use Interop\Async\Loop;
 

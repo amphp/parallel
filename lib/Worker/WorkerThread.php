@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Worker;
+namespace Amp\Parallel\Worker;
 
-use Amp\Concurrent\Threading\Thread;
-use Amp\Concurrent\Worker\Internal\TaskRunner;
+use Amp\Parallel\Threading\Thread;
+use Amp\Parallel\Worker\Internal\TaskRunner;
 use Interop\Async\Awaitable;
 
 /**

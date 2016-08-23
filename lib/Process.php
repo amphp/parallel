@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent;
+namespace Amp\Parallel;
 
 interface Process extends Context {
     /**
@@ -11,7 +11,7 @@ interface Process extends Context {
     /**
      * @param int $signo
      *
-     * @throws \Amp\Concurrent\StatusError
+     * @throws \Amp\Parallel\StatusError
      */
     public function signal(int $signo);
 }

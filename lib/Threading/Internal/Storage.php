@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading\Internal;
+namespace Amp\Parallel\Threading\Internal;
 
 /**
  * @internal

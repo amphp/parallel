@@ -1,9 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Process;
+namespace Amp\Parallel\Process;
 
 use Amp\Deferred;
-use Amp\Concurrent\{ ContextException, Process as ProcessContext, StatusError };
+use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError };
 use Amp\Socket\Socket;
 use Amp\Stream\Stream;
 use Interop\Async\{ Awaitable, Loop };
@@ -128,8 +128,8 @@ class Process implements ProcessContext {
     }
 
     /**
-     * @throws \Amp\Concurrent\ContextException If starting the process fails.
-     * @throws \Amp\Concurrent\StatusError If the process is already running.
+     * @throws \Amp\Parallel\ContextException If starting the process fails.
+     * @throws \Amp\Parallel\StatusError If the process is already running.
      */
     public function start() {
         if (null !== $this->deferred) {
@@ -212,7 +212,7 @@ class Process implements ProcessContext {
     /**
      * @return \Interop\Async\Awaitable<int> Resolves with exit status.
      *
-     * @throws \Amp\Concurrent\StatusError If the process has not been started.
+     * @throws \Amp\Parallel\StatusError If the process has not been started.
      */
     public function join(): Awaitable {
         if ($this->deferred === null) {
@@ -249,7 +249,7 @@ class Process implements ProcessContext {
      *
      * @param int $signo Signal number to send to process.
      *
-     * @throws \Amp\Concurrent\StatusError If the process is not running.
+     * @throws \Amp\Parallel\StatusError If the process is not running.
      */
     public function signal(int $signo) {
         if (!$this->isRunning()) {
@@ -323,7 +323,7 @@ class Process implements ProcessContext {
      *
      * @return \Amp\Stream\Stream
      *
-     * @throws \Amp\Concurrent\StatusError If the process is not running.
+     * @throws \Amp\Parallel\StatusError If the process is not running.
      */
     public function getStdIn(): Stream {
         if ($this->stdin === null) {
@@ -338,7 +338,7 @@ class Process implements ProcessContext {
      *
      * @return \Amp\Stream\Stream
      *
-     * @throws \Amp\Concurrent\StatusError If the process is not running.
+     * @throws \Amp\Parallel\StatusError If the process is not running.
      */
     public function getStdOut(): Stream {
         if ($this->stdout === null) {
@@ -353,7 +353,7 @@ class Process implements ProcessContext {
      *
      * @return \Amp\Stream\Stream
      *
-     * @throws \Amp\Concurrent\StatusError If the process is not running.
+     * @throws \Amp\Parallel\StatusError If the process is not running.
      */
     public function getStdErr(): Stream {
         if ($this->stderr === null) {

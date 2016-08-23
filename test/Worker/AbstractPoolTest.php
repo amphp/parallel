@@ -1,15 +1,15 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Test\Worker;
+namespace Amp\Parallel\Test\Worker;
 
-use Amp\Concurrent\Test\TestCase;
+use Amp\Parallel\Test\TestCase;
 
 abstract class AbstractPoolTest extends TestCase {
     /**
      * @param int $min
      * @param int $max
      *
-     * @return \Amp\Concurrent\Worker\Pool
+     * @return \Amp\Parallel\Worker\Pool
      */
     abstract protected function createPool($min = null, $max = null);
 

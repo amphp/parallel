@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Concurrent\Threading\Internal;
+namespace Amp\Parallel\Threading\Internal;
 
-use Amp\Concurrent\{ChannelException, SerializationException};
-use Amp\Concurrent\Sync\{Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess};
 use Amp\Coroutine;
+use Amp\Parallel\{ ChannelException, SerializationException };
+use Amp\Parallel\Sync\{ Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };
 use Amp\Socket\Socket;
 use Interop\Async\Awaitable;
 
@@ -113,7 +113,7 @@ class Thread extends \Thread {
     /**
      * @coroutine
      *
-     * @param \Amp\Concurrent\Sync\Channel $channel
+     * @param \Amp\Parallel\Sync\Channel $channel
      *
      * @return \Generator
      *
