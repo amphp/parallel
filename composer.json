@@ -22,7 +22,7 @@
     ],
     "require": {
         "amphp/amp": "^2.0",
-        "amphp/socket": "dev-amp_v2 as 2.0"
+        "amphp/socket": "dev-amp_v2 as 0.2"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
@@ -37,7 +37,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.x-dev"
+            "dev-master": "0.1.x-dev"
         }
     },
     "autoload": {
