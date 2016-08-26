@@ -186,9 +186,9 @@ class Process implements ProcessContext {
                     $this->deferred->resolve((int) $code);
                 }
             }
-
-            Loop::cancel($this->watcher);
         });
+        
+        Loop::disable($this->watcher);
     }
 
     /**
@@ -207,6 +207,11 @@ class Process implements ProcessContext {
         }
 
         $this->stdin->close();
+        
+        if ($this->watcher !== null) {
+            Loop::cancel($this->watcher);
+            $this->watcher = null;
+        }
     }
 
     /**
@@ -241,6 +246,9 @@ class Process implements ProcessContext {
 
             // "Detach" from the process and let it die asynchronously.
             $this->process = null;
+            
+            Loop::cancel($this->watcher);
+            $this->watcher = null;
         }
     }
 

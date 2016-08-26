@@ -38,7 +38,7 @@ ob_start(function ($data) {
 })();
 
 Amp\execute(function () {
-    $channel = new ChannelledStream(new Socket(STDIN), new Socket(STDOUT));
+    $channel = new ChannelledStream(new Socket(STDIN, false), new Socket(STDOUT, false));
     $environment = new BasicEnvironment;
     $runner = new TaskRunner($channel, $environment);
 
