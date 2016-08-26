@@ -3,9 +3,7 @@
 namespace Amp\Parallel;
 
 class PanicError extends \Error {
-    /**
-     * @var string Stack trace of the panic.
-     */
+    /** @var string Stack trace of the panic. */
     private $trace;
 
     /**

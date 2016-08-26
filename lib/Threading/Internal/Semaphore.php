@@ -14,9 +14,7 @@ use Interop\Async\Awaitable;
 class Semaphore extends \Threaded {
     const LATENCY_TIMEOUT = 10;
 
-    /**
-     * @var int The number of available locks.
-     */
+    /** @var int The number of available locks. */
     private $locks;
 
     /**

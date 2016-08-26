@@ -5,29 +5,19 @@ namespace Amp\Parallel\Worker;
 use Interop\Async\Loop;
 
 class BasicEnvironment implements Environment {
-    /**
-     * @var array
-     */
+    /** @var array */
     private $data = [];
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $ttl = [];
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $expire = [];
 
-    /**
-     * @var \SplPriorityQueue
-     */
+    /** @var \SplPriorityQueue */
     private $queue;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $timer;
 
     public function __construct() {

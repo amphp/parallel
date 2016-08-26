@@ -7,14 +7,10 @@ use Amp\Parallel\{ Sync\Channel, Worker\Environment };
 use Interop\Async\Awaitable;
 
 class TaskRunner {
-    /**
-     * @var \Amp\Parallel\Sync\Channel
-     */
+    /** @var \Amp\Parallel\Sync\Channel */
     private $channel;
 
-    /**
-     * @var \Amp\Parallel\Worker\Environment
-     */
+    /** @var \Amp\Parallel\Worker\Environment */
     private $environment;
 
     public function __construct(Channel $channel, Environment $environment) {

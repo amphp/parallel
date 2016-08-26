@@ -21,34 +21,22 @@ use Interop\Async\Awaitable;
  * Implements a UNIX-compatible context using forked processes.
  */
 class Fork implements Process, Strand {
-    /**
-     * @var \Amp\Parallel\Sync\Channel A channel for communicating with the child.
-     */
+    /** @var \Amp\Parallel\Sync\Channel A channel for communicating with the child. */
     private $channel;
 
-    /**
-     * @var \Amp\Socket\Socket
-     */
+    /** @var \Amp\Socket\Socket */
     private $pipe;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $pid = 0;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $function;
 
-    /**
-     * @var mixed[]
-     */
+    /** @var mixed[] */
     private $args;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $oid = 0;
 
     /**

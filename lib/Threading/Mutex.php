@@ -11,9 +11,7 @@ use Interop\Async\Awaitable;
  * Compatible with POSIX systems and Microsoft Windows.
  */
 class Mutex implements SyncMutex {
-    /**
-     * @var \Amp\Parallel\Threading\Internal\Mutex
-     */
+    /** @var \Amp\Parallel\Threading\Internal\Mutex */
     private $mutex;
 
     /**

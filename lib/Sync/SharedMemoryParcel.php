@@ -29,9 +29,7 @@ use Interop\Async\Awaitable;
  * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
  */
 class SharedMemoryParcel implements Parcel, \Serializable {
-    /**
-     * @var int The byte offset to the start of the object data in memory.
-     */
+    /** @var int The byte offset to the start of the object data in memory. */
     const MEM_DATA_OFFSET = 7;
 
     // A list of valid states the object can be in.
@@ -40,19 +38,13 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     const STATE_MOVED = 2;
     const STATE_FREED = 3;
 
-    /**
-     * @var int The shared memory segment key.
-     */
+    /** @var int The shared memory segment key. */
     private $key;
 
-    /**
-     * @var PosixSemaphore A semaphore for synchronizing on the parcel.
-     */
+    /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
     private $semaphore;
 
-    /**
-     * @var int An open handle to the shared memory segment.
-     */
+    /** @var int An open handle to the shared memory segment. */
     private $handle;
 
     /**

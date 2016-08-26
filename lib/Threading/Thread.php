@@ -16,39 +16,25 @@ use Interop\Async\Awaitable;
  * itself.
  */
 class Thread implements Strand {
-    /**
-     * @var Internal\Thread An internal thread instance.
-     */
+    /** @var Internal\Thread An internal thread instance. */
     private $thread;
 
-    /**
-     * @var \Amp\Parallel\Sync\Channel A channel for communicating with the thread.
-     */
+    /** @var \Amp\Parallel\Sync\Channel A channel for communicating with the thread. */
     private $channel;
 
-    /**
-     * @var \Amp\Socket\Socket
-     */
+    /** @var \Amp\Socket\Socket */
     private $pipe;
 
-    /**
-     * @var resource
-     */
+    /** @var resource */
     private $socket;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $function;
 
-    /**
-     * @var mixed[]
-     */
+    /** @var mixed[] */
     private $args;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $oid = 0;
 
     /**

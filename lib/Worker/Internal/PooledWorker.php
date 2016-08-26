@@ -6,14 +6,10 @@ use Amp\Parallel\Worker\{ Task, Worker };
 use Interop\Async\Awaitable;
 
 class PooledWorker implements Worker {
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $push;
 
-    /**
-     * @var \Amp\Parallel\Worker\Worker
-     */
+    /** @var \Amp\Parallel\Worker\Worker */
     private $worker;
 
     /**

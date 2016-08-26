@@ -14,14 +14,10 @@ use Interop\Async\Awaitable;
  * small delay. However, the small delay will not block the thread.
  */
 class Semaphore implements SyncSemaphore {
-    /**
-     * @var Internal\Semaphore
-     */
+    /** @var Internal\Semaphore */
     private $semaphore;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $maxLocks;
 
     /**

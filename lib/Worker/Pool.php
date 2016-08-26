@@ -6,14 +6,10 @@ namespace Amp\Parallel\Worker;
  * An interface for worker pools.
  */
 interface Pool extends Worker {
-    /**
-     * @var int The default minimum pool size.
-     */
+    /** @var int The default minimum pool size. */
     const DEFAULT_MIN_SIZE = 4;
 
-    /**
-     * @var int The default maximum pool size.
-     */
+    /** @var int The default maximum pool size. */
     const DEFAULT_MAX_SIZE = 32;
 
     /**

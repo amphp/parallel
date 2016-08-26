@@ -24,9 +24,7 @@ use Interop\Async\Awaitable;
 class FileMutex implements Mutex {
     const LATENCY_TIMEOUT = 10;
 
-    /**
-     * @var string The full path to the lock file.
-     */
+    /** @var string The full path to the lock file. */
     private $fileName;
 
     /**

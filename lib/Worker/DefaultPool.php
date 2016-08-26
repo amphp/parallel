@@ -15,44 +15,28 @@ use Interop\Async\Awaitable;
  * are completed as soon as possible and workers are used efficiently.
  */
 class DefaultPool implements Pool {
-    /**
-     * @var bool Indicates if the pool is currently running.
-     */
+    /** @var bool Indicates if the pool is currently running. */
     private $running = false;
 
-    /**
-     * @var int The minimum number of workers the pool should spawn.
-     */
+    /** @var int The minimum number of workers the pool should spawn. */
     private $minSize;
 
-    /**
-     * @var int The maximum number of workers the pool should spawn.
-     */
+    /** @var int The maximum number of workers the pool should spawn. */
     private $maxSize;
 
-    /**
-     * @var WorkerFactory A worker factory to be used to create new workers.
-     */
+    /** @var WorkerFactory A worker factory to be used to create new workers. */
     private $factory;
 
-    /**
-     * @var \SplObjectStorage A collection of all workers in the pool.
-     */
+    /** @var \SplObjectStorage A collection of all workers in the pool. */
     private $workers;
 
-    /**
-     * @var \SplQueue A collection of idle workers.
-     */
+    /** @var \SplQueue A collection of idle workers. */
     private $idleWorkers;
 
-    /**
-     * @var \SplQueue A queue of workers that have been assigned to tasks.
-     */
+    /** @var \SplQueue A queue of workers that have been assigned to tasks. */
     private $busyQueue;
 
-    /**
-     * @var \Closure
-     */
+    /** @var \Closure */
     private $push;
 
     /**

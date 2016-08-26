@@ -9,64 +9,40 @@ use Amp\Stream\Stream;
 use Interop\Async\{ Awaitable, Loop };
 
 class Process implements ProcessContext {
-    /**
-     * @var resource|null
-     */
+    /** @var resource|null */
     private $process;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $command;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $cwd = '';
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $env = [];
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $options;
 
-    /**
-     * @var \Amp\Stream\Stream|null
-     */
+    /** @var \Amp\Stream\Stream|null */
     private $stdin;
 
-    /**
-     * @var \Amp\Stream\Stream|null
-     */
+    /** @var \Amp\Stream\Stream|null */
     private $stdout;
 
-    /**
-     * @var \Amp\Stream\Stream|null
-     */
+    /** @var \Amp\Stream\Stream|null */
     private $stderr;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $pid = 0;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $oid = 0;
 
-    /**
-     * @var \Amp\Deferred|null
-     */
+    /** @var \Amp\Deferred|null */
     private $deferred;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $watcher;
 
     /**

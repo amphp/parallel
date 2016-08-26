@@ -10,14 +10,10 @@ use Interop\Async\Awaitable;
  * A thread-safe container that shares a value between multiple threads.
  */
 class Parcel implements SyncParcel {
-    /**
-     * @var \Amp\Parallel\Threading\Mutex
-     */
+    /** @var \Amp\Parallel\Threading\Mutex */
     private $mutex;
 
-    /**
-     * @var \Amp\Parallel\Threading\Internal\Storage
-     */
+    /** @var \Amp\Parallel\Threading\Internal\Storage */
     private $storage;
 
     /**

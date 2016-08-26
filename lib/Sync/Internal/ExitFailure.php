@@ -5,24 +5,16 @@ namespace Amp\Parallel\Sync\Internal;
 use Amp\Parallel\PanicError;
 
 class ExitFailure implements ExitStatus {
-    /**
-     * @var string
-     */
+    /** @var string */
     private $type;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $message;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $code;
 
-    /**
-     * @var array
-     */
+    /** @var array */
     private $trace;
 
     public function __construct(\Throwable $exception) {

@@ -12,9 +12,7 @@ use Interop\Async\Awaitable;
 class Mutex extends \Threaded {
     const LATENCY_TIMEOUT =  10;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $lock = true;
     
     /**

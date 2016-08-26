@@ -17,19 +17,13 @@ use Interop\Async\Awaitable;
 class PosixSemaphore implements Semaphore, \Serializable {
     const LATENCY_TIMEOUT = 10;
 
-    /**
-     * @var int The semaphore key.
-     */
+    /** @var int The semaphore key. */
     private $key;
 
-    /**
-     * @var int The number of total locks.
-     */
+    /** @var int The number of total locks. */
     private $maxLocks;
 
-    /**
-     * @var resource A message queue of available locks.
-     */
+    /** @var resource A message queue of available locks. */
     private $queue;
 
     /**

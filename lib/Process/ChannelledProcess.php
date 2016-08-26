@@ -7,14 +7,10 @@ use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitStatus };
 use Interop\Async\Awaitable;
 
 class ChannelledProcess implements ProcessContext, Strand {
-    /**
-     * @var \Amp\Parallel\Process\Process
-     */
+    /** @var \Amp\Parallel\Process\Process */
     private $process;
 
-    /**
-     * @var \Amp\Parallel\Sync\Channel
-     */
+    /** @var \Amp\Parallel\Sync\Channel */
     private $channel;
 
     /**

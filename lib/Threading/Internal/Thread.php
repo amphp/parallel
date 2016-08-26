@@ -16,24 +16,16 @@ use Interop\Async\Awaitable;
 class Thread extends \Thread {
     const KILL_CHECK_FREQUENCY = 250;
 
-    /**
-     * @var callable The function to execute in the thread.
-     */
+    /** @var callable The function to execute in the thread. */
     private $function;
 
-    /**
-     * @var mixed[] Arguments to pass to the function.
-     */
+    /** @var mixed[] Arguments to pass to the function. */
     private $args;
 
-    /**
-     * @var resource
-     */
+    /** @var resource */
     private $socket;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $killed = false;
 
     /**

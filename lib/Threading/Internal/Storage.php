@@ -6,9 +6,7 @@ namespace Amp\Parallel\Threading\Internal;
  * @internal
  */
 class Storage extends \Threaded {
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $value;
 
     /**

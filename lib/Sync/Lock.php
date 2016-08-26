@@ -12,14 +12,10 @@ use Amp\Parallel\LockAlreadyReleasedError;
  * released.
  */
 class Lock {
-    /**
-     * @var callable The function to be called on release.
-     */
+    /** @var callable The function to be called on release. */
     private $releaser;
 
-    /**
-     * @var bool Indicates if the lock has been released.
-     */
+    /** @var bool Indicates if the lock has been released. */
     private $released = false;
 
     /**

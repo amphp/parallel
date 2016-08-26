@@ -15,19 +15,13 @@ use Interop\Async\Awaitable;
 class ChannelledStream implements Channel {
     const HEADER_LENGTH = 5;
 
-    /**
-     * @var \Amp\Stream\Stream
-     */
+    /** @var \Amp\Stream\Stream */
     private $read;
 
-    /**
-     * @var \Amp\Stream\Stream
-     */
+    /** @var \Amp\Stream\Stream */
     private $write;
 
-    /**
-     * @var \Closure
-     */
+    /** @var \Closure */
     private $errorHandler;
 
     /**
