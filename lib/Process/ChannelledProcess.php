@@ -18,8 +18,8 @@ class ChannelledProcess implements ProcessContext, Strand {
      * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct(string $path, string $cwd = '', array $env = []) {
-        $command = \PHP_BINARY . ' ' . $path;
+    public function __construct(string $path, string $cwd = "", array $env = []) {
+        $command = \PHP_BINARY . " " . $path;
         $this->process = new Process($command, $cwd, $env);
     }
 
@@ -51,14 +51,14 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function receive(): Awaitable {
         if ($this->channel === null) {
-            throw new StatusError('The process has not been started.');
+            throw new StatusError("The process has not been started");
         }
 
         return \Amp\pipe($this->channel->receive(), static function ($data) {
             if ($data instanceof ExitStatus) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
-                    'Thread unexpectedly exited with result of type: %s',
+                    "Thread unexpectedly exited with result of type: %s",
                     \is_object($data) ? \get_class($data) : \gettype($data)
                 ));
             }
@@ -72,11 +72,11 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function send($data): Awaitable {
         if ($this->channel === null) {
-            throw new StatusError('The process has not been started.');
+            throw new StatusError("The process has not been started");
         }
 
         if ($data instanceof ExitStatus) {
-            throw new \Error('Cannot send exit status objects.');
+            throw new \Error("Cannot send exit status objects");
         }
 
         return $this->channel->send($data);
