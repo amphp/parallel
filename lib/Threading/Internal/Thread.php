@@ -86,7 +86,7 @@ class Thread extends \Thread {
         
                 \Amp\unreference($watcher);
         
-                return new Coroutine($this->execute($channel));
+                return $this->execute($channel);
             });
         } catch (\Throwable $exception) {
             return 1;

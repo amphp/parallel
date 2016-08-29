@@ -172,7 +172,7 @@ class Fork implements Process, Strand {
                 try {
                     \Amp\execute(function () use ($parent) {
                         $channel = new ChannelledStream(new Socket($parent));
-                        return new Coroutine($this->execute($channel));
+                        return $this->execute($channel);
                     });
                     $code = 0;
                 } catch (\Throwable $exception) {
