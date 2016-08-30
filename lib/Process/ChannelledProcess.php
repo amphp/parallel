@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Process;
 
 use Amp\Parallel\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
-use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitStatus };
+use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
 use Interop\Async\Awaitable;
 
 class ChannelledProcess implements ProcessContext, Strand {
@@ -36,7 +36,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function start() {
         $this->process->start();
-        $this->channel = new ChannelledStream($this->process->getStdOut(), $this->process->getStdIn());
+        $this->channel = new ChannelledSocket($this->process->getStdOut(), $this->process->getStdIn(), false);
     }
 
     /**

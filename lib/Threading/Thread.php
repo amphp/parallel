@@ -4,8 +4,7 @@ namespace Amp\Parallel\Threading;
 
 use Amp\Coroutine;
 use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
-use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitStatus };
-use Amp\Socket\Socket;
+use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
 use Interop\Async\Awaitable;
 
 /**
@@ -19,11 +18,8 @@ class Thread implements Strand {
     /** @var Internal\Thread An internal thread instance. */
     private $thread;
 
-    /** @var \Amp\Parallel\Sync\Channel A channel for communicating with the thread. */
+    /** @var \Amp\Parallel\Sync\ChannelledSocket A channel for communicating with the thread. */
     private $channel;
-
-    /** @var \Amp\Socket\Socket */
-    private $pipe;
 
     /** @var resource */
     private $socket;
@@ -82,7 +78,6 @@ class Thread implements Strand {
     public function __clone() {
         $this->thread = null;
         $this->socket = null;
-        $this->pipe = null;
         $this->channel = null;
         $this->oid = 0;
     }
@@ -104,7 +99,7 @@ class Thread implements Strand {
      * @return bool True if the context is running, otherwise false.
      */
     public function isRunning(): bool {
-        return null !== $this->pipe && $this->pipe->isReadable();
+        return $this->channel !== null;
     }
 
     /**
@@ -120,7 +115,21 @@ class Thread implements Strand {
 
         $this->oid = \getmypid();
 
-        list($channel, $this->socket) = \Amp\Socket\pair();
+        $sockets = @\stream_socket_pair(
+            \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+            STREAM_SOCK_STREAM,
+            STREAM_IPPROTO_IP
+        );
+
+        if ($sockets === false) {
+            $message = "Failed to create socket pair";
+            if ($error = \error_get_last()) {
+                $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+            }
+            throw new ContextException($message);
+        }
+
+        list($channel, $this->socket) = $sockets;
 
         $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
@@ -128,7 +137,7 @@ class Thread implements Strand {
             throw new ContextException('Failed to start the thread.');
         }
 
-        $this->channel = new ChannelledStream($this->pipe = new Socket($channel));
+        $this->channel = new ChannelledSocket($channel, $channel);
     }
 
     /**
@@ -152,8 +161,8 @@ class Thread implements Strand {
      * Closes channel and socket if still open.
      */
     private function close() {
-        if ($this->pipe !== null && $this->pipe->isReadable()) {
-            $this->pipe->close();
+        if ($this->channel !== null) {
+            $this->channel->close();
         }
 
         if (\is_resource($this->socket)) {

@@ -2,9 +2,8 @@
 <?php declare(strict_types = 1);
 
 use Amp\Parallel\{ ChannelException, SerializationException} ;
-use Amp\Parallel\Sync\{ ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };
+use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
 use Amp\Parallel\Worker\{ BasicEnvironment, Internal\TaskRunner };
-use Amp\Socket\Socket;
 
 @cli_set_process_title("amp-worker");
 error_reporting(E_ALL);
@@ -38,7 +37,7 @@ ob_start(function ($data) {
 })();
 
 Amp\execute(function () {
-    $channel = new ChannelledStream(new Socket(STDIN, false), new Socket(STDOUT, false));
+    $channel = new ChannelledSocket(STDIN, STDOUT, false);
     $environment = new BasicEnvironment;
     $runner = new TaskRunner($channel, $environment);
 

@@ -4,8 +4,6 @@ namespace Amp\Parallel\Process;
 
 use Amp\Deferred;
 use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError };
-use Amp\Socket\Socket;
-use Amp\Stream\Stream;
 use Interop\Async\{ Awaitable, Loop };
 
 class Process implements ProcessContext {
@@ -23,14 +21,14 @@ class Process implements ProcessContext {
 
     /** @var array */
     private $options;
-
-    /** @var \Amp\Stream\Stream|null */
+    
+    /** @var resource|null */
     private $stdin;
 
-    /** @var \Amp\Stream\Stream|null */
+    /** @var resource|null */
     private $stdout;
 
-    /** @var \Amp\Stream\Stream|null */
+    /** @var resource|null */
     private $stderr;
 
     /** @var int */
@@ -75,16 +73,16 @@ class Process implements ProcessContext {
         if (\getmypid() === $this->oid) {
             $this->kill(); // Will only terminate if the process is still running.
     
-            if ($this->stdin !== null) {
-                $this->stdin->close();
+            if (\is_resource($this->stdin)) {
+                \fclose($this->stdin);
             }
     
-            if ($this->stdout !== null) {
-                $this->stdout->close();
+            if (\is_resource($this->stdout)) {
+                \fclose($this->stdout);
             }
     
-            if ($this->stderr !== null) {
-                $this->stderr->close();
+            if (\is_resource($this->stderr)) {
+                \fclose($this->stderr);
             }
         }
     }
@@ -146,9 +144,9 @@ class Process implements ProcessContext {
 
         $this->pid = $status["pid"];
 
-        $this->stdin = $stdin = new Socket($pipes[0]);
-        $this->stdout = new Socket($pipes[1]);
-        $this->stderr = new Socket($pipes[2]);
+        $this->stdin = $stdin = $pipes[0];
+        $this->stdout = $pipes[1];
+        $this->stderr = $pipes[2];
 
         $stream = $pipes[3];
         \stream_set_blocking($stream, false);
@@ -175,7 +173,9 @@ class Process implements ProcessContext {
                         \proc_close($process);
                         $process = null;
                     }
-                    $stdin->close();
+                    if (\is_resource($stdin)) {
+                        \fclose($stdin);
+                    }
                     Loop::cancel($watcher);
                 }
                 
@@ -200,14 +200,10 @@ class Process implements ProcessContext {
 
         Loop::enable($this->watcher);
 
-        $awaitable = $this->deferred->getAwaitable();
-        
-        $awaitable->when(function () {
-            $this->stdout->close();
-            $this->stderr->close();
-        });
-        
-        return $awaitable;
+        \fclose($this->stdout);
+        \fclose($this->stderr);
+
+        return $this->deferred->getAwaitable();
     }
 
     /**
@@ -304,11 +300,11 @@ class Process implements ProcessContext {
     /**
      * Gets the process input stream (STDIN).
      *
-     * @return \Amp\Stream\Stream
+     * @return resource
      *
      * @throws \Amp\Parallel\StatusError If the process is not running.
      */
-    public function getStdIn(): Stream {
+    public function getStdIn() {
         if ($this->stdin === null) {
             throw new StatusError("The process has not been started");
         }
@@ -319,11 +315,11 @@ class Process implements ProcessContext {
     /**
      * Gets the process output stream (STDOUT).
      *
-     * @return \Amp\Stream\Stream
+     * @return resource
      *
      * @throws \Amp\Parallel\StatusError If the process is not running.
      */
-    public function getStdOut(): Stream {
+    public function getStdOut() {
         if ($this->stdout === null) {
             throw new StatusError("The process has not been started");
         }
@@ -334,11 +330,11 @@ class Process implements ProcessContext {
     /**
      * Gets the process error stream (STDERR).
      *
-     * @return \Amp\Stream\Stream
+     * @return resource
      *
      * @throws \Amp\Parallel\StatusError If the process is not running.
      */
-    public function getStdErr(): Stream {
+    public function getStdErr() {
         if ($this->stderr === null) {
             throw new StatusError("The process has not been started");
         }

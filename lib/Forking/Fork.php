@@ -12,20 +12,16 @@ use Amp\Parallel\{
     Strand,
     SynchronizationError
 };
-use Amp\Parallel\Sync\{ Channel, ChannelledStream };
+use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
-use Amp\Socket\Socket;
 use Interop\Async\Awaitable;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
  */
 class Fork implements Process, Strand {
-    /** @var \Amp\Parallel\Sync\Channel A channel for communicating with the child. */
+    /** @var \Amp\Parallel\Sync\ChannelledSocket A channel for communicating with the child. */
     private $channel;
-
-    /** @var \Amp\Socket\Socket */
-    private $pipe;
 
     /** @var int */
     private $pid = 0;
@@ -73,7 +69,6 @@ class Fork implements Process, Strand {
     public function __clone() {
         $this->pid = 0;
         $this->oid = 0;
-        $this->pipe = null;
         $this->channel = null;
     }
 
@@ -152,14 +147,23 @@ class Fork implements Process, Strand {
      * Starts the context execution.
      *
      * @throws \Amp\Parallel\ContextException If forking fails.
-     * @throws \Amp\Socket\SocketException If creating a socket pair fails.
      */
     public function start() {
         if (0 !== $this->oid) {
             throw new StatusError('The context has already been started.');
         }
 
-        list($parent, $child) = \Amp\Socket\pair();
+        $sockets = @\stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
+        if ($sockets === false) {
+                $message = "Failed to create socket pair";
+                if ($error = \error_get_last()) {
+                    $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+                }
+                throw new ContextException($message);
+        }
+
+        list($parent, $child) = $sockets;
 
         switch ($pid = \pcntl_fork()) {
             case -1: // Failure
@@ -171,7 +175,7 @@ class Fork implements Process, Strand {
 
                 try {
                     \Amp\execute(function () use ($parent) {
-                        $channel = new ChannelledStream(new Socket($parent));
+                        $channel = new ChannelledSocket($parent, $parent);
                         return $this->execute($channel);
                     });
                     $code = 0;
@@ -184,7 +188,7 @@ class Fork implements Process, Strand {
             default: // Parent
                 $this->pid = $pid;
                 $this->oid = \posix_getpid();
-                $this->channel = new ChannelledStream($this->pipe = new Socket($child));
+                $this->channel = new ChannelledSocket($child, $child);
                 \fclose($parent);
         }
     }
@@ -248,8 +252,8 @@ class Fork implements Process, Strand {
             \posix_kill($this->pid, SIGKILL);
         }
 
-        if (null !== $this->pipe && $this->pipe->isReadable()) {
-            $this->pipe->close();
+        if ($this->channel !== null) {
+            $this->channel->close();
         }
 
         // "Detach" from the process and let it die asynchronously.

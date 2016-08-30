@@ -4,8 +4,7 @@ namespace Amp\Parallel\Threading\Internal;
 
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
-use Amp\Parallel\Sync\{ Channel, ChannelledStream, Internal\ExitFailure, Internal\ExitSuccess };
-use Amp\Socket\Socket;
+use Amp\Parallel\Sync\{ Channel, ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
 use Interop\Async\Awaitable;
 
 /**
@@ -76,7 +75,7 @@ class Thread extends \Thread {
 
         try {
             \Amp\execute(function () {
-                $channel = new ChannelledStream(new Socket($this->socket, false));
+                $channel = new ChannelledSocket($this->socket, $this->socket, false);
         
                 $watcher = \Amp\repeat(self::KILL_CHECK_FREQUENCY, function () {
                     if ($this->killed) {
