@@ -36,6 +36,7 @@ class TaskFailure implements TaskResult {
     
     public function getAwaitable(): Awaitable {
         return new Failure(new TaskException(
+            $this->type,
             sprintf('Uncaught exception in worker of type "%s" with message "%s"', $this->type, $this->message),
             $this->code,
             $this->trace
