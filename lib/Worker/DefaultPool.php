@@ -155,19 +155,20 @@ class DefaultPool implements Pool {
      * @throws \Amp\Parallel\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Awaitable {
-        return new Coroutine($this->doEnqueue($task));
+        return new Coroutine($this->doEnqueue($this->pull(), $task));
     }
     
     /**
      * @coroutine
      *
+     * Keeps the worker marked as busy until the task has completed.
+     *
+     * @param \Amp\Parallel\Worker\Worker $worker
      * @param \Amp\Parallel\Worker\Task $task
      *
      * @return \Generator
      */
-    public function doEnqueue(Task $task): \Generator {
-        $worker = $this->pull();
-        
+    public function doEnqueue(Worker $worker, Task $task): \Generator {
         try {
             $result = yield $worker->enqueue($task);
         } finally {

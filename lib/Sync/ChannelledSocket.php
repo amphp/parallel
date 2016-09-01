@@ -34,17 +34,18 @@ class ChannelledSocket implements Channel {
     private $autoClose = true;
     
     /**
-     * @param resource $resource Stream resource.
-     * @param bool $autoClose True to close the stream resource when this object is destroyed, false to leave open.
+     * @param resource $read Readable stream resource.
+     * @param resource $write Writable stream resource.
+     * @param bool $autoClose True to close the stream resources when this object is destroyed, false to leave open.
      *
      * @throws \Error If a stream resource is not given for $resource.
      */
     public function __construct($read, $write, bool $autoClose = true) {
-        if (!\is_resource($read) ||\get_resource_type($read) !== 'stream') {
+        if (!\is_resource($read) || \get_resource_type($read) !== 'stream') {
             throw new \Error('Invalid resource given to constructor!');
         }
     
-        if (!\is_resource($write) ||\get_resource_type($write) !== 'stream') {
+        if (!\is_resource($write) || \get_resource_type($write) !== 'stream') {
             throw new \Error('Invalid resource given to constructor!');
         }
         
@@ -65,8 +66,16 @@ class ChannelledSocket implements Channel {
         $this->reads = $reads = new \SplQueue;
         $this->writes = $writes = new \SplQueue;
     
-        $errorHandler = static function ($errno, $errstr) {
-            throw new ChannelException(\sprintf('Received corrupted data. Errno: %d; %s', $errno, $errstr));
+        $errorHandler = static function ($errno, $errstr, $errfile, $errline) {
+            if ($errno & \error_reporting()) {
+                throw new ChannelException(\sprintf(
+                    'Received corrupted data. Errno: %d; %s in file %s on line %d',
+                    $errno,
+                    $errstr,
+                    $errfile,
+                    $errline
+                ));
+            }
         };
         
         $this->readWatcher = Loop::onReadable($this->readResource, static function ($watcher, $stream) use ($reads, $errorHandler) {
@@ -80,7 +89,7 @@ class ChannelledSocket implements Channel {
                     
                     if ($data === false || ($data === '' && (\feof($stream) || !\is_resource($stream)))) {
                         $deferred->fail(new ChannelException("The socket unexpectedly closed"));
-                        return;
+                        break;
                     }
                     
                     $buffer .= $data;
@@ -95,7 +104,7 @@ class ChannelledSocket implements Channel {
     
                     if ($data["prefix"] !== 0) {
                         $deferred->fail(new ChannelException("Invalid header received"));
-                        return;
+                        break;
                     }
                     
                     $length = $data["length"];
@@ -107,7 +116,7 @@ class ChannelledSocket implements Channel {
     
                 if ($data === false || ($data === '' && (\feof($stream) || !\is_resource($stream)))) {
                     $deferred->fail(new ChannelException("The socket unexpectedly closed"));
-                    return;
+                    break;
                 }
                 
                 $buffer .= $data;
@@ -261,8 +270,8 @@ class ChannelledSocket implements Channel {
             );
         }
         
+        $data = \pack("CL", 0, \strlen($data)) . $data;
         $length = \strlen($data);
-        $data = \pack("CL", 0, $length) . $data;
         $written = 0;
         
         if ($this->writes->isEmpty()) {

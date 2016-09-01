@@ -39,8 +39,16 @@ class ChannelledStream implements Channel {
 
         $this->read = $read;
 
-        $this->errorHandler = static function ($errno, $errstr) {
-            throw new ChannelException(\sprintf('Received corrupted data. Errno: %d; %s', $errno, $errstr));
+        $this->errorHandler = static function ($errno, $errstr, $errfile, $errline) {
+            if ($errno & \error_reporting()) {
+                throw new ChannelException(\sprintf(
+                    'Received corrupted data. Errno: %d; %s in file %s on line %d',
+                    $errno,
+                    $errstr,
+                    $errfile,
+                    $errline
+                ));
+            }
         };
     }
 
@@ -54,22 +62,18 @@ class ChannelledStream implements Channel {
     public function doSend($data): \Generator {
         // Serialize the data to send into the channel.
         try {
-            $serialized = \serialize($data);
+            $data = \serialize($data);
         } catch (\Throwable $exception) {
             throw new SerializationException(
                 "The given data cannot be sent because it is not serializable.", $exception
             );
         }
 
-        $length = \strlen($serialized);
-
         try {
-            yield $this->write->write(\pack("CL", 0, $length) . $serialized);
+            return yield $this->write->write(\pack("CL", 0, \strlen($data)) . $data);
         } catch (\Throwable $exception) {
             throw new ChannelException("Sending on the channel failed. Did the context die?", $exception);
         }
-        
-        return $length;
     }
 
     /**

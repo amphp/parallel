@@ -199,9 +199,14 @@ class Process implements ProcessContext {
         }
 
         Loop::enable($this->watcher);
-
-        \fclose($this->stdout);
-        \fclose($this->stderr);
+    
+        if (\is_resource($this->stdout)) {
+            \fclose($this->stdout);
+        }
+    
+        if (\is_resource($this->stderr)) {
+            \fclose($this->stderr);
+        }
 
         return $this->deferred->getAwaitable();
     }

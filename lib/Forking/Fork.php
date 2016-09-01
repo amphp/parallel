@@ -136,7 +136,7 @@ class Fork implements Process, Strand {
             throw new \Error('Priority value must be between 0.0 and 1.0.');
         }
 
-        $nice = \round(19 - ($priority * 39));
+        $nice = (int) \round(19 - ($priority * 39));
 
         if (!\pcntl_setpriority($nice, $this->pid, \PRIO_PROCESS)) {
             throw new ContextException('Failed to set the fork\'s priority.');
@@ -156,11 +156,11 @@ class Fork implements Process, Strand {
         $sockets = @\stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
         if ($sockets === false) {
-                $message = "Failed to create socket pair";
-                if ($error = \error_get_last()) {
-                    $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
-                }
-                throw new ContextException($message);
+            $message = "Failed to create socket pair";
+            if ($error = \error_get_last()) {
+                $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+            }
+            throw new ContextException($message);
         }
 
         list($parent, $child) = $sockets;

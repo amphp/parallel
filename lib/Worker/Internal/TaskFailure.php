@@ -24,7 +24,7 @@ class TaskFailure implements TaskResult {
 
     public function __construct(string $id, \Throwable $exception) {
         $this->id = $id;
-        $this->type = get_class($exception);
+        $this->type = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
         $this->trace = $exception->getTraceAsString();

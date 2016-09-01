@@ -187,7 +187,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
             }
             
             if ($result instanceof Awaitable) {
-                yield $result;
+                $result = yield $result;
             }
             
             $this->wrap(null === $result ? $value : $result);
