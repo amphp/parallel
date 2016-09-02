@@ -18,7 +18,7 @@ class ExitFailure implements ExitStatus {
     private $trace;
 
     public function __construct(\Throwable $exception) {
-        $this->type = get_class($exception);
+        $this->type = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
         $this->trace = $exception->getTraceAsString();
@@ -29,6 +29,7 @@ class ExitFailure implements ExitStatus {
      */
     public function getResult() {
         throw new PanicError(
+            $this->type,
             \sprintf(
                 'Uncaught exception in execution context of type "%s" with message "%s"',
                 $this->type,
