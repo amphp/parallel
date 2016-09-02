@@ -34,7 +34,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
      *
      * @throws SemaphoreException If the semaphore could not be created due to an internal error.
      */
-    public function __construct($maxLocks, $permissions = 0600) {
+    public function __construct(int $maxLocks, int $permissions = 0600) {
         if (!\extension_loaded("sysvmsg")) {
             throw new \Error(__CLASS__ . " requires the sysvmsg extension.");
         }
@@ -48,8 +48,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
      *
      * @throws SemaphoreException If the semaphore could not be created due to an internal error.
      */
-    private function init($maxLocks, $permissions) {
-        $maxLocks = (int) $maxLocks;
+    private function init(int $maxLocks, int $permissions) {
         if ($maxLocks < 1) {
             $maxLocks = 1;
         }
