@@ -5,20 +5,13 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Success;
 use Interop\Async\Awaitable;
 
-class TaskSuccess implements TaskResult {
-    /** @var string */
-    private $id;
-    
+class TaskSuccess extends TaskResult {
     /** @var mixed Result of task. */
     private $result;
     
     public function __construct(string $id, $result) {
-        $this->id = $id;
+        parent::__construct($id);
         $this->result = $result;
-    }
-    
-    public function getId(): string {
-        return $this->id;
     }
     
     public function getAwaitable(): Awaitable {

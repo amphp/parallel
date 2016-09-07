@@ -6,10 +6,7 @@ use Amp\Failure;
 use Amp\Parallel\TaskException;
 use Interop\Async\Awaitable;
 
-class TaskFailure implements TaskResult {
-    /** @var string */
-    private $id;
-    
+class TaskFailure extends TaskResult {
     /** @var string */
     private $type;
 
@@ -23,15 +20,11 @@ class TaskFailure implements TaskResult {
     private $trace;
 
     public function __construct(string $id, \Throwable $exception) {
-        $this->id = $id;
+        parent::__construct($id);
         $this->type = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
         $this->trace = $exception->getTraceAsString();
-    }
-
-    public function getId(): string {
-        return $this->id;
     }
     
     public function getAwaitable(): Awaitable {

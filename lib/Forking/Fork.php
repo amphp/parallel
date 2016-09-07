@@ -249,7 +249,7 @@ class Fork implements Process, Strand {
     public function kill() {
         if ($this->isRunning()) {
             // Forcefully kill the process using SIGKILL.
-            \posix_kill($this->pid, SIGKILL);
+            \posix_kill($this->pid, \SIGKILL);
         }
 
         if ($this->channel !== null) {
@@ -271,7 +271,7 @@ class Fork implements Process, Strand {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
-        \posix_kill($this->pid, (int) $signo);
+        \posix_kill($this->pid, $signo);
     }
 
     /**
@@ -308,11 +308,11 @@ class Fork implements Process, Strand {
                     \is_object($response) ? \get_class($response) : \gettype($response)
                 ));
             }
-        
-            return $response->getResult();
         } finally {
             $this->kill();
         }
+    
+        return $response->getResult();
     }
     
     /**

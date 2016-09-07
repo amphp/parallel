@@ -200,22 +200,18 @@ class Thread implements Strand {
     private function doJoin(): \Generator {
         try {
             $response = yield $this->channel->receive();
-
+    
             if (!$response instanceof ExitStatus) {
                 throw new SynchronizationError('Did not receive an exit status from thread.');
             }
-
-            $result = $response->getResult();
-
-            $this->thread->join();
         } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;
+        } finally {
+            $this->close();
         }
 
-        $this->close();
-
-        return $result;
+        return $response->getResult();
     }
 
     /**
