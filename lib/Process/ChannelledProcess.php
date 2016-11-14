@@ -4,7 +4,7 @@ namespace Amp\Parallel\Process;
 
 use Amp\Parallel\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Parallel\Process\Process */
@@ -49,7 +49,7 @@ class ChannelledProcess implements ProcessContext, Strand {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Awaitable {
+    public function receive(): Promise {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
@@ -70,7 +70,7 @@ class ChannelledProcess implements ProcessContext, Strand {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Awaitable {
+    public function send($data): Promise {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
@@ -85,7 +85,7 @@ class ChannelledProcess implements ProcessContext, Strand {
     /**
      * {@inheritdoc}
      */
-    public function join(): Awaitable {
+    public function join(): Promise {
         return $this->process->join();
     }
 

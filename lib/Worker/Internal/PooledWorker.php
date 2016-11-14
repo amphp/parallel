@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Parallel\Worker\{ Task, Worker };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class PooledWorker implements Worker {
     /** @var callable */
@@ -52,14 +52,14 @@ class PooledWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task): Awaitable {
+    public function enqueue(Task $task): Promise {
         return $this->worker->enqueue($task);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): Awaitable {
+    public function shutdown(): Promise {
         return $this->worker->shutdown();
     }
 

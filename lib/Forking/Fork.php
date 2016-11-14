@@ -14,7 +14,7 @@ use Amp\Parallel\{
 };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -220,7 +220,7 @@ class Fork implements Process, Strand {
                 $result = new Coroutine($result);
             }
     
-            if ($result instanceof Awaitable) {
+            if ($result instanceof Promise) {
                 $result = yield $result;
             }
         
@@ -278,12 +278,12 @@ class Fork implements Process, Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Interop\Async\Awaitable<int>
+     * @return \Interop\Async\Promise<int>
      *
      * @throws \Amp\Parallel\StatusError          Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError Thrown if an exit status object is not received.
      */
-    public function join(): Awaitable {
+    public function join(): Promise {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
@@ -318,7 +318,7 @@ class Fork implements Process, Strand {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Awaitable {
+    public function receive(): Promise {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
@@ -340,7 +340,7 @@ class Fork implements Process, Strand {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Awaitable {
+    public function send($data): Promise {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }

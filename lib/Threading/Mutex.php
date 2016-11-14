@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Threading;
 
 use Amp\Parallel\Sync\Mutex as SyncMutex;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * A thread-safe, asynchronous mutex using the pthreads locking mechanism.
@@ -31,7 +31,7 @@ class Mutex implements SyncMutex {
     /**
      * {@inheritdoc}
      */
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return $this->mutex->acquire();
     }
 

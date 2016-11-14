@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\Coroutine;
 use Amp\Parallel\SharedMemoryException;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * A container object for sharing a value across contexts.
@@ -163,7 +163,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     /**
      * {@inheritdoc}
      */
-    public function synchronized(callable $callback): Awaitable {
+    public function synchronized(callable $callback): Promise {
         return new Coroutine($this->doSynchronized($callback));
     }
     
@@ -186,7 +186,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
                 $result = new Coroutine($result);
             }
             
-            if ($result instanceof Awaitable) {
+            if ($result instanceof Promise) {
                 $result = yield $result;
             }
             

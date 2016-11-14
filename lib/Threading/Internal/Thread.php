@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading\Internal;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An internal thread that executes a given function concurrently.
@@ -126,7 +126,7 @@ class Thread extends \Thread {
                 $result = new Coroutine($result);
             }
             
-            if ($result instanceof Awaitable) {
+            if ($result instanceof Promise) {
                 $result = yield $result;
             }
 

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Returns the global worker pool for the current context.
@@ -32,9 +32,9 @@ function pool(Pool $pool = null): Pool {
  *
  * @param \Amp\Parallel\Worker\Task $task The task to enqueue.
  *
- * @return \Interop\Async\Awaitable<mixed>
+ * @return \Interop\Async\Promise<mixed>
  */
-function enqueue(Task $task): Awaitable {
+function enqueue(Task $task): Promise {
     return pool()->enqueue($task);
 }
 

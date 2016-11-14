@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\{ Coroutine, Deferred };
 use Amp\Parallel\{ StatusError, Strand, WorkerException} ;
 use Amp\Parallel\Worker\Internal\{ Job, TaskResult };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Base class for most common types of task workers.
@@ -54,7 +54,7 @@ abstract class AbstractWorker implements Worker {
                 $this->context->receive()->when($this->when);
             }
             
-            $deferred->resolve($data->getAwaitable());
+            $deferred->resolve($data->promise());
         };
     }
 
@@ -82,7 +82,7 @@ abstract class AbstractWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task): Awaitable {
+    public function enqueue(Task $task): Promise {
         if (!$this->context->isRunning()) {
             throw new StatusError('The worker has not been started.');
         }
@@ -118,13 +118,13 @@ abstract class AbstractWorker implements Worker {
             throw new WorkerException('Sending the task to the worker failed.', $exception);
         }
     
-        return yield $deferred->getAwaitable();
+        return yield $deferred->promise();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): Awaitable {
+    public function shutdown(): Promise {
         if (!$this->context->isRunning() || $this->shutdown) {
             throw new StatusError('The worker is not running.');
         }

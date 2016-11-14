@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Threading;
 
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
@@ -60,7 +60,7 @@ class Semaphore implements SyncSemaphore {
     /**
      * {@inheritdoc}
      */
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return $this->semaphore->acquire();
     }
 

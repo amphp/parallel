@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 abstract class TaskResult {
     /** @var string Task identifier. */
@@ -23,7 +23,7 @@ abstract class TaskResult {
     }
     
     /**
-     * @return \Interop\Async\Awaitable<mixed> Resolved with the task result or failure reason.
+     * @return \Interop\Async\Promise<mixed> Resolved with the task result or failure reason.
      */
-    abstract public function getAwaitable(): Awaitable;
+    abstract public function promise(): Promise;
 }

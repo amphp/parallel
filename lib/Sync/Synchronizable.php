@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An object that can be synchronized for exclusive access across contexts.
@@ -17,8 +17,8 @@ interface Synchronizable {
      * @param callable<(mixed ...$args): \Generator|mixed> $callback The synchronized callback to invoke.
      *     The callback may be a regular function or a coroutine.
      *
-     * @return \Interop\Async\Awaitable<mixed> Resolves with the return value of $callback or fails if $callback
+     * @return \Interop\Async\Promise<mixed> Resolves with the return value of $callback or fails if $callback
      *     throws an exception.
      */
-    public function synchronized(callable $callback): Awaitable;
+    public function synchronized(callable $callback): Promise;
 }

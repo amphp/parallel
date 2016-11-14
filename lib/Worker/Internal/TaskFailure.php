@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Failure;
 use Amp\Parallel\TaskException;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class TaskFailure extends TaskResult {
     /** @var string */
@@ -27,7 +27,7 @@ class TaskFailure extends TaskResult {
         $this->trace = $exception->getTraceAsString();
     }
     
-    public function getAwaitable(): Awaitable {
+    public function promise(): Promise {
         return new Failure(new TaskException(
             $this->type,
             sprintf('Uncaught exception in worker of type "%s" with message "%s"', $this->type, $this->message),

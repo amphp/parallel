@@ -6,7 +6,7 @@ use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class FunctionsTest extends TestCase {
     public function testPool() {
@@ -23,7 +23,7 @@ class FunctionsTest extends TestCase {
     public function testEnqueue() {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task): Awaitable {
+            ->will($this->returnCallback(function (Task $task): Promise {
                 return new Success($task->run($this->createMock(Environment::class)));
             }));
 

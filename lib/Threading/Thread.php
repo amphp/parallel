@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading;
 use Amp\Coroutine;
 use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -177,12 +177,12 @@ class Thread implements Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Interop\Async\Awaitable<mixed>
+     * @return \Interop\Async\Promise<mixed>
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
      */
-    public function join(): Awaitable {
+    public function join(): Promise {
         if ($this->channel == null || $this->thread === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
@@ -217,7 +217,7 @@ class Thread implements Strand {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Awaitable {
+    public function receive(): Promise {
         if ($this->channel === null) {
             throw new StatusError('The process has not been started.');
         }
@@ -238,7 +238,7 @@ class Thread implements Strand {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Awaitable {
+    public function send($data): Promise {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }

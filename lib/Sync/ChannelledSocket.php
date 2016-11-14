@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Deferred, Failure, Success };
 use Amp\Parallel\{ ChannelException, SerializationException };
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 class ChannelledSocket implements Channel {
     const HEADER_LENGTH = 5;
@@ -237,7 +237,7 @@ class ChannelledSocket implements Channel {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Awaitable {
+    public function receive(): Promise {
         if (!$this->open) {
             return new Failure(new ChannelException("The channel is has been closed"));
         }
@@ -247,16 +247,16 @@ class ChannelledSocket implements Channel {
         
         Loop::enable($this->readWatcher);
         
-        return $deferred->getAwaitable();
+        return $deferred->promise();
     }
     
     /**
      * @param string $data
      * @param bool $end
      *
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Promise
      */
-    public function send($data): Awaitable {
+    public function send($data): Promise {
         if (!$this->open) {
             return new Failure(new ChannelException("The channel is has been closed"));
         }
@@ -303,7 +303,7 @@ class ChannelledSocket implements Channel {
         Loop::enable($this->writeWatcher);
     
         try {
-            $written = yield $deferred->getAwaitable();
+            $written = yield $deferred->promise();
         } catch (\Throwable $exception) {
             $this->close();
             throw $exception;

@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Success;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class TaskSuccess extends TaskResult {
     /** @var mixed Result of task. */
@@ -14,7 +14,7 @@ class TaskSuccess extends TaskResult {
         $this->result = $result;
     }
     
-    public function getAwaitable(): Awaitable {
+    public function promise(): Promise {
         return new Success($this->result);
     }
 }

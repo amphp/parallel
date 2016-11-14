@@ -5,7 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Stream\Stream;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -55,11 +55,11 @@ class ChannelledStream implements Channel {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Awaitable {
+    public function send($data): Promise {
         return new Coroutine($this->doSend($data));
     }
     
-    public function doSend($data): \Generator {
+    private function doSend($data): \Generator {
         // Serialize the data to send into the channel.
         try {
             $data = \serialize($data);
@@ -79,11 +79,11 @@ class ChannelledStream implements Channel {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Awaitable {
+    public function receive(): Promise {
         return new Coroutine($this->doReceive());
     }
     
-    public function doReceive(): \Generator {
+    private function doReceive(): \Generator {
         try {
             // Read the message length first to determine how much needs to be read from the stream.
             $buffer = yield $this->read->read(self::HEADER_LENGTH);

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Threading\Internal;
 
 use Amp\{ Coroutine, Pause };
 use Amp\Parallel\Sync\Lock;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * @internal
@@ -16,9 +16,9 @@ class Mutex extends \Threaded {
     private $lock = true;
     
     /**
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Promise
      */
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
     

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
@@ -32,14 +32,14 @@ interface Worker {
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \Interop\Async\Awaitable<mixed> Resolves with the return value of Task::run().
+     * @return \Interop\Async\Promise<mixed> Resolves with the return value of Task::run().
      */
-    public function enqueue(Task $task): Awaitable;
+    public function enqueue(Task $task): Promise;
 
     /**
-     * @return \Interop\Async\Awaitable<int> Exit code.
+     * @return \Interop\Async\Promise<int> Exit code.
      */
-    public function shutdown(): Awaitable;
+    public function shutdown(): Promise;
 
     /**
      * Immediately kills the context.

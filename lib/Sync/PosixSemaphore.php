@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Pause };
 use Amp\Parallel\SemaphoreException;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * A non-blocking, interprocess POSIX semaphore.
@@ -120,7 +120,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
         return $stat['msg_qnum'];
     }
 
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
     

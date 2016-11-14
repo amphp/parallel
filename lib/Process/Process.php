@@ -4,7 +4,7 @@ namespace Amp\Parallel\Process;
 
 use Amp\Deferred;
 use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError };
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 class Process implements ProcessContext {
     /** @var resource|null */
@@ -189,11 +189,11 @@ class Process implements ProcessContext {
     }
 
     /**
-     * @return \Interop\Async\Awaitable<int> Resolves with exit status.
+     * @return \Interop\Async\Promise<int> Resolves with exit status.
      *
      * @throws \Amp\Parallel\StatusError If the process has not been started.
      */
-    public function join(): Awaitable {
+    public function join(): Promise {
         if ($this->deferred === null) {
             throw new StatusError("The process has not been started");
         }
@@ -208,7 +208,7 @@ class Process implements ProcessContext {
             \fclose($this->stderr);
         }
 
-        return $this->deferred->getAwaitable();
+        return $this->deferred->promise();
     }
 
     /**

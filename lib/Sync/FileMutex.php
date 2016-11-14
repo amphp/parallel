@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Pause };
 use Amp\Parallel\MutexException;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * A cross-platform mutex that uses exclusive files as the lock mechanism.
@@ -37,7 +37,7 @@ class FileMutex implements Mutex {
     /**
      * {@inheritdoc}
      */
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
     

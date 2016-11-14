@@ -2,14 +2,14 @@
 
 namespace Amp\Parallel\Sync;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Interface for sending messages between execution contexts.
  */
 interface Channel {
     /**
-     * @return \Interop\Async\Awaitable<mixed>
+     * @return \Interop\Async\Promise<mixed>
      *
      * @throws \Amp\Parallel\StatusError Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError If the context has not been started or the context
@@ -17,12 +17,12 @@ interface Channel {
      * @throws \Amp\Parallel\ChannelException If receiving from the channel fails.
      * @throws \Amp\Parallel\SerializationException If unserializing the data fails.
      */
-    public function receive(): Awaitable;
+    public function receive(): Promise;
 
     /**
      * @param mixed $data
      *
-     * @return \Interop\Async\Awaitable<int> Resolves with the number of bytes sent on the channel.
+     * @return \Interop\Async\Promise<int> Resolves with the number of bytes sent on the channel.
      *
      * @throws \Amp\Parallel\StatusError Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError If the context has not been started or the context
@@ -31,5 +31,5 @@ interface Channel {
      * @throws \Error If an ExitStatus object is given.
      * @throws \Amp\Parallel\SerializationException If serializing the data fails.
      */
-    public function send($data): Awaitable;
+    public function send($data): Promise;
 }

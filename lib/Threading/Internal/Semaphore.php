@@ -4,7 +4,7 @@ namespace Amp\Parallel\Threading\Internal;
 
 use Amp\{ Coroutine, Pause };
 use Amp\Parallel\Sync\Lock;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.
@@ -36,9 +36,9 @@ class Semaphore extends \Threaded {
     }
 
     /**
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Promise
      */
-    public function acquire(): Awaitable {
+    public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
     
