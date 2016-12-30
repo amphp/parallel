@@ -14,7 +14,7 @@ use Amp\Parallel\{
 };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
-use Interop\Async\Promise;
+use Interop\Async\{ Loop, Promise };
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -174,10 +174,10 @@ class Fork implements Process, Strand {
                 \fclose($child);
 
                 try {
-                    \Amp\execute(function () use ($parent) {
+                    Loop::execute(\Amp\wrap(function () use ($parent) {
                         $channel = new ChannelledSocket($parent, $parent);
                         return $this->execute($channel);
-                    });
+                    }));
                     $code = 0;
                 } catch (\Throwable $exception) {
                     $code = 1;

@@ -4,6 +4,7 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Test\TestCase;
 use Amp\Pause;
+use Interop\Async\Loop;
 
 abstract class AbstractSemaphoreTest extends TestCase {
     /**
@@ -25,7 +26,7 @@ abstract class AbstractSemaphoreTest extends TestCase {
     }
 
     public function testAcquire() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
 
             $lock = yield $this->semaphore->acquire();
@@ -35,34 +36,34 @@ abstract class AbstractSemaphoreTest extends TestCase {
             $lock->release();
 
             $this->assertTrue($lock->isReleased());
-        });
+        }));
     }
 
     public function testAcquireMultiple() {
         $this->assertRunTimeGreaterThan(function () {
             $this->semaphore = $this->createSemaphore(1);
 
-            \Amp\execute(function () {
+            Loop::execute(\Amp\wrap(function () {
                 $lock1 = yield $this->semaphore->acquire();
-                \Amp\delay(500, function () use ($lock1) {
+                Loop::delay(500, function () use ($lock1) {
                     $lock1->release();
                 });
 
                 $lock2 = yield $this->semaphore->acquire();
-                \Amp\delay(500, function () use ($lock2) {
+                Loop::delay(500, function () use ($lock2) {
                     $lock2->release();
                 });
 
                 $lock3 = yield $this->semaphore->acquire();
-                \Amp\delay(500, function () use ($lock3) {
+                Loop::delay(500, function () use ($lock3) {
                     $lock3->release();
                 });
-            });
+            }));
         }, 1.5);
     }
 
     public function testCloneIsNewSemaphore() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
@@ -72,11 +73,11 @@ abstract class AbstractSemaphoreTest extends TestCase {
             $this->assertCount(0, $clone);
 
             $lock->release();
-        });
+        }));
     }
 
     public function testSerializedIsSameSemaphore() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
             $unserialized = unserialize(serialize($this->semaphore));
 
@@ -86,13 +87,13 @@ abstract class AbstractSemaphoreTest extends TestCase {
             $this->assertCount(0, $unserialized);
 
             $lock->release();
-        });
+        }));
     }
 
     public function testSimultaneousAcquire() {
         $this->semaphore = $this->createSemaphore(1);
 
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $awaitable1 = $this->semaphore->acquire();
             $awaitable2 = $this->semaphore->acquire();
             
@@ -103,6 +104,6 @@ abstract class AbstractSemaphoreTest extends TestCase {
             yield new Pause(500);
             
             (yield $awaitable2)->release();
-        });
+        }));
     }
 }

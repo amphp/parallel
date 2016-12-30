@@ -5,6 +5,7 @@ namespace Amp\Parallel\Test\Threading;
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
 use Amp\Parallel\Threading\{Semaphore, Thread};
 use Amp\Parallel\Test\Sync\AbstractSemaphoreTest;
+use Interop\Async\Loop;
 
 /**
  * @group threading
@@ -16,7 +17,7 @@ class SemaphoreTest extends AbstractSemaphoreTest {
     }
 
     public function testAcquireInMultipleThreads() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
 
             $thread1 = new Thread(function (SyncSemaphore $semaphore) {
@@ -48,6 +49,6 @@ class SemaphoreTest extends AbstractSemaphoreTest {
             yield $thread2->join();
 
             $this->assertGreaterThan(0.1, microtime(true) - $start);
-        });
+        }));
     }
 }

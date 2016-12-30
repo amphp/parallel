@@ -4,9 +4,10 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Threading\Thread;
 use Amp\Pause;
+use Interop\Async\Loop;
 
-Amp\execute(function () {
-    $timer = Amp\repeat(1000, function () {
+Loop::execute(function () {
+    $timer = Loop::repeat(1000, function () {
         static $i;
         $i = $i ? ++$i : 1;
         print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -38,6 +39,6 @@ Amp\execute(function () {
         printf("Received the following from child: %s\n", yield $context->receive());
         printf("Thread ended with value %d!\n", yield $context->join());
     } finally {
-        Amp\cancel($timer);
+        Loop::cancel($timer);
     }
 });

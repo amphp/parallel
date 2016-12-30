@@ -3,8 +3,9 @@
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Forking\Fork;
+use Interop\Async\Loop;
 
-Amp\execute(function () {
+Loop::execute(Amp\wrap(function () {
     $context = Fork::spawn(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
@@ -17,7 +18,7 @@ Amp\execute(function () {
         return 42;
     });
 
-    $timer = Amp\repeat(1000, function () use ($context) {
+    $timer = Loop::repeat(1000, function () use ($context) {
         static $i;
         $i = $i ? ++$i : 1;
         print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -30,6 +31,6 @@ Amp\execute(function () {
         print "Error from child!\n";
         print $e."\n";
     } finally {
-        Amp\cancel($timer);
+        Loop::cancel($timer);
     }
-});
+}));

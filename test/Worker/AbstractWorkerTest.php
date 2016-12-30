@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Test\TestCase;
+use Interop\Async\Loop;
 
 abstract class AbstractWorkerTest extends TestCase {
     /**
@@ -11,7 +12,7 @@ abstract class AbstractWorkerTest extends TestCase {
     abstract protected function createWorker();
 
     public function testIsRunning() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $worker = $this->createWorker();
             $this->assertFalse($worker->isRunning());
 
@@ -20,24 +21,22 @@ abstract class AbstractWorkerTest extends TestCase {
 
             yield $worker->shutdown();
             $this->assertFalse($worker->isRunning());
-        });
-
+        }));
     }
 
     public function testIsIdleOnStart() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $worker = $this->createWorker();
             $worker->start();
 
             $this->assertTrue($worker->isIdle());
 
             yield $worker->shutdown();
-        });
-
+        }));
     }
 
     public function testEnqueue() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $worker = $this->createWorker();
             $worker->start();
 
@@ -45,12 +44,11 @@ abstract class AbstractWorkerTest extends TestCase {
             $this->assertEquals(42, $returnValue);
 
             yield $worker->shutdown();
-        });
-
+        }));
     }
 
     public function testEnqueueMultiple() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $worker = $this->createWorker();
             $worker->start();
     
@@ -63,12 +61,11 @@ abstract class AbstractWorkerTest extends TestCase {
             $this->assertEquals([42, 56, 72], $values);
 
             yield $worker->shutdown();
-        });
-
+        }));
     }
 
     public function testNotIdleOnEnqueue() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $worker = $this->createWorker();
             $worker->start();
 
@@ -77,8 +74,7 @@ abstract class AbstractWorkerTest extends TestCase {
             yield $coroutine;
 
             yield $worker->shutdown();
-        });
-
+        }));
     }
 
     public function testKill() {

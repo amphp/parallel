@@ -4,6 +4,7 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Sync\{ PosixSemaphore, Semaphore };
+use Interop\Async\Loop;
 
 /**
  * @group posix
@@ -26,7 +27,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
     }
 
     public function testCloneIsNewSemaphore() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
             $clone = clone $this->semaphore;
 
@@ -38,7 +39,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
             $lock->release();
 
             $clone->free();
-        });
+        }));
 
     }
 
@@ -56,7 +57,7 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
      * @requires extension pcntl
      */
     public function testAcquireInMultipleForks() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $this->semaphore = $this->createSemaphore(1);
 
             $fork1 = new Fork(function (Semaphore $semaphore) {
@@ -88,6 +89,6 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
             yield $fork2->join();
 
             $this->assertGreaterThan(0.1, microtime(true) - $start);
-        });
+        }));
     }
 }

@@ -5,12 +5,13 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Amp\Parallel\Worker\DefaultPool;
 use Amp\Coroutine;
 use Amp\Parallel\Example\BlockingTask;
+use Interop\Async\Loop;
 
-Amp\execute(function() {
-    $timer = Amp\repeat(100, function () {
+Loop::execute(Amp\wrap(function() {
+    $timer = Loop::repeat(100, function () {
         printf(".\n");
     });
-    Amp\unreference($timer);
+    Loop::unreference($timer);
     
     $pool = new DefaultPool();
     $pool->start();
@@ -42,5 +43,5 @@ Amp\execute(function() {
     yield Amp\all($coroutines);
 
     return yield $pool->shutdown();
-});
+}));
 

@@ -4,6 +4,7 @@ namespace Amp\Parallel\Test\Threading;
 
 use Amp\Parallel\Threading\Thread;
 use Amp\Parallel\Test\AbstractContextTest;
+use Interop\Async\Loop;
 
 /**
  * @group threading
@@ -15,13 +16,13 @@ class ThreadTest extends AbstractContextTest {
     }
 
     public function testSpawnStartsThread() {
-        \Amp\execute(function () {
+        Loop::execute(\Amp\wrap(function () {
             $thread = Thread::spawn(function () {
                 usleep(100);
             });
 
             return yield $thread->join();
-        });
+        }));
 
     }
 }

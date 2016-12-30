@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading\Internal;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
-use Interop\Async\Promise;
+use Interop\Async\{ Loop, Promise };
 
 /**
  * An internal thread that executes a given function concurrently.
@@ -74,19 +74,19 @@ class Thread extends \Thread {
         // At this point, the thread environment has been prepared so begin using the thread.
 
         try {
-            \Amp\execute(function () {
+            Loop::execute(\Amp\wrap(function () {
                 $channel = new ChannelledSocket($this->socket, $this->socket, false);
         
-                $watcher = \Amp\repeat(self::KILL_CHECK_FREQUENCY, function () {
+                $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
                     if ($this->killed) {
-                        \Amp\stop();
+                        Loop::stop();
                     }
                 });
         
-                \Amp\unreference($watcher);
+                Loop::unreference($watcher);
         
                 return $this->execute($channel);
-            });
+            }));
         } catch (\Throwable $exception) {
             return 1;
         }
