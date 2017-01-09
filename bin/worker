@@ -4,7 +4,6 @@
 use Amp\Parallel\{ ChannelException, SerializationException} ;
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
 use Amp\Parallel\Worker\{ BasicEnvironment, Internal\TaskRunner };
-use Interop\Async\Loop;
 
 @cli_set_process_title("amp-worker");
 error_reporting(E_ALL);
@@ -37,7 +36,7 @@ ob_start(function ($data) {
     require $autoloadPath;
 })();
 
-Loop::execute(Amp\wrap(function () {
+AsyncInterop\Loop::execute(Amp\wrap(function () {
     $channel = new ChannelledSocket(STDIN, STDOUT, false);
     $environment = new BasicEnvironment;
     $runner = new TaskRunner($channel, $environment);

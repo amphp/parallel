@@ -7,7 +7,7 @@ use Amp\Stream\Stream;
 use Amp\Stream\ClosedException;
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class ChannelledStreamTest extends TestCase {
     /**

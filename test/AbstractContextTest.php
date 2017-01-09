@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test;
 
 use Amp\Parallel\Sync\Internal\ExitSuccess;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 abstract class AbstractContextTest extends TestCase {
     /**

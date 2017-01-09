@@ -4,7 +4,7 @@ namespace Amp\Parallel\Threading;
 
 use Amp\Coroutine;
 use Amp\Parallel\Sync\Parcel as SyncParcel;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * A thread-safe container that shares a value between multiple threads.
@@ -48,7 +48,7 @@ class Parcel implements SyncParcel {
     }
 
     /**
-     * @return \Interop\Async\Promise
+     * @return \AsyncInterop\Promise
      */
     public function synchronized(callable $callback): Promise {
         return new Coroutine($this->doSynchronized($callback));

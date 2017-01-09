@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Threading;
 
 use Amp\Parallel\Threading\Thread;
 use Amp\Parallel\Test\AbstractContextTest;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 /**
  * @group threading

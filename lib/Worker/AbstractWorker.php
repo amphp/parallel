@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\{ Coroutine, Deferred };
 use Amp\Parallel\{ StatusError, Strand, WorkerException} ;
 use Amp\Parallel\Worker\Internal\{ Job, TaskResult };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Base class for most common types of task workers.

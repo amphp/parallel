@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class BasicEnvironment implements Environment {
     /** @var array */

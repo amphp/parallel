@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 interface Context {
     /**
@@ -21,7 +21,7 @@ interface Context {
     public function kill();
 
     /**
-     * @return \Interop\Async\Promise<mixed> Resolves with the returned from the context.
+     * @return \AsyncInterop\Promise<mixed> Resolves with the returned from the context.
      */
     public function join(): Promise;
 }

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Forking;
 
 use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Test\AbstractContextTest;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 /**
  * @group forking

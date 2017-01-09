@@ -4,7 +4,7 @@ namespace Amp\Parallel\Process;
 
 use Amp\Parallel\{ Process as ProcessContext, StatusError, Strand, SynchronizationError };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Parallel\Process\Process */

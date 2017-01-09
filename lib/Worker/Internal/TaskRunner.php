@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\{ Coroutine, Failure, Success };
 use Amp\Parallel\{ Sync\Channel, Worker\Environment };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class TaskRunner {
     /** @var \Amp\Parallel\Sync\Channel */
@@ -21,7 +21,7 @@ class TaskRunner {
     /**
      * Runs the task runner, receiving tasks from the parent and sending the result of those tasks.
      *
-     * @return \Interop\Async\Promise
+     * @return \AsyncInterop\Promise
      */
     public function run(): Promise {
         return new Coroutine($this->execute());

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Threading;
 
 use Amp\Parallel\Threading\Mutex;
 use Amp\Parallel\Test\TestCase;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 /**
  * @group threading

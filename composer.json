@@ -8,7 +8,7 @@
         "multi-threading",
         "multi-processing"
     ],
-    "homepage": "https://github.com/amphp/concurrent",
+    "homepage": "https://github.com/amphp/parallel",
     "license": "MIT",
     "authors": [
         {

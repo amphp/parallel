@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Worker\Internal\TaskRunner;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * A worker thread that executes task objects.

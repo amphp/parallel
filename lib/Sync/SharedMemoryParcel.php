@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\Coroutine;
 use Amp\Parallel\SharedMemoryException;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * A container object for sharing a value across contexts.

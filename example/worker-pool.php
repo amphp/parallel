@@ -5,7 +5,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Amp\Parallel\Worker\DefaultPool;
 use Amp\Coroutine;
 use Amp\Parallel\Example\BlockingTask;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 Loop::execute(Amp\wrap(function() {
     $timer = Loop::repeat(100, function () {

@@ -4,7 +4,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Threading\Thread;
 use Amp\Pause;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 Loop::execute(function () {
     $timer = Loop::repeat(1000, function () {

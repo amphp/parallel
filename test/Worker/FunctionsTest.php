@@ -6,7 +6,7 @@ use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class FunctionsTest extends TestCase {
     public function testPool() {

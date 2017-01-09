@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * A non-blocking synchronization primitive that can be used for mutual exclusion across contexts.
@@ -18,7 +18,7 @@ interface Mutex
      *
      * Acquires a lock on the mutex.
      *
-     * @return \Interop\Async\Promise<\Amp\Parallel\Sync\Lock> Resolves with a lock object when the acquire is
+     * @return \AsyncInterop\Promise<\Amp\Parallel\Sync\Lock> Resolves with a lock object when the acquire is
      * successful.
      */
     public function acquire(): Promise;

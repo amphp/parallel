@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Test\TestCase;
 use Amp\Pause;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 abstract class AbstractSemaphoreTest extends TestCase {
     /**

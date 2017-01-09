@@ -5,7 +5,7 @@ namespace Amp\Parallel\Test\Threading;
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
 use Amp\Parallel\Threading\{Semaphore, Thread};
 use Amp\Parallel\Test\Sync\AbstractSemaphoreTest;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 /**
  * @group threading

@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Test\TestCase;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 abstract class AbstractWorkerTest extends TestCase {
     /**

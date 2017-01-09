@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading\Internal;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 /**
  * An internal thread that executes a given function concurrently.

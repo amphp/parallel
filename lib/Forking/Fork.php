@@ -14,7 +14,7 @@ use Amp\Parallel\{
 };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -278,7 +278,7 @@ class Fork implements Process, Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Interop\Async\Promise<int>
+     * @return \AsyncInterop\Promise<int>
      *
      * @throws \Amp\Parallel\StatusError          Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError Thrown if an exit status object is not received.

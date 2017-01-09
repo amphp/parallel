@@ -4,7 +4,7 @@ namespace Amp\Parallel\Process;
 
 use Amp\Deferred;
 use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class Process implements ProcessContext {
     /** @var resource|null */
@@ -189,7 +189,7 @@ class Process implements ProcessContext {
     }
 
     /**
-     * @return \Interop\Async\Promise<int> Resolves with exit status.
+     * @return \AsyncInterop\Promise<int> Resolves with exit status.
      *
      * @throws \Amp\Parallel\StatusError If the process has not been started.
      */

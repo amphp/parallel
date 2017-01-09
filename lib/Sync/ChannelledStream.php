@@ -5,7 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
 use Amp\Stream\Stream;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * An asynchronous channel for sending data between threads and processes.

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\{ CallableMaker, Coroutine };
 use Amp\Parallel\StatusError;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -149,7 +149,7 @@ class DefaultPool implements Pool {
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \Interop\Async\Promise<mixed> The return value of Task::run().
+     * @return \AsyncInterop\Promise<mixed> The return value of Task::run().
      *
      * @throws \Amp\Parallel\StatusError If the pool has not been started.
      * @throws \Amp\Parallel\TaskException If the task throws an exception.
@@ -183,7 +183,7 @@ class DefaultPool implements Pool {
      *
      * @coroutine
      *
-     * @return \Interop\Async\Promise<int[]> Array of exit status from all workers.
+     * @return \AsyncInterop\Promise<int[]> Array of exit status from all workers.
      *
      * @throws \Amp\Parallel\StatusError If the pool has not been started.
      */

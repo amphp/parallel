@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading;
 use Amp\Coroutine;
 use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Implements an execution context using native multi-threading.
@@ -177,7 +177,7 @@ class Thread implements Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Interop\Async\Promise<mixed>
+     * @return \AsyncInterop\Promise<mixed>
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
