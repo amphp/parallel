@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, SerializationException };
-use Amp\Stream\Stream;
+use Amp\Stream\ByteStream;
 use AsyncInterop\Promise;
 
 /**
@@ -15,10 +15,10 @@ use AsyncInterop\Promise;
 class ChannelledStream implements Channel {
     const HEADER_LENGTH = 5;
 
-    /** @var \Amp\Stream\Stream */
+    /** @var \Amp\Stream\ByteStream */
     private $read;
 
-    /** @var \Amp\Stream\Stream */
+    /** @var \Amp\Stream\ByteStream */
     private $write;
 
     /** @var \Closure */
@@ -27,10 +27,10 @@ class ChannelledStream implements Channel {
     /**
      * Creates a new channel instance.
      *
-     * @param \Amp\Stream\Stream $read
-     * @param \Amp\Stream\Stream|null $write
+     * @param \Amp\Stream\ByteStream $read
+     * @param \Amp\Stream\ByteStream|null $write
      */
-    public function __construct(Stream $read, Stream $write = null) {
+    public function __construct(ByteStream $read, ByteStream $write = null) {
         if ($write === null) {
             $this->write = $read;
         } else {

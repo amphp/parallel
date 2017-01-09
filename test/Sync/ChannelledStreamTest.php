@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Stream\Stream;
+use Amp\Stream\ByteStream;
 use Amp\Stream\ClosedException;
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
@@ -11,10 +11,10 @@ use AsyncInterop\Loop;
 
 class ChannelledStreamTest extends TestCase {
     /**
-     * @return \Amp\Stream\Stream|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Amp\Stream\ByteStream|\PHPUnit_Framework_MockObject_MockObject
      */
     protected function createMockStream() {
-        $mock = $this->createMock(Stream::class);
+        $mock = $this->createMock(ByteStream::class);
 
         $buffer = '';
 
@@ -110,13 +110,13 @@ class ChannelledStreamTest extends TestCase {
      */
     public function testSendAfterClose() {
         Loop::execute(\Amp\wrap(function () {
-            $mock = $this->createMock(Stream::class);
+            $mock = $this->createMock(ByteStream::class);
             $mock->expects($this->once())
                 ->method('write')
                 ->will($this->throwException(new ClosedException));
 
             $a = new ChannelledStream($mock);
-            $b = new ChannelledStream($this->createMock(Stream::class));
+            $b = new ChannelledStream($this->createMock(ByteStream::class));
 
             yield $a->send('hello');
         }));
@@ -129,7 +129,7 @@ class ChannelledStreamTest extends TestCase {
      */
     public function testReceiveAfterClose() {
         Loop::execute(\Amp\wrap(function () {
-            $mock = $this->createMock(Stream::class);
+            $mock = $this->createMock(ByteStream::class);
             $mock->expects($this->once())
                 ->method('read')
                 ->will($this->throwException(new ClosedException));
