@@ -117,7 +117,7 @@ class Process implements ProcessContext {
         $fd = [
             ["pipe", "r"], // stdin
             ["pipe", "w"], // stdout
-            ["pipe", "a"], // stderr
+            ["pipe", "w"], // stderr
             ["pipe", "w"], // exit code pipe
         ];
 
