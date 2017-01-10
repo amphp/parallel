@@ -146,12 +146,14 @@ class Process implements ProcessContext {
 
         $this->pid = $status["pid"];
 
+        foreach ($pipes as $pipe) {
+            \stream_set_blocking($pipe, false);
+        }
+
         $this->stdin = $stdin = $pipes[0];
         $this->stdout = $pipes[1];
         $this->stderr = $pipes[2];
-
         $stream = $pipes[3];
-        \stream_set_blocking($stream, false);
 
         $process = &$this->process;
         
