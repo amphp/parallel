@@ -72,18 +72,20 @@ class Process implements ProcessContext {
     public function __destruct() {
         if (\getmypid() === $this->oid) {
             $this->kill(); // Will only terminate if the process is still running.
-    
-            if (\is_resource($this->stdin)) {
-                \fclose($this->stdin);
-            }
-    
-            if (\is_resource($this->stdout)) {
-                \fclose($this->stdout);
-            }
-    
-            if (\is_resource($this->stderr)) {
-                \fclose($this->stderr);
-            }
+        }
+
+        Loop::cancel($this->watcher);
+
+        if (\is_resource($this->stdin)) {
+            \fclose($this->stdin);
+        }
+
+        if (\is_resource($this->stdout)) {
+            \fclose($this->stdout);
+        }
+
+        if (\is_resource($this->stderr)) {
+            \fclose($this->stderr);
         }
     }
 
@@ -156,6 +158,8 @@ class Process implements ProcessContext {
         $this->watcher = Loop::onReadable($stream, static function ($watcher, $resource) use (
             &$process, $deferred, $stdin
         ) {
+            Loop::cancel($watcher);
+
             try {
                 try {
                     if (!\is_resource($resource) || \feof($resource)) {
@@ -176,13 +180,13 @@ class Process implements ProcessContext {
                     if (\is_resource($stdin)) {
                         \fclose($stdin);
                     }
-                    Loop::cancel($watcher);
                 }
-                
-                $deferred->resolve((int) $code);
             } catch (\Throwable $exception) {
                 $deferred->fail($exception);
+                return;
             }
+
+            $deferred->resolve((int) $code);
         });
         
         Loop::disable($this->watcher);
@@ -199,14 +203,6 @@ class Process implements ProcessContext {
         }
 
         Loop::enable($this->watcher);
-    
-        if (\is_resource($this->stdout)) {
-            \fclose($this->stdout);
-        }
-    
-        if (\is_resource($this->stderr)) {
-            \fclose($this->stderr);
-        }
 
         return $this->deferred->promise();
     }
