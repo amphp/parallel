@@ -2,7 +2,10 @@
 
 namespace Amp\Parallel\Worker;
 
-use AsyncInterop\Promise;
+use AsyncInterop\{ Loop, Promise };
+
+const LOOP_POOL_IDENTIFIER = Pool::class;
+const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
 
 /**
  * Returns the global worker pool for the current context.
@@ -12,19 +15,21 @@ use AsyncInterop\Promise;
  * @return \Amp\Parallel\Worker\Pool The global worker pool instance.
  */
 function pool(Pool $pool = null): Pool {
-    static $instance;
+    if ($pool === null) {
+        $pool = Loop::getState(LOOP_POOL_IDENTIFIER);
+        if ($pool) {
+            return $pool;
+        }
 
-    if (null !== $pool) {
-        $instance = $pool;
-    } elseif (null === $instance) {
-        $instance = new DefaultPool;
+        $pool = new DefaultPool;
     }
 
-    if (!$instance->isRunning()) {
-        $instance->start();
+    if (!$pool->isRunning()) {
+        $pool->start();
     }
 
-    return $instance;
+    Loop::setState(LOOP_POOL_IDENTIFIER, $pool);
+    return $pool;
 }
 
 /**
@@ -57,15 +62,16 @@ function create(): Worker {
  * @return \Amp\Parallel\Worker\WorkerFactory
  */
 function factory(WorkerFactory $factory = null): WorkerFactory {
-    static $instance;
+    if ($factory === null) {
+        $factory = Loop::getState(LOOP_FACTORY_IDENTIFIER);
+        if ($factory) {
+            return $factory;
+        }
 
-    if (null !== $factory) {
-        $instance = $factory;
-    } elseif (null === $instance) {
-        $instance = new DefaultWorkerFactory;
+        $factory = new DefaultWorkerFactory;
     }
-
-    return $instance;
+    Loop::setState(LOOP_FACTORY_IDENTIFIER, $factory);
+    return $factory;
 }
 
 /**
