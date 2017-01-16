@@ -1,12 +1,10 @@
 #!/usr/bin/env php
 <?php declare(strict_types = 1);
 
-use Amp\Parallel\{ ChannelException, SerializationException} ;
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
 use Amp\Parallel\Worker\{ BasicEnvironment, Internal\TaskRunner };
 
-@cli_set_process_title("amp-worker");
-error_reporting(E_ALL);
+@cli_set_process_title('amp-worker');
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
 ob_start(function ($data) {
@@ -16,8 +14,8 @@ ob_start(function ($data) {
 
 (function () {
     $paths = [
-        dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'autoload.php',
-        dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php',
+        dirname(__DIR__, 3) . '/autoload.php',
+        dirname(__DIR__) . '/vendor/autoload.php',
     ];
     
     $autoloadPath = null;
@@ -47,16 +45,5 @@ AsyncInterop\Loop::execute(Amp\wrap(function () {
         $result = new ExitFailure($exception);
     }
 
-    // Attempt to return the result.
-    try {
-        try {
-            return yield $channel->send($result);
-        } catch (SerializationException $exception) {
-            // Serializing the result failed. Send the reason why.
-            return yield $channel->send(new ExitFailure($exception));
-        }
-    } catch (ChannelException $exception) {
-        // The result was not sendable! The parent context must have died or killed the context.
-        return 0;
-    }
+    $channel->send($result); // Do not yield sending result on channel, process does not care if result arrives.
 }));

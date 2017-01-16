@@ -21,7 +21,8 @@
         }
     ],
     "require": {
-        "amphp/amp": "^2.0"
+        "amphp/amp": "^2.0",
+        "amphp/process": "dev-amp_v2 as 0.2"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
