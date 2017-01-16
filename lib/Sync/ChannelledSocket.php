@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Deferred, Failure, Success };
+use Amp\{ Deferred, Failure, Success };
 use Amp\Parallel\{ ChannelException, SerializationException };
 use AsyncInterop\{ Loop, Promise };
 
@@ -146,36 +146,47 @@ class ChannelledSocket implements Channel {
         });
         
         $this->writeWatcher = Loop::onWritable($this->writeResource, static function ($watcher, $stream) use ($writes) {
-            while (!$writes->isEmpty()) {
-                /** @var \Amp\Deferred $deferred */
-                list($data, $previous, $deferred) = $writes->shift();
-                $length = \strlen($data);
-                
-                if ($length === 0) {
-                    $deferred->resolve(0);
-                    continue;
-                }
-                
-                // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
-                $written = @\fwrite($stream, $data);
-                
-                if ($written === false || $written === 0) {
-                    $message = "Failed to write to socket";
-                    if ($error = \error_get_last()) {
-                        $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+            try {
+                while (!$writes->isEmpty()) {
+                    /** @var \Amp\Deferred $deferred */
+                    list($data, $previous, $deferred) = $writes->shift();
+                    $length = \strlen($data);
+
+                    if ($length === 0) {
+                        $deferred->resolve(0);
+                        continue;
                     }
-                    $deferred->fail(new ChannelException($message));
+
+                    // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
+                    $written = @\fwrite($stream, $data);
+
+                    if ($written === false || $written === 0) {
+                        $message = "Failed to write to socket";
+                        if ($error = \error_get_last()) {
+                            $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+                        }
+                        $exception = new ChannelException($message);
+                        $deferred->fail($exception);
+                        while (!$writes->isEmpty()) {
+                            list( , , $deferred) = $writes->shift();
+                            $deferred->fail($exception);
+                        }
+                        return;
+                    }
+
+                    if ($length <= $written) {
+                        $deferred->resolve($written + $previous);
+                        continue;
+                    }
+
+                    $data = \substr($data, $written);
+                    $writes->unshift([$data, $written + $previous, $deferred]);
                     return;
                 }
-                
-                if ($length <= $written) {
-                    $deferred->resolve($written + $previous);
-                    continue;
+            } finally {
+                if ($writes->isEmpty()) {
+                    Loop::disable($watcher);
                 }
-                
-                $data = \substr($data, $written);
-                $writes->unshift([$data, $written + $previous, $deferred]);
-                return;
             }
         });
         
@@ -224,14 +235,9 @@ class ChannelledSocket implements Channel {
                 $deferred->fail($exception);
             } while (!$this->writes->isEmpty());
         }
-        
-        // defer this, else the Loop::disable() may be invalid
-        $read = $this->readWatcher;
-        $write = $this->writeWatcher;
-        Loop::defer(static function () use ($read, $write) {
-            Loop::cancel($read);
-            Loop::cancel($write);
-        });
+
+        Loop::cancel($this->readWatcher);
+        Loop::cancel($this->writeWatcher);
     }
     
     /**
@@ -244,9 +250,7 @@ class ChannelledSocket implements Channel {
         
         $deferred = new Deferred;
         $this->reads->push(["", 0, $deferred]);
-        
         Loop::enable($this->readWatcher);
-        
         return $deferred->promise();
     }
     
@@ -260,7 +264,7 @@ class ChannelledSocket implements Channel {
         if (!$this->open) {
             return new Failure(new ChannelException("The channel is has been closed"));
         }
-    
+
         // Serialize the data to send into the channel.
         try {
             $data = \serialize($data);
@@ -273,7 +277,7 @@ class ChannelledSocket implements Channel {
         $data = \pack("CL", 0, \strlen($data)) . $data;
         $length = \strlen($data);
         $written = 0;
-        
+
         if ($this->writes->isEmpty()) {
             // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
             $written = @\fwrite($this->writeResource, $data);
@@ -292,27 +296,10 @@ class ChannelledSocket implements Channel {
             
             $data = \substr($data, $written);
         }
-        
-        return new Coroutine($this->doSend($data, $written));
-    }
-    
-    private function doSend(string $data, int $written): \Generator {
+
         $deferred = new Deferred;
         $this->writes->push([$data, $written, $deferred]);
-    
         Loop::enable($this->writeWatcher);
-    
-        try {
-            $written = yield $deferred->promise();
-        } catch (\Throwable $exception) {
-            $this->close();
-            throw $exception;
-        } finally {
-            if ($this->writes->isEmpty()) {
-                Loop::disable($this->writeWatcher);
-            }
-        }
-    
-        return $written;
+        return $deferred->promise();
     }
 }
