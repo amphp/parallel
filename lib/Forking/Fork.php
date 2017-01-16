@@ -127,11 +127,11 @@ class Fork implements Process, Strand {
      * @param float $priority A priority value between 0 and 1.
      *
      * @throws \Error If the given priority is an invalid value.
-     * @throws ContextException        If the operation failed.
+     * @throws ContextException If the operation failed.
      *
      * @see Fork::getPriority()
      */
-    public function setPriority(float $priority): float {
+    public function setPriority(float $priority) {
         if ($priority < 0 || $priority > 1) {
             throw new \Error('Priority value must be between 0.0 and 1.0.');
         }
