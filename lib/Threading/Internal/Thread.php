@@ -14,6 +14,10 @@ use AsyncInterop\{ Loop, Promise };
  */
 class Thread extends \Thread {
     const KILL_CHECK_FREQUENCY = 250;
+    const AUTO_LOAD_FILENAME = "/autoload.php";
+
+    /** @var string */
+    private static $autoloadPath;
 
     /** @var callable The function to execute in the thread. */
     private $function;
@@ -38,6 +42,17 @@ class Thread extends \Thread {
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
+
+        if (self::$autoloadPath === null) { // Determine path to composer autoload.php
+            foreach (\get_included_files() as $path) {
+                if (\substr($path, -\strlen(self::AUTO_LOAD_FILENAME)) === self::AUTO_LOAD_FILENAME) {
+                    self::$autoloadPath = $path;
+                    return;
+                }
+            }
+
+            throw new \Error(\sprintf("Could not locate %s", self::AUTO_LOAD_FILENAME));
+        }
     }
 
     /**
@@ -52,25 +67,10 @@ class Thread extends \Thread {
          * values (like resources) will be lost. This happens even with
          * thread-safe objects.
          */
-        $paths = [
-            \dirname(__DIR__, 3) . '/vendor/autoload.php',
-            \dirname(__DIR__, 5) . '/autoload.php',
-        ];
 
-        $autoloadPath = null;
-        foreach ($paths as $path) {
-            if (\file_exists($path)) {
-                $autoloadPath = $path;
-                break;
-            }
-        }
-
-        if ($autoloadPath === null) {
-            throw new \Error('Could not locate autoload.php');
-        }
-
-        // Protect scope by using a static closure.
-        (static function () use ($autoloadPath) { require $autoloadPath; })();
+        // Protect scope by using an unbound closure (protects static access as well).
+        $autoloadPath = self::$autoloadPath;
+        (static function () use ($autoloadPath) { require $autoloadPath; })->bindTo(null, null)();
 
         // At this point, the thread environment has been prepared so begin using the thread.
 
