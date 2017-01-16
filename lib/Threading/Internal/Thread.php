@@ -53,10 +53,10 @@ class Thread extends \Thread {
          * thread-safe objects.
          */
         $paths = [
-            \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . 'autoload.php',
-            \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . 'vendor' . \DIRECTORY_SEPARATOR . 'autoload.php',
+            \dirname(__DIR__, 3) . '/vendor/autoload.php',
+            \dirname(__DIR__, 5) . '/autoload.php',
         ];
-    
+
         $autoloadPath = null;
         foreach ($paths as $path) {
             if (\file_exists($path)) {
@@ -64,33 +64,34 @@ class Thread extends \Thread {
                 break;
             }
         }
-    
+
         if ($autoloadPath === null) {
             throw new \Error('Could not locate autoload.php');
         }
-    
-        require $autoloadPath;
-        
+
+        // Protect scope by using a static closure.
+        (static function () use ($autoloadPath) { require $autoloadPath; })();
+
         // At this point, the thread environment has been prepared so begin using the thread.
 
         try {
             Loop::execute(\Amp\wrap(function () {
                 $channel = new ChannelledSocket($this->socket, $this->socket, false);
-        
+
                 $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
                     if ($this->killed) {
                         Loop::stop();
                     }
                 });
-        
+
                 Loop::unreference($watcher);
-        
+
                 return $this->execute($channel);
             }));
         } catch (\Throwable $exception) {
             return 1;
         }
-        
+
         return 0;
     }
 
@@ -119,13 +120,13 @@ class Thread extends \Thread {
             if (empty($function)) {
                 $function = $this->function;
             }
-    
+
             $result = $function(...$this->args);
-            
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
             }
-            
+
             if ($result instanceof Promise) {
                 $result = yield $result;
             }
