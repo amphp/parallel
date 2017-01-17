@@ -225,7 +225,7 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Error
      */
-    public function testSendExitStatus() {
+    public function testSendExitResult() {
         Loop::execute(\Amp\wrap(function () {
             $context = $this->createContext(function () {
                 $value = yield $this->receive();

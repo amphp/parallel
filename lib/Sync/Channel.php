@@ -28,7 +28,7 @@ interface Channel {
      * @throws \Amp\Parallel\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
      * @throws \Amp\Parallel\ChannelException If sending on the channel fails.
-     * @throws \Error If an ExitStatus object is given.
+     * @throws \Error If an ExitResult object is given.
      * @throws \Amp\Parallel\SerializationException If serializing the data fails.
      */
     public function send($data): Promise;

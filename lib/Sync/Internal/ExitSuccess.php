@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync\Internal;
 
-class ExitSuccess implements ExitStatus {
+class ExitSuccess implements ExitResult {
     /** @var mixed */
     private $result;
 

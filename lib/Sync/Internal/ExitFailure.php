@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync\Internal;
 
 use Amp\Parallel\PanicError;
 
-class ExitFailure implements ExitStatus {
+class ExitFailure implements ExitResult {
     /** @var string */
     private $type;
 

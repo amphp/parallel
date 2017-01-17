@@ -4,7 +4,7 @@ namespace Amp\Parallel\Threading;
 
 use Amp\Coroutine;
 use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
-use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
+use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
 use AsyncInterop\Promise;
 
 /**
@@ -201,8 +201,8 @@ class Thread implements Strand {
         try {
             $response = yield $this->channel->receive();
     
-            if (!$response instanceof ExitStatus) {
-                throw new SynchronizationError('Did not receive an exit status from thread.');
+            if (!$response instanceof ExitResult) {
+                throw new SynchronizationError('Did not receive an exit result from thread.');
             }
         } catch (\Throwable $exception) {
             $this->kill();
@@ -223,7 +223,7 @@ class Thread implements Strand {
         }
         
         return \Amp\pipe($this->channel->receive(), static function ($data) {
-            if ($data instanceof ExitStatus) {
+            if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
                     'Thread unexpectedly exited with result of type: %s',
@@ -243,8 +243,8 @@ class Thread implements Strand {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        if ($data instanceof ExitStatus) {
-            throw new \Error('Cannot send exit status objects.');
+        if ($data instanceof ExitResult) {
+            throw new \Error('Cannot send exit result objects.');
         }
 
         return $this->channel->send($data);

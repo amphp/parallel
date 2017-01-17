@@ -13,7 +13,7 @@ use Amp\Parallel\{
     SynchronizationError
 };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
-use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitStatus, ExitSuccess };
+use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitResult, ExitSuccess };
 use AsyncInterop\{ Loop, Promise };
 
 /**
@@ -302,9 +302,9 @@ class Fork implements Process, Strand {
         try {
             $response = yield $this->channel->receive();
         
-            if (!$response instanceof ExitStatus) {
+            if (!$response instanceof ExitResult) {
                 throw new SynchronizationError(\sprintf(
-                    'Did not receive an exit status from fork. Instead received data of type %s',
+                    'Did not receive an exit result from fork. Instead received data of type %s',
                     \is_object($response) ? \get_class($response) : \gettype($response)
                 ));
             }
@@ -324,7 +324,7 @@ class Fork implements Process, Strand {
         }
         
         return \Amp\pipe($this->channel->receive(), static function ($data) {
-            if ($data instanceof ExitStatus) {
+            if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
                     'Forked process unexpectedly exited with result of type: %s',
@@ -345,8 +345,8 @@ class Fork implements Process, Strand {
             throw new StatusError('The fork has not been started or has already finished.');
         }
 
-        if ($data instanceof ExitStatus) {
-            throw new \Error('Cannot send exit status objects.');
+        if ($data instanceof ExitResult) {
+            throw new \Error('Cannot send exit result objects.');
         }
 
         return $this->channel->send($data);

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Process;
 
 use Amp\Coroutine;
 use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError, Strand, SynchronizationError };
-use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitStatus };
+use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
 use Amp\Process\Process;
 use AsyncInterop\Promise;
 
@@ -60,7 +60,7 @@ class ChannelledProcess implements ProcessContext, Strand {
         }
 
         return \Amp\pipe($this->channel->receive(), static function ($data) {
-            if ($data instanceof ExitStatus) {
+            if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
                     "Process unexpectedly exited with result of type: %s",
@@ -80,8 +80,8 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw new StatusError("The process has not been started");
         }
 
-        if ($data instanceof ExitStatus) {
-            throw new \Error("Cannot send exit status objects");
+        if ($data instanceof ExitResult) {
+            throw new \Error("Cannot send exit result objects");
         }
 
         return $this->channel->send($data);
@@ -101,8 +101,8 @@ class ChannelledProcess implements ProcessContext, Strand {
     private function doJoin(): \Generator {
         try {
             $data = yield $this->channel->receive();
-            if (!$data instanceof ExitStatus) {
-                throw new SynchronizationError("Did not receive an exit status from process");
+            if (!$data instanceof ExitResult) {
+                throw new SynchronizationError("Did not receive an exit result from process");
             }
         } catch (\Throwable $exception) {
             $this->kill();
