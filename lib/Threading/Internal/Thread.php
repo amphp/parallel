@@ -14,7 +14,7 @@ use AsyncInterop\{ Loop, Promise };
  */
 class Thread extends \Thread {
     const KILL_CHECK_FREQUENCY = 250;
-    const AUTOLOAD_FILENAME = "/autoload.php";
+    const AUTOLOAD_FILENAME = "autoload.php";
 
     /** @var string */
     private static $autoloadPath;
@@ -44,10 +44,17 @@ class Thread extends \Thread {
         $this->socket = $socket;
 
         if (self::$autoloadPath === null) { // Determine path to composer autoload.php
-            foreach (\get_included_files() as $path) {
-                if (\substr($path, -\strlen(self::AUTOLOAD_FILENAME)) === self::AUTOLOAD_FILENAME) {
-                    self::$autoloadPath = $path;
-                    return;
+            $files = [
+                dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . self::AUTOLOAD_FILENAME,
+                dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . self::AUTOLOAD_FILENAME,
+            ];
+
+            foreach ($files as $file) {
+                foreach (\get_included_files() as $path) {
+                    if (\substr($path, -\strlen($file)) === $file) {
+                        self::$autoloadPath = $path;
+                        return;
+                    }
                 }
             }
 
