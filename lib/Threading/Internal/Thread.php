@@ -49,7 +49,7 @@ class Thread extends \Thread {
             ];
 
             foreach ($files as $file) {
-                if (in_array($file, \get_included_files()) {
+                if (in_array($file, \get_included_files())) {
                     self::$autoloadPath = $file;
                     return;
                 }
