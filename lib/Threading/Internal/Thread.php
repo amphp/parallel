@@ -14,7 +14,6 @@ use AsyncInterop\{ Loop, Promise };
  */
 class Thread extends \Thread {
     const KILL_CHECK_FREQUENCY = 250;
-    const AUTOLOAD_FILENAME = "autoload.php";
 
     /** @var string */
     private static $autoloadPath;
@@ -45,20 +44,18 @@ class Thread extends \Thread {
 
         if (self::$autoloadPath === null) { // Determine path to composer autoload.php
             $files = [
-                dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . self::AUTOLOAD_FILENAME,
-                dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . self::AUTOLOAD_FILENAME,
+                dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
+                dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
             ];
 
             foreach ($files as $file) {
-                foreach (\get_included_files() as $path) {
-                    if (\substr($path, -\strlen($file)) === $file) {
-                        self::$autoloadPath = $path;
-                        return;
-                    }
+                if (in_array($file, \get_included_files()) {
+                    self::$autoloadPath = $file;
+                    return;
                 }
             }
 
-            throw new \Error(\sprintf("Could not locate %s", self::AUTOLOAD_FILENAME));
+            throw new \Error("Could not locate autoload.php");
         }
     }
 
