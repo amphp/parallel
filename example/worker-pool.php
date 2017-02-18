@@ -2,9 +2,8 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Parallel\Worker\DefaultPool;
 use Amp\Coroutine;
-use Amp\Parallel\Example\BlockingTask;
+use Amp\Parallel\{ Example\BlockingTask, Worker\DefaultPool };
 use AsyncInterop\Loop;
 
 Loop::execute(Amp\wrap(function() {
@@ -13,7 +12,7 @@ Loop::execute(Amp\wrap(function() {
     });
     Loop::unreference($timer);
     
-    $pool = new DefaultPool();
+    $pool = new DefaultPool;
     $pool->start();
 
     $coroutines = [];

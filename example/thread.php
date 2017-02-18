@@ -6,7 +6,7 @@ use Amp\Parallel\Threading\Thread;
 use Amp\Pause;
 use AsyncInterop\Loop;
 
-Loop::execute(function () {
+Loop::execute(Amp\wrap(function () {
     $timer = Loop::repeat(1000, function () {
         static $i;
         $i = $i ? ++$i : 1;
@@ -41,4 +41,4 @@ Loop::execute(function () {
     } finally {
         Loop::cancel($timer);
     }
-});
+}));
