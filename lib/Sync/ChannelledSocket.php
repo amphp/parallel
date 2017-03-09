@@ -128,18 +128,19 @@ class ChannelledSocket implements Channel {
                 }
     
                 \set_error_handler($errorHandler);
-    
-                // Attempt to unserialize the received data.
+
                 try {
-                    $data = \unserialize($buffer);
+                    // Attempt to unserialize the received data.
+                    try {
+                        $data = \unserialize($buffer);
+                    } finally {
+                        \restore_error_handler();
+                    }
+
+                    $deferred->resolve($data);
                 } catch (\Throwable $exception) {
                     $deferred->fail(new SerializationException("Exception thrown when unserializing data", $exception));
-                    continue;
-                } finally {
-                    \restore_error_handler();
                 }
-    
-                $deferred->resolve($data);
             }
             
             Loop::disable($watcher);
