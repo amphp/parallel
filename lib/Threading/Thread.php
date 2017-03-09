@@ -5,7 +5,7 @@ namespace Amp\Parallel\Threading;
 use Amp\Coroutine;
 use Amp\Parallel\{ ChannelException, ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
-use AsyncInterop\Promise;
+use AsyncInterop\{ Loop, Promise };
 
 /**
  * Implements an execution context using native multi-threading.
@@ -15,6 +15,8 @@ use AsyncInterop\Promise;
  * itself.
  */
 class Thread implements Strand {
+    const EXIT_CHECK_FREQUENCY = 250;
+
     /** @var Internal\Thread An internal thread instance. */
     private $thread;
 
@@ -32,6 +34,9 @@ class Thread implements Strand {
 
     /** @var int */
     private $oid = 0;
+
+    /** @var string */
+    private $watcher;
 
     /**
      * Checks if threading is enabled.
@@ -131,13 +136,19 @@ class Thread implements Strand {
 
         list($channel, $this->socket) = $sockets;
 
-        $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
+        $this->thread = $thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
         if (!$this->thread->start(PTHREADS_INHERIT_INI)) {
             throw new ContextException('Failed to start the thread.');
         }
 
-        $this->channel = new ChannelledSocket($channel, $channel);
+        $this->channel = $channel = new ChannelledSocket($channel, $channel);
+
+        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use ($thread, $channel) {
+            if (!$thread->isRunning()) {
+                $channel->close();
+            }
+        });
     }
 
     /**
@@ -171,6 +182,7 @@ class Thread implements Strand {
 
         $this->thread = null;
         $this->channel = null;
+        Loop::cancel($this->watcher);
     }
 
     /**
