@@ -3,7 +3,14 @@
 namespace Amp\Parallel\Process;
 
 use Amp\Coroutine;
-use Amp\Parallel\{ ContextException, Process as ProcessContext, StatusError, Strand, SynchronizationError };
+use Amp\Parallel\{
+    ChannelException,
+    ContextException,
+    Process as ProcessContext,
+    StatusError,
+    Strand,
+    SynchronizationError
+};
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
 use Amp\Process\Process;
 use AsyncInterop\Promise;
@@ -59,17 +66,27 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw new StatusError("The process has not been started");
         }
 
-        return \Amp\pipe($this->channel->receive(), static function ($data) {
+        return new Coroutine($this->doReceive());
+    }
+
+    private function doReceive() {
+        try {
+            $data = yield $this->channel->receive();
+
             if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
-                    "Process unexpectedly exited with result of type: %s",
+                    'Process unexpectedly exited with result of type: %s',
                     \is_object($data) ? \get_class($data) : \gettype($data)
                 ));
             }
-            
-            return $data;
-        });
+        } catch (ChannelException $exception) {
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        }
+
+        return $data;
     }
 
     /**
@@ -84,7 +101,11 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw new \Error("Cannot send exit result objects");
         }
 
-        return $this->channel->send($data);
+        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+            throw new ContextException(
+                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        });
     }
 
     /**
@@ -104,6 +125,11 @@ class ChannelledProcess implements ProcessContext, Strand {
             if (!$data instanceof ExitResult) {
                 throw new SynchronizationError("Did not receive an exit result from process");
             }
+        } catch (ChannelException $exception) {
+            $this->kill();
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
         } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;

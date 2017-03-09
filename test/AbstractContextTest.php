@@ -237,4 +237,34 @@ abstract class AbstractContextTest extends TestCase {
             $value = yield $context->join();
         }));
     }
+
+    /**
+     * @expectedException \Amp\Parallel\ContextException
+     * @expectedExceptionMessage The context stopped responding
+     */
+    public function testExitingContextOnJoin() {
+        Loop::execute(\Amp\wrap(function () {
+            $context = $this->createContext(function () {
+                exit;
+            });
+
+            $context->start();
+            $value = yield $context->join();
+        }));
+    }
+
+    /**
+     * @expectedException \Amp\Parallel\ContextException
+     * @expectedExceptionMessage The context stopped responding
+     */
+    public function testExitingContextOnReceive() {
+        Loop::execute(\Amp\wrap(function () {
+            $context = $this->createContext(function () {
+                exit;
+            });
+
+            $context->start();
+            $value = yield $context->receive();
+        }));
+    }
 }

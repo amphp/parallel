@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Threading;
 
 use Amp\Coroutine;
-use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
+use Amp\Parallel\{ ChannelException, ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
 use AsyncInterop\Promise;
 
@@ -204,6 +204,11 @@ class Thread implements Strand {
             if (!$response instanceof ExitResult) {
                 throw new SynchronizationError('Did not receive an exit result from thread.');
             }
+        } catch (ChannelException $exception) {
+            $this->kill();
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
         } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;
@@ -222,17 +227,27 @@ class Thread implements Strand {
             throw new StatusError('The process has not been started.');
         }
         
-        return \Amp\pipe($this->channel->receive(), static function ($data) {
+        return new Coroutine($this->doReceive());
+    }
+
+    private function doReceive() {
+        try {
+            $data = yield $this->channel->receive();
+
             if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
-                    'Thread unexpectedly exited with result of type: %s',
+                    'Thread process unexpectedly exited with result of type: %s',
                     \is_object($data) ? \get_class($data) : \gettype($data)
                 ));
             }
-            
-            return $data;
-        });
+        } catch (ChannelException $exception) {
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        }
+
+        return $data;
     }
 
     /**
@@ -247,6 +262,10 @@ class Thread implements Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return $this->channel->send($data);
+        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+            throw new ContextException(
+                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        });
     }
 }

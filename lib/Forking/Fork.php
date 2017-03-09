@@ -308,6 +308,10 @@ class Fork implements Process, Strand {
                     \is_object($response) ? \get_class($response) : \gettype($response)
                 ));
             }
+        } catch (ChannelException $exception) {
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
         } finally {
             $this->kill();
         }
@@ -323,7 +327,13 @@ class Fork implements Process, Strand {
             throw new StatusError('The process has not been started.');
         }
         
-        return \Amp\pipe($this->channel->receive(), static function ($data) {
+        return new Coroutine($this->doReceive());
+    }
+
+    private function doReceive() {
+        try {
+            $data = yield $this->channel->receive();
+
             if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
@@ -331,11 +341,14 @@ class Fork implements Process, Strand {
                     \is_object($data) ? \get_class($data) : \gettype($data)
                 ));
             }
-            
-            return $data;
-        });
+        } catch (ChannelException $exception) {
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        }
+
+        return $data;
     }
-    
     
     /**
      * {@inheritdoc}
@@ -349,6 +362,10 @@ class Fork implements Process, Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return $this->channel->send($data);
+        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+            throw new ContextException(
+                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
+            );
+        });
     }
 }
