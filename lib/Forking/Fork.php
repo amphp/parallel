@@ -333,18 +333,18 @@ class Fork implements Process, Strand {
     private function doReceive() {
         try {
             $data = yield $this->channel->receive();
-
-            if ($data instanceof ExitResult) {
-                $data = $data->getResult();
-                throw new SynchronizationError(\sprintf(
-                    'Forked process unexpectedly exited with result of type: %s',
-                    \is_object($data) ? \get_class($data) : \gettype($data)
-                ));
-            }
         } catch (ChannelException $exception) {
             throw new ContextException(
                 "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
             );
+        }
+
+        if ($data instanceof ExitResult) {
+            $data = $data->getResult();
+            throw new SynchronizationError(\sprintf(
+                'Forked process unexpectedly exited with result of type: %s',
+                \is_object($data) ? \get_class($data) : \gettype($data)
+            ));
         }
 
         return $data;
