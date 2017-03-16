@@ -174,7 +174,7 @@ class Fork implements Process, Strand {
 
                 try {
                     Loop::run(function () use ($parent) {
-                        $channel = new ChannelledSocket($parent, $parent);
+                        $channel = new ChannelledSocket($parent, $parent, false);
                         return $this->execute($channel);
                     });
                     $code = 0;
