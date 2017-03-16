@@ -25,7 +25,6 @@
         "amphp/process": "dev-amp_v2 as 0.2"
     },
     "require-dev": {
-        "amphp/loop": "dev-master",
         "amphp/stream": "dev-master as 0.1",
         "phpunit/phpunit": "^5.0"
     },

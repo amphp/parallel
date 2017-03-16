@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Promise;
 use Amp\Parallel\Threading\Thread;
 use Amp\Parallel\Worker\Internal\TaskRunner;
-use AsyncInterop\Promise;
 
 /**
  * A worker thread that executes task objects.

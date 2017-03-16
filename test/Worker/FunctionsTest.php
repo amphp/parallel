@@ -6,7 +6,7 @@ use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class FunctionsTest extends TestCase {
     public function testPool() {
@@ -35,7 +35,7 @@ class FunctionsTest extends TestCase {
 
         $awaitable = Worker\enqueue($task);
 
-        $this->assertSame($value, \Amp\wait($awaitable));
+        $this->assertSame($value, Promise\wait($awaitable));
     }
 
     /**

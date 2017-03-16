@@ -2,10 +2,9 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\{ Coroutine, Deferred };
+use Amp\{ Coroutine, Deferred, Promise };
 use Amp\Parallel\{ StatusError, Strand, WorkerException} ;
 use Amp\Parallel\Worker\Internal\{ Job, TaskResult };
-use AsyncInterop\Promise;
 
 /**
  * Base class for most common types of task workers.
@@ -139,7 +138,7 @@ abstract class AbstractWorker implements Worker {
         $this->shutdown = true;
 
         // If a task is currently running, wait for it to finish.
-        yield \Amp\any($this->jobQueue);
+        yield Promise\any($this->jobQueue);
 
         yield $this->context->send(0);
         return yield $this->context->join();

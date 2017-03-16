@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Forking;
 
 use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Test\AbstractContextTest;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 /**
  * @group forking
@@ -16,12 +16,12 @@ class ForkTest extends AbstractContextTest {
     }
 
     public function testSpawnStartsFork() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $fork = Fork::spawn(function () {
                 usleep(100);
             });
 
             return yield $fork->join();
-        }));
+        });
     }
 }

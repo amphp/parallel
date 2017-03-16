@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class TaskSuccess extends TaskResult {
     /** @var mixed Result of task. */

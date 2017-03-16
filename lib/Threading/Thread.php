@@ -2,10 +2,9 @@
 
 namespace Amp\Parallel\Threading;
 
-use Amp\Coroutine;
+use Amp\{ Coroutine, Loop, Promise };
 use Amp\Parallel\{ ChannelException, ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
-use AsyncInterop\{ Loop, Promise };
 
 /**
  * Implements an execution context using native multi-threading.
@@ -189,7 +188,7 @@ class Thread implements Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \AsyncInterop\Promise<mixed>
+     * @return \Amp\Promise<mixed>
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
@@ -274,7 +273,7 @@ class Thread implements Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
             throw new ContextException(
                 "The context went away, potentially due to a fatal error or calling exit", 0, $exception
             );

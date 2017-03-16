@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Forking;
 
-use Amp\Coroutine;
+use Amp\{ Coroutine, Loop, Promise };
 use Amp\Parallel\{
     ContextException,
     ChannelException,
@@ -14,7 +14,6 @@ use Amp\Parallel\{
 };
 use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitResult, ExitSuccess };
-use AsyncInterop\{ Loop, Promise };
 
 /**
  * Implements a UNIX-compatible context using forked processes.
@@ -174,10 +173,10 @@ class Fork implements Process, Strand {
                 \fclose($child);
 
                 try {
-                    Loop::execute(\Amp\wrap(function () use ($parent) {
+                    Loop::run(function () use ($parent) {
                         $channel = new ChannelledSocket($parent, $parent);
                         return $this->execute($channel);
-                    }));
+                    });
                     $code = 0;
                 } catch (\Throwable $exception) {
                     $code = 1;
@@ -278,7 +277,7 @@ class Fork implements Process, Strand {
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \AsyncInterop\Promise<int>
+     * @return \Amp\Promise<int>
      *
      * @throws \Amp\Parallel\StatusError          Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError Thrown if an exit status object is not received.
@@ -362,7 +361,7 @@ class Fork implements Process, Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
             throw new ContextException(
                 "The context went away, potentially due to a fatal error or calling exit", 0, $exception
             );

@@ -2,9 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Pause };
+use Amp\{ Coroutine, Pause, Promise };
 use Amp\Parallel\MutexException;
-use AsyncInterop\Promise;
 
 /**
  * A cross-platform mutex that uses exclusive files as the lock mechanism.

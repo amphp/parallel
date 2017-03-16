@@ -34,7 +34,7 @@ ob_start(function ($data) {
     require $autoloadPath;
 })();
 
-AsyncInterop\Loop::execute(Amp\wrap(function () {
+Amp\Loop::run(function () {
     $channel = new ChannelledSocket(STDIN, STDOUT, false);
     $environment = new BasicEnvironment;
     $runner = new TaskRunner($channel, $environment);
@@ -46,4 +46,4 @@ AsyncInterop\Loop::execute(Amp\wrap(function () {
     }
 
     $channel->send($result); // Do not yield sending result on channel, process does not care if result arrives.
-}));
+});

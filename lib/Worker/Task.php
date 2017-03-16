@@ -13,7 +13,7 @@ interface Task {
      *
      * @param \Amp\Parallel\Worker\Environment
      *
-     * @return mixed|\AsyncInterop\Promise|\Generator
+     * @return mixed|\Amp\Promise|\Generator
      */
     public function run(Environment $environment);
 }

@@ -3,10 +3,9 @@
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Threading\Thread;
-use Amp\Pause;
-use AsyncInterop\Loop;
+use Amp\{ Loop, Pause };
 
-Loop::execute(Amp\wrap(function () {
+Loop::run(function () {
     $timer = Loop::repeat(1000, function () {
         static $i;
         $i = $i ? ++$i : 1;
@@ -41,4 +40,4 @@ Loop::execute(Amp\wrap(function () {
     } finally {
         Loop::cancel($timer);
     }
-}));
+});

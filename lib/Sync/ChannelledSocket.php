@@ -2,9 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Deferred, Failure, Success };
+use Amp\{ Deferred, Failure, Loop, Promise, Success };
 use Amp\Parallel\{ ChannelException, SerializationException };
-use AsyncInterop\{ Loop, Promise };
 
 class ChannelledSocket implements Channel {
     const HEADER_LENGTH = 5;
@@ -259,7 +258,7 @@ class ChannelledSocket implements Channel {
      * @param string $data
      * @param bool $end
      *
-     * @return \AsyncInterop\Promise
+     * @return \Amp\Promise
      */
     public function send($data): Promise {
         if (!$this->open) {

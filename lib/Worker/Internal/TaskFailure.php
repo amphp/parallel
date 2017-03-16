@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Failure;
 use Amp\Parallel\TaskException;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class TaskFailure extends TaskResult {
     /** @var string */

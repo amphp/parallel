@@ -2,10 +2,10 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
+use Amp\Loop;
 use Amp\Parallel\Forking\Fork;
-use AsyncInterop\Loop;
 
-Loop::execute(Amp\wrap(function () {
+Loop::run(function () {
     $context = Fork::spawn(function () {
         print "Child sleeping for 4 seconds...\n";
         sleep(4);
@@ -33,4 +33,4 @@ Loop::execute(Amp\wrap(function () {
     } finally {
         Loop::cancel($timer);
     }
-}));
+});

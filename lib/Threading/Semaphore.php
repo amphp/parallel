@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Threading;
 
+use Amp\Promise;
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
-use AsyncInterop\Promise;
 
 /**
  * An asynchronous semaphore based on pthreads' synchronization methods.

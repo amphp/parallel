@@ -2,11 +2,10 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Coroutine;
+use Amp\{ Coroutine, Loop };
 use Amp\Parallel\{ Example\BlockingTask, Worker\DefaultPool };
-use AsyncInterop\Loop;
 
-Loop::execute(Amp\wrap(function() {
+Loop::run(function() {
     $timer = Loop::repeat(100, function () {
         printf(".\n");
     });
@@ -39,8 +38,8 @@ Loop::execute(Amp\wrap(function() {
         return new Coroutine($coroutine());
     }, $coroutines);
 
-    yield Amp\all($coroutines);
+    yield Amp\Promise\all($coroutines);
 
     return yield $pool->shutdown();
-}));
+});
 

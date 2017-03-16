@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel;
 
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 interface Context {
     /**
@@ -21,7 +21,7 @@ interface Context {
     public function kill();
 
     /**
-     * @return \AsyncInterop\Promise<mixed> Resolves with the returned from the context.
+     * @return \Amp\Promise<mixed> Resolves with the returned from the context.
      *
      * @throws \Amp\Parallel\ContextException If the context dies unexpectedly.
      * @throws \Amp\Parallel\PanicError If the context throws an uncaught exception.

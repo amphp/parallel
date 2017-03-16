@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
@@ -32,12 +32,12 @@ interface Worker {
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \AsyncInterop\Promise<mixed> Resolves with the return value of Task::run().
+     * @return \Amp\Promise<mixed> Resolves with the return value of Task::run().
      */
     public function enqueue(Task $task): Promise;
 
     /**
-     * @return \AsyncInterop\Promise<int> Exit code.
+     * @return \Amp\Promise<int> Exit code.
      */
     public function shutdown(): Promise;
 

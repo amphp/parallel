@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Threading;
 
 use Amp\Parallel\Threading\Mutex;
 use Amp\Parallel\Test\TestCase;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 /**
  * @group threading
@@ -12,18 +12,18 @@ use AsyncInterop\Loop;
  */
 class MutexTest extends TestCase {
     public function testAcquire() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mutex = new Mutex;
             $lock = yield $mutex->acquire();
             $lock->release();
             $this->assertTrue($lock->isReleased());
-        }));
+        });
 
     }
 
     public function testAcquireMultiple() {
         $this->assertRunTimeGreaterThan(function () {
-            Loop::execute(\Amp\wrap(function () {
+            Loop::run(function () {
                 $mutex = new Mutex;
 
                 $lock1 = yield $mutex->acquire();
@@ -40,7 +40,7 @@ class MutexTest extends TestCase {
                 Loop::delay(500, function () use ($lock3) {
                     $lock3->release();
                 });
-            }));
+            });
         }, 1.5);
     }
 }

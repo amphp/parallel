@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Parallel\Worker\{ Task, Worker };
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class PooledWorker implements Worker {
     /** @var callable */

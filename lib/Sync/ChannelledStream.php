@@ -2,10 +2,9 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Coroutine;
+use Amp\{ Coroutine, Promise };
 use Amp\Parallel\{ ChannelException, SerializationException };
-use Amp\Stream\ByteStream;
-use AsyncInterop\Promise;
+use Amp\ByteStream\ByteStream;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -15,10 +14,10 @@ use AsyncInterop\Promise;
 class ChannelledStream implements Channel {
     const HEADER_LENGTH = 5;
 
-    /** @var \Amp\Stream\ByteStream */
+    /** @var \Amp\ByteStream\ByteStream */
     private $read;
 
-    /** @var \Amp\Stream\ByteStream */
+    /** @var \Amp\ByteStream\ByteStream */
     private $write;
 
     /** @var \Closure */
@@ -27,8 +26,8 @@ class ChannelledStream implements Channel {
     /**
      * Creates a new channel instance.
      *
-     * @param \Amp\Stream\ByteStream $read
-     * @param \Amp\Stream\ByteStream|null $write
+     * @param \Amp\ByteStream\ByteStream $read
+     * @param \Amp\ByteStream\ByteStream|null $write
      */
     public function __construct(ByteStream $read, ByteStream $write = null) {
         if ($write === null) {

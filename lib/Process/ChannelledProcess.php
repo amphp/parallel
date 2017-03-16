@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Process;
 
-use Amp\Coroutine;
+use Amp\{ Coroutine, Promise };
 use Amp\Parallel\{
     ChannelException,
     ContextException,
@@ -13,7 +13,6 @@ use Amp\Parallel\{
 };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
 use Amp\Process\Process;
-use AsyncInterop\Promise;
 
 class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Process\Process */
@@ -22,7 +21,7 @@ class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Parallel\Sync\Channel */
     private $channel;
 
-    /** @var \AsyncInterop\Promise */
+    /** @var \Amp\Promise */
     private $promise;
 
     /**
@@ -101,7 +100,7 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw new \Error("Cannot send exit result objects");
         }
 
-        return \Amp\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
+        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
             throw new ContextException(
                 "The context went away, potentially due to a fatal error or calling exit", 0, $exception
             );

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Pause };
 use Amp\Parallel\SemaphoreException;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 /**
  * A non-blocking, interprocess POSIX semaphore.

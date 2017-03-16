@@ -4,9 +4,8 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Example\BlockingTask;
-use AsyncInterop\Loop;
 
-Loop::execute(Amp\wrap(function () {
+Amp\Loop::run(function () {
     $factory = new DefaultWorkerFactory();
 
     $worker = $factory->create();
@@ -17,4 +16,4 @@ Loop::execute(Amp\wrap(function () {
 
     $code = yield $worker->shutdown();
     printf("Code: %d\n", $code);
-}));
+});

@@ -61,7 +61,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
         $awaitable = $object->synchronized(function () {
             return 'hello world';
         });
-        \Amp\wait($awaitable);
+        \Amp\Promise\wait($awaitable);
 
         $this->assertEquals('hello world', $object->unwrap());
         $object->free();
@@ -78,7 +78,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
             $awaitable = $object->synchronized(function () {
                 return 43;
             });
-            \Amp\wait($awaitable);
+            \Amp\Promise\wait($awaitable);
         });
 
         $this->assertEquals(43, $object->unwrap());

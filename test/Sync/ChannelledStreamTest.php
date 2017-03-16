@@ -2,16 +2,16 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\ByteStream\ByteStream;
+use Amp\ByteStream\ClosedException;
+use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Stream\ByteStream;
-use Amp\Stream\ClosedException;
 use Amp\Parallel\Test\TestCase;
 use Amp\Success;
-use AsyncInterop\Loop;
 
 class ChannelledStreamTest extends TestCase {
     /**
-     * @return \Amp\Stream\ByteStream|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Amp\ByteStream\ByteStream|\PHPUnit_Framework_MockObject_MockObject
      */
     protected function createMockStream() {
         $mock = $this->createMock(ByteStream::class);
@@ -35,7 +35,7 @@ class ChannelledStreamTest extends TestCase {
     }
     
     public function testSendReceive() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
@@ -45,14 +45,14 @@ class ChannelledStreamTest extends TestCase {
             yield $a->send($message);
             $data = yield $b->receive();
             $this->assertSame($message, $data);
-        }));
+        });
     }
 
     /**
      * @depends testSendReceive
      */
     public function testSendReceiveLongData() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
@@ -66,7 +66,7 @@ class ChannelledStreamTest extends TestCase {
             yield $a->send($message);
             $data = yield $b->receive();
             $this->assertSame($message, $data);
-        }));
+        });
 
     }
 
@@ -75,7 +75,7 @@ class ChannelledStreamTest extends TestCase {
      * @expectedException \Amp\Parallel\ChannelException
      */
     public function testInvalidDataReceived() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
@@ -83,7 +83,7 @@ class ChannelledStreamTest extends TestCase {
             // Close $a. $b should close on next read...
             yield $mock->write(pack('L', 10) . '1234567890');
             $data = yield $b->receive();
-        }));
+        });
 
     }
 
@@ -92,7 +92,7 @@ class ChannelledStreamTest extends TestCase {
      * @expectedException \Amp\Parallel\ChannelException
      */
     public function testSendUnserializableData() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock);
             $b = new ChannelledStream($mock);
@@ -100,7 +100,7 @@ class ChannelledStreamTest extends TestCase {
             // Close $a. $b should close on next read...
             yield $a->send(function () {});
             $data = yield $b->receive();
-        }));
+        });
 
     }
 
@@ -109,7 +109,7 @@ class ChannelledStreamTest extends TestCase {
      * @expectedException \Amp\Parallel\ChannelException
      */
     public function testSendAfterClose() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMock(ByteStream::class);
             $mock->expects($this->once())
                 ->method('write')
@@ -119,7 +119,7 @@ class ChannelledStreamTest extends TestCase {
             $b = new ChannelledStream($this->createMock(ByteStream::class));
 
             yield $a->send('hello');
-        }));
+        });
 
     }
 
@@ -128,7 +128,7 @@ class ChannelledStreamTest extends TestCase {
      * @expectedException \Amp\Parallel\ChannelException
      */
     public function testReceiveAfterClose() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $mock = $this->createMock(ByteStream::class);
             $mock->expects($this->once())
                 ->method('read')
@@ -137,7 +137,7 @@ class ChannelledStreamTest extends TestCase {
             $a = new ChannelledStream($mock);
 
             $data = yield $a->receive();
-        }));
+        });
 
     }
 }

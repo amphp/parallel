@@ -68,7 +68,7 @@ abstract class AbstractParcelTest extends TestCase {
         $awaitable = $clone->synchronized(function () {
             return 2;
         });
-        \Amp\wait($awaitable);
+        \Amp\Promise\wait($awaitable);
 
         $this->assertSame(1, $original->unwrap());
         $this->assertSame(2, $clone->unwrap());

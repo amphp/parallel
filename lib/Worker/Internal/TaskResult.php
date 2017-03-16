@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 abstract class TaskResult {
     /** @var string Task identifier. */
@@ -23,7 +23,7 @@ abstract class TaskResult {
     }
     
     /**
-     * @return \AsyncInterop\Promise<mixed> Resolved with the task result or failure reason.
+     * @return \Amp\Promise<mixed> Resolved with the task result or failure reason.
      */
     abstract public function promise(): Promise;
 }

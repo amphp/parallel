@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use AsyncInterop\{ Loop, Promise };
+use Amp\{ Loop, Promise };
 
 const LOOP_POOL_IDENTIFIER = Pool::class;
 const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
@@ -37,7 +37,7 @@ function pool(Pool $pool = null): Pool {
  *
  * @param \Amp\Parallel\Worker\Task $task The task to enqueue.
  *
- * @return \AsyncInterop\Promise<mixed>
+ * @return \Amp\Promise<mixed>
  */
 function enqueue(Task $task): Promise {
     return pool()->enqueue($task);

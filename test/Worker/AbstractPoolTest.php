@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Test\TestCase;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 abstract class AbstractPoolTest extends TestCase {
     /**
@@ -15,7 +15,7 @@ abstract class AbstractPoolTest extends TestCase {
     abstract protected function createPool($min = null, $max = null);
 
     public function testIsRunning() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool();
             $this->assertFalse($pool->isRunning());
 
@@ -24,18 +24,18 @@ abstract class AbstractPoolTest extends TestCase {
 
             yield $pool->shutdown();
             $this->assertFalse($pool->isRunning());
-        }));
+        });
     }
 
     public function testIsIdleOnStart() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool();
             $pool->start();
 
             $this->assertTrue($pool->isIdle());
 
             yield $pool->shutdown();
-        }));
+        });
     }
 
     public function testGetMinSize() {
@@ -49,29 +49,29 @@ abstract class AbstractPoolTest extends TestCase {
     }
 
     public function testMinWorkersSpawnedOnStart() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool(8, 32);
             $pool->start();
 
             $this->assertEquals(8, $pool->getWorkerCount());
 
             yield $pool->shutdown();
-        }));
+        });
     }
 
     public function testWorkersIdleOnStart() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool(8, 32);
             $pool->start();
 
             $this->assertEquals(8, $pool->getIdleWorkerCount());
 
             yield $pool->shutdown();
-        }));
+        });
     }
 
     public function testEnqueue() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool();
             $pool->start();
 
@@ -79,15 +79,15 @@ abstract class AbstractPoolTest extends TestCase {
             $this->assertEquals(42, $returnValue);
 
             yield $pool->shutdown();
-        }));
+        });
     }
 
     public function testEnqueueMultiple() {
-        Loop::execute(\Amp\wrap(function () {
+        Loop::run(function () {
             $pool = $this->createPool();
             $pool->start();
 
-            $values = yield \Amp\all([
+            $values = yield \Amp\Promise\all([
                 $pool->enqueue(new TestTask(42)),
                 $pool->enqueue(new TestTask(56)),
                 $pool->enqueue(new TestTask(72))
@@ -96,7 +96,7 @@ abstract class AbstractPoolTest extends TestCase {
             $this->assertEquals([42, 56, 72], $values);
 
             yield $pool->shutdown();
-        }));
+        });
     }
 
     public function testKill() {
