@@ -21,9 +21,6 @@ class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Parallel\Sync\Channel */
     private $channel;
 
-    /** @var \Amp\Promise */
-    private $promise;
-
     /**
      * @param string $path Path to PHP script.
      * @param string $cwd Working directory.
@@ -46,7 +43,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      * {@inheritdoc}
      */
     public function start() {
-        $this->promise = $this->process->execute();
+        $this->process->start();
         $this->channel = new ChannelledSocket($this->process->getStdOut(), $this->process->getStdIn(), false);
     }
 
@@ -134,7 +131,7 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw $exception;
         }
 
-        $code = yield $this->promise;
+        $code = yield $this->process->join();
         if ($code !== 0) {
             throw new ContextException(\sprintf("Process exited with code %d", $code));
         }
