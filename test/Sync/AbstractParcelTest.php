@@ -42,7 +42,7 @@ abstract class AbstractParcelTest extends TestCase {
         $callback->method('__invoke')
             ->with($this->identicalTo(null), $this->identicalTo(1));
 
-        $awaitable->when($callback);
+        $awaitable->onResolve($callback);
 
         $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
@@ -54,7 +54,7 @@ abstract class AbstractParcelTest extends TestCase {
         $callback->method('__invoke')
             ->with($this->identicalTo(null), $this->identicalTo(2));
 
-        $awaitable->when($callback);
+        $awaitable->onResolve($callback);
     }
 
     /**

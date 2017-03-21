@@ -50,7 +50,7 @@ abstract class AbstractWorker implements Worker {
             unset($this->jobQueue[$id]);
             
             if (!empty($this->jobQueue)) {
-                $this->context->receive()->when($this->when);
+                $this->context->receive()->onResolve($this->when);
             }
             
             $deferred->resolve($data->promise());
@@ -105,7 +105,7 @@ abstract class AbstractWorker implements Worker {
      */
     private function doEnqueue(Task $task): \Generator {
         if (empty($this->jobQueue)) {
-            $this->context->receive()->when($this->when);
+            $this->context->receive()->onResolve($this->when);
         }
         
         try {

@@ -52,7 +52,7 @@ class TaskRunner {
                 $result = new Failure($exception);
             }
             
-            $result->when(function ($exception, $value) use ($job) {
+            $result->onResolve(function ($exception, $value) use ($job) {
                 if ($exception) {
                     $result = new TaskFailure($job->getId(), $exception);
                 } else {
