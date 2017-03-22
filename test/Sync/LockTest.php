@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\Lock;
-use Amp\Parallel\Test\TestCase;
+use Amp\PHPUnit\TestCase;
 
 class LockTest extends TestCase {
     public function testIsReleased() {

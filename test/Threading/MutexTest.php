@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Threading;
 
-use Amp\Parallel\Threading\Mutex;
-use Amp\Parallel\Test\TestCase;
 use Amp\Loop;
+use Amp\Parallel\Threading\Mutex;
+use Amp\PHPUnit\TestCase;
 
 /**
  * @group threading
@@ -41,6 +41,6 @@ class MutexTest extends TestCase {
                     $lock3->release();
                 });
             });
-        }, 1.5);
+        }, 1500);
     }
 }

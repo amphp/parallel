@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Test\TestCase;
 use Amp\Loop;
+use Amp\PHPUnit\TestCase;
 
 abstract class AbstractWorkerTest extends TestCase {
     /**
@@ -81,7 +81,7 @@ abstract class AbstractWorkerTest extends TestCase {
         $worker = $this->createWorker();
         $worker->start();
 
-        $this->assertRunTimeLessThan([$worker, 'kill'], 0.2);
+        $this->assertRunTimeLessThan([$worker, 'kill'], 200);
         $this->assertFalse($worker->isRunning());
     }
 }

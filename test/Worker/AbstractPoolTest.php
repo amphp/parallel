@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Test\TestCase;
 use Amp\Loop;
+use Amp\PHPUnit\TestCase;
 
 abstract class AbstractPoolTest extends TestCase {
     /**
@@ -103,7 +103,7 @@ abstract class AbstractPoolTest extends TestCase {
         $pool = $this->createPool();
         $pool->start();
 
-        $this->assertRunTimeLessThan([$pool, 'kill'], 1);
+        $this->assertRunTimeLessThan([$pool, 'kill'], 1000);
         $this->assertFalse($pool->isRunning());
     }
 }

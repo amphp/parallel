@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Sync\FileMutex;
-use Amp\Parallel\Test\TestCase;
 use Amp\Loop;
+use Amp\Parallel\Sync\FileMutex;
+use Amp\PHPUnit\TestCase;
 
 class FileMutexTest extends TestCase {
     public function testAcquire() {
@@ -37,6 +37,6 @@ class FileMutexTest extends TestCase {
                     $lock3->release();
                 });
             });
-        }, 1.5);
+        }, 1500);
     }
 }

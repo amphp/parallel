@@ -21,6 +21,8 @@ class ForkTest extends AbstractContextTest {
                 usleep(100);
             });
 
+            $this->assertTrue($fork->isRunning());
+
             return yield $fork->join();
         });
     }

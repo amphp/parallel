@@ -6,7 +6,7 @@ use Amp\ByteStream\ByteStream;
 use Amp\ByteStream\ClosedException;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Parallel\Test\TestCase;
+use Amp\PHPUnit\TestCase;
 use Amp\Success;
 
 class ChannelledStreamTest extends TestCase {

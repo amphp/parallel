@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
-use Amp\Parallel\Test\TestCase;
+use Amp\PHPUnit\TestCase;
 use Amp\Success;
 use Amp\Promise;
 

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\Parallel\Test\TestCase;
+use Amp\PHPUnit\TestCase;
 
 class ChannelledSocketTest extends TestCase {
     /**

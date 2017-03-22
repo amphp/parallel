@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Test\TestCase;
-use Amp\Pause;
 use Amp\Loop;
+use Amp\Pause;
+use Amp\PHPUnit\TestCase;
 
 abstract class AbstractSemaphoreTest extends TestCase {
     /**
@@ -59,7 +59,7 @@ abstract class AbstractSemaphoreTest extends TestCase {
                     $lock3->release();
                 });
             });
-        }, 1.5);
+        }, 1500);
     }
 
     public function testCloneIsNewSemaphore() {
@@ -93,7 +93,7 @@ abstract class AbstractSemaphoreTest extends TestCase {
     public function testSimultaneousAcquire() {
         $this->semaphore = $this->createSemaphore(1);
 
-        Loop::run(function () {
+        $callback = function () {
             $awaitable1 = $this->semaphore->acquire();
             $awaitable2 = $this->semaphore->acquire();
             
@@ -104,6 +104,8 @@ abstract class AbstractSemaphoreTest extends TestCase {
             yield new Pause(500);
             
             (yield $awaitable2)->release();
-        });
+        };
+
+        $this->assertRunTimeGreaterThan('Amp\Loop::run', 1000, [$callback]);
     }
 }

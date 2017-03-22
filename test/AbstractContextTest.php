@@ -2,8 +2,9 @@
 
 namespace Amp\Parallel\Test;
 
-use Amp\Parallel\Sync\Internal\ExitSuccess;
 use Amp\Loop;
+use Amp\Parallel\Sync\Internal\ExitSuccess;
+use Amp\PHPUnit\TestCase;
 
 abstract class AbstractContextTest extends TestCase {
     /**
@@ -38,7 +39,7 @@ abstract class AbstractContextTest extends TestCase {
 
         $context->start();
 
-        $this->assertRunTimeLessThan([$context, 'kill'], 0.1);
+        $this->assertRunTimeLessThan([$context, 'kill'], 100);
 
         $this->assertFalse($context->isRunning());
     }
@@ -71,7 +72,7 @@ abstract class AbstractContextTest extends TestCase {
                 $context->start();
                 yield $context->join();
             });
-        }, 2);
+        }, 2000);
     }
 
     /**
@@ -113,7 +114,7 @@ abstract class AbstractContextTest extends TestCase {
                 yield $context->join();
             });
 
-        }, 1);
+        }, 1000);
     }
 
     /**

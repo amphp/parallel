@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Test\TestCase;
+use Amp\PHPUnit\TestCase;
 
 abstract class AbstractParcelTest extends TestCase {
     /**
