@@ -81,7 +81,7 @@ abstract class AbstractWorkerTest extends TestCase {
         $worker = $this->createWorker();
         $worker->start();
 
-        $this->assertRunTimeLessThan([$worker, 'kill'], 200);
+        $this->assertRunTimeLessThan([$worker, 'kill'], 250);
         $this->assertFalse($worker->isRunning());
     }
 }

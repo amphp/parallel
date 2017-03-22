@@ -39,7 +39,7 @@ abstract class AbstractContextTest extends TestCase {
 
         $context->start();
 
-        $this->assertRunTimeLessThan([$context, 'kill'], 100);
+        $this->assertRunTimeLessThan([$context, 'kill'], 250);
 
         $this->assertFalse($context->isRunning());
     }
