@@ -21,6 +21,8 @@ class ThreadTest extends AbstractContextTest {
                 usleep(100);
             });
 
+            $this->assertTrue($thread->isRunning());
+
             return yield $thread->join();
         });
 
