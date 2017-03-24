@@ -4,7 +4,7 @@ namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Promise };
 use Amp\Parallel\{ ChannelException, SerializationException };
-use Amp\ByteStream\ByteStream;
+use Amp\ByteStream\{ DuplexStream, ReadableStream, WritableStream };
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -14,10 +14,10 @@ use Amp\ByteStream\ByteStream;
 class ChannelledStream implements Channel {
     const HEADER_LENGTH = 5;
 
-    /** @var \Amp\ByteStream\ByteStream */
+    /** @var \Amp\ByteStream\ReadableStream */
     private $read;
 
-    /** @var \Amp\ByteStream\ByteStream */
+    /** @var \Amp\ByteStream\WritableStream */
     private $write;
 
     /** @var \Closure */
@@ -26,11 +26,14 @@ class ChannelledStream implements Channel {
     /**
      * Creates a new channel instance.
      *
-     * @param \Amp\ByteStream\ByteStream $read
-     * @param \Amp\ByteStream\ByteStream|null $write
+     * @param \Amp\ByteStream\ReadableStream $read
+     * @param \Amp\ByteStream\WritableStream|null $write
      */
-    public function __construct(ByteStream $read, ByteStream $write = null) {
+    public function __construct(ReadableStream $read, WritableStream $write = null) {
         if ($write === null) {
+            if (!$read instanceof DuplexStream) {
+                throw new \TypeError('Must provide a duplex stream if no write stream is given');
+            }
             $this->write = $read;
         } else {
             $this->write = $write;
