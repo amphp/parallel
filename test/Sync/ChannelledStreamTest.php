@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\ByteStream\ClosedException;
 use Amp\ByteStream\DuplexStream;
 use Amp\ByteStream\ReadableStream;
+use Amp\ByteStream\StreamException;
 use Amp\ByteStream\WritableStream;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledStream;
@@ -26,11 +26,14 @@ class ChannelledStreamTest extends TestCase {
                 return new Success(\strlen($data));
             }));
 
-        $mock->method('read')
-            ->will($this->returnCallback(function ($length, $byte = null, $timeout = 0) use (&$buffer) {
-                $result = \substr($buffer, 0, $length);
-                $buffer = \substr($buffer, $length);
-                return new Success($result);
+        $mock->method('advance')
+            ->willReturn(new Success(true));
+
+        $mock->method('getChunk')
+            ->will($this->returnCallback(function () use (&$buffer) {
+                $result = $buffer;
+                $buffer = '';
+                return $result;
             }));
 
         return $mock;
@@ -115,7 +118,7 @@ class ChannelledStreamTest extends TestCase {
             $mock = $this->createMock(DuplexStream::class);
             $mock->expects($this->once())
                 ->method('write')
-                ->will($this->throwException(new ClosedException));
+                ->will($this->throwException(new StreamException));
 
             $a = new ChannelledStream($mock, $mock);
             $b = new ChannelledStream(
@@ -136,8 +139,8 @@ class ChannelledStreamTest extends TestCase {
         Loop::run(function () {
             $mock = $this->createMock(DuplexStream::class);
             $mock->expects($this->once())
-                ->method('read')
-                ->will($this->throwException(new ClosedException));
+                ->method('advance')
+                ->willReturn(new Success(false));
 
             $a = new ChannelledStream($mock, $mock);
 
