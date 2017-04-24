@@ -26,7 +26,7 @@
     },
     "require-dev": {
         "amphp/phpunit-util": "dev-master",
-        "amphp/stream": "dev-master as 0.1",
+        "amphp/byte-stream": "dev-master as 0.1",
         "phpunit/phpunit": "^6.0"
     },
     "minimum-stability": "dev",
