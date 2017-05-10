@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Process;
 
+use function Amp\call;
 use Amp\{ Coroutine, Promise };
 use Amp\Parallel\{
     ChannelException,
@@ -97,10 +98,14 @@ class ChannelledProcess implements ProcessContext, Strand {
             throw new \Error("Cannot send exit result objects");
         }
 
-        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
-            throw new ContextException(
-                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        return call(function () use ($data) {
+            try {
+                yield $this->channel->send($data);
+            } catch (ChannelException $e) {
+                throw new ContextException(
+                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
+                );
+            }
         });
     }
 

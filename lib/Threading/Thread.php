@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Threading;
 
+use function Amp\call;
 use Amp\{ Coroutine, Loop, Promise };
 use Amp\Parallel\{ ChannelException, ContextException, StatusError, SynchronizationError, Strand };
 use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
@@ -197,10 +198,10 @@ class Thread implements Strand {
         if ($this->channel == null || $this->thread === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
-        
+
         return new Coroutine($this->doJoin());
     }
-    
+
     /**
      * @coroutine
      *
@@ -211,7 +212,7 @@ class Thread implements Strand {
     private function doJoin(): \Generator {
         try {
             $response = yield $this->channel->receive();
-    
+
             if (!$response instanceof ExitResult) {
                 throw new SynchronizationError('Did not receive an exit result from thread.');
             }
@@ -237,7 +238,7 @@ class Thread implements Strand {
         if ($this->channel === null) {
             throw new StatusError('The process has not been started.');
         }
-        
+
         return new Coroutine($this->doReceive());
     }
 
@@ -273,10 +274,14 @@ class Thread implements Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
-            throw new ContextException(
-                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        return call(function () use ($data) {
+            try {
+                yield $this->channel->send($data);
+            } catch (ChannelException $e) {
+                throw new ContextException(
+                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
+                );
+            }
         });
     }
 }

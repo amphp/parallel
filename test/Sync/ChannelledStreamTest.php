@@ -2,43 +2,47 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\ByteStream\DuplexStream;
-use Amp\ByteStream\ReadableStream;
+use Amp\ByteStream\ClosedException;
+use Amp\ByteStream\InputStream;
+use Amp\ByteStream\PendingReadException;
 use Amp\ByteStream\StreamException;
-use Amp\ByteStream\WritableStream;
+use Amp\ByteStream\OutputStream;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\PHPUnit\TestCase;
+use Amp\Promise;
 use Amp\Success;
+use Symfony\Component\Console\Output\Output;
 
 class ChannelledStreamTest extends TestCase {
     /**
-     * @return \Amp\ByteStream\DuplexStream|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Amp\ByteStream\InputStream|\Amp\ByteStream\OutputStream
      */
     protected function createMockStream() {
-        $mock = $this->createMock(DuplexStream::class);
+        return new class implements InputStream, OutputStream {
+            private $buffer = "";
 
-        $buffer = '';
+            public function read(): Promise {
+                $data = $this->buffer;
+                $this->buffer = "";
+                return new Success($data);
+            }
 
-        $mock->method('write')
-            ->will($this->returnCallback(function ($data) use (&$buffer) {
-                $buffer .= $data;
+            public function write(string $data): Promise {
+                $this->buffer .= $data;
                 return new Success(\strlen($data));
-            }));
+            }
 
-        $mock->method('advance')
-            ->willReturn(new Success(true));
+            public function end(string $finalData = ""): Promise {
+                throw new \BadMethodCallException;
+            }
 
-        $mock->method('getChunk')
-            ->will($this->returnCallback(function () use (&$buffer) {
-                $result = $buffer;
-                $buffer = '';
-                return $result;
-            }));
-
-        return $mock;
+            public function close() {
+                throw new \BadMethodCallException;
+            }
+        };
     }
-    
+
     public function testSendReceive() {
         Loop::run(function () {
             $mock = $this->createMockStream();
@@ -115,15 +119,15 @@ class ChannelledStreamTest extends TestCase {
      */
     public function testSendAfterClose() {
         Loop::run(function () {
-            $mock = $this->createMock(DuplexStream::class);
+            $mock = $this->createMock(OutputStream::class);
             $mock->expects($this->once())
                 ->method('write')
                 ->will($this->throwException(new StreamException));
 
-            $a = new ChannelledStream($mock, $mock);
+            $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
             $b = new ChannelledStream(
-                $this->createMock(ReadableStream::class),
-                $this->createMock(WritableStream::class)
+                $this->createMock(InputStream::class),
+                $this->createMock(OutputStream::class)
             );
 
             yield $a->send('hello');
@@ -137,12 +141,12 @@ class ChannelledStreamTest extends TestCase {
      */
     public function testReceiveAfterClose() {
         Loop::run(function () {
-            $mock = $this->createMock(DuplexStream::class);
+            $mock = $this->createMock(InputStream::class);
             $mock->expects($this->once())
-                ->method('advance')
-                ->willReturn(new Success(false));
+                ->method('read')
+                ->willReturn(new Success(null));
 
-            $a = new ChannelledStream($mock, $mock);
+            $a = new ChannelledStream($mock, $this->createMock(OutputStream::class));
 
             $data = yield $a->receive();
         });

@@ -3,7 +3,9 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Promise };
-use Amp\ByteStream\{ Parser, ReadableStream, StreamException, WritableStream };
+use Amp\ByteStream\{
+    InputStream, OutputStream, Parser, ReadableStream, StreamException, WritableStream
+};
 use Amp\Parallel\{ ChannelException, SerializationException };
 
 /**
@@ -14,10 +16,10 @@ use Amp\Parallel\{ ChannelException, SerializationException };
 class ChannelledStream implements Channel {
     const HEADER_LENGTH = 5;
 
-    /** @var \Amp\ByteStream\ReadableStream */
+    /** @var \Amp\ByteStream\InputStream */
     private $read;
 
-    /** @var \Amp\ByteStream\WritableStream */
+    /** @var \Amp\ByteStream\OutputStream */
     private $write;
 
     /** @var \SplQueue */
@@ -29,10 +31,10 @@ class ChannelledStream implements Channel {
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
      *
-     * @param \Amp\ByteStream\ReadableStream $read
-     * @param \Amp\ByteStream\WritableStream $write
+     * @param \Amp\ByteStream\InputStream $read
+     * @param \Amp\ByteStream\OutputStream $write
      */
-    public function __construct(ReadableStream $read, WritableStream $write) {
+    public function __construct(InputStream $read, OutputStream $write) {
         $this->read = $read;
         $this->write = $write;
         $this->received = new \SplQueue;
@@ -89,7 +91,7 @@ class ChannelledStream implements Channel {
     public function send($data): Promise {
         return new Coroutine($this->doSend($data));
     }
-    
+
     private function doSend($data): \Generator {
         // Serialize the data to send into the channel.
         try {
@@ -113,15 +115,15 @@ class ChannelledStream implements Channel {
     public function receive(): Promise {
         return new Coroutine($this->doReceive());
     }
-    
+
     private function doReceive(): \Generator {
         while ($this->received->isEmpty()) {
-            if (!yield $this->read->advance()) {
+            if (($chunk = yield $this->read->read()) === null) {
                 throw new ChannelException("The channel closed. Did the context die?");
             }
 
             try {
-                yield $this->parser->write($this->read->getChunk());
+                yield $this->parser->write($chunk);
             } catch (StreamException $exception) {
                 throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
             }

@@ -2,8 +2,11 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Pause, Promise };
+use Amp\Coroutine;
+use Amp\Delayed;
+use Amp\Pause;
 use Amp\Parallel\MutexException;
+use Amp\Promise;
 
 /**
  * A cross-platform mutex that uses exclusive files as the lock mechanism.
@@ -39,7 +42,7 @@ class FileMutex implements Mutex {
     public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
-    
+
     /**
      * @coroutine
      *
@@ -49,16 +52,16 @@ class FileMutex implements Mutex {
         // Try to create the lock file. If the file already exists, someone else
         // has the lock, so set an asynchronous timer and try again.
         while (($handle = @\fopen($this->fileName, 'x')) === false) {
-            yield new Pause(self::LATENCY_TIMEOUT);
+            yield new Delayed(self::LATENCY_TIMEOUT);
         }
-    
+
         // Return a lock object that can be used to release the lock on the mutex.
         $lock = new Lock(function () {
             $this->release();
         });
-    
+
         \fclose($handle);
-    
+
         return $lock;
     }
 

@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Forking;
 
+use function Amp\call;
 use Amp\{ Coroutine, Loop, Promise };
 use Amp\Parallel\{
     ContextException,
@@ -182,7 +183,7 @@ class Fork implements Process, Strand {
                 } catch (\Throwable $exception) {
                     $code = 1;
                 }
-                
+
                 exit($code);
                 // @codeCoverageIgnoreEnd
             default: // Parent
@@ -209,21 +210,21 @@ class Fork implements Process, Strand {
             if ($this->function instanceof \Closure) {
                 $function = $this->function->bindTo($channel, Channel::class);
             }
-        
+
             if (empty($function)) {
                 $function = $this->function;
             }
-        
+
             $result = $function(...$this->args);
-    
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
             }
-    
+
             if ($result instanceof Promise) {
                 $result = yield $result;
             }
-        
+
             $result = new ExitSuccess($result);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
@@ -287,10 +288,10 @@ class Fork implements Process, Strand {
         if (null === $this->channel) {
             throw new StatusError('The fork has not been started or has already finished.');
         }
-        
+
         return new Coroutine($this->doJoin());
     }
-    
+
     /**
      * @coroutine
      *
@@ -301,7 +302,7 @@ class Fork implements Process, Strand {
     private function doJoin(): \Generator {
         try {
             $response = yield $this->channel->receive();
-        
+
             if (!$response instanceof ExitResult) {
                 throw new SynchronizationError(\sprintf(
                     'Did not receive an exit result from fork. Instead received data of type %s',
@@ -315,10 +316,10 @@ class Fork implements Process, Strand {
         } finally {
             $this->kill();
         }
-    
+
         return $response->getResult();
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -326,7 +327,7 @@ class Fork implements Process, Strand {
         if (null === $this->channel) {
             throw new StatusError('The process has not been started.');
         }
-        
+
         return new Coroutine($this->doReceive());
     }
 
@@ -349,7 +350,7 @@ class Fork implements Process, Strand {
 
         return $data;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -362,10 +363,14 @@ class Fork implements Process, Strand {
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return Promise\capture($this->channel->send($data), ChannelException::class, function (ChannelException $exception) {
-            throw new ContextException(
-                "The context went away, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        return call(function () use ($data) {
+            try {
+                yield $this->channel->send($data);
+            } catch (ChannelException $e) {
+                throw new ContextException(
+                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
+                );
+            }
         });
     }
 }
