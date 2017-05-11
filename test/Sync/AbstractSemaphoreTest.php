@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\Delayed;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\PHPUnit\TestCase;
 
 abstract class AbstractSemaphoreTest extends TestCase {
@@ -97,11 +97,11 @@ abstract class AbstractSemaphoreTest extends TestCase {
             $awaitable1 = $this->semaphore->acquire();
             $awaitable2 = $this->semaphore->acquire();
             
-            yield new Pause(500);
+            yield new Delayed(500);
             
             (yield $awaitable1)->release();
             
-            yield new Pause(500);
+            yield new Delayed(500);
             
             (yield $awaitable2)->release();
         };

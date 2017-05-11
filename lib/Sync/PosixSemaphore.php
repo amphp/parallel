@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Pause };
+use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Parallel\SemaphoreException;
 use Amp\Promise;
 
@@ -142,7 +143,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
             if ($errno !== \MSG_ENOMSG) {
                 throw new SemaphoreException('Failed to acquire a lock.');
             }
-        } while (yield new Pause(self::LATENCY_TIMEOUT, true));
+        } while (yield new Delayed(self::LATENCY_TIMEOUT, true));
     }
 
     /**

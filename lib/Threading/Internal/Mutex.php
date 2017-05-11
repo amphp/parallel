@@ -2,8 +2,10 @@
 
 namespace Amp\Parallel\Threading\Internal;
 
-use Amp\{ Coroutine, Pause, Promise };
+use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Parallel\Sync\Lock;
+use Amp\Promise;
 
 /**
  * @internal
@@ -32,7 +34,7 @@ class Mutex extends \Threaded {
         };
 
         while (!$this->lock || $this->synchronized($tsl)) {
-            yield new Pause(self::LATENCY_TIMEOUT);
+            yield new Delayed(self::LATENCY_TIMEOUT);
         }
 
         return new Lock(function () {
