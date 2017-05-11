@@ -2,9 +2,7 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\ByteStream\ClosedException;
 use Amp\ByteStream\InputStream;
-use Amp\ByteStream\PendingReadException;
 use Amp\ByteStream\StreamException;
 use Amp\ByteStream\OutputStream;
 use Amp\Loop;
@@ -12,7 +10,6 @@ use Amp\Parallel\Sync\ChannelledStream;
 use Amp\PHPUnit\TestCase;
 use Amp\Promise;
 use Amp\Success;
-use Symfony\Component\Console\Output\Output;
 
 class ChannelledStreamTest extends TestCase {
     /**
