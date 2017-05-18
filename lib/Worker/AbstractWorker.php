@@ -139,7 +139,9 @@ abstract class AbstractWorker implements Worker {
         $this->shutdown = true;
 
         // If a task is currently running, wait for it to finish.
-        yield Promise\any($this->jobQueue);
+        yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+            return $deferred->promise();
+        }, $this->jobQueue));
 
         yield $this->context->send(0);
         return yield $this->context->join();
