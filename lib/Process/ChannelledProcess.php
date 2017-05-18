@@ -5,14 +5,13 @@ namespace Amp\Parallel\Process;
 use function Amp\call;
 use Amp\{ Coroutine, Promise };
 use Amp\Parallel\{
-    ChannelException,
     ContextException,
     Process as ProcessContext,
     StatusError,
     Strand,
     SynchronizationError
 };
-use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
+use Amp\Parallel\Sync\{ ChannelException, ChannelledSocket, Internal\ExitResult };
 use Amp\Process\Process;
 
 class ChannelledProcess implements ProcessContext, Strand {

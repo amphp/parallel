@@ -78,7 +78,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\ChannelException
+     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testInvalidDataReceived() {
         Loop::run(function () {
@@ -95,7 +95,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\ChannelException
+     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testSendUnserializableData() {
         Loop::run(function () {
@@ -112,7 +112,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\ChannelException
+     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testSendAfterClose() {
         Loop::run(function () {
@@ -134,7 +134,7 @@ class ChannelledStreamTest extends TestCase {
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\ChannelException
+     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testReceiveAfterClose() {
         Loop::run(function () {

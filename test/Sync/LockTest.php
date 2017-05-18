@@ -19,7 +19,7 @@ class LockTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\LockAlreadyReleasedError
+     * @expectedException \Amp\Parallel\Sync\LockAlreadyReleasedError
      */
     public function testThrowsOnMultiRelease() {
         $lock = new Lock($this->createCallback(1));

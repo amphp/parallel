@@ -1,17 +1,15 @@
 <?php
 
-namespace Amp\Parallel;
+namespace Amp\Parallel\Worker;
 
-class TaskException extends \Exception {
-    /** @var string Class name of exception thrown from task. */
+class TaskError extends \Error {
+    /** @var string Class name of error thrown from task. */
     private $name;
 
-    /** @var string Stack trace of the exception thrown from task. */
+    /** @var string Stack trace of the error thrown from task. */
     private $trace;
 
     /**
-     * Creates a new panic error.
-     *
      * @param string $name    The exception class name.
      * @param string $message The panic message.
      * @param int    $code    The panic code.
@@ -24,7 +22,7 @@ class TaskException extends \Exception {
     }
     
     /**
-     * Returns the class name of the exception thrown from the task.
+     * Returns the class name of the error thrown from the task.
      *
      * @return string
      */
@@ -33,7 +31,7 @@ class TaskException extends \Exception {
     }
     
     /**
-     * Gets the stack trace at the point the exception was thrown in the task.
+     * Gets the stack trace at the point the error was thrown in the task.
      *
      * @return string
      */

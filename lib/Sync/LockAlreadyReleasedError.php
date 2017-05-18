@@ -1,5 +1,5 @@
 <?php
 
-namespace Amp\Parallel;
+namespace Amp\Parallel\Sync;
 
 class LockAlreadyReleasedError extends \Error {}

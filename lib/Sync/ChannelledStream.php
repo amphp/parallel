@@ -3,10 +3,7 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\{ Coroutine, Promise };
-use Amp\ByteStream\{
-    InputStream, OutputStream, Parser, ReadableStream, StreamException, WritableStream
-};
-use Amp\Parallel\{ ChannelException, SerializationException };
+use Amp\ByteStream\{ InputStream, OutputStream, Parser, StreamException };
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -57,8 +54,8 @@ class ChannelledStream implements Channel {
      *
      * @return \Generator
      *
-     * @throws \Amp\Parallel\ChannelException
-     * @throws \Amp\Parallel\SerializationException
+     * @throws \Amp\Parallel\Sync\ChannelException
+     * @throws \Amp\Parallel\Sync\SerializationException
      */
     private static function parser(\SplQueue $queue, callable $errorHandler): \Generator {
         while (true) {

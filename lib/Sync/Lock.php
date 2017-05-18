@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Parallel\LockAlreadyReleasedError;
-
 /**
  * A handle on an acquired lock from a synchronization object.
  *

@@ -4,8 +4,8 @@ namespace Amp\Parallel\Threading;
 
 use function Amp\call;
 use Amp\{ Coroutine, Loop, Promise };
-use Amp\Parallel\{ ChannelException, ContextException, StatusError, SynchronizationError, Strand };
-use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitResult };
+use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
+use Amp\Parallel\Sync\{ ChannelException, ChannelledSocket, Internal\ExitResult };
 
 /**
  * Implements an execution context using native multi-threading.

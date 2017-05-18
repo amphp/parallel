@@ -4,7 +4,6 @@ namespace Amp\Parallel\Sync;
 
 use Amp\Coroutine;
 use Amp\Delayed;
-use Amp\Parallel\SemaphoreException;
 use Amp\Promise;
 
 /**

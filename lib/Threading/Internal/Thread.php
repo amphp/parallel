@@ -3,8 +3,14 @@
 namespace Amp\Parallel\Threading\Internal;
 
 use Amp\{ Coroutine, Loop, Promise };
-use Amp\Parallel\{ ChannelException, SerializationException };
-use Amp\Parallel\Sync\{ Channel, ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
+use Amp\Parallel\Sync\{
+    Channel,
+    ChannelException,
+    ChannelledSocket,
+    Internal\ExitFailure,
+    Internal\ExitSuccess,
+    SerializationException
+};
 
 /**
  * An internal thread that executes a given function concurrently.

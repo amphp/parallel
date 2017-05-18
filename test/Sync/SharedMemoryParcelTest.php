@@ -35,7 +35,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
     }
 
     /**
-     * @expectedException \Amp\Parallel\SharedMemoryException
+     * @expectedException \Amp\Parallel\Sync\SharedMemoryException
      */
     public function testUnwrapThrowsErrorIfFreed() {
         $object = new SharedMemoryParcel(new \stdClass());

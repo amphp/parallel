@@ -2,19 +2,11 @@
 
 namespace Amp\Parallel\Forking;
 
-use function Amp\call;
 use Amp\{ Coroutine, Loop, Promise };
-use Amp\Parallel\{
-    ContextException,
-    ChannelException,
-    Process,
-    SerializationException,
-    StatusError,
-    Strand,
-    SynchronizationError
-};
-use Amp\Parallel\Sync\{ Channel, ChannelledSocket };
+use Amp\Parallel\{ ContextException, Process, StatusError, Strand, SynchronizationError };
+use Amp\Parallel\Sync\{ Channel, ChannelException, ChannelledSocket, SerializationException };
 use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitResult, ExitSuccess };
+use function Amp\call;
 
 /**
  * Implements a UNIX-compatible context using forked processes.

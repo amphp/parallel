@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\{ Coroutine, Deferred, Promise };
-use Amp\Parallel\{ StatusError, Strand, WorkerException} ;
+use Amp\Parallel\{ StatusError, Strand } ;
 use Amp\Parallel\Worker\Internal\{ Job, TaskResult };
 
 /**
@@ -100,8 +100,9 @@ abstract class AbstractWorker implements Worker {
      *
      * @return \Generator
      * @throws \Amp\Parallel\StatusError
-     * @throws \Amp\Parallel\TaskException
-     * @throws \Amp\Parallel\WorkerException
+     * @throws \Amp\Parallel\Worker\TaskException
+     * @throws \Amp\Parallel\Worker\TaskError
+     * @throws \Amp\Parallel\Worker\WorkerException
      */
     private function doEnqueue(Task $task): \Generator {
         if (empty($this->jobQueue)) {

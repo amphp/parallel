@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\{ Deferred, Failure, Loop, Promise, Success };
-use Amp\Parallel\{ ChannelException, SerializationException };
 
 class ChannelledSocket implements Channel {
     const HEADER_LENGTH = 5;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel;
+namespace Amp\Parallel\Worker;
 
 class WorkerException extends \Exception {
     /**
