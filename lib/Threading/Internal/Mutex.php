@@ -15,14 +15,14 @@ class Mutex extends \Threaded {
 
     /** @var bool */
     private $lock = true;
-    
+
     /**
      * @return \Amp\Promise
      */
     public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
-    
+
     /**
      * Attempts to acquire the lock and sleeps for a time if the lock could not be acquired.
      *

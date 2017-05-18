@@ -20,7 +20,7 @@ class ChannelledSocketTest extends TestCase {
         }
         return $sockets;
     }
-    
+
     public function testSendReceive() {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
@@ -54,7 +54,6 @@ class ChannelledSocketTest extends TestCase {
             $data = yield $b->receive();
             $this->assertSame($message, $data);
         });
-
     }
 
     /**
@@ -70,7 +69,6 @@ class ChannelledSocketTest extends TestCase {
             fwrite($left, pack('L', 10) . '1234567890');
             $data = yield $b->receive();
         });
-
     }
 
     /**
@@ -87,7 +85,6 @@ class ChannelledSocketTest extends TestCase {
             yield $a->send(function () {});
             $data = yield $b->receive();
         });
-
     }
 
     /**
@@ -102,7 +99,6 @@ class ChannelledSocketTest extends TestCase {
 
             yield $a->send('hello');
         });
-
     }
 
     /**
@@ -117,6 +113,5 @@ class ChannelledSocketTest extends TestCase {
 
             $data = yield $a->receive();
         });
-
     }
 }

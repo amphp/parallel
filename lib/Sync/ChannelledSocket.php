@@ -2,35 +2,39 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Deferred, Failure, Loop, Promise, Success };
+use Amp\Deferred;
+use Amp\Failure;
+use Amp\Loop;
+use Amp\Promise;
+use Amp\Success;
 
 class ChannelledSocket implements Channel {
     const HEADER_LENGTH = 5;
-    
+
     /** @var resource Stream resource. */
     private $readResource;
-    
+
     /** @var resource Stream resource. */
     private $writeResource;
-    
+
     /** @var string onReadable loop watcher. */
     private $readWatcher;
-    
+
     /** @var string onWritable loop watcher. */
     private $writeWatcher;
-    
+
     /** @var \SplQueue Queue of pending reads. */
     private $reads;
-    
+
     /** @var \SplQueue Queue of pending writes. */
     private $writes;
-    
+
     /** @var bool */
     private $open = true;
-    
+
     /** @var bool */
     private $autoClose = true;
-    
+
     /**
      * @param resource $read Readable stream resource.
      * @param resource $write Writable stream resource.
@@ -42,28 +46,28 @@ class ChannelledSocket implements Channel {
         if (!\is_resource($read) || \get_resource_type($read) !== 'stream') {
             throw new \Error('Invalid resource given to constructor!');
         }
-    
+
         if (!\is_resource($write) || \get_resource_type($write) !== 'stream') {
             throw new \Error('Invalid resource given to constructor!');
         }
-        
+
         $this->readResource = $read;
         $this->writeResource = $write;
         $this->autoClose = $autoClose;
-        
+
         \stream_set_blocking($this->readResource, false);
         \stream_set_read_buffer($this->readResource, 0);
         \stream_set_write_buffer($this->readResource, 0);
-        
+
         if ($this->readResource !== $this->writeResource) {
             \stream_set_blocking($this->writeResource, false);
             \stream_set_read_buffer($this->writeResource, 0);
             \stream_set_write_buffer($this->writeResource, 0);
         }
-        
+
         $this->reads = $reads = new \SplQueue;
         $this->writes = $writes = new \SplQueue;
-    
+
         $errorHandler = static function ($errno, $errstr, $errfile, $errline) {
             if ($errno & \error_reporting()) {
                 throw new ChannelException(\sprintf(
@@ -75,56 +79,56 @@ class ChannelledSocket implements Channel {
                 ));
             }
         };
-        
+
         $this->readWatcher = Loop::onReadable($this->readResource, static function ($watcher, $stream) use ($reads, $errorHandler) {
             while (!$reads->isEmpty()) {
                 /** @var \Amp\Deferred $deferred */
                 list($buffer, $length, $deferred) = $reads->shift();
-                
+
                 if ($length === 0) {
                     // Error reporting suppressed since fread() produces a warning if the stream unexpectedly closes.
                     $data = @\fread($stream, self::HEADER_LENGTH - \strlen($buffer));
-                    
+
                     if ($data === false || ($data === '' && (\feof($stream) || !\is_resource($stream)))) {
                         $deferred->fail(new ChannelException("The socket unexpectedly closed"));
                         break;
                     }
-                    
+
                     $buffer .= $data;
-                    
+
                     if (\strlen($buffer) !== self::HEADER_LENGTH) {
                         // Not enough data available.
                         $reads->unshift([$buffer, 0, $deferred]);
                         return;
                     }
-    
+
                     $data = \unpack("Cprefix/Llength", $data);
-    
+
                     if ($data["prefix"] !== 0) {
                         $deferred->fail(new ChannelException("Invalid header received"));
                         break;
                     }
-                    
+
                     $length = $data["length"];
                     $buffer = '';
                 }
-    
+
                 // Error reporting suppressed since fread() produces a warning if the stream unexpectedly closes.
                 $data = @\fread($stream, $length - \strlen($buffer));
-    
+
                 if ($data === false || ($data === '' && (\feof($stream) || !\is_resource($stream)))) {
                     $deferred->fail(new ChannelException("The socket unexpectedly closed"));
                     break;
                 }
-                
+
                 $buffer .= $data;
-                
+
                 if (\strlen($buffer) < $length) {
                     // Not enough data available.
                     $reads->unshift([$buffer, $length, $deferred]);
                     return;
                 }
-    
+
                 \set_error_handler($errorHandler);
 
                 try {
@@ -140,10 +144,10 @@ class ChannelledSocket implements Channel {
                     $deferred->fail(new SerializationException("Exception thrown when unserializing data", $exception));
                 }
             }
-            
+
             Loop::disable($watcher);
         });
-        
+
         $this->writeWatcher = Loop::onWritable($this->writeResource, static function ($watcher, $stream) use ($writes) {
             try {
                 while (!$writes->isEmpty()) {
@@ -167,7 +171,7 @@ class ChannelledSocket implements Channel {
                         $exception = new ChannelException($message);
                         $deferred->fail($exception);
                         while (!$writes->isEmpty()) {
-                            list( , , $deferred) = $writes->shift();
+                            list(, , $deferred) = $writes->shift();
                             $deferred->fail($exception);
                         }
                         return;
@@ -188,17 +192,17 @@ class ChannelledSocket implements Channel {
                 }
             }
         });
-        
+
         Loop::disable($this->readWatcher);
         Loop::disable($this->writeWatcher);
     }
-    
+
     public function __destruct() {
         if ($this->readResource !== null) {
             $this->close();
         }
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -206,7 +210,7 @@ class ChannelledSocket implements Channel {
         if (\is_resource($this->readResource)) {
             if ($this->autoClose) {
                 @\fclose($this->readResource);
-                
+
                 if ($this->readResource !== $this->writeResource) {
                     @\fclose($this->writeResource);
                 }
@@ -214,23 +218,23 @@ class ChannelledSocket implements Channel {
             $this->readResource = null;
             $this->writeResource = null;
         }
-        
+
         $this->open = false;
-        
+
         if (!$this->reads->isEmpty()) {
             $exception = new ChannelException("The connection was unexpectedly closed before reading completed");
             do {
                 /** @var \Amp\Deferred $deferred */
-                list( , , $deferred) = $this->reads->shift();
+                list(, , $deferred) = $this->reads->shift();
                 $deferred->fail($exception);
             } while (!$this->reads->isEmpty());
         }
-        
+
         if (!$this->writes->isEmpty()) {
             $exception = new ChannelException("The connection was unexpectedly writing completed");
             do {
                 /** @var \Amp\Deferred $deferred */
-                list( , , $deferred) = $this->writes->shift();
+                list(, , $deferred) = $this->writes->shift();
                 $deferred->fail($exception);
             } while (!$this->writes->isEmpty());
         }
@@ -238,7 +242,7 @@ class ChannelledSocket implements Channel {
         Loop::cancel($this->readWatcher);
         Loop::cancel($this->writeWatcher);
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -246,13 +250,13 @@ class ChannelledSocket implements Channel {
         if (!$this->open) {
             return new Failure(new ChannelException("The channel is has been closed"));
         }
-        
+
         $deferred = new Deferred;
         $this->reads->push(["", 0, $deferred]);
         Loop::enable($this->readWatcher);
         return $deferred->promise();
     }
-    
+
     /**
      * @param string $data
      * @param bool $end
@@ -272,7 +276,7 @@ class ChannelledSocket implements Channel {
                 "The given data cannot be sent because it is not serializable.", $exception
             );
         }
-        
+
         $data = \pack("CL", 0, \strlen($data)) . $data;
         $length = \strlen($data);
         $written = 0;
@@ -280,7 +284,7 @@ class ChannelledSocket implements Channel {
         if ($this->writes->isEmpty()) {
             // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
             $written = @\fwrite($this->writeResource, $data);
-            
+
             if ($written === false) {
                 $message = "Failed to write to stream";
                 if ($error = \error_get_last()) {
@@ -288,11 +292,11 @@ class ChannelledSocket implements Channel {
                 }
                 return new Failure(new ChannelException($message));
             }
-            
+
             if ($length <= $written) {
                 return new Success($written);
             }
-            
+
             $data = \substr($data, $written);
         }
 

@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Threading;
 
-use Amp\Promise;
 use Amp\Parallel\Sync\Mutex as SyncMutex;
+use Amp\Promise;
 
 /**
  * A thread-safe, asynchronous mutex using the pthreads locking mechanism.

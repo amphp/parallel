@@ -18,7 +18,6 @@ class MutexTest extends TestCase {
             $lock->release();
             $this->assertTrue($lock->isReleased());
         });
-
     }
 
     public function testAcquireMultiple() {

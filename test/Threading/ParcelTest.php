@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Threading;
 
-use Amp\Parallel\Threading\Parcel;
 use Amp\Parallel\Test\Sync\AbstractParcelTest;
+use Amp\Parallel\Threading\Parcel;
 
 /**
  * @requires extension pthreads

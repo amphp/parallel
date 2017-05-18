@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Promise };
+use Amp\Coroutine;
+use Amp\Promise;
 
 /**
  * A container object for sharing a value across contexts.
@@ -164,7 +165,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     public function synchronized(callable $callback): Promise {
         return new Coroutine($this->doSynchronized($callback));
     }
-    
+
     /**
      * @coroutine
      *
@@ -175,28 +176,28 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     private function doSynchronized(callable $callback): \Generator {
         /** @var \Amp\Parallel\Sync\Lock $lock */
         $lock = yield $this->semaphore->acquire();
-        
+
         try {
             $value = $this->unwrap();
             $result = $callback($value);
-            
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
             }
-            
+
             if ($result instanceof Promise) {
                 $result = yield $result;
             }
-            
+
             $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }
-        
+
         return $result;
     }
-    
-    
+
+
     /**
      * Frees the shared object from memory.
      *

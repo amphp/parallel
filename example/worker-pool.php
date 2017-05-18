@@ -2,15 +2,17 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\{ Coroutine, Loop };
-use Amp\Parallel\{ Example\BlockingTask, Worker\DefaultPool };
+use Amp\Coroutine;
+use Amp\Loop;
+use Amp\Parallel\Example\BlockingTask;
+use Amp\Parallel\Worker\DefaultPool;
 
-Loop::run(function() {
+Loop::run(function () {
     $timer = Loop::repeat(100, function () {
         printf(".\n");
     });
     Loop::unreference($timer);
-    
+
     $pool = new DefaultPool;
     $pool->start();
 
@@ -33,7 +35,7 @@ Loop::run(function() {
         $result = yield $pool->enqueue(new BlockingTask('file_get_contents', $url));
         printf("Read from %s: %d bytes\n", $url, strlen($result));
     };
-    
+
     $coroutines = array_map(function (callable $coroutine): Coroutine {
         return new Coroutine($coroutine());
     }, $coroutines);
@@ -42,4 +44,3 @@ Loop::run(function() {
 
     return yield $pool->shutdown();
 });
-

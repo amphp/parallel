@@ -3,10 +3,13 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker;
-use Amp\Parallel\Worker\{ Environment, Pool, Task, WorkerFactory };
+use Amp\Parallel\Worker\Environment;
+use Amp\Parallel\Worker\Pool;
+use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\TestCase;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 
 class FunctionsTest extends TestCase {
     public function testPool() {

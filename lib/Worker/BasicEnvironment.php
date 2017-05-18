@@ -43,7 +43,7 @@ class BasicEnvironment implements Environment {
                 Loop::disable($this->timer);
             }
         });
-    
+
         Loop::disable($this->timer);
         Loop::unreference($this->timer);
     }
@@ -70,7 +70,7 @@ class BasicEnvironment implements Environment {
 
         return isset($this->data[$key]) ? $this->data[$key] : null;
     }
-    
+
     /**
      * @param string $key
      * @param mixed $value Using null for the value deletes the key.

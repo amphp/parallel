@@ -20,7 +20,7 @@ class TaskException extends \Exception {
         $this->name = $name;
         $this->trace = $trace;
     }
-    
+
     /**
      * Returns the class name of the exception thrown from the task.
      *
@@ -29,7 +29,7 @@ class TaskException extends \Exception {
     public function getName(): string {
         return $this->name;
     }
-    
+
     /**
      * Gets the stack trace at the point the exception was thrown in the task.
      *

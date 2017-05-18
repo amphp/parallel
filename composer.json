@@ -21,13 +21,14 @@
         }
     ],
     "require": {
-        "amphp/amp": "^2.0",
+        "amphp/amp": "^2",
         "amphp/byte-stream": "dev-master as 0.1",
         "amphp/process": "dev-amp_v2 as 0.2"
     },
     "require-dev": {
         "amphp/phpunit-util": "dev-master",
-        "phpunit/phpunit": "^6.0"
+        "friendsofphp/php-cs-fixer": "^2.3",
+        "phpunit/phpunit": "^6"
     },
     "minimum-stability": "dev",
     "suggest": {

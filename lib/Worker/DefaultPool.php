@@ -2,8 +2,10 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\{ CallableMaker, Coroutine, Promise };
+use Amp\CallableMaker;
+use Amp\Coroutine;
 use Amp\Parallel\StatusError;
+use Amp\Promise;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -14,7 +16,7 @@ use Amp\Parallel\StatusError;
  */
 class DefaultPool implements Pool {
     use CallableMaker;
-    
+
     /** @var bool Indicates if the pool is currently running. */
     private $running = false;
 
@@ -156,7 +158,7 @@ class DefaultPool implements Pool {
     public function enqueue(Task $task): Promise {
         return new Coroutine($this->doEnqueue($this->pull(), $task));
     }
-    
+
     /**
      * @coroutine
      *
@@ -173,7 +175,7 @@ class DefaultPool implements Pool {
         } finally {
             $this->push($worker);
         }
-        
+
         return $result;
     }
 
@@ -190,7 +192,7 @@ class DefaultPool implements Pool {
         if (!$this->isRunning()) {
             throw new StatusError('The pool is not running.');
         }
-        
+
         return new Coroutine($this->doShutdown());
     }
 
@@ -247,7 +249,7 @@ class DefaultPool implements Pool {
     public function get(): Worker {
         return new Internal\PooledWorker($this->pull(), $this->push);
     }
-    
+
     /**
      * Pulls a worker from the pool. The worker should be put back into the pool with push() to be marked as idle.
      *
@@ -282,7 +284,7 @@ class DefaultPool implements Pool {
 
         $this->busyQueue->push($worker);
         $this->workers[$worker] += 1;
-        
+
         return $worker;
     }
 

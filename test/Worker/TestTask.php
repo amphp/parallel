@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Worker\{ Environment, Task };
+use Amp\Parallel\Worker\Environment;
+use Amp\Parallel\Worker\Task;
 
 class TestTask implements Task {
     private $returnValue;

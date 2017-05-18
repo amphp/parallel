@@ -1,7 +1,8 @@
 <?php
 namespace Amp\Parallel\Example;
 
-use Amp\Parallel\Worker\{ Environment, Task };
+use Amp\Parallel\Worker\Environment;
+use Amp\Parallel\Worker\Task;
 
 class BlockingTask implements Task {
     /**

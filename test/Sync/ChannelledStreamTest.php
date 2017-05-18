@@ -3,8 +3,8 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\ByteStream\InputStream;
-use Amp\ByteStream\StreamException;
 use Amp\ByteStream\OutputStream;
+use Amp\ByteStream\StreamException;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\PHPUnit\TestCase;
@@ -73,7 +73,6 @@ class ChannelledStreamTest extends TestCase {
             $data = yield $b->receive();
             $this->assertSame($message, $data);
         });
-
     }
 
     /**
@@ -90,7 +89,6 @@ class ChannelledStreamTest extends TestCase {
             yield $mock->write(pack('L', 10) . '1234567890');
             $data = yield $b->receive();
         });
-
     }
 
     /**
@@ -107,7 +105,6 @@ class ChannelledStreamTest extends TestCase {
             yield $a->send(function () {});
             $data = yield $b->receive();
         });
-
     }
 
     /**
@@ -129,7 +126,6 @@ class ChannelledStreamTest extends TestCase {
 
             yield $a->send('hello');
         });
-
     }
 
     /**
@@ -147,6 +143,5 @@ class ChannelledStreamTest extends TestCase {
 
             $data = yield $a->receive();
         });
-
     }
 }

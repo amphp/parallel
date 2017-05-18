@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\{ Loop, Promise };
+use Amp\Loop;
+use Amp\Promise;
 
 const LOOP_POOL_IDENTIFIER = Pool::class;
 const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;

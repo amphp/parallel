@@ -2,4 +2,5 @@
 
 namespace Amp\Parallel\Sync;
 
-class SemaphoreException extends \Exception {}
+class SemaphoreException extends \Exception {
+}

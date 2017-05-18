@@ -2,8 +2,12 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\{ Coroutine, Promise };
-use Amp\ByteStream\{ InputStream, OutputStream, Parser, StreamException };
+use Amp\ByteStream\InputStream;
+use Amp\ByteStream\OutputStream;
+use Amp\ByteStream\Parser;
+use Amp\ByteStream\StreamException;
+use Amp\Coroutine;
+use Amp\Promise;
 
 /**
  * An asynchronous channel for sending data between threads and processes.

@@ -3,8 +3,8 @@
 namespace Amp\Parallel\Test\Threading;
 
 use Amp\Loop;
-use Amp\Parallel\Threading\Thread;
 use Amp\Parallel\Test\AbstractContextTest;
+use Amp\Parallel\Threading\Thread;
 
 /**
  * @group threading
@@ -25,6 +25,5 @@ class ThreadTest extends AbstractContextTest {
 
             return yield $thread->join();
         });
-
     }
 }

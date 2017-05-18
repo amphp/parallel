@@ -123,7 +123,7 @@ class PosixSemaphore implements Semaphore, \Serializable {
     public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
-    
+
     /**
      * {@inheritdoc}
      */

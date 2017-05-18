@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Parallel\Worker\{ Task, Worker };
+use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\Worker;
 use Amp\Promise;
 
 class PooledWorker implements Worker {

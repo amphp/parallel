@@ -2,4 +2,5 @@
 
 namespace Amp\Parallel\Sync;
 
-class SerializationException extends ChannelException {}
+class SerializationException extends ChannelException {
+}

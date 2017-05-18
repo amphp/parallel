@@ -5,7 +5,7 @@ namespace Amp\Parallel;
 class PanicError extends \Error {
     /** @var string Class name of uncaught exception. */
     private $name;
-    
+
     /** @var string Stack trace of the panic. */
     private $trace;
 
@@ -22,7 +22,7 @@ class PanicError extends \Error {
         $this->name = $name;
         $this->trace = $trace;
     }
-    
+
     /**
      * Returns the class name of the uncaught exception.
      *

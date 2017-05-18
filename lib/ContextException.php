@@ -2,4 +2,5 @@
 
 namespace Amp\Parallel;
 
-class ContextException extends \Exception {}
+class ContextException extends \Exception {
+}

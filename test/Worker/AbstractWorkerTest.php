@@ -51,7 +51,7 @@ abstract class AbstractWorkerTest extends TestCase {
         Loop::run(function () {
             $worker = $this->createWorker();
             $worker->start();
-    
+
             $values = yield \Amp\Promise\all([
                 $worker->enqueue(new TestTask(42)),
                 $worker->enqueue(new TestTask(56)),

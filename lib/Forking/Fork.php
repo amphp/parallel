@@ -2,10 +2,21 @@
 
 namespace Amp\Parallel\Forking;
 
-use Amp\{ Coroutine, Loop, Promise };
-use Amp\Parallel\{ ContextException, Process, StatusError, Strand, SynchronizationError };
-use Amp\Parallel\Sync\{ Channel, ChannelException, ChannelledSocket, SerializationException };
-use Amp\Parallel\Sync\Internal\{ ExitFailure, ExitResult, ExitSuccess };
+use Amp\Coroutine;
+use Amp\Loop;
+use Amp\Parallel\ContextException;
+use Amp\Parallel\Process;
+use Amp\Parallel\StatusError;
+use Amp\Parallel\Strand;
+use Amp\Parallel\Sync\Channel;
+use Amp\Parallel\Sync\ChannelException;
+use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\Internal\ExitFailure;
+use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\Sync\Internal\ExitSuccess;
+use Amp\Parallel\Sync\SerializationException;
+use Amp\Parallel\SynchronizationError;
+use Amp\Promise;
 use function Amp\call;
 
 /**

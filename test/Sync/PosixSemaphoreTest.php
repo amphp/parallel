@@ -2,9 +2,10 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Forking\Fork;
-use Amp\Parallel\Sync\{ PosixSemaphore, Semaphore };
 use Amp\Loop;
+use Amp\Parallel\Forking\Fork;
+use Amp\Parallel\Sync\PosixSemaphore;
+use Amp\Parallel\Sync\Semaphore;
 
 /**
  * @group posix
@@ -40,7 +41,6 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
 
             $clone->free();
         });
-
     }
 
     public function testFree() {

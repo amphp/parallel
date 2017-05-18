@@ -42,7 +42,7 @@ class Semaphore extends \Threaded {
     public function acquire(): Promise {
         return new Coroutine($this->doAcquire());
     }
-    
+
     /**
      * Uses a double locking mechanism to acquire a lock without blocking. A
      * synchronous mutex is used to make sure that the semaphore is queried one

@@ -2,17 +2,18 @@
 
 namespace Amp\Parallel\Process;
 
-use function Amp\call;
-use Amp\{ Coroutine, Promise };
-use Amp\Parallel\{
-    ContextException,
-    Process as ProcessContext,
-    StatusError,
-    Strand,
-    SynchronizationError
-};
-use Amp\Parallel\Sync\{ ChannelException, ChannelledSocket, Internal\ExitResult };
+use Amp\Coroutine;
+use Amp\Parallel\ContextException;
+use Amp\Parallel\Process as ProcessContext;
+use Amp\Parallel\StatusError;
+use Amp\Parallel\Strand;
+use Amp\Parallel\Sync\ChannelException;
+use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\SynchronizationError;
 use Amp\Process\Process;
+use Amp\Promise;
+use function Amp\call;
 
 class ChannelledProcess implements ProcessContext, Strand {
     /** @var \Amp\Process\Process */

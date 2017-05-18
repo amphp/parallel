@@ -2,4 +2,5 @@
 
 namespace Amp\Parallel\Sync;
 
-class MutexException extends \Exception {}
+class MutexException extends \Exception {
+}

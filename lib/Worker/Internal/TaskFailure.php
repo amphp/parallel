@@ -34,7 +34,7 @@ class TaskFailure extends TaskResult {
         $this->code = $exception->getCode();
         $this->trace = $exception->getTraceAsString();
     }
-    
+
     public function promise(): Promise {
         switch ($this->parent) {
             case self::PARENT_ERROR:

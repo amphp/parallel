@@ -113,7 +113,6 @@ abstract class AbstractContextTest extends TestCase {
                 $context->start();
                 yield $context->join();
             });
-
         }, 1000);
     }
 

@@ -2,7 +2,9 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Worker\{ DefaultPool, WorkerFactory, WorkerProcess };
+use Amp\Parallel\Worker\DefaultPool;
+use Amp\Parallel\Worker\WorkerFactory;
+use Amp\Parallel\Worker\WorkerProcess;
 
 /**
  * @group process

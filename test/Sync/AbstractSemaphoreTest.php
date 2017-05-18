@@ -96,13 +96,13 @@ abstract class AbstractSemaphoreTest extends TestCase {
         $callback = function () {
             $awaitable1 = $this->semaphore->acquire();
             $awaitable2 = $this->semaphore->acquire();
-            
+
             yield new Delayed(500);
-            
+
             (yield $awaitable1)->release();
-            
+
             yield new Delayed(500);
-            
+
             (yield $awaitable2)->release();
         };
 

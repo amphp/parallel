@@ -2,4 +2,5 @@
 
 namespace Amp\Parallel\Sync;
 
-class LockAlreadyReleasedError extends \Error {}
+class LockAlreadyReleasedError extends \Error {
+}

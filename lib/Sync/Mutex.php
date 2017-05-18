@@ -11,8 +11,7 @@ use Amp\Promise;
  * are atomic. Implementations do not have to guarantee that acquiring a lock
  * is first-come, first serve.
  */
-interface Mutex
-{
+interface Mutex {
     /**
      * @coroutine
      *

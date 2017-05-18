@@ -14,7 +14,6 @@ class FileMutexTest extends TestCase {
             $lock->release();
             $this->assertTrue($lock->isReleased());
         });
-
     }
 
     public function testAcquireMultiple() {

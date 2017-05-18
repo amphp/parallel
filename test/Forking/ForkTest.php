@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Forking;
 
+use Amp\Loop;
 use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Test\AbstractContextTest;
-use Amp\Loop;
 
 /**
  * @group forking

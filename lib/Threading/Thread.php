@@ -2,10 +2,17 @@
 
 namespace Amp\Parallel\Threading;
 
+use Amp\Coroutine;
+use Amp\Loop;
+use Amp\Parallel\ContextException;
+use Amp\Parallel\StatusError;
+use Amp\Parallel\Strand;
+use Amp\Parallel\Sync\ChannelException;
+use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\SynchronizationError;
+use Amp\Promise;
 use function Amp\call;
-use Amp\{ Coroutine, Loop, Promise };
-use Amp\Parallel\{ ContextException, StatusError, SynchronizationError, Strand };
-use Amp\Parallel\Sync\{ ChannelException, ChannelledSocket, Internal\ExitResult };
 
 /**
  * Implements an execution context using native multi-threading.

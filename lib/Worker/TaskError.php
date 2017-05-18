@@ -20,7 +20,7 @@ class TaskError extends \Error {
         $this->name = $name;
         $this->trace = $trace;
     }
-    
+
     /**
      * Returns the class name of the error thrown from the task.
      *
@@ -29,7 +29,7 @@ class TaskError extends \Error {
     public function getName(): string {
         return $this->name;
     }
-    
+
     /**
      * Gets the stack trace at the point the error was thrown in the task.
      *
