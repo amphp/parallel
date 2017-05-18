@@ -13,17 +13,9 @@ matrix:
   fast_finish: true
 
 install:
-  - git clone https://github.com/krakjoe/pthreads.git;
-    pushd pthreads;
-    git checkout master;
-    phpize;
-    ./configure;
-    make;
-    make install;
-    popd;
-    echo "extension=pthreads.so" >> "$(php -r 'echo php_ini_loaded_file();')"
   - composer self-update
   - composer install --no-interaction --prefer-source
+  - travis/install-pthreads.sh
 
 script:
   - vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
