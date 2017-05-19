@@ -3,11 +3,10 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Coroutine;
-use Amp\Failure;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker\Environment;
 use Amp\Promise;
-use Amp\Success;
+use function Amp\call;
 
 class TaskRunner {
     /** @var \Amp\Parallel\Sync\Channel */
@@ -41,19 +40,7 @@ class TaskRunner {
         while ($job instanceof Job) {
             $task = $job->getTask();
 
-            try {
-                $result = $task->run($this->environment);
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if (!$result instanceof Promise) {
-                    $result = new Success($result);
-                }
-            } catch (\Throwable $exception) {
-                $result = new Failure($exception);
-            }
+            $result = call([$task, 'run'], $this->environment);
 
             $result->onResolve(function ($exception, $value) use ($job) {
                 if ($exception) {
