@@ -4,7 +4,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Loop;
 use Amp\Parallel\Threading\Thread;
-use Amp\Pause;
+use Amp\Delayed;
 
 Loop::run(function () {
     $timer = Loop::repeat(1000, function () {
@@ -32,7 +32,7 @@ Loop::run(function () {
         });
 
         print "Waiting 2 seconds to send start data...\n";
-        yield new Pause(2000);
+        yield new Delayed(2000);
 
         yield $context->send("Start data");
 
