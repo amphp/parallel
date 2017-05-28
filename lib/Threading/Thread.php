@@ -293,12 +293,16 @@ class Thread implements Strand {
         }
 
         return call(function () use ($data) {
+            Loop::enable($this->watcher);
+
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
                 throw new ContextException(
                     "The context went away, potentially due to a fatal error or calling exit", 0, $e
                 );
+            } finally {
+                Loop::disable($this->watcher);
             }
         });
     }

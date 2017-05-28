@@ -267,4 +267,20 @@ abstract class AbstractContextTest extends TestCase {
             $value = yield $context->receive();
         });
     }
+
+    /**
+     * @expectedException \Amp\Parallel\ContextException
+     * @expectedExceptionMessage The context went away
+     */
+    public function testExitingContextOnSend() {
+        Loop::run(function () {
+            $context = $this->createContext(function () {
+                exit;
+            });
+
+            $context->start();
+
+            while (!yield $context->send(0));
+        });
+    }
 }
