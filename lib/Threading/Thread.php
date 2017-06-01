@@ -151,9 +151,13 @@ class Thread implements Strand {
 
         $this->channel = new ChannelledSocket($channel, $channel);
 
-        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
+        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, function ($watcher) {
             if (!$this->thread->isRunning()) {
-                $this->channel->close();
+                // Delay call to close to avoid race condition between thread exiting and data becoming available.
+                Loop::delay(self::EXIT_CHECK_FREQUENCY, function () {
+                    $this->close();
+                });
+                Loop::disable($watcher);
             }
         });
 
