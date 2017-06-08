@@ -4,7 +4,6 @@ namespace Amp\Parallel\Sync;
 
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
-use Amp\ByteStream\Parser;
 use Amp\ByteStream\StreamException;
 use Amp\Coroutine;
 use Amp\Promise;
@@ -15,8 +14,6 @@ use Amp\Promise;
  * Supports full duplex read and write.
  */
 class ChannelledStream implements Channel {
-    const HEADER_LENGTH = 5;
-
     /** @var \Amp\ByteStream\InputStream */
     private $read;
 
@@ -26,7 +23,7 @@ class ChannelledStream implements Channel {
     /** @var \SplQueue */
     private $received;
 
-    /** @var \Amp\ByteStream\Parser */
+    /** @var \Amp\Parser\Parser */
     private $parser;
 
     /**
@@ -39,51 +36,7 @@ class ChannelledStream implements Channel {
         $this->read = $read;
         $this->write = $write;
         $this->received = new \SplQueue;
-        $this->parser = new Parser(self::parser($this->received, static function ($errno, $errstr, $errfile, $errline) {
-            if ($errno & \error_reporting()) {
-                throw new ChannelException(\sprintf(
-                    'Received corrupted data. Errno: %d; %s in file %s on line %d',
-                    $errno,
-                    $errstr,
-                    $errfile,
-                    $errline
-                ));
-            }
-        }));
-    }
-
-    /**
-     * @param \SplQueue $queue
-     * @param callable $errorHandler
-     *
-     * @return \Generator
-     *
-     * @throws \Amp\Parallel\Sync\ChannelException
-     * @throws \Amp\Parallel\Sync\SerializationException
-     */
-    private static function parser(\SplQueue $queue, callable $errorHandler): \Generator {
-        while (true) {
-            $data = \unpack("Cprefix/Llength", yield self::HEADER_LENGTH);
-
-            if ($data["prefix"] !== 0) {
-                throw new ChannelException("Invalid header received");
-            }
-
-            $data = yield $data["length"];
-
-            \set_error_handler($errorHandler);
-
-            // Attempt to unserialize the received data.
-            try {
-                $data = \unserialize($data);
-            } catch (\Throwable $exception) {
-                throw new SerializationException("Exception thrown when unserializing data", $exception);
-            } finally {
-                \restore_error_handler();
-            }
-
-            $queue->push($data);
-        }
+        $this->parser = new ChannelParser([$this->received, 'push']);
     }
 
     /**
@@ -94,17 +47,8 @@ class ChannelledStream implements Channel {
     }
 
     private function doSend($data): \Generator {
-        // Serialize the data to send into the channel.
         try {
-            $data = \serialize($data);
-        } catch (\Throwable $exception) {
-            throw new SerializationException(
-                "The given data cannot be sent because it is not serializable.", $exception
-            );
-        }
-
-        try {
-            return yield $this->write->write(\pack("CL", 0, \strlen($data)) . $data);
+            return yield $this->write->write($this->parser->encode($data));
         } catch (StreamException $exception) {
             throw new ChannelException("Sending on the channel failed. Did the context die?", $exception);
         }
@@ -124,7 +68,7 @@ class ChannelledStream implements Channel {
             }
 
             try {
-                yield $this->parser->write($chunk);
+                $this->parser->push($chunk);
             } catch (StreamException $exception) {
                 throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
             }
