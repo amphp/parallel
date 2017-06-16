@@ -8,7 +8,7 @@ use Amp\Parallel\Process as ProcessContext;
 use Amp\Parallel\StatusError;
 use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\Internal\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Process\Process;
@@ -45,7 +45,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function start() {
         $this->process->start();
-        $this->channel = new ChannelledSocket($this->process->getStdOut(), $this->process->getStdIn(), false);
+        $this->channel = new ChannelledStream($this->process->getStdOut(), $this->process->getStdIn());
     }
 
     /**

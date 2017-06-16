@@ -1,8 +1,8 @@
 #!/usr/bin/env php
-<?php declare(strict_types = 1);
+<?php
 
-use Amp\Parallel\Sync\{ ChannelledSocket, Internal\ExitFailure, Internal\ExitSuccess };
-use Amp\Parallel\Worker\{ BasicEnvironment, Internal\TaskRunner };
+use Amp\Parallel\Sync;
+use Amp\Parallel\Worker;
 
 @cli_set_process_title('amp-worker');
 
@@ -35,14 +35,16 @@ ob_start(function ($data) {
 })();
 
 Amp\Loop::run(function () {
-    $channel = new ChannelledSocket(STDIN, STDOUT, false);
-    $environment = new BasicEnvironment;
-    $runner = new TaskRunner($channel, $environment);
+    $channel = new Sync\ChannelledSocket(STDIN, STDOUT);
+    $environment = new Worker\BasicEnvironment;
+    $runner = new Worker\Internal\TaskRunner($channel, $environment);
 
     try {
-        $result = new ExitSuccess(yield $runner->run());
+        $result = new Sync\Internal\ExitSuccess(yield $runner->run());
+    } catch (Sync\ChannelException $exception) {
+        return; // Parent context died, simply exit.
     } catch (Throwable $exception) {
-        $result = new ExitFailure($exception);
+        $result = new Sync\Internal\ExitFailure($exception);
     }
 
     $channel->send($result); // Do not yield sending result on channel, process does not care if result arrives.

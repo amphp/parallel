@@ -21,17 +21,16 @@
         }
     ],
     "require": {
-        "amphp/amp": "^2.0",
-        "amphp/byte-stream": "dev-master as 0.1",
-        "amphp/parser": "^1.0",
-        "amphp/process": "dev-amp_v2 as 0.2"
+        "amphp/amp": "^2",
+        "amphp/byte-stream": "^1",
+        "amphp/parser": "^1",
+        "amphp/process": "v0.2.x-dev"
     },
     "require-dev": {
-        "amphp/phpunit-util": "dev-master",
-        "friendsofphp/php-cs-fixer": "^2.3",
-        "phpunit/phpunit": "^6"
+        "phpunit/phpunit": "^6",
+        "amphp/phpunit-util": "^1",
+        "friendsofphp/php-cs-fixer": "^2.3"
     },
-    "minimum-stability": "dev",
     "suggest": {
         "ext-pcntl": "Required for fork contexts",
         "ext-pthreads": "Required for thread contexts",
