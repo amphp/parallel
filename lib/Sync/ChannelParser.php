@@ -46,10 +46,11 @@ class ChannelParser extends Parser {
      */
     private static function parser(callable $callback, callable $errorHandler): \Generator {
         while (true) {
-            $data = \unpack("Cprefix/Llength", yield self::HEADER_LENGTH);
+            $header = yield self::HEADER_LENGTH;
+            $data = \unpack("Cprefix/Llength", $header);
 
             if ($data["prefix"] !== 0) {
-                throw new ChannelException("Invalid header received");
+                throw new ChannelException("Invalid header received: " . \bin2hex($header));
             }
 
             $data = yield $data["length"];

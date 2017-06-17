@@ -4,7 +4,10 @@
 use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
 
-@cli_set_process_title('amp-worker');
+// Doesn't exist in phpdbg...
+if (\function_exists('cli_set_process_title')) {
+    @cli_set_process_title('amp-worker');
+}
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
 ob_start(function ($data) {
@@ -17,7 +20,7 @@ ob_start(function ($data) {
         dirname(__DIR__, 3) . '/autoload.php',
         dirname(__DIR__) . '/vendor/autoload.php',
     ];
-    
+
     $autoloadPath = null;
     foreach ($paths as $path) {
         if (file_exists($path)) {
@@ -25,12 +28,12 @@ ob_start(function ($data) {
             break;
         }
     }
-    
+
     if ($autoloadPath === null) {
         fwrite(STDERR, 'Could not locate autoload.php.');
         exit(1);
     }
-    
+
     require $autoloadPath;
 })();
 
