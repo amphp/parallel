@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Test;
 
-use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Sync\Internal\ExitSuccess;
 use Amp\PHPUnit\TestCase;
