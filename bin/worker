@@ -5,7 +5,7 @@ use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
 
 // Doesn't exist in phpdbg...
-if (\function_exists('cli_set_process_title')) {
+if (function_exists('cli_set_process_title')) {
     @cli_set_process_title('amp-worker');
 }
 
@@ -45,7 +45,7 @@ Amp\Loop::run(function () {
     try {
         $result = new Sync\Internal\ExitSuccess(yield $runner->run());
     } catch (Sync\ChannelException $exception) {
-        return; // Parent context died, simply exit.
+        exit(1); // Parent context died, simply exit.
     } catch (Throwable $exception) {
         $result = new Sync\Internal\ExitFailure($exception);
     }
