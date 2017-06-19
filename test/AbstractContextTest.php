@@ -280,9 +280,7 @@ abstract class AbstractContextTest extends TestCase {
             });
 
             $context->start();
-
-            yield new Delayed(1000);
-            yield $context->send(0);
+            yield $context->send(\str_pad("", 1024 * 1024, "-"));
         });
     }
 }
