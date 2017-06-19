@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test;
 
+use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Sync\Internal\ExitSuccess;
 use Amp\PHPUnit\TestCase;
@@ -280,7 +281,8 @@ abstract class AbstractContextTest extends TestCase {
 
             $context->start();
 
-            while (!yield $context->send(0));
+            yield new Delayed(1000);
+            yield $context->send(0);
         });
     }
 }
