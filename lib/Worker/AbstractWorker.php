@@ -51,12 +51,13 @@ abstract class AbstractWorker implements Worker {
 
             $deferred = $this->jobQueue[$id];
             unset($this->jobQueue[$id]);
-
-            if (!empty($this->jobQueue)) {
-                $this->context->receive()->onResolve($this->onResolve);
-            }
+            $empty = empty($this->jobQueue);
 
             $deferred->resolve($data->promise());
+
+            if (!$empty) {
+                $this->context->receive()->onResolve($this->onResolve);
+            }
         };
     }
 
@@ -108,13 +109,16 @@ abstract class AbstractWorker implements Worker {
      * @throws \Amp\Parallel\Worker\WorkerException
      */
     private function doEnqueue(Task $task): \Generator {
-        if (empty($this->jobQueue)) {
-            $this->context->receive()->onResolve($this->onResolve);
-        }
+        $empty = empty($this->jobQueue);
 
         try {
             $job = new Internal\Job($task);
             $this->jobQueue[$job->getId()] = $deferred = new Deferred;
+
+            if ($empty) {
+                $this->context->receive()->onResolve($this->onResolve);
+            }
+
             yield $this->context->send($job);
         } catch (\Throwable $exception) {
             $exception = new WorkerException("Sending the task to the worker failed", $exception);
