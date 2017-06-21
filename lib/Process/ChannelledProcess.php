@@ -28,10 +28,26 @@ class ChannelledProcess implements ProcessContext, Strand {
      * @param mixed[] $env Array of environment variables.
      */
     public function __construct(string $path, string $cwd = "", array $env = []) {
-        $options = "-d html_errors=0 -d display_errors=0 -d log_errors=1";
-        $binary = \PHP_SAPI === "phpdbg" ? \PHP_BINARY . " -b -qrr $options --" : \PHP_BINARY . " " . $options;
-        $command = $binary . " " . \escapeshellarg($path);
+        $options = [
+            "html_errors" => "0",
+            "display_errors" => "0",
+            "log_errors" => "1",
+        ];
+
+        $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options) . " -- ";
+        $command = \PHP_BINARY . $options . \escapeshellarg($path);
+
         $this->process = new Process($command, $cwd, $env);
+    }
+
+    private function formatOptions(array $options) {
+        $result = [];
+
+        foreach ($options as $option => $value) {
+            $result[] = \sprintf("-d %s=%s", $option, $value);
+        }
+
+        return \implode(" ", $result);
     }
 
     /**
@@ -47,7 +63,7 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function start() {
         $this->process->start();
-        $this->channel = new ChannelledStream($this->process->getStdOut(), $this->process->getStdIn());
+        $this->channel = new ChannelledStream($this->process->getStdout(), $this->process->getStdin());
     }
 
     /**
