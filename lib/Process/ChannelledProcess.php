@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Process;
 
+use Amp\ByteStream;
 use Amp\Coroutine;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\Process as ProcessContext;
@@ -13,6 +14,7 @@ use Amp\Parallel\Sync\Internal\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Promise;
+use function Amp\asyncCall;
 use function Amp\call;
 
 class ChannelledProcess implements ProcessContext, Strand {
@@ -23,8 +25,8 @@ class ChannelledProcess implements ProcessContext, Strand {
     private $channel;
 
     /**
-     * @param string $path Path to PHP script.
-     * @param string $cwd Working directory.
+     * @param string  $path Path to PHP script.
+     * @param string  $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
     public function __construct(string $path, string $cwd = "", array $env = []) {
@@ -64,6 +66,13 @@ class ChannelledProcess implements ProcessContext, Strand {
     public function start() {
         $this->process->start();
         $this->channel = new ChannelledStream($this->process->getStdout(), $this->process->getStdin());
+
+        $childStderr = $this->process->getStderr();
+
+        asyncCall(function () use ($childStderr) {
+            $stderr = new ByteStream\ResourceOutputStream(\STDERR);
+            yield ByteStream\pipe($childStderr, $stderr);
+        });
     }
 
     /**
