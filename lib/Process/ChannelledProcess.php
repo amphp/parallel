@@ -28,7 +28,8 @@ class ChannelledProcess implements ProcessContext, Strand {
      * @param mixed[] $env Array of environment variables.
      */
     public function __construct(string $path, string $cwd = "", array $env = []) {
-        $binary = \PHP_SAPI === "phpdbg" ? \PHP_BINARY . " -qrr --" : \PHP_BINARY;
+        $options = "-d html_errors=0 -d display_errors=0 -d log_errors=1";
+        $binary = \PHP_SAPI === "phpdbg" ? \PHP_BINARY . " -b -qrr $options --" : \PHP_BINARY . " " . $options;
         $command = $binary . " " . \escapeshellarg($path);
         $this->process = new Process($command, $cwd, $env);
     }
