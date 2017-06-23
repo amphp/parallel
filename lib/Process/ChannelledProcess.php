@@ -37,7 +37,8 @@ class ChannelledProcess implements ProcessContext, Strand {
         ];
 
         $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options);
-        $command = \PHP_BINARY . $options . (\PHP_BINARY === "phpdbg" ? " -- " : " ") . \escapeshellarg($path);
+        $separator = \PHP_BINARY === "phpdbg" ? " -- " : " ";
+        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . \escapeshellarg($path);
 
         $this->process = new Process($command, $cwd, $env);
     }
