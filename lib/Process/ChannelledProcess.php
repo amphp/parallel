@@ -40,7 +40,13 @@ class ChannelledProcess implements ProcessContext, Strand {
         $separator = \PHP_BINARY === "phpdbg" ? " -- " : " ";
         $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . \escapeshellarg($path);
 
-        $this->process = new Process($command, $cwd, $env);
+        $processOptions = [];
+
+        if (\strncasecmp(\PHP_OS, "WIN", 3) === 0) {
+            $processOptions = ["bypass_shell" => true];
+        }
+
+        $this->process = new Process($command, $cwd, $env, $processOptions);
     }
 
     private function formatOptions(array $options) {
