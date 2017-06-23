@@ -67,7 +67,9 @@ class ChannelledProcess implements ProcessContext, Strand {
         $this->process->start();
         $this->channel = new ChannelledStream($this->process->getStdout(), $this->process->getStdin());
 
+        /** @var ByteStream\ResourceInputStream $childStderr */
         $childStderr = $this->process->getStderr();
+        $childStderr->unreference();
 
         asyncCall(function () use ($childStderr) {
             $stderr = new ByteStream\ResourceOutputStream(\STDERR);
