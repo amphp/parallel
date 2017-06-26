@@ -47,7 +47,8 @@
             "Amp\\Parallel\\": "lib"
         },
         "files": [
-            "lib/Worker/functions.php"
+            "lib/Worker/functions.php",
+	    "examples/BlockingTask.php"
         ]
     },
     "autoload-dev": {
