@@ -50,7 +50,7 @@ class ChannelParser extends Parser {
             $data = \unpack("Cprefix/Llength", $header);
 
             if ($data["prefix"] !== 0) {
-                throw new ChannelException("Invalid header received: " . \bin2hex($header));
+                throw new ChannelException("Invalid header received: " . \bin2hex($header . yield));
             }
 
             $data = yield $data["length"];
