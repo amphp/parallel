@@ -50,5 +50,9 @@ Amp\Loop::run(function () {
         $result = new Sync\Internal\ExitFailure($exception);
     }
 
-    $channel->send($result); // Do not yield sending result on channel, process does not care if result arrives.
+    try {
+        yield $channel->send($result);
+    } catch (\Throwable $exception) {
+        exit(1); // Parent context died, simply exit.
+    }
 });
