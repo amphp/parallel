@@ -10,13 +10,17 @@ class TaskError extends \Error {
     private $trace;
 
     /**
-     * @param string $name    The exception class name.
+     * @param string $name The exception class name.
      * @param string $message The panic message.
-     * @param int    $code    The panic code.
-     * @param string $trace   The panic stack trace.
+     * @param mixed  $code The panic code.
+     * @param string $trace The panic stack trace.
      */
-    public function __construct(string $name, string $message = '', int $code = 0, string $trace = '') {
-        parent::__construct($message, $code);
+    public function __construct(string $name, string $message = '', $code = 0, string $trace = '') {
+        parent::__construct($message);
+
+        // Code might also be a string, because PDO, so don't pass to parent constructor, but assign directly.
+        // See https://github.com/amphp/parallel/issues/19.
+        $this->code = $code;
         $this->name = $name;
         $this->trace = $trace;
     }
