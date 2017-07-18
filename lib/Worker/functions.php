@@ -25,10 +25,6 @@ function pool(Pool $pool = null): Pool {
         $pool = new DefaultPool;
     }
 
-    if (!$pool->isRunning()) {
-        $pool->start();
-    }
-
     Loop::setState(LOOP_POOL_IDENTIFIER, $pool);
     return $pool;
 }
@@ -41,7 +37,13 @@ function pool(Pool $pool = null): Pool {
  * @return \Amp\Promise<mixed>
  */
 function enqueue(Task $task): Promise {
-    return pool()->enqueue($task);
+    $pool = pool();
+
+    if (!$pool->isRunning()) {
+        $pool->start();
+    }
+
+    return $pool->enqueue($task);
 }
 
 /**
@@ -81,5 +83,11 @@ function factory(WorkerFactory $factory = null): WorkerFactory {
  * @return \Amp\Parallel\Worker\Worker
  */
 function get(): Worker {
-    return pool()->get();
+    $pool = pool();
+
+    if (!$pool->isRunning()) {
+        $pool->start();
+    }
+
+    return $pool->get();
 }
