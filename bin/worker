@@ -4,9 +4,11 @@
 use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
 
+const AMP_WORKER = "amp-worker";
+
 // Doesn't exist in phpdbg...
-if (function_exists('cli_set_process_title')) {
-    @cli_set_process_title('amp-worker');
+if (function_exists("cli_set_process_title")) {
+    @cli_set_process_title(AMP_WORKER);
 }
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
@@ -17,11 +19,10 @@ ob_start(function ($data) {
 
 (function () {
     $paths = [
-        dirname(__DIR__, 3) . '/autoload.php',
-        dirname(__DIR__) . '/vendor/autoload.php',
+        dirname(__DIR__, 3) . "/autoload.php",
+        dirname(__DIR__) . "/vendor/autoload.php",
     ];
 
-    $autoloadPath = null;
     foreach ($paths as $path) {
         if (file_exists($path)) {
             $autoloadPath = $path;
@@ -29,8 +30,8 @@ ob_start(function ($data) {
         }
     }
 
-    if ($autoloadPath === null) {
-        fwrite(STDERR, 'Could not locate autoload.php.');
+    if (!isset($autoloadPath)) {
+        fwrite(STDERR, "Could not locate autoload.php");
         exit(1);
     }
 
@@ -52,7 +53,7 @@ Amp\Loop::run(function () {
 
     try {
         yield $channel->send($result);
-    } catch (\Throwable $exception) {
+    } catch (Throwable $exception) {
         exit(1); // Parent context died, simply exit.
     }
 });
