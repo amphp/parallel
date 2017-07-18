@@ -1,8 +1,13 @@
 # Parallel Processing for Amp
 
+[![Build Status](https://img.shields.io/travis/amphp/parallel/master.svg?style=flat-square)](https://travis-ci.org/amphp/process)
+[![Coverage Status](https://img.shields.io/coveralls/amphp/parallel/master.svg?style=flat-square)](https://coveralls.io/github/amphp/process?branch=master)
+![Stable](https://img.shields.io/badge/v0.1-stable-green.svg?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
+
 **True parallel processing using native threading and multiprocessing for parallelizing code, *without* blocking.**
 
-This library is a component for [Amp](https://amphp.org) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Amp components, this library uses Coroutines built from Awaitables and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
+This library is a component for [Amp](https://amphp.org) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Amp components, this library uses [Coroutines](http://amphp.org/amp/coroutines/) built from [Promises](http://amphp.org/amp/promises/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
 This library provides a means of parallelizing code without littering your application with complicated lock checking and inter-process communication.
 
@@ -34,7 +39,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "amphp/parallel": "dev-master"
+        "amphp/parallel": "^0.1"
     }
 }
 ```
