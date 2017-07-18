@@ -153,7 +153,7 @@ class DefaultPool implements Pool {
      * @return \Amp\Promise<mixed> The return value of Task::run().
      *
      * @throws \Amp\Parallel\StatusError If the pool has not been started.
-     * @throws \Amp\Parallel\TaskException If the task throws an exception.
+     * @throws \Amp\Parallel\Worker\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Promise {
         return new Coroutine($this->doEnqueue($this->pull(), $task));
