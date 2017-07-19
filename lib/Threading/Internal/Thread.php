@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Threading\Internal;
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ChannelException;
@@ -10,7 +9,7 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\Internal\ExitFailure;
 use Amp\Parallel\Sync\Internal\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
-use Amp\Promise;
+use function Amp\call;
 
 /**
  * An internal thread that executes a given function concurrently.
@@ -123,39 +122,30 @@ class Thread extends \Thread {
     private function execute(Channel $channel): \Generator {
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($channel, Channel::class);
+                $result = call($this->function->bindTo($channel, Channel::class), ...$this->args);
+            } else {
+                $result = call($this->function, ...$this->args);
             }
 
-            if (empty($function)) {
-                $function = $this->function;
-            }
-
-            $result = $function(...$this->args);
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
-
-            if ($result instanceof Promise) {
-                $result = yield $result;
-            }
-
-            $result = new ExitSuccess($result);
+            $result = new ExitSuccess(yield $result);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
+        }
+
+        if ($this->killed) {
+            return; // Parent is not listening for a result.
         }
 
         // Attempt to return the result.
         try {
             try {
-                return yield $channel->send($result);
+                yield $channel->send($result);
             } catch (SerializationException $exception) {
                 // Serializing the result failed. Send the reason why.
-                return yield $channel->send(new ExitFailure($exception));
+                yield $channel->send(new ExitFailure($exception));
             }
         } catch (ChannelException $exception) {
             // The result was not sendable! The parent context must have died or killed the context.
-            return 0;
         }
     }
 }

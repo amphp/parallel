@@ -211,24 +211,12 @@ class Fork implements Process, Strand {
     private function execute(Channel $channel): \Generator {
         try {
             if ($this->function instanceof \Closure) {
-                $function = $this->function->bindTo($channel, Channel::class);
+                $result = call($this->function->bindTo($channel, Channel::class), ...$this->args);
+            } else {
+                $result = call($this->function, ...$this->args);
             }
 
-            if (empty($function)) {
-                $function = $this->function;
-            }
-
-            $result = $function(...$this->args);
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
-
-            if ($result instanceof Promise) {
-                $result = yield $result;
-            }
-
-            $result = new ExitSuccess($result);
+            $result = new ExitSuccess(yield $result);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
@@ -236,14 +224,13 @@ class Fork implements Process, Strand {
         // Attempt to return the result.
         try {
             try {
-                return yield $channel->send($result);
+                yield $channel->send($result);
             } catch (SerializationException $exception) {
                 // Serializing the result failed. Send the reason why.
-                return yield $channel->send(new ExitFailure($exception));
+                yield $channel->send(new ExitFailure($exception));
             }
         } catch (ChannelException $exception) {
             // The result was not sendable! The parent context must have died or killed the context.
-            return 0;
         }
     }
 
