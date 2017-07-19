@@ -82,6 +82,10 @@ class Thread extends \Thread {
 
         // At this point, the thread environment has been prepared so begin using the thread.
 
+        if ($this->killed) {
+            return; // Thread killed while requiring autoloader, simply exit.
+        }
+
         Loop::run(function () {
             $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
                 if ($this->killed) {
