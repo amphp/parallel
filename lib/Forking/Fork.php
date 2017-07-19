@@ -176,18 +176,12 @@ class Fork implements Process, Strand {
                 // @codeCoverageIgnoreStart
                 \fclose($child);
 
-                try {
-                    Loop::set((new Loop\DriverFactory)->create()); // Replace loop instance inherited from parent.
-                    Loop::run(function () use ($parent) {
-                        $channel = new ChannelledSocket($parent, $parent, false);
-                        return $this->execute($channel);
-                    });
-                    $code = 0;
-                } catch (\Throwable $exception) {
-                    $code = 1;
-                }
+                Loop::set((new Loop\DriverFactory)->create()); // Replace loop instance inherited from parent.
+                Loop::run(function () use ($parent) {
+                    return $this->execute(new ChannelledSocket($parent, $parent));
+                });
 
-                exit($code);
+                exit(0);
                 // @codeCoverageIgnoreEnd
             default: // Parent
                 $this->pid = $pid;

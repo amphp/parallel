@@ -82,25 +82,16 @@ class Thread extends \Thread {
 
         // At this point, the thread environment has been prepared so begin using the thread.
 
-        try {
-            Loop::run(function () {
-                $channel = new ChannelledSocket($this->socket, $this->socket, false);
-
-                $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
-                    if ($this->killed) {
-                        Loop::stop();
-                    }
-                });
-
-                Loop::unreference($watcher);
-
-                return $this->execute($channel);
+        Loop::run(function () {
+            $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
+                if ($this->killed) {
+                    Loop::stop();
+                }
             });
-        } catch (\Throwable $exception) {
-            return 1;
-        }
+            Loop::unreference($watcher);
 
-        return 0;
+            return $this->execute(new ChannelledSocket($this->socket, $this->socket));
+        });
     }
 
     /**
