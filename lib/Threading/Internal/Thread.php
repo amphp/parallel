@@ -48,12 +48,12 @@ class Thread extends \Thread {
 
         if (self::$autoloadPath === null) { // Determine path to composer autoload.php
             $files = [
-                dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
-                dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
+                \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
+                \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
             ];
 
             foreach ($files as $file) {
-                if (in_array($file, \get_included_files())) {
+                if (\in_array($file, \get_included_files())) {
                     self::$autoloadPath = $file;
                     return;
                 }

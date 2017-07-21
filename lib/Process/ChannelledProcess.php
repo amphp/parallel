@@ -105,10 +105,8 @@ class ChannelledProcess implements ProcessContext, Strand {
     private function doReceive() {
         try {
             $data = yield $this->channel->receive();
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }
 
         if ($data instanceof ExitResult) {
@@ -138,9 +136,7 @@ class ChannelledProcess implements ProcessContext, Strand {
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
-                throw new ContextException(
-                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
-                );
+                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
             }
         });
     }
@@ -162,11 +158,9 @@ class ChannelledProcess implements ProcessContext, Strand {
             if (!$data instanceof ExitResult) {
                 throw new SynchronizationError("Did not receive an exit result from process");
             }
-        } catch (ChannelException $exception) {
+        } catch (ChannelException $e) {
             $this->kill();
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;

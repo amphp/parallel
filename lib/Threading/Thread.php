@@ -236,7 +236,9 @@ class Thread implements Strand {
         } catch (ChannelException $exception) {
             $this->kill();
             throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+                "The context stopped responding, potentially due to a fatal error or calling exit",
+                0,
+                $exception
             );
         } catch (\Throwable $exception) {
             $this->kill();
@@ -265,10 +267,8 @@ class Thread implements Strand {
 
         try {
             $data = yield $this->channel->receive();
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         } finally {
             Loop::disable($this->watcher);
         }
@@ -302,9 +302,7 @@ class Thread implements Strand {
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
-                throw new ContextException(
-                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
-                );
+                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
             } finally {
                 Loop::disable($this->watcher);
             }

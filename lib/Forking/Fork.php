@@ -293,10 +293,8 @@ class Fork implements Process, Strand {
                     \is_object($response) ? \get_class($response) : \gettype($response)
                 ));
             }
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         } finally {
             $this->kill();
         }
@@ -318,10 +316,8 @@ class Fork implements Process, Strand {
     private function doReceive() {
         try {
             $data = yield $this->channel->receive();
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }
 
         if ($data instanceof ExitResult) {
@@ -351,9 +347,7 @@ class Fork implements Process, Strand {
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
-                throw new ContextException(
-                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
-                );
+                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
             }
         });
     }
