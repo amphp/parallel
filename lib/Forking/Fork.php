@@ -205,7 +205,7 @@ class Fork implements Process, Strand {
     private function execute(Channel $channel): \Generator {
         try {
             if ($this->function instanceof \Closure) {
-                $result = call($this->function->bindTo($channel, Channel::class), ...$this->args);
+                $result = call($this->function->bindTo($channel, null), ...$this->args);
             } else {
                 $result = call($this->function, ...$this->args);
             }
