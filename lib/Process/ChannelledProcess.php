@@ -25,20 +25,27 @@ class ChannelledProcess implements ProcessContext, Strand {
     private $channel;
 
     /**
-     * @param string  $path Path to PHP script.
-     * @param string  $cwd Working directory.
+     * @param string|array $script Path to PHP script or array with first element as path and following elements options
+     *     to the PHP script (e.g.: ['bin/worker', '-eOptionValue', '-nOptionValue'].
+     * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct(string $path, string $cwd = "", array $env = []) {
+    public function __construct($script, string $cwd = "", array $env = []) {
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
             "log_errors" => "1",
         ];
 
+        if (\is_array($script)) {
+            $script = \implode(" ", \array_map("escapeshellarg", $script));
+        } else {
+            $script = \escapeshellarg($script);
+        }
+
         $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options);
         $separator = \PHP_SAPI === "phpdbg" ? " -- " : " ";
-        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . \escapeshellarg($path);
+        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . $script;
 
         $processOptions = [];
 

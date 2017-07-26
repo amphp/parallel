@@ -40,10 +40,36 @@ ob_start(function ($data) {
 
 Amp\Loop::run(function () {
     $channel = new Sync\ChannelledSocket(STDIN, STDOUT);
-    $environment = new Worker\BasicEnvironment;
-    $runner = new Worker\TaskRunner($channel, $environment);
 
     try {
+        $environment = (function (): Worker\Environment {
+            $options = getopt("e:");
+
+            if (!isset($options["e"])) {
+                throw new Error("No environment class name provided");
+            }
+
+            $className = $options["e"];
+
+            try {
+                $reflection = new ReflectionClass($className);
+            } catch (ReflectionException $e) {
+                throw new Error(sprintf("Invalid class name '%s'", $className));
+            }
+
+            if (!$reflection->isInstantiable()) {
+                throw new Error(sprintf("'%s' is not instatiable class", $className));
+            }
+
+            if (!$reflection->implementsInterface(Worker\Environment::class)) {
+                throw new Error(sprintf("The class '%s' does not implement '%s'", $className,Worker\Environment::class));
+            }
+
+            return $reflection->newInstance();
+        })();
+
+        $runner = new Worker\TaskRunner($channel, $environment);
+
         $result = new Sync\Internal\ExitSuccess(yield $runner->run());
     } catch (Sync\ChannelException $exception) {
         exit(1); // Parent context died, simply exit.
