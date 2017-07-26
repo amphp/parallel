@@ -1,10 +1,9 @@
 <?php
 
-namespace Amp\Parallel\Worker\Internal;
+namespace Amp\Parallel\Worker;
 
 use Amp\Coroutine;
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Worker\Environment;
 use Amp\Promise;
 use function Amp\call;
 
@@ -37,16 +36,16 @@ class TaskRunner {
     private function execute(): \Generator {
         $job = yield $this->channel->receive();
 
-        while ($job instanceof Job) {
+        while ($job instanceof Internal\Job) {
             $task = $job->getTask();
 
             $result = call([$task, 'run'], $this->environment);
 
             $result->onResolve(function ($exception, $value) use ($job) {
                 if ($exception) {
-                    $result = new TaskFailure($job->getId(), $exception);
+                    $result = new Internal\TaskFailure($job->getId(), $exception);
                 } else {
-                    $result = new TaskSuccess($job->getId(), $value);
+                    $result = new Internal\TaskSuccess($job->getId(), $value);
                 }
 
                 $this->channel->send($result);

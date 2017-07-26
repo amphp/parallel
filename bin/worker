@@ -41,7 +41,7 @@ ob_start(function ($data) {
 Amp\Loop::run(function () {
     $channel = new Sync\ChannelledSocket(STDIN, STDOUT);
     $environment = new Worker\BasicEnvironment;
-    $runner = new Worker\Internal\TaskRunner($channel, $environment);
+    $runner = new Worker\TaskRunner($channel, $environment);
 
     try {
         $result = new Sync\Internal\ExitSuccess(yield $runner->run());

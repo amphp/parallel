@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Threading\Thread;
-use Amp\Parallel\Worker\Internal\TaskRunner;
 use Amp\Promise;
 
 /**
