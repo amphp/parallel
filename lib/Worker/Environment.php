@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-interface Environment extends \ArrayAccess, \Countable {
+interface Environment extends \ArrayAccess {
     /**
      * @param string $key
      *
@@ -22,7 +22,7 @@ interface Environment extends \ArrayAccess, \Countable {
      * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
      */
-    public function set(string $key, $value, int $ttl = 0);
+    public function set(string $key, $value, int $ttl = null);
 
     /**
      * @param string $key
