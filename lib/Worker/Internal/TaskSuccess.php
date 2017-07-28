@@ -5,6 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Promise;
 use Amp\Success;
 
+/** @internal */
 class TaskSuccess extends TaskResult {
     /** @var mixed Result of task. */
     private $result;

@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Parallel\Worker\Task;
 
+/** @internal */
 class Job {
     /** @var string */
     private $id;

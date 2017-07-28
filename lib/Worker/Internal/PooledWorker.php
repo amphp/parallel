@@ -6,6 +6,7 @@ use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\Promise;
 
+/** @internal */
 class PooledWorker implements Worker {
     /** @var callable */
     private $push;
