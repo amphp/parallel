@@ -10,7 +10,7 @@ use Amp\Parallel\StatusError;
 use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Promise;

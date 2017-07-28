@@ -6,8 +6,8 @@ use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\Parallel\Sync\Internal\ExitFailure;
-use Amp\Parallel\Sync\Internal\ExitSuccess;
+use Amp\Parallel\Sync\ExitFailure;
+use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
 use function Amp\call;
 

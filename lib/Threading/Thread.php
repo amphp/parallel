@@ -9,7 +9,7 @@ use Amp\Parallel\StatusError;
 use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Promise;
 use function Amp\call;

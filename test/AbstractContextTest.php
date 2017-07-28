@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test;
 
 use Amp\Loop;
-use Amp\Parallel\Sync\Internal\ExitSuccess;
+use Amp\Parallel\Sync\ExitSuccess;
 use Amp\PHPUnit\TestCase;
 
 abstract class AbstractContextTest extends TestCase {

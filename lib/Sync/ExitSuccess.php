@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Sync\Internal;
+namespace Amp\Parallel\Sync;
 
 class ExitSuccess implements ExitResult {
     /** @var mixed */

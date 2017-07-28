@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Sync\Internal;
+namespace Amp\Parallel\Sync;
 
 use Amp\Parallel\PanicError;
 

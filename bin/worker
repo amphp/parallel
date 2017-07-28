@@ -70,11 +70,11 @@ Amp\Loop::run(function () {
 
         $runner = new Worker\TaskRunner($channel, $environment);
 
-        $result = new Sync\Internal\ExitSuccess(yield $runner->run());
+        $result = new Sync\ExitSuccess(yield $runner->run());
     } catch (Sync\ChannelException $exception) {
         exit(1); // Parent context died, simply exit.
     } catch (Throwable $exception) {
-        $result = new Sync\Internal\ExitFailure($exception);
+        $result = new Sync\ExitFailure($exception);
     }
 
     try {
