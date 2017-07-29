@@ -89,4 +89,57 @@ class BasicEnvironmentTest extends TestCase {
             $this->assertSame(2, $environment->get($key));
         });
     }
+
+    public function testShorteningTtl() {
+        Loop::run(function () {
+            $environment = new BasicEnvironment;
+            $key = "key";
+
+            $environment->set($key, 1, 10);
+            $environment->set($key, 1, 1);
+
+            yield new Delayed(2000);
+
+            $this->assertFalse($environment->exists($key));
+        });
+    }
+
+    public function testLengtheningTtl() {
+        Loop::run(function () {
+            $environment = new BasicEnvironment;
+            $key = "key";
+
+            $environment->set($key, 1, 1);
+            $environment->set($key, 1, 3);
+
+            yield new Delayed(2000);
+
+            $this->assertTrue($environment->exists($key));
+
+            yield new Delayed(1100);
+
+            $this->assertFalse($environment->exists($key));
+        });
+    }
+
+    public function testAccessExtendsTtl() {
+        Loop::run(function () {
+            $environment = new BasicEnvironment;
+            $key1 = "key1";
+            $key2 = "key2";
+
+            $environment->set($key1, 1, 2);
+            $environment->set($key2, 2, 2);
+
+            yield new Delayed(1000);
+
+            $this->assertSame(1, $environment->get($key1));
+            $this->assertTrue($environment->exists($key2));
+
+            yield new Delayed(1500);
+
+            $this->assertTrue($environment->exists($key1));
+            $this->assertFalse($environment->exists($key2));
+        });
+    }
 }

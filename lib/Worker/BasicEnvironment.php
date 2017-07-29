@@ -21,7 +21,7 @@ class BasicEnvironment implements Environment {
         $this->timer = Loop::repeat(1000, function () {
             $time = \time();
             while (!$this->queue->isEmpty()) {
-                $key = $this->queue->top();
+                list($key, $expiration) = $this->queue->top();
 
                 if (!isset($this->data[$key])) {
                     // Item removed.
@@ -33,6 +33,12 @@ class BasicEnvironment implements Environment {
 
                 if ($struct->expire === 0) {
                     // Item was set again without a TTL.
+                    $this->queue->extract();
+                    continue;
+                }
+
+                if ($struct->expire !== $expiration) {
+                    // Expiration changed or TTL updated.
                     $this->queue->extract();
                     continue;
                 }
@@ -78,8 +84,11 @@ class BasicEnvironment implements Environment {
         $struct = $this->data[$key];
 
         if ($struct->ttl !== null) {
-            $struct->expire = \time() + $struct->ttl;
-            $this->queue->insert($key, -$struct->expire);
+            $expire = \time() + $struct->ttl;
+            if ($struct->expire < $expire) {
+                $struct->expire = $expire;
+                $this->queue->insert([$key, $struct->expire], -$struct->expire);
+            }
         }
 
         return $struct->data;
@@ -114,7 +123,7 @@ class BasicEnvironment implements Environment {
         if ($ttl !== null) {
             $struct->ttl = $ttl;
             $struct->expire = \time() + $ttl;
-            $this->queue->insert($key, -$struct->expire);
+            $this->queue->insert([$key, $struct->expire], -$struct->expire);
 
             Loop::enable($this->timer);
         }
