@@ -3,9 +3,7 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Loop;
-use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Sync\PosixSemaphore;
-use Amp\Parallel\Sync\Semaphore;
 
 /**
  * @group posix

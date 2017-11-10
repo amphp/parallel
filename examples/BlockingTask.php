@@ -1,4 +1,5 @@
 <?php
+
 namespace Amp\Parallel\Example;
 
 use Amp\Parallel\Worker\Environment;

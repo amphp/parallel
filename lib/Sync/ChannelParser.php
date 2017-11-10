@@ -1,4 +1,5 @@
 <?php
+
 namespace Amp\Parallel\Sync;
 
 use Amp\CallableMaker;
