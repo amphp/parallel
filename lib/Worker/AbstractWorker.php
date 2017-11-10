@@ -4,16 +4,16 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Coroutine;
 use Amp\Deferred;
+use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\StatusError;
-use Amp\Parallel\Strand;
 use Amp\Promise;
 
 /**
  * Base class for most common types of task workers.
  */
 abstract class AbstractWorker implements Worker {
-    /** @var \Amp\Parallel\Strand */
+    /** @var \Amp\Parallel\Context */
     private $context;
 
     /** @var bool */
@@ -26,10 +26,10 @@ abstract class AbstractWorker implements Worker {
     private $onResolve;
 
     /**
-     * @param \Amp\Parallel\Strand $strand
+     * @param \Amp\Parallel\Context $context
      */
-    public function __construct(Strand $strand) {
-        $this->context = $strand;
+    public function __construct(Context $context) {
+        $this->context = $context;
 
         $this->onResolve = function ($exception, $data) {
             if ($exception) {

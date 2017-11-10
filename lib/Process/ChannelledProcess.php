@@ -4,10 +4,9 @@ namespace Amp\Parallel\Process;
 
 use Amp\ByteStream;
 use Amp\Coroutine;
+use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
-use Amp\Parallel\Process as ProcessContext;
 use Amp\Parallel\StatusError;
-use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
@@ -17,7 +16,7 @@ use Amp\Promise;
 use function Amp\asyncCall;
 use function Amp\call;
 
-class ChannelledProcess implements ProcessContext, Strand {
+class ChannelledProcess implements Context {
     /** @var \Amp\Process\Process */
     private $process;
 
@@ -186,19 +185,5 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function kill() {
         $this->process->kill();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getPid(): int {
-        return $this->process->getPid();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function signal(int $signo) {
-        $this->process->signal($signo);
     }
 }
