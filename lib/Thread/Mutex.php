@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Threading;
+namespace Amp\Parallel\Thread;
 
 use Amp\Parallel\Sync\Mutex as SyncMutex;
 use Amp\Promise;
@@ -11,7 +11,7 @@ use Amp\Promise;
  * Compatible with POSIX systems and Microsoft Windows.
  */
 class Mutex implements SyncMutex {
-    /** @var \Amp\Parallel\Threading\Internal\Mutex */
+    /** @var \Amp\Parallel\Thread\Internal\Mutex */
     private $mutex;
 
     /**

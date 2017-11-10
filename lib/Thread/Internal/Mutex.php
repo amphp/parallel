@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Threading\Internal;
+namespace Amp\Parallel\Thread\Internal;
 
 use Amp\Coroutine;
 use Amp\Delayed;

@@ -1,12 +1,12 @@
 <?php
 
-namespace Amp\Parallel\Threading;
+namespace Amp\Parallel\Thread;
 
 use Amp\Coroutine;
 use Amp\Loop;
+use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\StatusError;
-use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -21,7 +21,7 @@ use function Amp\call;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements Strand {
+class Thread implements Context {
     const EXIT_CHECK_FREQUENCY = 250;
 
     /** @var Internal\Thread An internal thread instance. */

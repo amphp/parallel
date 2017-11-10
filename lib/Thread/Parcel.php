@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Threading;
+namespace Amp\Parallel\Thread;
 
 use Amp\Coroutine;
 use Amp\Parallel\Sync\Parcel as SyncParcel;
@@ -10,10 +10,10 @@ use Amp\Promise;
  * A thread-safe container that shares a value between multiple threads.
  */
 class Parcel implements SyncParcel {
-    /** @var \Amp\Parallel\Threading\Mutex */
+    /** @var \Amp\Parallel\Thread\Mutex */
     private $mutex;
 
-    /** @var \Amp\Parallel\Threading\Internal\Storage */
+    /** @var \Amp\Parallel\Thread\Internal\Storage */
     private $storage;
 
     /**

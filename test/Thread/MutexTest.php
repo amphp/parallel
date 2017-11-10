@@ -1,9 +1,9 @@
 <?php
 
-namespace Amp\Parallel\Test\Threading;
+namespace Amp\Parallel\Test\Thread;
 
 use Amp\Loop;
-use Amp\Parallel\Threading\Mutex;
+use Amp\Parallel\Thread\Mutex;
 use Amp\PHPUnit\TestCase;
 
 /**

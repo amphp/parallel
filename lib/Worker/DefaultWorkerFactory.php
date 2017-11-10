@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Parallel\Threading\Thread;
+use Amp\Parallel\Thread\Thread;
 
 /**
  * The built-in worker factory type.

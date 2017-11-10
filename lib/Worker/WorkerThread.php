@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Parallel\Threading\Thread;
+use Amp\Parallel\Thread\Thread;
 use Amp\Promise;
 
 /**

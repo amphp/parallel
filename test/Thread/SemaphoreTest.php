@@ -1,12 +1,12 @@
 <?php
 
-namespace Amp\Parallel\Test\Threading;
+namespace Amp\Parallel\Test\Thread;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
 use Amp\Parallel\Test\Sync\AbstractSemaphoreTest;
-use Amp\Parallel\Threading\Semaphore;
-use Amp\Parallel\Threading\Thread;
+use Amp\Parallel\Thread\Semaphore;
+use Amp\Parallel\Thread\Thread;
 
 /**
  * @group threading
