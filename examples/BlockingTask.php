@@ -32,8 +32,7 @@ class BlockingTask implements Task {
         return ($this->function)(...$this->args);
     }
 
-    public function getArgs()
-    {
+    public function getArgs() {
         return $this->args;
     }
 }

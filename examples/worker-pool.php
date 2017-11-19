@@ -2,7 +2,6 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-
 use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Parallel\Example\BlockingTask;
@@ -30,7 +29,6 @@ Loop::run(function () use (&$results, &$tasks) {
 
     $coroutines = [];
 
-
     foreach ($tasks as $task) {
         $coroutines[] = function () use ($pool, $task, &$results) {
             $result = yield $pool->enqueue($task);
@@ -48,8 +46,6 @@ Loop::run(function () use (&$results, &$tasks) {
 
     return yield $pool->shutdown();
 });
-
-assert(3 === count(array_keys($results)));
 
 echo "\nResult array keys:\n";
 echo var_export(array_keys($results), true);
