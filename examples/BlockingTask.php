@@ -30,4 +30,9 @@ class BlockingTask implements Task {
     public function run(Environment $environment) {
         return ($this->function)(...$this->args);
     }
+
+    public function getArgs()
+    {
+        return $this->args;
+    }
 }
