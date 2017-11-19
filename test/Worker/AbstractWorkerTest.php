@@ -11,6 +11,15 @@ abstract class AbstractWorkerTest extends TestCase {
      */
     abstract protected function createWorker();
 
+    public function testWorkerConstantDefined() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+            $worker->start();
+            $this->assertTrue(yield $worker->enqueue(new ConstantTask));
+            yield $worker->shutdown();
+        });
+    }
+
     public function testIsRunning() {
         Loop::run(function () {
             $worker = $this->createWorker();

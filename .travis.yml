@@ -16,7 +16,10 @@ install:
   # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
   - composer update -n --prefer-dist --ignore-platform-reqs
   - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
-  - travis/install-pthreads.sh
+  # pthreads is now only supported on PHP 7.2+
+  - if [ "$TRAVIS_PHP_VERSION" != "7.0" ] && [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
+    travis/install-pthreads.sh;
+    fi
 
 script:
   - vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml

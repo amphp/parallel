@@ -14,8 +14,8 @@ interface Channel {
      * @throws \Amp\Parallel\StatusError Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
-     * @throws \Amp\Parallel\ChannelException If receiving from the channel fails.
-     * @throws \Amp\Parallel\SerializationException If unserializing the data fails.
+     * @throws \Amp\Parallel\Sync\ChannelException If receiving from the channel fails.
+     * @throws \Amp\Parallel\Sync\SerializationException If unserializing the data fails.
      */
     public function receive(): Promise;
 
@@ -27,9 +27,9 @@ interface Channel {
      * @throws \Amp\Parallel\StatusError Thrown if the context has not been started.
      * @throws \Amp\Parallel\SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
-     * @throws \Amp\Parallel\ChannelException If sending on the channel fails.
+     * @throws \Amp\Parallel\Sync\ChannelException If sending on the channel fails.
      * @throws \Error If an ExitResult object is given.
-     * @throws \Amp\Parallel\SerializationException If serializing the data fails.
+     * @throws \Amp\Parallel\Sync\SerializationException If serializing the data fails.
      */
     public function send($data): Promise;
 }

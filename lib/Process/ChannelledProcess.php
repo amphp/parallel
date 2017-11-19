@@ -4,20 +4,19 @@ namespace Amp\Parallel\Process;
 
 use Amp\ByteStream;
 use Amp\Coroutine;
+use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
-use Amp\Parallel\Process as ProcessContext;
 use Amp\Parallel\StatusError;
-use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Promise;
 use function Amp\asyncCall;
 use function Amp\call;
 
-class ChannelledProcess implements ProcessContext, Strand {
+class ChannelledProcess implements Context {
     /** @var \Amp\Process\Process */
     private $process;
 
@@ -25,20 +24,27 @@ class ChannelledProcess implements ProcessContext, Strand {
     private $channel;
 
     /**
-     * @param string  $path Path to PHP script.
-     * @param string  $cwd Working directory.
+     * @param string|array $script Path to PHP script or array with first element as path and following elements options
+     *     to the PHP script (e.g.: ['bin/worker', '-eOptionValue', '-nOptionValue'].
+     * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct(string $path, string $cwd = "", array $env = []) {
+    public function __construct($script, string $cwd = "", array $env = []) {
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
             "log_errors" => "1",
         ];
 
+        if (\is_array($script)) {
+            $script = \implode(" ", \array_map("escapeshellarg", $script));
+        } else {
+            $script = \escapeshellarg($script);
+        }
+
         $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options);
-        $separator = \PHP_BINARY === "phpdbg" ? " -- " : " ";
-        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . \escapeshellarg($path);
+        $separator = \PHP_SAPI === "phpdbg" ? " -- " : " ";
+        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . $script;
 
         $processOptions = [];
 
@@ -105,10 +111,8 @@ class ChannelledProcess implements ProcessContext, Strand {
     private function doReceive() {
         try {
             $data = yield $this->channel->receive();
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }
 
         if ($data instanceof ExitResult) {
@@ -138,9 +142,7 @@ class ChannelledProcess implements ProcessContext, Strand {
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
-                throw new ContextException(
-                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
-                );
+                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
             }
         });
     }
@@ -162,11 +164,9 @@ class ChannelledProcess implements ProcessContext, Strand {
             if (!$data instanceof ExitResult) {
                 throw new SynchronizationError("Did not receive an exit result from process");
             }
-        } catch (ChannelException $exception) {
+        } catch (ChannelException $e) {
             $this->kill();
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         } catch (\Throwable $exception) {
             $this->kill();
             throw $exception;
@@ -185,19 +185,5 @@ class ChannelledProcess implements ProcessContext, Strand {
      */
     public function kill() {
         $this->process->kill();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getPid(): int {
-        return $this->process->getPid();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function signal(int $signo) {
-        $this->process->signal($signo);
     }
 }

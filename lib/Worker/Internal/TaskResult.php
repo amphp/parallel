@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Promise;
 
+/** @internal */
 abstract class TaskResult {
     /** @var string Task identifier. */
     private $id;

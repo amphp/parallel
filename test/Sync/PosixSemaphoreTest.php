@@ -3,9 +3,7 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Loop;
-use Amp\Parallel\Forking\Fork;
 use Amp\Parallel\Sync\PosixSemaphore;
-use Amp\Parallel\Sync\Semaphore;
 
 /**
  * @group posix
@@ -51,44 +49,5 @@ class PosixSemaphoreTest extends AbstractSemaphoreTest {
         $this->semaphore->free();
 
         $this->assertTrue($this->semaphore->isFreed());
-    }
-
-    /**
-     * @requires extension pcntl
-     */
-    public function testAcquireInMultipleForks() {
-        Loop::run(function () {
-            $this->semaphore = $this->createSemaphore(1);
-
-            $fork1 = new Fork(function (Semaphore $semaphore) {
-                $lock = yield $semaphore->acquire();
-
-                usleep(100000);
-
-                $lock->release();
-
-                return 0;
-            }, $this->semaphore);
-
-            $fork2 = new Fork(function (Semaphore $semaphore) {
-                $lock = yield $semaphore->acquire();
-
-                usleep(100000);
-
-                $lock->release();
-
-                return 1;
-            }, $this->semaphore);
-
-            $start = microtime(true);
-
-            $fork1->start();
-            $fork2->start();
-
-            yield $fork1->join();
-            yield $fork2->join();
-
-            $this->assertGreaterThan(0.1, microtime(true) - $start);
-        });
     }
 }

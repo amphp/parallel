@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Threading;
+namespace Amp\Parallel\Thread;
 
 use Amp\Parallel\Sync\Semaphore as SyncSemaphore;
 use Amp\Promise;

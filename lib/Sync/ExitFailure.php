@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Sync\Internal;
+namespace Amp\Parallel\Sync;
 
 use Amp\Parallel\PanicError;
 
@@ -11,7 +11,7 @@ class ExitFailure implements ExitResult {
     /** @var string */
     private $message;
 
-    /** @var int */
+    /** @var int|string */
     private $code;
 
     /** @var array */
@@ -31,11 +31,11 @@ class ExitFailure implements ExitResult {
         throw new PanicError(
             $this->type,
             \sprintf(
-                'Uncaught exception in execution context of type "%s" with message "%s"',
+                'Uncaught exception in execution context of type "%s" with message "%s" and code "%s"',
                 $this->type,
-                $this->message
+                $this->message,
+                $this->code
             ),
-            $this->code,
             $this->trace
         );
     }

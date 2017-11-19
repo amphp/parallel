@@ -3,16 +3,11 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Loop;
+use Amp\Struct;
 
 class BasicEnvironment implements Environment {
     /** @var array */
     private $data = [];
-
-    /** @var array */
-    private $ttl = [];
-
-    /** @var array */
-    private $expire = [];
 
     /** @var \SplPriorityQueue */
     private $queue;
@@ -26,15 +21,34 @@ class BasicEnvironment implements Environment {
         $this->timer = Loop::repeat(1000, function () {
             $time = \time();
             while (!$this->queue->isEmpty()) {
-                $key = $this->queue->top();
+                list($key, $expiration) = $this->queue->top();
 
-                if (isset($this->expire[$key])) {
-                    if ($time <= $this->expire[$key]) {
-                        break;
-                    }
-
-                    unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
+                if (!isset($this->data[$key])) {
+                    // Item removed.
+                    $this->queue->extract();
+                    continue;
                 }
+
+                $struct = $this->data[$key];
+
+                if ($struct->expire === 0) {
+                    // Item was set again without a TTL.
+                    $this->queue->extract();
+                    continue;
+                }
+
+                if ($struct->expire !== $expiration) {
+                    // Expiration changed or TTL updated.
+                    $this->queue->extract();
+                    continue;
+                }
+
+                if ($time < $struct->expire) {
+                    // Item at top has not expired, break out of loop.
+                    break;
+                }
+
+                unset($this->data[$key]);
 
                 $this->queue->extract();
             }
@@ -63,49 +77,65 @@ class BasicEnvironment implements Environment {
      * @return mixed|null Returns null if the key does not exist.
      */
     public function get(string $key) {
-        if (isset($this->ttl[$key]) && 0 !== $this->ttl[$key]) {
-            $this->expire[$key] = time() + $this->ttl[$key];
-            $this->queue->insert($key, -$this->expire[$key]);
+        if (!isset($this->data[$key])) {
+            return null;
         }
 
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        $struct = $this->data[$key];
+
+        if ($struct->ttl !== null) {
+            $expire = \time() + $struct->ttl;
+            if ($struct->expire < $expire) {
+                $struct->expire = $expire;
+                $this->queue->insert([$key, $struct->expire], -$struct->expire);
+            }
+        }
+
+        return $struct->data;
     }
 
     /**
      * @param string $key
      * @param mixed $value Using null for the value deletes the key.
-     * @param int $ttl Number of seconds until data is automatically deleted. Use 0 for unlimited TTL.
+     * @param int $ttl Number of seconds until data is automatically deleted. Use null for unlimited TTL.
+     *
+     * @throws \Error If the time-to-live is not a positive integer.
      */
-    public function set(string $key, $value, int $ttl = 0) {
-        if (null === $value) {
+    public function set(string $key, $value, int $ttl = null) {
+        if ($value === null) {
             $this->delete($key);
             return;
         }
 
-        $ttl = (int) $ttl;
-        if (0 > $ttl) {
-            $ttl = 0;
+        if ($ttl !== null && $ttl <= 0) {
+            throw new \Error("The time-to-live must be a positive integer or null");
         }
 
-        if (0 !== $ttl) {
-            $this->ttl[$key] = $ttl;
-            $this->expire[$key] = time() + $ttl;
-            $this->queue->insert($key, -$this->expire[$key]);
+        $struct = new class {
+            use Struct;
+            public $data;
+            public $expire = 0;
+            public $ttl;
+        };
+
+        $struct->data = $value;
+
+        if ($ttl !== null) {
+            $struct->ttl = $ttl;
+            $struct->expire = \time() + $ttl;
+            $this->queue->insert([$key, $struct->expire], -$struct->expire);
 
             Loop::enable($this->timer);
-        } else {
-            unset($this->expire[$key], $this->ttl[$key]);
         }
 
-        $this->data[$key] = $value;
+        $this->data[$key] = $struct;
     }
 
     /**
      * @param string $key
      */
     public function delete(string $key) {
-        $key = (string) $key;
-        unset($this->data[$key], $this->expire[$key], $this->ttl[$key]);
+        unset($this->data[$key]);
     }
 
     /**
@@ -131,7 +161,7 @@ class BasicEnvironment implements Environment {
     }
 
     /**
-     * Alias of set() with $ttl = 0.
+     * Alias of set() with $ttl = null.
      *
      * @param string $key
      * @param mixed $value
@@ -150,19 +180,10 @@ class BasicEnvironment implements Environment {
     }
 
     /**
-     * @return int
-     */
-    public function count(): int {
-        return count($this->data);
-    }
-
-    /**
      * Removes all values.
      */
     public function clear() {
         $this->data = [];
-        $this->expire = [];
-        $this->ttl = [];
 
         Loop::disable($this->timer);
         $this->queue = new \SplPriorityQueue;

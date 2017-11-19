@@ -1,15 +1,15 @@
 <?php
 
-namespace Amp\Parallel\Threading;
+namespace Amp\Parallel\Thread;
 
 use Amp\Coroutine;
 use Amp\Loop;
+use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\StatusError;
-use Amp\Parallel\Strand;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\Parallel\Sync\Internal\ExitResult;
+use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\SynchronizationError;
 use Amp\Promise;
 use function Amp\call;
@@ -21,7 +21,7 @@ use function Amp\call;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements Strand {
+class Thread implements Context {
     const EXIT_CHECK_FREQUENCY = 250;
 
     /** @var Internal\Thread An internal thread instance. */
@@ -236,7 +236,9 @@ class Thread implements Strand {
         } catch (ChannelException $exception) {
             $this->kill();
             throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
+                "The context stopped responding, potentially due to a fatal error or calling exit",
+                0,
+                $exception
             );
         } catch (\Throwable $exception) {
             $this->kill();
@@ -265,10 +267,8 @@ class Thread implements Strand {
 
         try {
             $data = yield $this->channel->receive();
-        } catch (ChannelException $exception) {
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit", 0, $exception
-            );
+        } catch (ChannelException $e) {
+            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         } finally {
             Loop::disable($this->watcher);
         }
@@ -302,9 +302,7 @@ class Thread implements Strand {
             try {
                 yield $this->channel->send($data);
             } catch (ChannelException $e) {
-                throw new ContextException(
-                    "The context went away, potentially due to a fatal error or calling exit", 0, $e
-                );
+                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
             } finally {
                 Loop::disable($this->watcher);
             }
