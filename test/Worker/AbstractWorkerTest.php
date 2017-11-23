@@ -3,7 +3,16 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
+use Amp\Parallel\Worker\Environment;
+use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\TaskError;
 use Amp\PHPUnit\TestCase;
+
+class NonAutoloadableTask implements Task {
+    public function run(Environment $environment) {
+        return 1;
+    }
+}
 
 abstract class AbstractWorkerTest extends TestCase {
     /**
@@ -92,5 +101,22 @@ abstract class AbstractWorkerTest extends TestCase {
 
         $this->assertRunTimeLessThan([$worker, 'kill'], 250);
         $this->assertFalse($worker->isRunning());
+    }
+
+    public function testUnserializableTask() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+            $worker->start();
+
+            try {
+                yield $worker->enqueue(new NonAutoloadableTask);
+                $this->fail("Tasks that cannot be autoloaded should throw an exception");
+            } catch (TaskError $exception) {
+                $this->assertSame("Error", $exception->getName());
+                $this->assertGreaterThan(0, \strpos($exception->getMessage(), \sprintf("Classes implementing %s", Task::class)));
+            }
+
+            yield $worker->shutdown();
+        });
     }
 }
