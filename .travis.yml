@@ -3,6 +3,7 @@ language: php
 php:
   - 7.0
   - 7.1
+  - 7.2
   - nightly
 
 sudo: false
@@ -15,7 +16,6 @@ matrix:
 install:
   # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
   - composer update -n --prefer-dist --ignore-platform-reqs
-  - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
   # pthreads is now only supported on PHP 7.2+
   - if [ "$TRAVIS_PHP_VERSION" != "7.0" ] && [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
     travis/install-pthreads.sh;
@@ -26,4 +26,5 @@ script:
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
+  - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
   - vendor/bin/coveralls -v --exclude-no-stmt
