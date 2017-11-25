@@ -42,9 +42,11 @@ class ChannelledProcess implements Context {
             $script = \escapeshellarg($script);
         }
 
+        // use cli binary, if provided
+        $binary = defined('PHP_CLI_BINARY') ? \PHP_CLI_BINARY : \PHP_BINARY;
         $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options);
         $separator = \PHP_SAPI === "phpdbg" ? " -- " : " ";
-        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . $script;
+        $command = \escapeshellarg($binary) . $options . $separator . $script;
 
         $processOptions = [];
 
