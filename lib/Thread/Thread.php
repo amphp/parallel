@@ -145,7 +145,7 @@ class Thread implements Context {
 
         $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
-        if (!$this->thread->start(PTHREADS_INHERIT_INI)) {
+        if (!$this->thread->start(\PTHREADS_INHERIT_INI)) {
             throw new ContextException('Failed to start the thread.');
         }
 

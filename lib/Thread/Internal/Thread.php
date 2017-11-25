@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Thread\Internal;
 
 use Amp\Loop;
+use Amp\Parallel\ContextException;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
@@ -18,9 +19,6 @@ use function Amp\call;
  */
 class Thread extends \Thread {
     const KILL_CHECK_FREQUENCY = 250;
-
-    /** @var string */
-    private static $autoloadPath;
 
     /** @var callable The function to execute in the thread. */
     private $function;
@@ -45,22 +43,6 @@ class Thread extends \Thread {
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
-
-        if (self::$autoloadPath === null) { // Determine path to composer autoload.php
-            $files = [
-                \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
-                \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
-            ];
-
-            foreach ($files as $file) {
-                if (\in_array($file, \get_included_files())) {
-                    self::$autoloadPath = $file;
-                    return;
-                }
-            }
-
-            throw new \Error("Could not locate autoload.php");
-        }
     }
 
     /**
@@ -77,8 +59,25 @@ class Thread extends \Thread {
          */
 
         // Protect scope by using an unbound closure (protects static access as well).
-        $autoloadPath = self::$autoloadPath;
-        (static function () use ($autoloadPath) { require $autoloadPath; })->bindTo(null, null)();
+        (static function () {
+            $paths = [
+                \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
+                \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
+            ];
+
+            foreach ($paths as $path) {
+                if (\file_exists($path)) {
+                    $autoloadPath = $path;
+                    break;
+                }
+            }
+
+            if (!isset($autoloadPath)) {
+                throw new ContextException("Could not locate autoload.php");
+            }
+
+            require $autoloadPath;
+        })->bindTo(null, null)();
 
         // At this point, the thread environment has been prepared so begin using the thread.
 
