@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\Loop;
 use Amp\PHPUnit\TestCase;
 
 abstract class AbstractParcelTest extends TestCase {
@@ -61,16 +62,17 @@ abstract class AbstractParcelTest extends TestCase {
      * @depends testSynchronized
      */
     public function testCloneIsNewParcel() {
-        $original = $this->createParcel(1);
+        Loop::run(function () {
+            $original = $this->createParcel(1);
 
-        $clone = clone $original;
+            $clone = clone $original;
 
-        $awaitable = $clone->synchronized(function () {
-            return 2;
+            $this->assertSame(2, yield $clone->synchronized(function () {
+                return 2;
+            }));
+
+            $this->assertSame(1, yield $original->unwrap());
+            $this->assertSame(2, $clone->unwrap());
         });
-        \Amp\Promise\wait($awaitable);
-
-        $this->assertSame(1, $original->unwrap());
-        $this->assertSame(2, $clone->unwrap());
     }
 }

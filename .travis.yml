@@ -18,7 +18,7 @@ install:
   - composer update -n --prefer-dist --ignore-platform-reqs
   # pthreads is now only supported on PHP 7.2+
   - if [ "$TRAVIS_PHP_VERSION" != "7.0" ] && [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
-    travis/install-pthreads.sh;
+      travis/install-pthreads.sh;
     fi
 
 script:

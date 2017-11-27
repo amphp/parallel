@@ -24,7 +24,8 @@
         "amphp/amp": "^2",
         "amphp/byte-stream": "^1.1",
         "amphp/parser": "^1",
-        "amphp/process": "^0.3"
+        "amphp/process": "^0.3",
+        "amphp/sync": "^1"
     },
     "require-dev": {
         "phpunit/phpunit": "^6",
@@ -32,15 +33,7 @@
         "friendsofphp/php-cs-fixer": "^2.3"
     },
     "suggest": {
-        "ext-pcntl": "Required for fork contexts",
-        "ext-pthreads": "Required for thread contexts",
-        "ext-sysvsem": "Required for fork synchronization",
-        "ext-sysvshm": "Required for fork contexts"
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "0.1.x-dev"
-        }
+        "ext-pthreads": "Required for thread contexts"
     },
     "autoload": {
         "psr-4": {

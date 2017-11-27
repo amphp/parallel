@@ -3,7 +3,10 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\Coroutine;
+use Amp\Failure;
 use Amp\Promise;
+use Amp\Success;
+use Amp\Sync\PosixSemaphore;
 
 /**
  * A container object for sharing a value across contexts.
@@ -103,21 +106,21 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     /**
      * {@inheritdoc}
      */
-    public function unwrap() {
+    public function unwrap(): Promise {
         if ($this->isFreed()) {
-            throw new SharedMemoryException('The object has already been freed.');
+            return new Failure(new SharedMemoryException('The object has already been freed.'));
         }
 
         $header = $this->getHeader();
 
         // Make sure the header is in a valid state and format.
         if ($header['state'] !== self::STATE_ALLOCATED || $header['size'] <= 0) {
-            throw new SharedMemoryException('Shared object memory is corrupt.');
+            new Failure(new SharedMemoryException('Shared object memory is corrupt.'));
         }
 
         // Read the actual value data from memory and unserialize it.
         $data = $this->memGet(self::MEM_DATA_OFFSET, $header['size']);
-        return \unserialize($data);
+        return new Success(\unserialize($data));
     }
 
     /**
@@ -178,7 +181,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
         $lock = yield $this->semaphore->acquire();
 
         try {
-            $value = $this->unwrap();
+            $value = yield $this->unwrap();
             $result = $callback($value);
 
             if ($result instanceof \Generator) {

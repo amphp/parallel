@@ -5,6 +5,7 @@ namespace Amp\Parallel\Thread;
 use Amp\Coroutine;
 use Amp\Parallel\Sync\Parcel as SyncParcel;
 use Amp\Promise;
+use Amp\Success;
 
 /**
  * A thread-safe container that shares a value between multiple threads.
@@ -36,8 +37,8 @@ class Parcel implements SyncParcel {
     /**
      * {@inheritdoc}
      */
-    public function unwrap() {
-        return $this->storage->get();
+    public function unwrap(): Promise {
+        return new Success($this->storage->get());
     }
 
     /**
@@ -69,7 +70,7 @@ class Parcel implements SyncParcel {
         $lock = yield $this->mutex->acquire();
 
         try {
-            $value = $this->unwrap();
+            $value = yield $this->unwrap();
             $result = $callback($value);
 
             if ($result instanceof \Generator) {

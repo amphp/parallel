@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\SharedMemoryParcel;
+use Amp\Promise;
 
 /**
  * @requires extension shmop
@@ -40,7 +41,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
     public function testUnwrapThrowsErrorIfFreed() {
         $object = new SharedMemoryParcel(new \stdClass());
         $object->free();
-        $object->unwrap();
+        Promise\wait($object->unwrap());
     }
 
     public function testCloneIsNewObject() {
@@ -49,7 +50,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
         $clone = clone $shared;
 
         $this->assertNotSame($shared, $clone);
-        $this->assertNotSame($object, $clone->unwrap());
+        $this->assertNotSame($object, Promise\wait($clone->unwrap()));
         $this->assertNotEquals($shared->__debugInfo()['id'], $clone->__debugInfo()['id']);
 
         $clone->free();
@@ -61,9 +62,9 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
         $awaitable = $object->synchronized(function () {
             return 'hello world';
         });
-        \Amp\Promise\wait($awaitable);
+        Promise\wait($awaitable);
 
-        $this->assertEquals('hello world', $object->unwrap());
+        $this->assertEquals('hello world', Promise\wait($object->unwrap()));
         $object->free();
     }
 
@@ -78,10 +79,10 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
             $awaitable = $object->synchronized(function () {
                 return 43;
             });
-            \Amp\Promise\wait($awaitable);
+            Promise\wait($awaitable);
         });
 
-        $this->assertEquals(43, $object->unwrap());
+        $this->assertEquals(43, Promise\wait($object->unwrap()));
         $object->free();
     }
 
