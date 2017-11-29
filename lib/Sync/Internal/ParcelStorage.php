@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Sync\Internal
+namespace Amp\Parallel\Sync\Internal;
 
 class ParcelStorage extends \Threaded {
     /** @var mixed */
