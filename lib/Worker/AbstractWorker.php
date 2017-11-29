@@ -29,6 +29,10 @@ abstract class AbstractWorker implements Worker {
      * @param \Amp\Parallel\Context $context
      */
     public function __construct(Context $context) {
+        if ($context->isRunning()) {
+            throw new \Error("The context was already running");
+        }
+
         $this->context = $context;
 
         $this->onResolve = function ($exception, $data) {

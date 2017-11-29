@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Loop;
 use Amp\PHPUnit\TestCase;
+use Amp\Promise;
 
 abstract class AbstractParcelTest extends TestCase {
     /**
@@ -11,20 +11,15 @@ abstract class AbstractParcelTest extends TestCase {
      */
     abstract protected function createParcel($value);
 
-    public function testConstructor() {
-        $object = $this->createParcel(new \stdClass());
-        $this->assertInternalType('object', $object->unwrap());
-    }
-
     public function testUnwrapIsOfCorrectType() {
-        $object = $this->createParcel(new \stdClass());
-        $this->assertInstanceOf('stdClass', $object->unwrap());
+        $object = $this->createParcel(new \stdClass);
+        $this->assertInstanceOf('stdClass', Promise\wait($object->unwrap()));
     }
 
     public function testUnwrapIsEqual() {
         $object = new \stdClass;
         $shared = $this->createParcel($object);
-        $this->assertEquals($object, $shared->unwrap());
+        $this->assertEquals($object, Promise\wait($shared->unwrap()));
     }
 
     /**
@@ -56,23 +51,5 @@ abstract class AbstractParcelTest extends TestCase {
             ->with($this->identicalTo(null), $this->identicalTo(2));
 
         $awaitable->onResolve($callback);
-    }
-
-    /**
-     * @depends testSynchronized
-     */
-    public function testCloneIsNewParcel() {
-        Loop::run(function () {
-            $original = $this->createParcel(1);
-
-            $clone = clone $original;
-
-            $this->assertSame(2, yield $clone->synchronized(function () {
-                return 2;
-            }));
-
-            $this->assertSame(1, yield $original->unwrap());
-            $this->assertSame(2, $clone->unwrap());
-        });
     }
 }

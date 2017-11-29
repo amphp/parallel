@@ -7,6 +7,7 @@ use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
 use Amp\Sync\PosixSemaphore;
+use function Amp\call;
 
 /**
  * A container object for sharing a value across contexts.
@@ -30,7 +31,7 @@ use Amp\Sync\PosixSemaphore;
  * @see http://man7.org/linux/man-pages/man2/shmctl.2.html How shared memory works on Linux.
  * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
  */
-class SharedMemoryParcel implements Parcel, \Serializable {
+class SharedMemoryParcel implements Parcel {
     /** @var int The byte offset to the start of the object data in memory. */
     const MEM_DATA_OFFSET = 7;
 
@@ -40,6 +41,9 @@ class SharedMemoryParcel implements Parcel, \Serializable {
     const STATE_MOVED = 2;
     const STATE_FREED = 3;
 
+    /** @var string */
+    private $id;
+
     /** @var int The shared memory segment key. */
     private $key;
 
@@ -48,6 +52,35 @@ class SharedMemoryParcel implements Parcel, \Serializable {
 
     /** @var int An open handle to the shared memory segment. */
     private $handle;
+
+    /** @var int */
+    private $initializer = 0;
+
+    /**
+     * @param string $id
+     * @param mixed $value
+     * @param int $size The initial size in bytes of the shared memory segment. It will automatically be expanded as
+     *     necessary.
+     * @param int $permissions Permissions to access the semaphore. Use file permission format specified as 0xxx.
+     *
+     * @return \Amp\Parallel\Sync\SharedMemoryParcel
+     */
+    public static function create(string $id, $value, int $size = 8192, int $permissions = 0600): self {
+        $parcel = new self($id);
+        $parcel->init($value, $size, $permissions);
+        return $parcel;
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return \Amp\Parallel\Sync\SharedMemoryParcel
+     */
+    public static function use(string $id): self {
+        $parcel = new self($id);
+        $parcel->open();
+        return $parcel;
+    }
 
     /**
      * Creates a new local object container.
@@ -61,12 +94,13 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @param int   $permissions The access permissions to set for the object.
      *                           If not specified defaults to 0600.
      */
-    public function __construct($value, int $size = 16384, int $permissions = 0600) {
+    private function __construct(string $id) {
         if (!\extension_loaded("shmop")) {
             throw new \Error(__CLASS__ . " requires the shmop extension.");
         }
 
-        $this->init($value, $size, $permissions);
+        $this->id = $id;
+        $this->key = self::makeKey($this->id);
     }
 
     /**
@@ -74,13 +108,18 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @param int   $size
      * @param int   $permissions
      */
-    private function init($value, int $size = 16384, int $permissions = 0600) {
-        $this->key = \abs(\crc32(\spl_object_hash($this)));
+    private function init($value, int $size = 8192, int $permissions = 0600) {
+        $this->semaphore = PosixSemaphore::create($this->id, 1);
+        $this->initializer = \getmypid();
+
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
         $this->setHeader(self::STATE_ALLOCATED, 0, $permissions);
         $this->wrap($value);
+    }
 
-        $this->semaphore = new PosixSemaphore(1);
+    private function open() {
+        $this->semaphore = PosixSemaphore::use($this->id);
+        $this->memOpen($this->key, 'w', 0, 0);
     }
 
     /**
@@ -91,7 +130,7 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      *
      * @return bool True if the object is freed, otherwise false.
      */
-    public function isFreed(): bool {
+    private function isFreed(): bool {
         // If we are no longer connected to the memory segment, check if it has
         // been invalidated.
         if ($this->handle !== null) {
@@ -177,22 +216,16 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * @return \Generator
      */
     private function doSynchronized(callable $callback): \Generator {
-        /** @var \Amp\Parallel\Sync\Lock $lock */
+        /** @var \Amp\Sync\Lock $lock */
         $lock = yield $this->semaphore->acquire();
 
         try {
             $value = yield $this->unwrap();
-            $result = $callback($value);
+            $result = yield call($callback, $value);
 
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
+            if ($result !== null) {
+                $this->wrap($result);
             }
-
-            if ($result instanceof Promise) {
-                $result = yield $result;
-            }
-
-            $this->wrap(null === $result ? $value : $result);
         } finally {
             $lock->release();
         }
@@ -207,73 +240,37 @@ class SharedMemoryParcel implements Parcel, \Serializable {
      * The memory containing the shared value will be invalidated. When all
      * process disconnect from the object, the shared memory block will be
      * destroyed by the OS.
-     *
-     * Calling `free()` on an object already freed will have no effect.
      */
-    public function free() {
-        if (!$this->isFreed()) {
-            // Invalidate the memory block by setting its state to FREED.
-            $this->setHeader(static::STATE_FREED, 0, 0);
-
-            // Request the block to be deleted, then close our local handle.
-            $this->memDelete();
-            \shmop_close($this->handle);
-            $this->handle = null;
-
-            $this->semaphore->free();
+    public function __destruct() {
+        if ($this->initializer === 0 || $this->initializer !== \getmypid()) {
+            return;
         }
-    }
 
-    /**
-     * Serializes the local object handle.
-     *
-     * Note that this does not serialize the object that is referenced, just the
-     * object handle.
-     *
-     * @return string The serialized object handle.
-     */
-    public function serialize(): string {
-        return \serialize([$this->key, $this->semaphore]);
-    }
-
-    /**
-     * Unserializes the local object handle.
-     *
-     * @param string $serialized The serialized object handle.
-     */
-    public function unserialize($serialized) {
-        list($this->key, $this->semaphore) = \unserialize($serialized);
-        $this->memOpen($this->key, 'w', 0, 0);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __clone() {
-        $value = $this->unwrap();
-        $header = $this->getHeader();
-        $this->init($value, $header['size'], $header['permissions']);
-    }
-
-    /**
-     * Gets information about the object for debugging purposes.
-     *
-     * @return array An array of debugging information.
-     */
-    public function __debugInfo() {
         if ($this->isFreed()) {
-            return [
-                'id' => $this->key,
-                'object' => null,
-                'freed' => true,
-            ];
+            return;
         }
 
-        return [
-            'id' => $this->key,
-            'object' => $this->unwrap(),
-            'freed' => false,
-        ];
+        // Invalidate the memory block by setting its state to FREED.
+        $this->setHeader(static::STATE_FREED, 0, 0);
+
+        // Request the block to be deleted, then close our local handle.
+        $this->memDelete();
+        \shmop_close($this->handle);
+        $this->handle = null;
+
+        $this->semaphore = null;
+    }
+
+    /**
+     * Private method to prevent cloning.
+     */
+    private function __clone() {
+    }
+
+    /**
+     * Private method to prevent serialization.
+     */
+    private function __sleep() {
     }
 
     /**
@@ -370,5 +367,9 @@ class SharedMemoryParcel implements Parcel, \Serializable {
         if (!\shmop_delete($this->handle)) {
             throw new SharedMemoryException('Failed to discard shared memory block.');
         }
+    }
+
+    private static function makeKey(string $id): int {
+        return \abs(\unpack("l", \md5($id, true))[1]);
     }
 }

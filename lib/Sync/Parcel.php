@@ -22,11 +22,8 @@ interface Parcel {
      * Asynchronously invokes a callback while maintaining an exclusive lock on the parcel. The current value of the
      * parcel is provided as the first argument to the callback function.
      *
-     * The arguments passed to the callback depend on the implementing object. If the callback throws an exception,
-     * the lock on the object will be immediately released.
-     *
-     * @param callable $callback The synchronized callback to invoke.
-     *     The callback may be a regular function or a coroutine.
+     * @param callable $callback The synchronized callback to invoke. The parcel value is given as the single argument
+     *     to the callback function. The callback may be a regular function or a coroutine.
      *
      * @return \Amp\Promise<mixed> Resolves with the return value of $callback or fails if $callback
      *     throws an exception.
@@ -34,17 +31,7 @@ interface Parcel {
     public function synchronized(callable $callback): Promise;
 
     /**
-     * Unwraps the parcel and returns the value inside the parcel.
-     *
-     * @return mixed The value inside the parcel.
+     * @return \Amp\Promise<mixed> A promise for the value inside the parcel.
      */
     public function unwrap(): Promise;
-
-    /**
-     * Clones the parcel object, resulting in a new, independent parcel.
-     *
-     * When a parcel is cloned, a new parcel is created and the original
-     * parcel's value is duplicated and copied to the new parcel.
-     */
-    public function __clone();
 }

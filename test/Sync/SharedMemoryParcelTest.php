@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\Loop;
 use Amp\Parallel\Sync\SharedMemoryParcel;
 use Amp\Promise;
 
@@ -10,62 +11,27 @@ use Amp\Promise;
  * @requires extension sysvmsg
  */
 class SharedMemoryParcelTest extends AbstractParcelTest {
+    const ID = __CLASS__;
+
     private $parcel;
 
     protected function createParcel($value) {
-        $this->parcel = new SharedMemoryParcel($value);
+        $this->parcel = SharedMemoryParcel::create(self::ID, $value);
         return $this->parcel;
     }
 
     public function tearDown() {
-        if ($this->parcel !== null) {
-            $this->parcel->free();
-        }
-    }
-
-    public function testNewObjectIsNotFreed() {
-        $object = new SharedMemoryParcel(new \stdClass());
-        $this->assertFalse($object->isFreed());
-        $object->free();
-    }
-
-    public function testFreeReleasesObject() {
-        $object = new SharedMemoryParcel(new \stdClass());
-        $object->free();
-        $this->assertTrue($object->isFreed());
-    }
-
-    /**
-     * @expectedException \Amp\Parallel\Sync\SharedMemoryException
-     */
-    public function testUnwrapThrowsErrorIfFreed() {
-        $object = new SharedMemoryParcel(new \stdClass());
-        $object->free();
-        Promise\wait($object->unwrap());
-    }
-
-    public function testCloneIsNewObject() {
-        $object = new \stdClass;
-        $shared = new SharedMemoryParcel($object);
-        $clone = clone $shared;
-
-        $this->assertNotSame($shared, $clone);
-        $this->assertNotSame($object, Promise\wait($clone->unwrap()));
-        $this->assertNotEquals($shared->__debugInfo()['id'], $clone->__debugInfo()['id']);
-
-        $clone->free();
-        $shared->free();
+        $this->parcel = null;
     }
 
     public function testObjectOverflowMoved() {
-        $object = new SharedMemoryParcel('hi', 14);
+        $object = SharedMemoryParcel::create(self::ID, 'hi', 2);
         $awaitable = $object->synchronized(function () {
             return 'hello world';
         });
         Promise\wait($awaitable);
 
         $this->assertEquals('hello world', Promise\wait($object->unwrap()));
-        $object->free();
     }
 
     /**
@@ -73,30 +39,37 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
      * @requires extension pcntl
      */
     public function testSetInSeparateProcess() {
-        $object = new SharedMemoryParcel(42);
+        $object = SharedMemoryParcel::create(self::ID, 42);
 
         $this->doInFork(function () use ($object) {
-            $awaitable = $object->synchronized(function () {
-                return 43;
+            $awaitable = $object->synchronized(function ($value) {
+                return $value + 1;
             });
             Promise\wait($awaitable);
         });
 
         $this->assertEquals(43, Promise\wait($object->unwrap()));
-        $object->free();
     }
 
     /**
      * @group posix
      * @requires extension pcntl
      */
-    public function testFreeInSeparateProcess() {
-        $object = new SharedMemoryParcel(42);
+    public function testInSeparateProcess() {
+        $parcel = SharedMemoryParcel::create(self::ID, 42);
 
-        $this->doInFork(function () use ($object) {
-            $object->free();
+        $this->doInFork(function () {
+            Loop::run(function () {
+                $parcel = SharedMemoryParcel::use(self::ID);
+                $this->assertSame(43, yield $parcel->synchronized(function ($value) {
+                    $this->assertSame(42, $value);
+                    return $value + 1;
+                }));
+            });
         });
 
-        $this->assertTrue($object->isFreed());
+        Loop::run(function () use ($parcel) {
+            $this->assertSame(43, yield $parcel->unwrap());
+        });
     }
 }
