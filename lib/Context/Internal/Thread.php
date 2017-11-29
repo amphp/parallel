@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Thread\Internal;
+namespace Amp\Parallel\Context\Internal;
 
 use Amp\Loop;
 use Amp\Parallel\ContextException;

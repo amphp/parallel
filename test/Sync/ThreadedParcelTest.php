@@ -1,11 +1,10 @@
 <?php
 
-namespace Amp\Parallel\Test\Thread;
+namespace Amp\Parallel\Test\Sync;
 
 use Amp\Loop;
-use Amp\Parallel\Test\Sync\AbstractParcelTest;
-use Amp\Parallel\Thread\Thread;
-use Amp\Parallel\Thread\ThreadedParcel;
+use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Sync\ThreadedParcel;
 
 /**
  * @requires extension pthreads

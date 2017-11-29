@@ -1,10 +1,10 @@
 <?php
 
-namespace Amp\Parallel\Test\Thread;
+namespace Amp\Parallel\Test\Context;
 
 use Amp\Loop;
 use Amp\Parallel\Test\AbstractContextTest;
-use Amp\Parallel\Thread\Thread;
+use Amp\Parallel\Context\Thread;
 
 /**
  * @group threading

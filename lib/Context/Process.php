@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Process;
+namespace Amp\Parallel\Context;
 
 use Amp\ByteStream;
 use Amp\Coroutine;
@@ -11,12 +11,12 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\SynchronizationError;
-use Amp\Process\Process;
+use Amp\Process\Process as BaseProcess;
 use Amp\Promise;
 use function Amp\asyncCall;
 use function Amp\call;
 
-class ChannelledProcess implements Context {
+class Process implements Context {
     /** @var \Amp\Process\Process */
     private $process;
 
@@ -52,7 +52,7 @@ class ChannelledProcess implements Context {
             $processOptions = ["bypass_shell" => true];
         }
 
-        $this->process = new Process($command, $cwd, $env, $processOptions);
+        $this->process = new BaseProcess($command, $cwd, $env, $processOptions);
     }
 
     private function formatOptions(array $options) {

@@ -1,8 +1,7 @@
 <?php
 
-namespace Amp\Parallel\Thread;
+namespace Amp\Parallel\Sync;
 
-use Amp\Parallel\Sync\Parcel;
 use Amp\Promise;
 use Amp\Success;
 use Amp\Sync\ThreadedMutex;

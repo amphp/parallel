@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Thread;
+namespace Amp\Parallel\Context;
 
 use Amp\Coroutine;
 use Amp\Loop;
@@ -61,7 +61,7 @@ class Thread implements Context {
      *
      * @return Thread The thread object that was spawned.
      */
-    public static function spawn(callable $function, ...$args) {
+    public static function spawn(callable $function, ...$args): self {
         $thread = new self($function, ...$args);
         $thread->start();
         return $thread;

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Parallel\Process\ChannelledProcess;
+use Amp\Parallel\Context\Process;
 
 /**
  * A worker thread that executes task objects.
@@ -20,6 +20,6 @@ class WorkerProcess extends AbstractWorker {
             $dir . "/worker",
             "-e" . $envClassName,
         ];
-        parent::__construct(new ChannelledProcess($script, $dir, $env));
+        parent::__construct(new Process($script, $dir, $env));
     }
 }
