@@ -24,7 +24,7 @@
         "amphp/amp": "^2",
         "amphp/byte-stream": "^1.1",
         "amphp/parser": "^1",
-        "amphp/process": "^0.3",
+        "amphp/process": "^0.2 || ^0.3",
         "amphp/sync": "^1"
     },
     "require-dev": {
