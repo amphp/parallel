@@ -85,10 +85,6 @@ class Thread extends \Thread {
             return; // Thread killed while requiring autoloader, simply exit.
         }
 
-        if (!\is_resource($this->socket) || \feof($this->socket)) {
-            return; // Parent context exited, no need to continue.
-        }
-
         Loop::run(function () {
             $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
                 if ($this->killed) {
@@ -97,7 +93,13 @@ class Thread extends \Thread {
             });
             Loop::unreference($watcher);
 
-            return $this->execute(new ChannelledSocket($this->socket, $this->socket));
+            try {
+                $channel = new ChannelledSocket($this->socket, $this->socket);
+            } catch (\Throwable $exception) {
+                return; // Parent context exited or destroyed thread, no need to continue.
+            }
+
+            return $this->execute($channel);
         });
     }
 
