@@ -15,21 +15,15 @@ class WorkerThread extends AbstractWorker {
      */
     public function __construct(string $envClassName = BasicEnvironment::class) {
         parent::__construct(new Thread(function (string $className): Promise {
-            try {
-                $reflection = new \ReflectionClass($className);
-            } catch (\ReflectionException $e) {
-                throw new \Error(\sprintf("Invalid class name '%s'", $className));
+            if (!\class_exists($className)) {
+                throw new \Error(\sprintf("Invalid environment class name '%s'", $className));
             }
 
-            if (!$reflection->isInstantiable()) {
-                throw new \Error(\sprintf("'%s' is not instatiable class", $className));
-            }
-
-            if (!$reflection->implementsInterface(Environment::class)) {
+            if (!\is_subclass_of($className, Environment::class)) {
                 throw new \Error(\sprintf("The class '%s' does not implement '%s'", $className, Environment::class));
             }
 
-            $environment = $reflection->newInstance();
+            $environment = new $className;
 
             if (!\defined("AMP_WORKER")) {
                 \define("AMP_WORKER", "amp-worker");

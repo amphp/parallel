@@ -51,21 +51,19 @@ Amp\Loop::run(function () {
 
             $className = $options["e"];
 
-            try {
-                $reflection = new ReflectionClass($className);
-            } catch (ReflectionException $e) {
-                throw new Error(sprintf("Invalid class name '%s'", $className));
+            if (!class_exists($className)) {
+                throw new Error(sprintf("Invalid environment class name '%s'", $className));
             }
 
-            if (!$reflection->isInstantiable()) {
-                throw new Error(sprintf("'%s' is not instatiable class", $className));
+            if (!is_subclass_of($className, Worker\Environment::class)) {
+                throw new Error(sprintf(
+                    "The class '%s' does not implement '%s'",
+                    $className,
+                    Worker\Environment::class
+                ));
             }
 
-            if (!$reflection->implementsInterface(Worker\Environment::class)) {
-                throw new Error(sprintf("The class '%s' does not implement '%s'", $className,Worker\Environment::class));
-            }
-
-            return $reflection->newInstance();
+            return new $className;
         })();
 
         $runner = new Worker\TaskRunner($channel, $environment);
