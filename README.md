@@ -31,7 +31,7 @@ composer require amphp/sync
 
 ## Documentation
 
-Documentation can be found on [amphp.org/sync](https://amphp.org/sync/) as well as in the [`./docs`](./docs) directory.
+Documentation can be found on [amphp.org/parallel](https://amphp.org/parallel/) as well as in the [`./docs`](./docs) directory.
 
 ## Versioning
 
