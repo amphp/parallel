@@ -48,5 +48,10 @@
             "Amp\\Parallel\\Example\\": "examples",
             "Amp\\Parallel\\Test\\": "test"
         }
+    },
+    "config": {
+        "platform": {
+            "php": "7.0.0"
+        }
     }
 }
