@@ -9,11 +9,11 @@
 <a href="blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
 </p>
 
-**True parallel processing using native multiple processes or threads for parallelizing code, *without* blocking.**
+**True parallel processing using multiple processes or native threads for concurrent code execution, *without* blocking.**
 
 `amphp/parallel` a component for [Amp](https://amphp.org) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers. Like other Amp components, this library uses [Coroutines](http://amphp.org/amp/coroutines/) built from [Promises](http://amphp.org/amp/promises/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
 
-This library provides a means of parallelizing code without littering your application with complicated lock checking and inter-process communication.
+This library provides a means of executing code concurrently without littering your application with complicated lock checking and inter-process communication.
 
 To be as flexible as possible, this library comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" worker API that allows you to assign units of work to a pool of worker threads or processes.
 
@@ -22,7 +22,7 @@ To be as flexible as possible, this library comes with a collection of non-block
 This package can be installed as a [Composer](https://getcomposer.org/) dependency.
 
 ```bash
-composer require amphp/sync
+composer require amphp/parallel
 ```
 
 ## Requirements
@@ -35,7 +35,7 @@ Documentation can be found on [amphp.org/parallel](https://amphp.org/parallel/) 
 
 ## Versioning
 
-`amphp/sync` follows the [semver](http://semver.org/) semantic versioning specification like all other `amphp` packages.
+`amphp/parallel` follows the [semver](http://semver.org/) semantic versioning specification like all other `amphp` packages.
 
 ## Security
 
