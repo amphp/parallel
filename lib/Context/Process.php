@@ -47,20 +47,18 @@ class Process implements Context {
         }
 
         if ($binary === null) {
-            $binary = \PHP_BINARY;
-        }
-
-        // Locate PHP executable when running under non-cli SAPI and no custom binary path was provided.
-        if ($binary === \PHP_BINARY && \PHP_SAPI !== "cli") {
-            $binary = self::$binaryPath ?? self::locateBinary();
+            if (\PHP_SAPI === "cli") {
+                $binary = \PHP_BINARY;
+            } else {
+                $binary = self::$binaryPath ?? self::locateBinary();
+            }
         } elseif (!\is_executable($binary)) {
             throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
         }
 
         $command = \escapeshellarg($binary) . " " . $this->formatOptions($options) . " " . $script;
-        $processOptions = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? ["bypass_shell" => true] : [];
 
-        $this->process = new BaseProcess($command, $cwd, $env, $processOptions);
+        $this->process = new BaseProcess($command, $cwd, $env);
     }
 
     private static function locateBinary(): string {
