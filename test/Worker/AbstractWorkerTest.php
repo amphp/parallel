@@ -65,7 +65,7 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testEnqueueMultiple() {
+    public function testEnqueueMultipleSynchronous() {
         Loop::run(function () {
             $worker = $this->createWorker();
             $worker->start();
@@ -77,6 +77,28 @@ abstract class AbstractWorkerTest extends TestCase {
             ]);
 
             $this->assertEquals([42, 56, 72], $values);
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testEnqueueMultipleAsynchronous() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+            $worker->start();
+
+            $promises = [
+                $worker->enqueue(new TestTask(42, 200)),
+                $worker->enqueue(new TestTask(56, 300)),
+                $worker->enqueue(new TestTask(72, 100))
+            ];
+
+            $expected = [72, 42, 56];
+            foreach ($promises as $promise) {
+                $promise->onResolve(function ($e, $v) use (&$expected) {
+                    $this->assertSame(\array_shift($expected), $v);
+                });
+            }
 
             yield $worker->shutdown();
         });
