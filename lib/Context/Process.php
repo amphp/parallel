@@ -17,6 +17,9 @@ use function Amp\asyncCall;
 use function Amp\call;
 
 class Process implements Context {
+    /** @var string|null Cached path to located PHP binary. */
+    private static $binaryPath;
+
     /** @var \Amp\Process\Process */
     private $process;
 
@@ -26,10 +29,11 @@ class Process implements Context {
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', '-eOptionValue', '-nOptionValue'].
+     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
      */
-    public function __construct($script, string $cwd = "", array $env = []) {
+    public function __construct($script, string $binary = null, string $cwd = "", array $env = []) {
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
@@ -42,17 +46,33 @@ class Process implements Context {
             $script = \escapeshellarg($script);
         }
 
-        $options = (\PHP_SAPI === "phpdbg" ? " -b -qrr " : " ") . $this->formatOptions($options);
-        $separator = \PHP_SAPI === "phpdbg" ? " -- " : " ";
-        $command = \escapeshellarg(\PHP_BINARY) . $options . $separator . $script;
-
-        $processOptions = [];
-
-        if (\strncasecmp(\PHP_OS, "WIN", 3) === 0) {
-            $processOptions = ["bypass_shell" => true];
+        if ($binary === null) {
+            $binary = \PHP_BINARY;
         }
 
+        // Locate PHP executable when running under non-cli SAPI and no custom binary path was provided.
+        if ($binary === \PHP_BINARY && \PHP_SAPI !== "cli") {
+            $binary = self::$binaryPath ?? self::locateBinary();
+        } elseif (!\is_executable($binary)) {
+            throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
+        }
+
+        $command = \escapeshellarg($binary) . " " . $this->formatOptions($options) . " " . $script;
+        $processOptions = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? ["bypass_shell" => true] : [];
+
         $this->process = new BaseProcess($command, $cwd, $env, $processOptions);
+    }
+
+    private static function locateBinary(): string {
+        $executable = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? "php.exe" : "php";
+        foreach (\explode(\PATH_SEPARATOR, \getenv("PATH")) as $path) {
+            $path .= \DIRECTORY_SEPARATOR . $executable;
+            if (\is_executable($path)) {
+                return self::$binaryPath = $path;
+            }
+        }
+
+        throw new \Error("Could not locate PHP executable binary");
     }
 
     private function formatOptions(array $options) {

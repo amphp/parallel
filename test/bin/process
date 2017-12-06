@@ -1,0 +1,61 @@
+#!/usr/bin/env php
+<?php
+
+use Amp\Parallel\Sync;
+
+// Doesn't exist in phpdbg...
+if (function_exists("cli_set_process_title")) {
+    @cli_set_process_title("process-test");
+}
+
+// Redirect all output written using echo, print, printf, etc. to STDERR.
+ob_start(function ($data) {
+    fwrite(STDERR, $data);
+    return '';
+}, 1, PHP_OUTPUT_HANDLER_CLEANABLE | PHP_OUTPUT_HANDLER_FLUSHABLE);
+
+(function () {
+    $paths = [
+        dirname(__DIR__, 2) . "/vendor/autoload.php",
+    ];
+
+    foreach ($paths as $path) {
+        if (file_exists($path)) {
+            $autoloadPath = $path;
+            break;
+        }
+    }
+
+    if (!isset($autoloadPath)) {
+        fwrite(STDERR, "Could not locate autoload.php");
+        exit(1);
+    }
+
+    require $autoloadPath;
+})();
+
+Amp\Loop::run(function () {
+    $channel = new Sync\ChannelledSocket(STDIN, STDOUT);
+
+    try {
+        $value = (function (): string {
+            $options = getopt("s:");
+
+            if (!isset($options["s"])) {
+                throw new Error("No string provided");
+            }
+
+            return $options["s"];
+        })();
+
+        $result = new Sync\ExitSuccess($value);
+    } catch (Throwable $exception) {
+        $result = new Sync\ExitFailure($exception);
+    }
+
+    try {
+        yield $channel->send($result);
+    } catch (Throwable $exception) {
+        exit(1); // Parent context died, simply exit.
+    }
+});
