@@ -93,7 +93,7 @@ abstract class AbstractWorkerTest extends TestCase {
                 $worker->enqueue(new TestTask(72, 100))
             ];
 
-            $expected = [72, 42, 56];
+            $expected = [42, 56, 72];
             foreach ($promises as $promise) {
                 $promise->onResolve(function ($e, $v) use (&$expected) {
                     $this->assertSame(\array_shift($expected), $v);

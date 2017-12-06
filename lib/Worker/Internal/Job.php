@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 
 /** @internal */
@@ -25,11 +24,7 @@ class Job {
     public function getTask(): Task {
         // Classes that cannot be autoloaded will be unserialized as an instance of __PHP_Incomplete_Class.
         if ($this->task instanceof \__PHP_Incomplete_Class) {
-            return new class implements Task {
-                public function run(Environment $environment) {
-                    throw new \Error(\sprintf("Classes implementing %s must be autoloadable by the Composer autoloader", Task::class));
-                }
-            };
+            throw new \Error(\sprintf("Classes implementing %s must be autoloadable by the Composer autoloader", Task::class));
         }
 
         return $this->task;

@@ -37,17 +37,18 @@ class TaskRunner {
         $job = yield $this->channel->receive();
 
         while ($job instanceof Internal\Job) {
-            call([$job->getTask(), 'run'], $this->environment)->onResolve(function ($exception, $value) use ($job) {
-                if ($exception) {
-                    $result = new Internal\TaskFailure($job->getId(), $exception);
-                } else {
-                    $result = new Internal\TaskSuccess($job->getId(), $value);
-                }
+            try {
+                $result = yield call([$job->getTask(), "run"], $this->environment);
+                $result = new Internal\TaskSuccess($job->getId(), $result);
+            } catch (\Throwable $exception) {
+                $result = new Internal\TaskFailure($job->getId(), $exception);
+            }
 
-                $this->channel->send($result);
-            });
+            $job = null; // Free memory from last job.
 
-            unset($job); // Free memory from last job.
+            yield $this->channel->send($result);
+
+            $result = null; // Free memory from last result.
 
             $job = yield $this->channel->receive();
         }
