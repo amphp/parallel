@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Context;
 
 use Amp\ByteStream;
-use Amp\Coroutine;
 use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\StatusError;
@@ -123,25 +122,23 @@ class Process implements Context {
             throw new StatusError("The process has not been started");
         }
 
-        return new Coroutine($this->doReceive());
-    }
+        return call(function () {
+            try {
+                $data = yield $this->channel->receive();
+            } catch (ChannelException $e) {
+                throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            }
 
-    private function doReceive() {
-        try {
-            $data = yield $this->channel->receive();
-        } catch (ChannelException $e) {
-            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-        }
+            if ($data instanceof ExitResult) {
+                $data = $data->getResult();
+                throw new SynchronizationError(\sprintf(
+                    'Process unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ));
+            }
 
-        if ($data instanceof ExitResult) {
-            $data = $data->getResult();
-            throw new SynchronizationError(\sprintf(
-                'Process unexpectedly exited with result of type: %s',
-                \is_object($data) ? \get_class($data) : \gettype($data)
-            ));
-        }
-
-        return $data;
+            return $data;
+        });
     }
 
     /**
@@ -173,29 +170,27 @@ class Process implements Context {
             throw new StatusError("The process has not been started");
         }
 
-        return new Coroutine($this->doJoin());
-    }
-
-    private function doJoin(): \Generator {
-        try {
-            $data = yield $this->channel->receive();
-            if (!$data instanceof ExitResult) {
-                throw new SynchronizationError("Did not receive an exit result from process");
+        return call(function () {
+            try {
+                $data = yield $this->channel->receive();
+                if (!$data instanceof ExitResult) {
+                    throw new SynchronizationError("Did not receive an exit result from process");
+                }
+            } catch (ChannelException $e) {
+                $this->kill();
+                throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            } catch (\Throwable $exception) {
+                $this->kill();
+                throw $exception;
             }
-        } catch (ChannelException $e) {
-            $this->kill();
-            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-        } catch (\Throwable $exception) {
-            $this->kill();
-            throw $exception;
-        }
 
-        $code = yield $this->process->join();
-        if ($code !== 0) {
-            throw new ContextException(\sprintf("Process exited with code %d", $code));
-        }
+            $code = yield $this->process->join();
+            if ($code !== 0) {
+                throw new ContextException(\sprintf("Process exited with code %d", $code));
+            }
 
-        return $data->getResult();
+            return $data->getResult();
+        });
     }
 
     /**

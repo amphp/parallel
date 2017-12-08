@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CallableMaker;
-use Amp\Coroutine;
 use Amp\Parallel\StatusError;
 use Amp\Promise;
 
@@ -156,33 +155,17 @@ class DefaultPool implements Pool {
      * @throws \Amp\Parallel\Worker\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Promise {
-        return new Coroutine($this->doEnqueue($this->pull(), $task));
-    }
+        $worker = $this->pull();
 
-    /**
-     * @coroutine
-     *
-     * Keeps the worker marked as busy until the task has completed.
-     *
-     * @param \Amp\Parallel\Worker\Worker $worker
-     * @param \Amp\Parallel\Worker\Task $task
-     *
-     * @return \Generator
-     */
-    public function doEnqueue(Worker $worker, Task $task): \Generator {
-        try {
-            $result = yield $worker->enqueue($task);
-        } finally {
+        $promise = $worker->enqueue($task);
+        $promise->onResolve(function () use ($worker) {
             $this->push($worker);
-        }
-
-        return $result;
+        });
+        return $promise;
     }
 
     /**
      * Shuts down the pool and all workers in it.
-     *
-     * @coroutine
      *
      * @return \Amp\Promise<int[]> Array of exit status from all workers.
      *
@@ -193,30 +176,16 @@ class DefaultPool implements Pool {
             throw new StatusError('The pool is not running.');
         }
 
-        return new Coroutine($this->doShutdown());
-    }
-
-    /**
-     * Shuts down the pool and all workers in it.
-     *
-     * @coroutine
-     *
-     * @return \Generator
-     *
-     * @throws \Amp\Parallel\StatusError If the pool has not been started.
-     */
-    private function doShutdown(): \Generator {
         $this->running = false;
 
         $shutdowns = [];
-
         foreach ($this->workers as $worker) {
             if ($worker->isRunning()) {
                 $shutdowns[] = $worker->shutdown();
             }
         }
 
-        return yield Promise\all($shutdowns);
+        return Promise\all($shutdowns);
     }
 
     /**

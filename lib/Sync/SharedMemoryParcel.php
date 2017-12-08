@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
@@ -205,32 +204,22 @@ class SharedMemoryParcel implements Parcel {
      * {@inheritdoc}
      */
     public function synchronized(callable $callback): Promise {
-        return new Coroutine($this->doSynchronized($callback));
-    }
+        return call(function () use ($callback) {
+            /** @var \Amp\Sync\Lock $lock */
+            $lock = yield $this->semaphore->acquire();
 
-    /**
-     * @coroutine
-     *
-     * @param callable $callback
-     *
-     * @return \Generator
-     */
-    private function doSynchronized(callable $callback): \Generator {
-        /** @var \Amp\Sync\Lock $lock */
-        $lock = yield $this->semaphore->acquire();
+            try {
+                $result = yield call($callback, yield $this->unwrap());
 
-        try {
-            $value = yield $this->unwrap();
-            $result = yield call($callback, $value);
-
-            if ($result !== null) {
-                $this->wrap($result);
+                if ($result !== null) {
+                    $this->wrap($result);
+                }
+            } finally {
+                $lock->release();
             }
-        } finally {
-            $lock->release();
-        }
 
-        return $result;
+            return $result;
+        });
     }
 
 

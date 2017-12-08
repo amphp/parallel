@@ -2,12 +2,12 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Coroutine;
 use Amp\Deferred;
 use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
 use Amp\Parallel\StatusError;
 use Amp\Promise;
+use function Amp\call;
 
 /**
  * Base class for most common types of task workers.
@@ -98,39 +98,18 @@ abstract class AbstractWorker implements Worker {
             throw new StatusError("The worker has been shut down");
         }
 
-        return new Coroutine($this->doEnqueue($task));
-    }
-
-    /**
-     * @coroutine
-     *
-     * @param \Amp\Parallel\Worker\Task $task
-     *
-     * @return \Generator
-     * @throws \Amp\Parallel\StatusError
-     * @throws \Amp\Parallel\Worker\TaskException
-     * @throws \Amp\Parallel\Worker\TaskError
-     * @throws \Amp\Parallel\Worker\WorkerException
-     */
-    private function doEnqueue(Task $task): \Generator {
         $empty = empty($this->jobQueue);
 
         $job = new Internal\Job($task);
         $this->jobQueue[$job->getId()] = $deferred = new Deferred;
 
-        try {
-            yield $this->context->send($job);
-        } catch (\Throwable $exception) {
-            $exception = new WorkerException("Sending the task to the worker failed", $exception);
-            $this->cancel($exception);
-            throw $exception;
-        }
+        $this->context->send($job);
 
         if ($empty) {
             $this->context->receive()->onResolve($this->onResolve);
         }
 
-        return yield $deferred->promise();
+        return $deferred->promise();
     }
 
     /**
@@ -141,22 +120,19 @@ abstract class AbstractWorker implements Worker {
             throw new StatusError("The worker is not running");
         }
 
-        return new Coroutine($this->doShutdown());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    private function doShutdown(): \Generator {
         $this->shutdown = true;
 
-        // If a task is currently running, wait for it to finish.
-        yield Promise\any(\array_map(function (Deferred $deferred): Promise {
-            return $deferred->promise();
-        }, $this->jobQueue));
+        return call(function () {
+            if (!empty($this->jobQueue)) {
+                // If a task is currently running, wait for it to finish.
+                yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+                    return $deferred->promise();
+                }, $this->jobQueue));
+            }
 
-        yield $this->context->send(0);
-        return yield $this->context->join();
+            yield $this->context->send(0);
+            return yield $this->context->join();
+        });
     }
 
     /**

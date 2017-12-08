@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Parallel\Context;
 use Amp\Parallel\ContextException;
@@ -213,42 +212,32 @@ class Thread implements Context {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        return new Coroutine($this->doJoin());
-    }
+        return call(function () {
+            Loop::enable($this->watcher);
 
-    /**
-     * @coroutine
-     *
-     * @return \Generator
-     *
-     * @throws SynchronizationError If the thread does not send an exit status.
-     * @throws ContextException If the context stops responding.
-     */
-    private function doJoin(): \Generator {
-        Loop::enable($this->watcher);
+            try {
+                $response = yield $this->channel->receive();
 
-        try {
-            $response = yield $this->channel->receive();
-
-            if (!$response instanceof ExitResult) {
-                throw new SynchronizationError('Did not receive an exit result from thread.');
+                if (!$response instanceof ExitResult) {
+                    throw new SynchronizationError('Did not receive an exit result from thread.');
+                }
+            } catch (ChannelException $exception) {
+                $this->kill();
+                throw new ContextException(
+                    "The context stopped responding, potentially due to a fatal error or calling exit",
+                    0,
+                    $exception
+                );
+            } catch (\Throwable $exception) {
+                $this->kill();
+                throw $exception;
+            } finally {
+                Loop::disable($this->watcher);
+                $this->close();
             }
-        } catch (ChannelException $exception) {
-            $this->kill();
-            throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit",
-                0,
-                $exception
-            );
-        } catch (\Throwable $exception) {
-            $this->kill();
-            throw $exception;
-        } finally {
-            Loop::disable($this->watcher);
-            $this->close();
-        }
 
-        return $response->getResult();
+            return $response->getResult();
+        });
     }
 
     /**
@@ -259,29 +248,27 @@ class Thread implements Context {
             throw new StatusError('The process has not been started.');
         }
 
-        return new Coroutine($this->doReceive());
-    }
+        return call(function () {
+            Loop::enable($this->watcher);
 
-    private function doReceive() {
-        Loop::enable($this->watcher);
+            try {
+                $data = yield $this->channel->receive();
+            } catch (ChannelException $e) {
+                throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            } finally {
+                Loop::disable($this->watcher);
+            }
 
-        try {
-            $data = yield $this->channel->receive();
-        } catch (ChannelException $e) {
-            throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-        } finally {
-            Loop::disable($this->watcher);
-        }
+            if ($data instanceof ExitResult) {
+                $data = $data->getResult();
+                throw new SynchronizationError(\sprintf(
+                    'Thread process unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ));
+            }
 
-        if ($data instanceof ExitResult) {
-            $data = $data->getResult();
-            throw new SynchronizationError(\sprintf(
-                'Thread process unexpectedly exited with result of type: %s',
-                \is_object($data) ? \get_class($data) : \gettype($data)
-            ));
-        }
-
-        return $data;
+            return $data;
+        });
     }
 
     /**

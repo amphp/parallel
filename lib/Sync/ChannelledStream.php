@@ -5,8 +5,8 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
-use Amp\Coroutine;
 use Amp\Promise;
+use function Amp\call;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -43,37 +43,33 @@ class ChannelledStream implements Channel {
      * {@inheritdoc}
      */
     public function send($data): Promise {
-        return new Coroutine($this->doSend($data));
-    }
-
-    private function doSend($data): \Generator {
-        try {
-            return yield $this->write->write($this->parser->encode($data));
-        } catch (StreamException $exception) {
-            throw new ChannelException("Sending on the channel failed. Did the context die?", $exception);
-        }
+        return call(function () use ($data) {
+            try {
+                return yield $this->write->write($this->parser->encode($data));
+            } catch (StreamException $exception) {
+                throw new ChannelException("Sending on the channel failed. Did the context die?", $exception);
+            }
+        });
     }
 
     /**
      * {@inheritdoc}
      */
     public function receive(): Promise {
-        return new Coroutine($this->doReceive());
-    }
+        return call(function () {
+            while ($this->received->isEmpty()) {
+                if (($chunk = yield $this->read->read()) === null) {
+                    throw new ChannelException("The channel closed. Did the context die?");
+                }
 
-    private function doReceive(): \Generator {
-        while ($this->received->isEmpty()) {
-            if (($chunk = yield $this->read->read()) === null) {
-                throw new ChannelException("The channel closed. Did the context die?");
+                try {
+                    $this->parser->push($chunk);
+                } catch (StreamException $exception) {
+                    throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
+                }
             }
 
-            try {
-                $this->parser->push($chunk);
-            } catch (StreamException $exception) {
-                throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
-            }
-        }
-
-        return $this->received->shift();
+            return $this->received->shift();
+        });
     }
 }
