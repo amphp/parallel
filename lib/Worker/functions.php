@@ -9,7 +9,7 @@ const LOOP_POOL_IDENTIFIER = Pool::class;
 const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
 
 /**
- * Returns the global worker pool for the current context.
+ * Gets or sets the global worker pool. The pool is started if it is not already running.
  *
  * @param \Amp\Parallel\Worker\Pool|null $pool A worker pool instance.
  *
@@ -25,6 +25,10 @@ function pool(Pool $pool = null): Pool {
         $pool = new DefaultPool;
     }
 
+    if (!$pool->isRunning()) {
+        $pool->start();
+    }
+
     Loop::setState(LOOP_POOL_IDENTIFIER, $pool);
     return $pool;
 }
@@ -37,17 +41,20 @@ function pool(Pool $pool = null): Pool {
  * @return \Amp\Promise<mixed>
  */
 function enqueue(Task $task): Promise {
-    $pool = pool();
-
-    if (!$pool->isRunning()) {
-        $pool->start();
-    }
-
-    return $pool->enqueue($task);
+    return pool()->enqueue($task);
 }
 
 /**
- * Creates a worker using the global worker factory.
+ * Gets a worker from the global worker pool.
+ *
+ * @return \Amp\Parallel\Worker\Worker
+ */
+function get(): Worker {
+    return pool()->get();
+}
+
+/**
+ * Creates a worker using the global worker factory. The worker is automatically started.
  *
  * @return \Amp\Parallel\Worker\Worker
  */
@@ -75,19 +82,4 @@ function factory(WorkerFactory $factory = null): WorkerFactory {
     }
     Loop::setState(LOOP_FACTORY_IDENTIFIER, $factory);
     return $factory;
-}
-
-/**
- * Gets a worker from the global worker pool.
- *
- * @return \Amp\Parallel\Worker\Worker
- */
-function get(): Worker {
-    $pool = pool();
-
-    if (!$pool->isRunning()) {
-        $pool->start();
-    }
-
-    return $pool->get();
 }
