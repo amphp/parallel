@@ -4,7 +4,6 @@ namespace Amp\Parallel\Test\Context;
 
 use Amp\Loop;
 use Amp\Parallel\Context\Thread;
-use Amp\Parallel\Test\AbstractContextTest;
 
 /**
  * @group threading

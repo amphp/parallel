@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Parallel\PanicError;
-
 class ExitFailure implements ExitResult {
     /** @var string */
     private $type;

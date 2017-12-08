@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Deferred;
-use Amp\Parallel\Context;
-use Amp\Parallel\ContextException;
-use Amp\Parallel\StatusError;
+use Amp\Parallel\Context\Context;
+use Amp\Parallel\Context\ContextException;
+use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
 use function Amp\call;
 
@@ -13,7 +13,7 @@ use function Amp\call;
  * Base class for most common types of task workers.
  */
 abstract class AbstractWorker implements Worker {
-    /** @var \Amp\Parallel\Context */
+    /** @var \Amp\Parallel\Context\Context */
     private $context;
 
     /** @var bool */
@@ -26,7 +26,7 @@ abstract class AbstractWorker implements Worker {
     private $onResolve;
 
     /**
-     * @param \Amp\Parallel\Context $context
+     * @param \Amp\Parallel\Context\Context $context
      */
     public function __construct(Context $context) {
         if ($context->isRunning()) {

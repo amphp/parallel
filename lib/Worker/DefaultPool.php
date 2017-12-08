@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CallableMaker;
-use Amp\Parallel\StatusError;
+use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
 
 /**
@@ -151,7 +151,7 @@ class DefaultPool implements Pool {
      *
      * @return \Amp\Promise<mixed> The return value of Task::run().
      *
-     * @throws \Amp\Parallel\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\Context\StatusError If the pool has not been started.
      * @throws \Amp\Parallel\Worker\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Promise {
@@ -169,7 +169,7 @@ class DefaultPool implements Pool {
      *
      * @return \Amp\Promise<int[]> Array of exit status from all workers.
      *
-     * @throws \Amp\Parallel\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\Context\StatusError If the pool has not been started.
      */
     public function shutdown(): Promise {
         if (!$this->isRunning()) {
@@ -223,7 +223,7 @@ class DefaultPool implements Pool {
      * Pulls a worker from the pool. The worker should be put back into the pool with push() to be marked as idle.
      *
      * @return \Amp\Parallel\Worker\Worker
-     * @throws \Amp\Parallel\StatusError
+     * @throws \Amp\Parallel\Context\StatusError
      */
     protected function pull(): Worker {
         if (!$this->isRunning()) {

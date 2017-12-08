@@ -3,13 +3,10 @@
 namespace Amp\Parallel\Context;
 
 use Amp\ByteStream;
-use Amp\Parallel\Context;
-use Amp\Parallel\ContextException;
-use Amp\Parallel\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
-use Amp\Parallel\SynchronizationError;
+use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
 use Amp\Promise;
 use function Amp\asyncCall;

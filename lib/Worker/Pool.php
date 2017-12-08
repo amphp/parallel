@@ -18,7 +18,7 @@ interface Pool extends Worker {
      *
      * @return \Amp\Parallel\Worker\Worker
      *
-     * @throws \Amp\Parallel\StatusError If the queue is not running.
+     * @throws \Amp\Parallel\Context\StatusError If the queue is not running.
      */
     public function get(): Worker;
 

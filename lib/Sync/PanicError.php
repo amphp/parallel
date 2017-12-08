@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel;
+namespace Amp\Parallel\Sync;
 
 class PanicError extends \Error {
     /** @var string Class name of uncaught exception. */

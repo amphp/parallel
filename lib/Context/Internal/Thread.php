@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Loop;
-use Amp\Parallel\ContextException;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
@@ -73,7 +72,7 @@ class Thread extends \Thread {
             }
 
             if (!isset($autoloadPath)) {
-                throw new ContextException("Could not locate autoload.php");
+                throw new \Error("Could not locate autoload.php");
             }
 
             require $autoloadPath;
@@ -111,8 +110,6 @@ class Thread extends \Thread {
     }
 
     /**
-     * @coroutine
-     *
      * @param \Amp\Parallel\Sync\Channel $channel
      *
      * @return \Generator

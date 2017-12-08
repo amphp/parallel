@@ -3,13 +3,10 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Loop;
-use Amp\Parallel\Context;
-use Amp\Parallel\ContextException;
-use Amp\Parallel\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
-use Amp\Parallel\SynchronizationError;
+use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
 use function Amp\call;
 
@@ -96,7 +93,7 @@ class Thread implements Context {
     /**
      * Kills the thread if it is still running.
      *
-     * @throws \Amp\Parallel\ContextException
+     * @throws \Amp\Parallel\Context\ContextException
      */
     public function __destruct() {
         if (\getmypid() === $this->oid) {
@@ -116,8 +113,8 @@ class Thread implements Context {
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @throws \Amp\Parallel\StatusError If the thread has already been started.
-     * @throws \Amp\Parallel\ContextException If starting the thread was unsuccessful.
+     * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
+     * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
      */
     public function start() {
         if ($this->oid !== 0) {

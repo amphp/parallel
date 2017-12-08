@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Test;
+namespace Amp\Parallel\Test\Context;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\ExitSuccess;
@@ -10,7 +10,7 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @param callable $function
      *
-     * @return \Amp\Parallel\Context
+     * @return \Amp\Parallel\Context\Context
      */
     abstract public function createContext(callable $function);
 
@@ -45,7 +45,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\StatusError
+     * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testStartWhileRunningThrowsError() {
         $context = $this->createContext(function () {
@@ -57,7 +57,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\StatusError
+     * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testStartMultipleTimesThrowsError() {
         $this->assertRunTimeGreaterThan(function () {
@@ -76,7 +76,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\PanicError
+     * @expectedException \Amp\Parallel\Sync\PanicError
      */
     public function testExceptionInContextPanics() {
         Loop::run(function () {
@@ -90,7 +90,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\PanicError
+     * @expectedException \Amp\Parallel\Sync\PanicError
      */
     public function testReturnUnserializableDataPanics() {
         Loop::run(function () {
@@ -117,7 +117,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\StatusError
+     * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testJoinWithoutStartThrowsError() {
         Loop::run(function () {
@@ -159,7 +159,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\SynchronizationError
+     * @expectedException \Amp\Parallel\Sync\SynchronizationError
      */
     public function testJoinWhenContextSendingData() {
         Loop::run(function () {
@@ -175,7 +175,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\StatusError
+     * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testReceiveBeforeContextHasStarted() {
         Loop::run(function () {
@@ -190,7 +190,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\StatusError
+     * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testSendBeforeContextHasStarted() {
         Loop::run(function () {
@@ -205,7 +205,7 @@ abstract class AbstractContextTest extends TestCase {
 
     /**
      * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\SynchronizationError
+     * @expectedException \Amp\Parallel\Sync\SynchronizationError
      */
     public function testReceiveWhenContextHasReturned() {
         Loop::run(function () {
@@ -239,7 +239,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\ContextException
+     * @expectedException \Amp\Parallel\Context\ContextException
      * @expectedExceptionMessage The context stopped responding
      */
     public function testExitingContextOnJoin() {
@@ -254,7 +254,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\ContextException
+     * @expectedException \Amp\Parallel\Context\ContextException
      * @expectedExceptionMessage The context stopped responding
      */
     public function testExitingContextOnReceive() {
@@ -269,7 +269,7 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\ContextException
+     * @expectedException \Amp\Parallel\Context\ContextException
      * @expectedExceptionMessage The context went away
      */
     public function testExitingContextOnSend() {
