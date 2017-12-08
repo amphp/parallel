@@ -23,8 +23,7 @@ class DefaultWorkerFactory implements WorkerFactory {
         }
 
         return new WorkerProcess(
-            \getenv("AMP_PHP_BINARY") ?:
-            \defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null
+            \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null)
         );
     }
 }
