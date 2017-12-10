@@ -13,6 +13,8 @@ use function Amp\asyncCall;
 use function Amp\call;
 
 class Process implements Context {
+    const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
+
     /** @var string|null Cached path to located PHP binary. */
     private static $binaryPath;
 
@@ -23,11 +25,28 @@ class Process implements Context {
     private $channel;
 
     /**
+     * Creates and starts the process at the given path using the optional PHP binary path.
+     *
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
-     *     to the PHP script (e.g.: ['bin/worker', '-eOptionValue', '-nOptionValue'].
+     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     *
+     * @return \Amp\Parallel\Context\Process
+     */
+    public static function spawn($script, string $binary = null): self {
+        $process = new self($script, $binary);
+        $process->start();
+        return $process;
+    }
+
+    /**
+     * @param string|array $script Path to PHP script or array with first element as path and following elements options
+     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param string $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
+     *
+     * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
     public function __construct($script, string $binary = null, string $cwd = "", array $env = []) {
         $options = [
@@ -52,7 +71,12 @@ class Process implements Context {
             throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
         }
 
-        $command = \escapeshellarg($binary) . " " . $this->formatOptions($options) . " " . $script;
+        $command = \implode(" ", [
+            \escapeshellarg($binary),
+            $this->formatOptions($options),
+            self::SCRIPT_PATH,
+            $script,
+        ]);
 
         $this->process = new BaseProcess($command, $cwd, $env);
     }
@@ -73,7 +97,7 @@ class Process implements Context {
         $result = [];
 
         foreach ($options as $option => $value) {
-            $result[] = \sprintf("-d %s=%s", $option, $value);
+            $result[] = \sprintf("-d%s=%s", $option, $value);
         }
 
         return \implode(" ", $result);
