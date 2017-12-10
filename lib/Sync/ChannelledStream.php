@@ -58,15 +58,17 @@ class ChannelledStream implements Channel {
     public function receive(): Promise {
         return call(function () {
             while ($this->received->isEmpty()) {
-                if (($chunk = yield $this->read->read()) === null) {
-                    throw new ChannelException("The channel closed. Did the context die?");
-                }
-
                 try {
-                    $this->parser->push($chunk);
+                    $chunk = yield $this->read->read();
                 } catch (StreamException $exception) {
                     throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
                 }
+
+                if ($chunk === null) {
+                    throw new ChannelException("The channel closed unexpectedly. Did the context die?");
+                }
+
+                $this->parser->push($chunk);
             }
 
             return $this->received->shift();
