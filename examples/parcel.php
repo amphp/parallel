@@ -5,13 +5,14 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\ThreadedParcel;
 
 Loop::run(function () {
     $parcel = new ThreadedParcel(1);
 
-    $context = Thread::spawn(function (Parcel $parcel) {
+    $context = Thread::spawn(function (Channel $channel, Parcel $parcel) {
         $value = yield $parcel->synchronized(function (int $value) {
             return $value + 1;
         });

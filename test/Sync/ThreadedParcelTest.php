@@ -4,6 +4,7 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Loop;
 use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ThreadedParcel;
 
 /**
@@ -19,7 +20,7 @@ class ThreadedParcelTest extends AbstractParcelTest {
             $value = 1;
             $parcel = new ThreadedParcel($value);
 
-            $thread = Thread::spawn(function (ThreadedParcel $parcel) {
+            $thread = Thread::spawn(function (Channel $channel, ThreadedParcel $parcel) {
                 $parcel->synchronized(function (int $value) {
                     return $value + 1;
                 });

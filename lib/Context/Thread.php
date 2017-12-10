@@ -53,7 +53,9 @@ class Thread implements Context {
     /**
      * Spawns a new thread and runs it.
      *
-     * @param callable $function The callable to invoke in the thread.
+     * @param callable $function The callable to invoke in the thread. First argument is an instance of
+     *     \Amp\Parallel\Sync\Channel.
+     * @param mixed ...$args Additional arguments to pass to the given callable.
      *
      * @return Thread The thread object that was spawned.
      */
@@ -66,7 +68,9 @@ class Thread implements Context {
     /**
      * Creates a new thread.
      *
-     * @param callable $function The callable to invoke in the thread when run.
+     * @param callable $function The callable to invoke in the thread. First argument is an instance of
+     *     \Amp\Parallel\Sync\Channel.
+     * @param mixed ...$args Additional arguments to pass to the given callable.
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */

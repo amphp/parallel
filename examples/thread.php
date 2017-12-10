@@ -5,6 +5,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Sync\Channel;
 
 Loop::run(function () {
     $timer = Loop::repeat(1000, function () {
@@ -15,15 +16,13 @@ Loop::run(function () {
 
     try {
         // Create a new child thread that does some blocking stuff.
-        $context = Thread::spawn(function () {
-            printf("\$this: %s\n", get_class($this));
-
-            printf("Received the following from parent: %s\n", yield $this->receive());
+        $context = Thread::spawn(function (Channel $channel): \Generator {
+            printf("Received the following from parent: %s\n", yield $channel->receive());
 
             print "Sleeping for 3 seconds...\n";
             sleep(3); // Blocking call in thread.
 
-            yield $this->send("Data sent from child.");
+            yield $channel->send("Data sent from child.");
 
             print "Sleeping for 2 seconds...\n";
             sleep(2); // Blocking call in thread.

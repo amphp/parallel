@@ -118,13 +118,7 @@ class Thread extends \Thread {
      */
     private function execute(Channel $channel): \Generator {
         try {
-            if ($this->function instanceof \Closure) {
-                $result = call($this->function->bindTo($channel, null), ...$this->args);
-            } else {
-                $result = call($this->function, ...$this->args);
-            }
-
-            $result = new ExitSuccess(yield $result);
+            $result = new ExitSuccess(yield call($this->function, $channel, ...$this->args));
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }

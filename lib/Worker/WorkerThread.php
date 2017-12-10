@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Sync\Channel;
 use Amp\Promise;
 
 /**
@@ -14,7 +15,7 @@ class WorkerThread extends AbstractWorker {
      *     Defaults to \Amp\Parallel\Worker\BasicEnvironment.
      */
     public function __construct(string $envClassName = BasicEnvironment::class) {
-        parent::__construct(new Thread(function (string $className): Promise {
+        parent::__construct(new Thread(function (Channel $channel, string $className): Promise {
             if (!\class_exists($className)) {
                 throw new \Error(\sprintf("Invalid environment class name '%s'", $className));
             }
@@ -29,7 +30,7 @@ class WorkerThread extends AbstractWorker {
                 \define("AMP_WORKER", "amp-worker");
             }
 
-            $runner = new TaskRunner($this, $environment);
+            $runner = new TaskRunner($channel, $environment);
             return $runner->run();
         }, $envClassName));
     }
