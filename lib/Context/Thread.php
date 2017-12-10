@@ -51,7 +51,7 @@ class Thread implements Context {
     }
 
     /**
-     * Spawns a new thread and runs it.
+     * Creates and starts a new thread.
      *
      * @param callable $function The callable to invoke in the thread. First argument is an instance of
      *     \Amp\Parallel\Sync\Channel.
@@ -59,7 +59,7 @@ class Thread implements Context {
      *
      * @return Thread The thread object that was spawned.
      */
-    public static function spawn(callable $function, ...$args): self {
+    public static function run(callable $function, ...$args): self {
         $thread = new self($function, ...$args);
         $thread->start();
         return $thread;

@@ -33,7 +33,7 @@ class Process implements Context {
      *
      * @return \Amp\Parallel\Context\Process
      */
-    public static function spawn($script, string $binary = null): self {
+    public static function run($script, string $binary = null): self {
         $process = new self($script, $binary);
         $process->start();
         return $process;

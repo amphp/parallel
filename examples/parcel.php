@@ -12,7 +12,7 @@ use Amp\Parallel\Sync\ThreadedParcel;
 Loop::run(function () {
     $parcel = new ThreadedParcel(1);
 
-    $context = Thread::spawn(function (Channel $channel, Parcel $parcel) {
+    $context = Thread::run(function (Channel $channel, Parcel $parcel) {
         $value = yield $parcel->synchronized(function (int $value) {
             return $value + 1;
         });

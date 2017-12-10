@@ -16,7 +16,7 @@ Loop::run(function () {
 
     try {
         // Create a new child thread that does some blocking stuff.
-        $context = Thread::spawn(function (Channel $channel): \Generator {
+        $context = Thread::run(function (Channel $channel): \Generator {
             printf("Received the following from parent: %s\n", yield $channel->receive());
 
             print "Sleeping for 3 seconds...\n";
