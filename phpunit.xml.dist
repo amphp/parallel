@@ -20,6 +20,11 @@
     <filter>
         <whitelist>
             <directory suffix=".php">lib</directory>
+            <exclude>
+                <!-- Only executed in child contexts -->
+                <file>lib/Context/Internal/process-runner.php</file>
+                <file>lib/Worker/Internal/worker-process.php</file>
+            </exclude>
         </whitelist>
     </filter>
     <listeners>

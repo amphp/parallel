@@ -35,4 +35,34 @@ class ProcessTest extends TestCase {
         $process->start();
         Promise\wait($process->join());
     }
+
+    /**
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage The given data cannot be sent because it is not serializable
+     */
+    public function testInvalidResult() {
+        $process = new Process(__DIR__ . "/invalid-result-process.php");
+        $process->start();
+        var_dump(Promise\wait($process->join()));
+    }
+
+    /**
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage Script did not return a callable function
+     */
+    public function testNoCallbackReturned() {
+        $process = new Process(__DIR__ . "/no-callback-process.php");
+        $process->start();
+        var_dump(Promise\wait($process->join()));
+    }
+
+    /**
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage Uncaught ParseError in execution context
+     */
+    public function testParseError() {
+        $process = new Process(__DIR__ . "/parse-error-process.php");
+        $process->start();
+        var_dump(Promise\wait($process->join()));
+    }
 }

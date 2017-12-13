@@ -106,11 +106,9 @@ class Process implements Context {
     }
 
     /**
-     * Resets process values.
+     * Private method to prevent cloning.
      */
-    public function __clone() {
-        $this->process = clone $this->process;
-        $this->channel = null;
+    private function __clone() {
     }
 
     /**
