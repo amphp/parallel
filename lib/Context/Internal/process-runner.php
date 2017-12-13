@@ -13,9 +13,9 @@ if (\function_exists("cli_set_process_title")) {
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
 \ob_start(function ($data) {
-    \fwrite(STDERR, $data);
+    \fwrite(\STDERR, $data);
     return '';
-}, 1, PHP_OUTPUT_HANDLER_CLEANABLE | PHP_OUTPUT_HANDLER_FLUSHABLE);
+}, 1, \PHP_OUTPUT_HANDLER_CLEANABLE | \PHP_OUTPUT_HANDLER_FLUSHABLE);
 
 (function () {
     $paths = [
@@ -31,7 +31,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     if (!isset($autoloadPath)) {
-        \fwrite(STDERR, "Could not locate autoload.php");
+        \fwrite(\STDERR, "Could not locate autoload.php");
         exit(1);
     }
 
@@ -39,7 +39,7 @@ if (\function_exists("cli_set_process_title")) {
 })();
 
 Loop::run(function () use ($argc, $argv) {
-    $channel = new Sync\ChannelledSocket(STDIN, STDOUT);
+    $channel = new Sync\ChannelledSocket(\STDIN, \STDOUT);
 
     // Remove this scripts path from process arguments.
     --$argc;
@@ -73,7 +73,12 @@ Loop::run(function () use ($argc, $argv) {
     }
 
     try {
-        yield $channel->send($result);
+        try {
+            yield $channel->send($result);
+        } catch (Sync\SerializationException $exception) {
+            // Serializing the result failed. Send the reason why.
+            yield $channel->send(new Sync\ExitFailure($exception));
+        }
     } catch (\Throwable $exception) {
         exit(1); // Parent context died, simply exit.
     }
