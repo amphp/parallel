@@ -19,10 +19,12 @@ class DefaultWorkerFactory implements WorkerFactory {
      */
     public function create(): Worker {
         if (Thread::supported()) {
-            return new WorkerThread;
+            return new WorkerThread(BasicEnvironment::class);
         }
 
         return new WorkerProcess(
+            BasicEnvironment::class,
+            [],
             \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null)
         );
     }

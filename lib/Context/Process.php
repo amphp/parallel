@@ -29,12 +29,14 @@ class Process implements Context {
      *
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+     * @param string|null $cwd Working directory.
+     * @param mixed[] $env Array of environment variables.
      * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @return \Amp\Parallel\Context\Process
      */
-    public static function run($script, string $binary = null): self {
-        $process = new self($script, $binary);
+    public static function run($script, string $cwd = null, array $env = [], string $binary = null): self {
+        $process = new self($script, $cwd, $env, $binary);
         $process->start();
         return $process;
     }
@@ -42,13 +44,13 @@ class Process implements Context {
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
-     * @param string $cwd Working directory.
+     * @param string|null $cwd Working directory.
      * @param mixed[] $env Array of environment variables.
+     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $binary = null, string $cwd = "", array $env = []) {
+    public function __construct($script, string $cwd = null, array $env = [], string $binary = null) {
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
