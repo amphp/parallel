@@ -6,9 +6,6 @@ namespace Amp\Parallel\Worker;
  * An interface for worker pools.
  */
 interface Pool extends Worker {
-    /** @var int The default minimum pool size. */
-    const DEFAULT_MIN_SIZE = 1;
-
     /** @var int The default maximum pool size. */
     const DEFAULT_MAX_SIZE = 32;
 
@@ -35,13 +32,6 @@ interface Pool extends Worker {
      * @return int The number of idle workers.
      */
     public function getIdleWorkerCount(): int;
-
-    /**
-     * Gets the minimum number of workers the pool may have idle.
-     *
-     * @return int The minimum number of workers.
-     */
-    public function getMinSize(): int;
 
     /**
      * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.

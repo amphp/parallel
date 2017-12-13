@@ -7,6 +7,7 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
+use Amp\Success;
 use function Amp\call;
 
 /**
@@ -82,20 +83,13 @@ abstract class AbstractWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function start() {
-        $this->context->start();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function enqueue(Task $task): Promise {
-        if (!$this->context->isRunning()) {
-            throw new StatusError("The worker has not been started");
-        }
-
         if ($this->shutdown) {
             throw new StatusError("The worker has been shut down");
+        }
+
+        if (!$this->context->isRunning()) {
+            $this->context->start();
         }
 
         $empty = empty($this->jobQueue);
@@ -116,11 +110,15 @@ abstract class AbstractWorker implements Worker {
      * {@inheritdoc}
      */
     public function shutdown(): Promise {
-        if (!$this->context->isRunning() || $this->shutdown) {
+        if ($this->shutdown) {
             throw new StatusError("The worker is not running");
         }
 
         $this->shutdown = true;
+
+        if (!$this->context->isRunning()) {
+            return new Success(0);
+        }
 
         return call(function () {
             if (!empty($this->jobQueue)) {
@@ -158,6 +156,8 @@ abstract class AbstractWorker implements Worker {
             $this->jobQueue = [];
         }
 
-        $this->context->kill();
+        if ($this->context->isRunning()) {
+            $this->context->kill();
+        }
     }
 }

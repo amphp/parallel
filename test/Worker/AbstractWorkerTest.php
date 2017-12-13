@@ -23,7 +23,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testWorkerConstantDefined() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
             $this->assertTrue(yield $worker->enqueue(new ConstantTask));
             yield $worker->shutdown();
         });
@@ -34,7 +33,8 @@ abstract class AbstractWorkerTest extends TestCase {
             $worker = $this->createWorker();
             $this->assertFalse($worker->isRunning());
 
-            $worker->start();
+            $worker->enqueue(new TestTask(42)); // Enqueue a task to start the worker.
+
             $this->assertTrue($worker->isRunning());
 
             yield $worker->shutdown();
@@ -45,7 +45,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testIsIdleOnStart() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             $this->assertTrue($worker->isIdle());
 
@@ -56,7 +55,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testEnqueue() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             $returnValue = yield $worker->enqueue(new TestTask(42));
             $this->assertEquals(42, $returnValue);
@@ -68,7 +66,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testEnqueueMultipleSynchronous() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             $values = yield \Amp\Promise\all([
                 $worker->enqueue(new TestTask(42)),
@@ -85,7 +82,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testEnqueueMultipleAsynchronous() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             $promises = [
                 $worker->enqueue(new TestTask(42, 200)),
@@ -107,7 +103,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testNotIdleOnEnqueue() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             $coroutine = $worker->enqueue(new TestTask(42));
             $this->assertFalse($worker->isIdle());
@@ -119,7 +114,8 @@ abstract class AbstractWorkerTest extends TestCase {
 
     public function testKill() {
         $worker = $this->createWorker();
-        $worker->start();
+
+        $worker->enqueue(new TestTask(42));
 
         $this->assertRunTimeLessThan([$worker, 'kill'], 250);
         $this->assertFalse($worker->isRunning());
@@ -128,7 +124,6 @@ abstract class AbstractWorkerTest extends TestCase {
     public function testUnserializableTask() {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $worker->start();
 
             try {
                 yield $worker->enqueue(new NonAutoloadableTask);

@@ -17,10 +17,7 @@ class DefaultPool implements Pool {
     use CallableMaker;
 
     /** @var bool Indicates if the pool is currently running. */
-    private $running = false;
-
-    /** @var int The minimum number of workers the pool should spawn. */
-    private $minSize;
+    private $running = true;
 
     /** @var int The maximum number of workers the pool should spawn. */
     private $maxSize;
@@ -43,8 +40,6 @@ class DefaultPool implements Pool {
     /**
      * Creates a new worker pool.
      *
-     * @param int $minSize The minimum number of workers the pool should spawn.
-     *     Defaults to `Pool::DEFAULT_MIN_SIZE`.
      * @param int $maxSize The maximum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
      * @param \Amp\Parallel\Worker\WorkerFactory|null $factory A worker factory to be used to create
@@ -52,21 +47,12 @@ class DefaultPool implements Pool {
      *
      * @throws \Error
      */
-    public function __construct(
-        int $minSize = self::DEFAULT_MIN_SIZE,
-        int $maxSize = self::DEFAULT_MAX_SIZE,
-        WorkerFactory $factory = null
-    ) {
-        if ($minSize < 0) {
-            throw new \Error('Minimum size must be a non-negative integer.');
-        }
-
-        if ($maxSize < 0 || $maxSize < $minSize) {
-            throw new \Error('Maximum size must be a non-negative integer at least '.$minSize.'.');
+    public function __construct(int $maxSize = self::DEFAULT_MAX_SIZE, WorkerFactory $factory = null) {
+        if ($maxSize < 0) {
+            throw new \Error("Maximum size must be a non-negative integer");
         }
 
         $this->maxSize = $maxSize;
-        $this->minSize = $minSize;
 
         // Use the global factory if none is given.
         $this->factory = $factory ?: factory();
@@ -93,14 +79,7 @@ class DefaultPool implements Pool {
      * @return bool True if the pool has at least one idle worker, otherwise false.
      */
     public function isIdle(): bool {
-        return $this->idleWorkers->count() > 0;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMinSize(): int {
-        return $this->minSize;
+        return $this->idleWorkers->count() > 0 || $this->workers->count() === 0;
     }
 
     /**
@@ -125,34 +104,13 @@ class DefaultPool implements Pool {
     }
 
     /**
-     * Starts the worker pool execution.
-     *
-     * When the worker pool starts up, the minimum number of workers will be created. This adds some overhead to
-     * starting the pool, but allows for greater performance during runtime.
-     */
-    public function start() {
-        if ($this->isRunning()) {
-            throw new StatusError('The worker pool has already been started.');
-        }
-
-        // Start up the pool with the minimum number of workers.
-        $count = $this->minSize;
-        while (--$count >= 0) {
-            $worker = $this->createWorker();
-            $this->idleWorkers->enqueue($worker);
-        }
-
-        $this->running = true;
-    }
-
-    /**
      * Enqueues a task to be executed by the worker pool.
      *
      * @param Task $task The task to enqueue.
      *
      * @return \Amp\Promise<mixed> The return value of Task::run().
      *
-     * @throws \Amp\Parallel\Context\StatusError If the pool has not been started.
+     * @throws \Amp\Parallel\Context\StatusError If the pool has been shutdown.
      * @throws \Amp\Parallel\Worker\TaskException If the task throws an exception.
      */
     public function enqueue(Task $task): Promise {
@@ -174,7 +132,7 @@ class DefaultPool implements Pool {
      */
     public function shutdown(): Promise {
         if (!$this->isRunning()) {
-            throw new StatusError('The pool is not running.');
+            throw new StatusError("The pool was shutdown");
         }
 
         $this->running = false;
@@ -207,8 +165,6 @@ class DefaultPool implements Pool {
      */
     private function createWorker() {
         $worker = $this->factory->create();
-        $worker->start();
-
         $this->workers->attach($worker, 0);
         return $worker;
     }
@@ -228,7 +184,7 @@ class DefaultPool implements Pool {
      */
     protected function pull(): Worker {
         if (!$this->isRunning()) {
-            throw new StatusError("The queue is not running");
+            throw new StatusError("The pool was shutdown");
         }
 
         do {
@@ -239,6 +195,7 @@ class DefaultPool implements Pool {
                 } else {
                     // Max worker count has not been reached, so create another worker.
                     $worker = $this->createWorker();
+                    break;
                 }
             } else {
                 // Shift a worker off the idle queue.
@@ -266,9 +223,7 @@ class DefaultPool implements Pool {
      * @throws \Error If the worker was not part of this queue.
      */
     protected function push(Worker $worker) {
-        if (!$this->workers->contains($worker)) {
-            throw new \Error("The provided worker was not part of this queue");
-        }
+        \assert($this->workers->contains($worker), "The provided worker was not part of this queue");
 
         if (($this->workers[$worker] -= 1) === 0) {
             // Worker is completely idle, remove from busy queue and add to idle queue.

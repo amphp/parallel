@@ -23,11 +23,6 @@ interface Worker {
     public function isIdle(): bool;
 
     /**
-     * Starts the context execution.
-     */
-    public function start();
-
-    /**
      * Enqueues a task to be executed by the worker.
      *
      * @param Task $task The task to enqueue.

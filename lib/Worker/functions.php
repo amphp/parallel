@@ -9,7 +9,7 @@ const LOOP_POOL_IDENTIFIER = Pool::class;
 const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
 
 /**
- * Gets or sets the global worker pool. The pool is started if it is not already running.
+ * Gets or sets the global worker pool.
  *
  * @param \Amp\Parallel\Worker\Pool|null $pool A worker pool instance.
  *
@@ -23,10 +23,6 @@ function pool(Pool $pool = null): Pool {
         }
 
         $pool = new DefaultPool;
-    }
-
-    if (!$pool->isRunning()) {
-        $pool->start();
     }
 
     Loop::setState(LOOP_POOL_IDENTIFIER, $pool);
@@ -59,9 +55,7 @@ function get(): Worker {
  * @return \Amp\Parallel\Worker\Worker
  */
 function create(): Worker {
-    $worker = factory()->create();
-    $worker->start();
-    return $worker;
+    return factory()->create();
 }
 
 /**

@@ -9,7 +9,6 @@ Amp\Loop::run(function () {
     $factory = new DefaultWorkerFactory();
 
     $worker = $factory->create();
-    $worker->start();
 
     $result = yield $worker->enqueue(new BlockingTask('file_get_contents', 'https://google.com'));
     printf("Read %d bytes\n", strlen($result));

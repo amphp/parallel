@@ -11,12 +11,12 @@ use Amp\Parallel\Worker\WorkerProcess;
  * @group process
  */
 class ProcessPoolTest extends AbstractPoolTest {
-    protected function createPool($min = Pool::DEFAULT_MIN_SIZE, $max =Pool::DEFAULT_MAX_SIZE): Pool {
+    protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool {
         $factory = $this->createMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
             return new WorkerProcess;
         }));
 
-        return new DefaultPool($min, $max, $factory);
+        return new DefaultPool($max, $factory);
     }
 }

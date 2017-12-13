@@ -25,7 +25,6 @@ Loop::run(function () use (&$results, &$tasks) {
     Loop::unreference($timer);
 
     $pool = new DefaultPool;
-    $pool->start();
 
     $coroutines = [];
 

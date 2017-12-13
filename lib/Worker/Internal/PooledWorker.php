@@ -47,13 +47,6 @@ class PooledWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function start() {
-        $this->worker->start();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function enqueue(Task $task): Promise {
         return $this->worker->enqueue($task);
     }
