@@ -29,7 +29,7 @@ class ExitFailure implements ExitResult {
         throw new PanicError(
             $this->type,
             \sprintf(
-                'Uncaught exception in execution context of type "%s" with message "%s" and code "%s"',
+                'Uncaught %s in execution context with message "%s" and code "%s"',
                 $this->type,
                 $this->message,
                 $this->code
