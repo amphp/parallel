@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
+use Amp\Parallel\Worker\Pool;
 use Amp\PHPUnit\TestCase;
 
 abstract class AbstractPoolTest extends TestCase {
@@ -12,7 +13,7 @@ abstract class AbstractPoolTest extends TestCase {
      *
      * @return \Amp\Parallel\Worker\Pool
      */
-    abstract protected function createPool($min = null, $max = null);
+    abstract protected function createPool($min = null, $max = null): Pool;
 
     public function testIsRunning() {
         Loop::run(function () {

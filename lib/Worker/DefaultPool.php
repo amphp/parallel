@@ -43,19 +43,20 @@ class DefaultPool implements Pool {
     /**
      * Creates a new worker pool.
      *
-     * @param int|null $minSize The minimum number of workers the pool should spawn.
+     * @param int $minSize The minimum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MIN_SIZE`.
-     * @param int|null $maxSize The maximum number of workers the pool should spawn.
+     * @param int $maxSize The maximum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
      * @param \Amp\Parallel\Worker\WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
      * @throws \Error
      */
-    public function __construct(int $minSize = null, int $maxSize = null, WorkerFactory $factory = null) {
-        $minSize = $minSize ?: self::DEFAULT_MIN_SIZE;
-        $maxSize = $maxSize ?: self::DEFAULT_MAX_SIZE;
-
+    public function __construct(
+        int $minSize = self::DEFAULT_MIN_SIZE,
+        int $maxSize = self::DEFAULT_MAX_SIZE,
+        WorkerFactory $factory = null
+    ) {
         if ($minSize < 0) {
             throw new \Error('Minimum size must be a non-negative integer.');
         }
