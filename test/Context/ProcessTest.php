@@ -61,7 +61,7 @@ class ProcessTest extends TestCase {
      * @expectedExceptionMessage Uncaught ParseError in execution context
      */
     public function testParseError() {
-        $process = new Process(__DIR__ . "/parse-error-process.php");
+        $process = new Process(__DIR__ . "/parse-error-process.inc");
         $process->start();
         var_dump(Promise\wait($process->join()));
     }
