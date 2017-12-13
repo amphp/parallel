@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
+use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskError;
@@ -121,7 +122,7 @@ abstract class AbstractWorkerTest extends TestCase {
         $this->assertFalse($worker->isRunning());
     }
 
-    public function testUnserializableTask() {
+    public function testNonAutoloadableTask() {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -131,6 +132,24 @@ abstract class AbstractWorkerTest extends TestCase {
             } catch (TaskError $exception) {
                 $this->assertSame("Error", $exception->getName());
                 $this->assertGreaterThan(0, \strpos($exception->getMessage(), \sprintf("Classes implementing %s", Task::class)));
+            }
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testUnserializableTask() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            try {
+                yield $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
+                    public function run(Environment $environment) {
+                    }
+                });
+                $this->fail("Tasks that cannot be autoloaded should throw an exception");
+            } catch (SerializationException $exception) {
+                $this->assertSame(0, \strpos($exception->getMessage(), "The given data cannot be sent because it is not serializable"));
             }
 
             yield $worker->shutdown();

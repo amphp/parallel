@@ -174,13 +174,7 @@ class Process implements Context {
             throw new \Error("Cannot send exit result objects");
         }
 
-        return call(function () use ($data) {
-            try {
-                yield $this->channel->send($data);
-            } catch (ChannelException $e) {
-                throw new ContextException("The context went away, potentially due to a fatal error or calling exit", 0, $e);
-            }
-        });
+        return $this->channel->send($data);
     }
 
     /**
@@ -197,9 +191,6 @@ class Process implements Context {
                 if (!$data instanceof ExitResult) {
                     throw new SynchronizationError("Did not receive an exit result from process");
                 }
-            } catch (ChannelException $e) {
-                $this->kill();
-                throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw $exception;

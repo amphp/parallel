@@ -92,18 +92,27 @@ abstract class AbstractWorker implements Worker {
             $this->context->start();
         }
 
-        $empty = empty($this->jobQueue);
+        return call(function () use ($task) {
+            $empty = empty($this->jobQueue);
 
-        $job = new Internal\Job($task);
-        $this->jobQueue[$job->getId()] = $deferred = new Deferred;
+            $job = new Internal\Job($task);
+            $this->jobQueue[$job->getId()] = $deferred = new Deferred;
 
-        $this->context->send($job);
+            try {
+                yield $this->context->send($job);
+                if ($empty) {
+                    $this->context->receive()->onResolve($this->onResolve);
+                }
+            } catch (\Throwable $exception) {
+                unset($this->jobQueue[$job->getId()]);
+                if (!empty($this->jobQueue)) {
+                    $this->context->receive()->onResolve($this->onResolve);
+                }
+                $deferred->fail($exception);
+            }
 
-        if ($empty) {
-            $this->context->receive()->onResolve($this->onResolve);
-        }
-
-        return $deferred->promise();
+            return $deferred->promise();
+        });
     }
 
     /**
