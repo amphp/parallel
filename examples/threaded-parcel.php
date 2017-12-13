@@ -19,7 +19,7 @@ Loop::run(function () {
 
         printf("Value after modifying in child thread: %s\n", $value);
 
-        yield new Delayed(2000); // Main thread should access parcel during this time.
+        yield new Delayed(500); // Main thread should access parcel during this time.
 
         // Unwrapping the parcel now should give value from main thread.
         printf("Value in child thread after being modified in main thread: %s\n", yield $parcel->unwrap());
@@ -29,7 +29,7 @@ Loop::run(function () {
         });
     }, $parcel);
 
-    yield new Delayed(1000); // Give the thread time to start and access the parcel.
+    yield new Delayed(100); // Give the thread time to start and access the parcel.
 
     yield $parcel->synchronized(function (int $value) {
         return $value + 1;
