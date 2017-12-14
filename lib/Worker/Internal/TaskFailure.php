@@ -42,7 +42,7 @@ class TaskFailure extends TaskResult {
                 $exception = new TaskError(
                     $this->type,
                     sprintf(
-                        'Uncaught Error in worker of type "%s" with message "%s" and code "%s"',
+                        'Uncaught %s in worker with message "%s" and code "%s"',
                         $this->type,
                         $this->message,
                         $this->code
@@ -55,7 +55,7 @@ class TaskFailure extends TaskResult {
                 $exception = new TaskException(
                     $this->type,
                     sprintf(
-                        'Uncaught Exception in worker of type "%s" with message "%s" and code "%s"',
+                        'Uncaught %s in worker with message "%s" and code "%s"',
                         $this->type,
                         $this->message,
                         $this->code
