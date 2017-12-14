@@ -13,8 +13,10 @@ class Job {
     private $task;
 
     public function __construct(Task $task) {
+        static $id = 'a';
+
         $this->task = $task;
-        $this->id = \spl_object_hash($this->task);
+        $this->id = $id++;
     }
 
     public function getId(): string {
