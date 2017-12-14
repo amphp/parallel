@@ -6,6 +6,7 @@ use Amp\Deferred;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Sync\SerializationException;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
@@ -103,12 +104,11 @@ abstract class AbstractWorker implements Worker {
                 if ($empty) {
                     $this->context->receive()->onResolve($this->onResolve);
                 }
-            } catch (\Throwable $exception) {
+            } catch (SerializationException $exception) {
                 unset($this->jobQueue[$job->getId()]);
-                if (!empty($this->jobQueue)) {
-                    $this->context->receive()->onResolve($this->onResolve);
-                }
                 $deferred->fail($exception);
+            } catch (\Throwable $exception) {
+                $this->cancel($exception);
             }
 
             return $deferred->promise();

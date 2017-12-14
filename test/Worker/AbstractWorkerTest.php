@@ -155,4 +155,20 @@ abstract class AbstractWorkerTest extends TestCase {
             yield $worker->shutdown();
         });
     }
+
+    public function testUnserializableTaskFollowedByValidTask() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            $promise1 = $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
+                public function run(Environment $environment) {
+                }
+            });
+            $promise2 = $worker->enqueue(new TestTask(42));
+
+            $this->assertSame(42, yield $promise2);
+
+            yield $worker->shutdown();
+        });
+    }
 }
