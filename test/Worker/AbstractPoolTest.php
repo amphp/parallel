@@ -4,7 +4,10 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
 use Amp\Parallel\Worker\Pool;
+use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\TestCase;
+use Amp\Promise;
 
 abstract class AbstractPoolTest extends TestCase {
     /**
@@ -43,7 +46,7 @@ abstract class AbstractPoolTest extends TestCase {
 
     public function testWorkersIdleOnStart() {
         Loop::run(function () {
-            $pool = $this->createPool(32);
+            $pool = $this->createPool();
 
             $this->assertEquals(0, $pool->getIdleWorkerCount());
 
@@ -83,5 +86,48 @@ abstract class AbstractPoolTest extends TestCase {
 
         $this->assertRunTimeLessThan([$pool, 'kill'], 1000);
         $this->assertFalse($pool->isRunning());
+    }
+
+    public function testGet() {
+        Loop::run(function () {
+            $pool = $this->createPool();
+
+            $worker = $pool->get();
+            $this->assertInstanceOf(Worker::class, $worker);
+
+            $this->assertFalse($worker->isRunning());
+            $this->assertTrue($worker->isIdle());
+
+            $this->assertSame(42, yield $worker->enqueue(new TestTask(42)));
+
+            yield $worker->shutdown();
+
+            $worker->kill();
+        });
+    }
+
+    public function testBusyPool() {
+        Loop::run(function () {
+            $pool = $this->createPool(2);
+
+            $values = [42, 56, 72];
+            $tasks = \array_map(function (int $value): Task {
+                return new TestTask($value);
+            }, $values);
+
+            $promises = \array_map(function (Task $task) use ($pool): Promise {
+                return $pool->enqueue($task);
+            }, $tasks);
+
+            $this->assertSame($values, yield $promises);
+
+            $promises = \array_map(function (Task $task) use ($pool): Promise {
+                return $pool->enqueue($task);
+            }, $tasks);
+
+            $this->assertSame($values, yield $promises);
+
+            yield $pool->shutdown();
+        });
     }
 }
