@@ -61,7 +61,25 @@ class DefaultPool implements Pool {
         $this->idleWorkers = new \SplQueue;
         $this->busyQueue = new \SplQueue;
 
-        $this->push = $this->callableFromInstanceMethod("push");
+        $workers = &$this->workers;
+        $idleWorkers = &$this->idleWorkers;
+        $busyQueue = &$this->busyQueue;
+
+        $this->push = static function (Worker $worker) use (&$workers, &$idleWorkers, &$busyQueue) {
+            \assert($workers->contains($worker), "The provided worker was not part of this queue");
+
+            if (($workers[$worker] -= 1) === 0) {
+                // Worker is completely idle, remove from busy queue and add to idle queue.
+                foreach ($busyQueue as $key => $busy) {
+                    if ($busy === $worker) {
+                        unset($busyQueue[$key]);
+                        break;
+                    }
+                }
+
+                $idleWorkers->push($worker);
+            }
+        };
     }
 
     /**
@@ -118,7 +136,7 @@ class DefaultPool implements Pool {
 
         $promise = $worker->enqueue($task);
         $promise->onResolve(function () use ($worker) {
-            $this->push($worker);
+            ($this->push)($worker);
         });
         return $promise;
     }
@@ -223,18 +241,6 @@ class DefaultPool implements Pool {
      * @throws \Error If the worker was not part of this queue.
      */
     protected function push(Worker $worker) {
-        \assert($this->workers->contains($worker), "The provided worker was not part of this queue");
-
-        if (($this->workers[$worker] -= 1) === 0) {
-            // Worker is completely idle, remove from busy queue and add to idle queue.
-            foreach ($this->busyQueue as $key => $busy) {
-                if ($busy === $worker) {
-                    unset($this->busyQueue[$key]);
-                    break;
-                }
-            }
-
-            $this->idleWorkers->push($worker);
-        }
+        ($this->push)($worker); // Kept for BC
     }
 }
