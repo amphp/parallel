@@ -27,6 +27,9 @@ abstract class AbstractWorker implements Worker {
     /** @var callable */
     private $onResolve;
 
+    /** @var callable */
+    private $cancel;
+
     /**
      * @param \Amp\Parallel\Context\Context $context
      */
@@ -37,34 +40,56 @@ abstract class AbstractWorker implements Worker {
 
         $this->context = $context;
 
-        $this->onResolve = function ($exception, $data) {
+        $jobQueue = &$this->jobQueue;
+
+        $this->cancel = static function (\Throwable $exception = null) use (&$jobQueue, &$context) {
+            if (!empty($jobQueue)) {
+                $exception = new WorkerException('Worker was shut down', $exception);
+
+                foreach ($jobQueue as $job) {
+                    $job->fail($exception);
+                }
+
+                $jobQueue = [];
+            }
+
+            if ($context->isRunning()) {
+                $context->kill();
+            }
+        };
+
+        $cancel = &$this->cancel;
+
+        $this->onResolve = static function ($exception, $data) use (&$jobQueue, &$cancel, &$context, &$onResolve) {
             if ($exception) {
-                $this->cancel($exception);
+                $cancel($exception);
                 return;
             }
 
             if (!$data instanceof Internal\TaskResult) {
-                $this->cancel(new ContextException("Context did not return a task result"));
+                $cancel(new ContextException("Context did not return a task result"));
                 return;
             }
 
             $id = $data->getId();
 
-            if (!isset($this->jobQueue[$id])) {
-                $this->cancel(new ContextException("Job ID returned by context does not exist"));
+            if (!isset($jobQueue[$id])) {
+                $cancel(new ContextException("Job ID returned by context does not exist"));
                 return;
             }
 
-            $deferred = $this->jobQueue[$id];
-            unset($this->jobQueue[$id]);
-            $empty = empty($this->jobQueue);
+            $deferred = $jobQueue[$id];
+            unset($jobQueue[$id]);
+            $empty = empty($jobQueue);
 
             $deferred->resolve($data->promise());
 
             if (!$empty) {
-                $this->context->receive()->onResolve($this->onResolve);
+                $context->receive()->onResolve($onResolve);
             }
         };
+
+        $onResolve = $this->onResolve;
     }
 
     /**
@@ -155,18 +180,6 @@ abstract class AbstractWorker implements Worker {
      * @param \Throwable|null $exception Optional exception to be used as the previous exception.
      */
     protected function cancel(\Throwable $exception = null) {
-        if (!empty($this->jobQueue)) {
-            $exception = new WorkerException('Worker was shut down', $exception);
-
-            foreach ($this->jobQueue as $job) {
-                $job->fail($exception);
-            }
-
-            $this->jobQueue = [];
-        }
-
-        if ($this->context->isRunning()) {
-            $this->context->kill();
-        }
+        ($this->cancel)($exception);
     }
 }

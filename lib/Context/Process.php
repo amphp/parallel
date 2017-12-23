@@ -122,7 +122,7 @@ class Process implements Context {
         $childStderr = $this->process->getStderr();
         $childStderr->unreference();
 
-        asyncCall(function () use ($childStderr) {
+        asyncCall(static function () use ($childStderr) {
             $stderr = new ByteStream\ResourceOutputStream(\STDERR);
             yield ByteStream\pipe($childStderr, $stderr);
         });
