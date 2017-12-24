@@ -61,11 +61,11 @@ class DefaultPool implements Pool {
         $this->idleWorkers = new \SplQueue;
         $this->busyQueue = new \SplQueue;
 
-        $workers = &$this->workers;
-        $idleWorkers = &$this->idleWorkers;
-        $busyQueue = &$this->busyQueue;
+        $workers = $this->workers;
+        $idleWorkers = $this->idleWorkers;
+        $busyQueue = $this->busyQueue;
 
-        $this->push = static function (Worker $worker) use (&$workers, &$idleWorkers, &$busyQueue) {
+        $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue) {
             \assert($workers->contains($worker), "The provided worker was not part of this queue");
 
             if (($workers[$worker] -= 1) === 0) {

@@ -2,11 +2,9 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Deferred;
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Sync\SerializationException;
+use Amp\Parallel\Worker\Internal\TaskResult;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
@@ -21,14 +19,8 @@ abstract class AbstractWorker implements Worker {
     /** @var bool */
     private $shutdown = false;
 
-    /** @var \Amp\Deferred[] */
-    private $jobQueue = [];
-
-    /** @var callable */
-    private $onResolve;
-
-    /** @var callable */
-    private $cancel;
+    /** @var \Amp\Promise|null */
+    private $pending;
 
     /**
      * @param \Amp\Parallel\Context\Context $context
@@ -39,57 +31,6 @@ abstract class AbstractWorker implements Worker {
         }
 
         $this->context = $context;
-
-        $jobQueue = &$this->jobQueue;
-
-        $this->cancel = static function (\Throwable $exception = null) use (&$jobQueue, &$context) {
-            if (!empty($jobQueue)) {
-                $exception = new WorkerException('Worker was shut down', $exception);
-
-                foreach ($jobQueue as $job) {
-                    $job->fail($exception);
-                }
-
-                $jobQueue = [];
-            }
-
-            if ($context->isRunning()) {
-                $context->kill();
-            }
-        };
-
-        $cancel = &$this->cancel;
-
-        $this->onResolve = static function ($exception, $data) use (&$jobQueue, &$cancel, &$context, &$onResolve) {
-            if ($exception) {
-                $cancel($exception);
-                return;
-            }
-
-            if (!$data instanceof Internal\TaskResult) {
-                $cancel(new ContextException("Context did not return a task result"));
-                return;
-            }
-
-            $id = $data->getId();
-
-            if (!isset($jobQueue[$id])) {
-                $cancel(new ContextException("Job ID returned by context does not exist"));
-                return;
-            }
-
-            $deferred = $jobQueue[$id];
-            unset($jobQueue[$id]);
-            $empty = empty($jobQueue);
-
-            $deferred->resolve($data->promise());
-
-            if (!$empty) {
-                $context->receive()->onResolve($onResolve);
-            }
-        };
-
-        $onResolve = $this->onResolve;
     }
 
     /**
@@ -103,7 +44,7 @@ abstract class AbstractWorker implements Worker {
      * {@inheritdoc}
      */
     public function isIdle(): bool {
-        return empty($this->jobQueue);
+        return $this->pending === null;
     }
 
     /**
@@ -118,26 +59,43 @@ abstract class AbstractWorker implements Worker {
             $this->context->start();
         }
 
-        return call(function () use ($task) {
-            $empty = empty($this->jobQueue);
+        $job = new Internal\Job($task);
+        $id = $job->getId();
 
-            $job = new Internal\Job($task);
-            $this->jobQueue[$job->getId()] = $deferred = new Deferred;
-
-            try {
-                yield $this->context->send($job);
-                if ($empty) {
-                    $this->context->receive()->onResolve($this->onResolve);
+        $promise = $this->pending = call(function () use ($task, $job, $id) {
+            if ($this->pending) {
+                try {
+                    yield $this->pending;
+                } catch (\Throwable $exception) {
+                    // Ignore error from prior job.
                 }
-            } catch (SerializationException $exception) {
-                unset($this->jobQueue[$job->getId()]);
-                $deferred->fail($exception);
-            } catch (\Throwable $exception) {
-                $this->cancel($exception);
             }
 
-            return $deferred->promise();
+            if (!$this->context->isRunning()) {
+                throw new WorkerException("The worker was shutdown");
+            }
+
+            yield $this->context->send($job);
+            $result = yield $this->context->receive();
+
+            if (!$result instanceof TaskResult) {
+                $this->cancel(new WorkerException("Context did not return a task result"));
+            }
+
+            if ($result->getId() !== $id) {
+                $this->cancel(new WorkerException("Task results returned out of order"));
+            }
+
+            return $result->promise();
         });
+
+        $promise->onResolve(function () use ($promise) {
+            if ($this->pending === $promise) {
+                $this->pending = null;
+            }
+        });
+
+        return $promise;
     }
 
     /**
@@ -155,11 +113,9 @@ abstract class AbstractWorker implements Worker {
         }
 
         return call(function () {
-            if (!empty($this->jobQueue)) {
+            if ($this->pending) {
                 // If a task is currently running, wait for it to finish.
-                yield Promise\any(\array_map(function (Deferred $deferred): Promise {
-                    return $deferred->promise();
-                }, $this->jobQueue));
+                yield Promise\any([$this->pending]);
             }
 
             yield $this->context->send(0);
@@ -177,9 +133,13 @@ abstract class AbstractWorker implements Worker {
     /**
      * Cancels all pending tasks and kills the context.
      *
+     * @TODO Parameter kept for BC, remove in future version.
+     *
      * @param \Throwable|null $exception Optional exception to be used as the previous exception.
      */
     protected function cancel(\Throwable $exception = null) {
-        ($this->cancel)($exception);
+        if ($this->context->isRunning()) {
+            $this->context->kill();
+        }
     }
 }
