@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Test\Context;
 
 use Amp\Loop;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ExitSuccess;
 use Amp\PHPUnit\TestCase;
 
@@ -142,9 +143,9 @@ abstract class AbstractContextTest extends TestCase {
 
     public function testSendAndReceive() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield $this->send(1);
-                $value = yield $this->receive();
+            $context = $this->createContext(function (Channel $channel) {
+                yield $channel->send(1);
+                $value = yield $channel->receive();
                 return $value;
             });
 
@@ -163,8 +164,8 @@ abstract class AbstractContextTest extends TestCase {
      */
     public function testJoinWhenContextSendingData() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield $this->send(0);
+            $context = $this->createContext(function (Channel $channel) {
+                yield $channel->send(0);
                 return 42;
             });
 
@@ -179,8 +180,8 @@ abstract class AbstractContextTest extends TestCase {
      */
     public function testReceiveBeforeContextHasStarted() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield $this->send(0);
+            $context = $this->createContext(function (Channel $channel) {
+                yield $channel->send(0);
                 return 42;
             });
 
@@ -194,8 +195,8 @@ abstract class AbstractContextTest extends TestCase {
      */
     public function testSendBeforeContextHasStarted() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield $this->send(0);
+            $context = $this->createContext(function (Channel $channel) {
+                yield $channel->send(0);
                 return 42;
             });
 
@@ -209,8 +210,8 @@ abstract class AbstractContextTest extends TestCase {
      */
     public function testReceiveWhenContextHasReturned() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield $this->send(0);
+            $context = $this->createContext(function (Channel $channel) {
+                yield $channel->send(0);
                 return 42;
             });
 
@@ -227,8 +228,8 @@ abstract class AbstractContextTest extends TestCase {
      */
     public function testSendExitResult() {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                $value = yield $this->receive();
+            $context = $this->createContext(function (Channel $channel) {
+                $value = yield $channel->receive();
                 return 42;
             });
 
@@ -254,8 +255,8 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\Context\ContextException
-     * @expectedExceptionMessage The context stopped responding
+     * @expectedException \Amp\Parallel\Sync\ChannelException
+     * @expectedExceptionMessage The channel closed unexpectedly
      */
     public function testExitingContextOnReceive() {
         Loop::run(function () {
@@ -269,8 +270,8 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     /**
-     * @expectedException \Amp\Parallel\Context\ContextException
-     * @expectedExceptionMessage The context went away
+     * @expectedException \Amp\Parallel\Sync\ChannelException
+     * @expectedExceptionMessage Sending on the channel failed
      */
     public function testExitingContextOnSend() {
         Loop::run(function () {
