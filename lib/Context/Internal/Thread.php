@@ -94,11 +94,12 @@ class Thread extends \Thread {
 
             try {
                 $channel = new ChannelledSocket($this->socket, $this->socket);
+                yield from $this->execute($channel);
             } catch (\Throwable $exception) {
                 return; // Parent context exited or destroyed thread, no need to continue.
+            } finally {
+                Loop::cancel($watcher);
             }
-
-            return $this->execute($channel);
         });
     }
 

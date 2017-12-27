@@ -151,13 +151,26 @@ class Thread implements Context {
 
         $this->channel = new ChannelledSocket($channel, $channel);
 
-        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, function ($watcher) {
-            if (!$this->thread->isRunning()) {
-                // Delay call to close to avoid race condition between thread exiting and data becoming available.
-                Loop::delay(self::EXIT_CHECK_FREQUENCY, function () {
-                    $this->close();
+        $thread = &$this->thread;
+        $channel = &$this->channel;
+        $socket = &$this->socket;
+
+        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function ($watcher) use (&$thread, &$channel, &$socket) {
+            if ($thread === null || !$thread->isRunning()) {
+                // Delay closing to avoid race condition between thread exiting and data becoming available.
+                Loop::delay(self::EXIT_CHECK_FREQUENCY, function () use (&$thread, &$channel, &$socket) {
+                    if ($channel !== null) {
+                        $channel->close();
+                    }
+
+                    if (\is_resource($socket)) {
+                        @\fclose($socket);
+                    }
+
+                    $channel = null;
+                    $thread = null;
                 });
-                Loop::disable($watcher);
+                Loop::cancel($watcher);
             }
         });
 
