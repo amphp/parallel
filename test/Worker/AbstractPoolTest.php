@@ -130,24 +130,4 @@ abstract class AbstractPoolTest extends TestCase {
             yield $pool->shutdown();
         });
     }
-
-    public function testCleanGarbageCollection() {
-        // See https://github.com/amphp/parallel-functions/issues/5
-        Loop::run(function () {
-            for ($i = 0; $i < 15; $i++) {
-                $pool = $this->createPool(32);
-
-                $values = \range(1, 50);
-                $tasks = \array_map(function (int $value): Task {
-                    return new TestTask($value);
-                }, $values);
-
-                $promises = \array_map(function (Task $task) use ($pool): Promise {
-                    return $pool->enqueue($task);
-                }, $tasks);
-
-                $this->assertSame($values, yield $promises);
-            }
-        });
-    }
 }
