@@ -143,33 +143,18 @@ class Thread implements Context {
 
         list($channel, $this->socket) = $sockets;
 
-        $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
+        $thread = $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
         if (!$this->thread->start(\PTHREADS_INHERIT_INI)) {
             throw new ContextException('Failed to start the thread.');
         }
 
-        $this->channel = new ChannelledSocket($channel, $channel);
+        $channel = $this->channel = new ChannelledSocket($channel, $channel);
 
-        $thread = &$this->thread;
-        $channel = &$this->channel;
-        $socket = &$this->socket;
-
-        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function ($watcher) use (&$thread, &$channel, &$socket) {
-            if ($thread === null || !$thread->isRunning()) {
+        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function ($watcher) use ($thread, $channel) {
+            if (!$thread->isRunning()) {
                 // Delay closing to avoid race condition between thread exiting and data becoming available.
-                Loop::delay(self::EXIT_CHECK_FREQUENCY, function () use (&$thread, &$channel, &$socket) {
-                    if ($channel !== null) {
-                        $channel->close();
-                    }
-
-                    if (\is_resource($socket)) {
-                        @\fclose($socket);
-                    }
-
-                    $channel = null;
-                    $thread = null;
-                });
+                Loop::delay(self::EXIT_CHECK_FREQUENCY, [$channel, "close"]);
                 Loop::cancel($watcher);
             }
         });
@@ -202,11 +187,6 @@ class Thread implements Context {
             $this->channel->close();
         }
 
-        if (\is_resource($this->socket)) {
-            @\fclose($this->socket);
-        }
-
-        $this->thread = null;
         $this->channel = null;
         Loop::cancel($this->watcher);
     }
