@@ -85,7 +85,12 @@ class Process implements Context {
 
     private static function locateBinary(): string {
         $executable = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? "php.exe" : "php";
-        foreach (\explode(\PATH_SEPARATOR, \getenv("PATH")) as $path) {
+
+        $paths = \array_filter(\explode(\PATH_SEPARATOR, \getenv("PATH")));
+        $paths[] = \PHP_BINDIR;
+        $paths = \array_unique($paths);
+
+        foreach ($paths as $path) {
             $path .= \DIRECTORY_SEPARATOR . $executable;
             if (\is_executable($path)) {
                 return self::$binaryPath = $path;
