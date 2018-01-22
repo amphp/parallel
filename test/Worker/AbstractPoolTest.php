@@ -134,7 +134,7 @@ abstract class AbstractPoolTest extends TestCase {
     public function testCleanGarbageCollection() {
         // See https://github.com/amphp/parallel-functions/issues/5
         Loop::run(function () {
-            for ($i = 0; $i < 15; $i++) {
+            for ($i = 0; $i < 3; $i++) {
                 $pool = $this->createPool(32);
 
                 $values = \range(1, 50);
