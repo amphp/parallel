@@ -15,6 +15,9 @@ use function Amp\call;
 class Process implements Context {
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
 
+    /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
+    private static $pharScriptPath;
+
     /** @var string|null Cached path to located PHP binary. */
     private static $binaryPath;
 
@@ -73,10 +76,29 @@ class Process implements Context {
             throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
         }
 
+        // Write process runner to external file if inside a PHAR,
+        // because PHP can't open files inside a PHAR directly except for the stub.
+        if (\strpos(self::SCRIPT_PATH, "phar://") === 0) {
+            if (self::$pharScriptPath) {
+                $scriptPath = self::$pharScriptPath;
+            } else {
+                $contents = \file_get_contents(self::SCRIPT_PATH);
+                $contents = \str_replace("__DIR__", \var_export(\dirname(self::SCRIPT_PATH), true), $contents);
+                self::$pharScriptPath = $scriptPath = \tempnam(\sys_get_temp_dir(), "amp-process-runner-");
+                \file_put_contents($scriptPath, $contents);
+
+                \register_shutdown_function(static function () {
+                    @\unlink(self::$pharScriptPath);
+                });
+            }
+        } else {
+            $scriptPath = self::SCRIPT_PATH;
+        }
+
         $command = \implode(" ", [
             \escapeshellarg($binary),
             $this->formatOptions($options),
-            self::SCRIPT_PATH,
+            $scriptPath,
             $script,
         ]);
 
