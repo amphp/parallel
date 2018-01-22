@@ -36,5 +36,4 @@ class ChannelParserTest extends TestCase {
         $parser = new ChannelParser($this->createCallback(0));
         $parser->push($data);
     }
-
 }
