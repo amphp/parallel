@@ -38,7 +38,7 @@ class ChannelParser extends Parser {
     }
 
     /**
-     * @param \SplQueue $queue
+     * @param callable $push
      * @param callable $errorHandler
      *
      * @return \Generator
@@ -46,13 +46,19 @@ class ChannelParser extends Parser {
      * @throws \Amp\Parallel\Sync\ChannelException
      * @throws \Amp\Parallel\Sync\SerializationException
      */
-    private static function parser(callable $callback, callable $errorHandler): \Generator {
+    private static function parser(callable $push, callable $errorHandler): \Generator {
         while (true) {
             $header = yield self::HEADER_LENGTH;
             $data = \unpack("Cprefix/Llength", $header);
 
             if ($data["prefix"] !== 0) {
-                throw new ChannelException("Invalid header received: " . \bin2hex($header . yield));
+                $data = $header . yield;
+
+                $data = \preg_replace_callback("/[^\x20-\x7e]/", function (array $matches) {
+                    return "\\x" . \dechex(\ord($matches[0]));
+                }, $data);
+
+                throw new ChannelException("Invalid packet received: " . $data);
             }
 
             $data = yield $data["length"];
@@ -68,7 +74,7 @@ class ChannelParser extends Parser {
                 \restore_error_handler();
             }
 
-            $callback($data);
+            $push($data);
         }
     }
 
