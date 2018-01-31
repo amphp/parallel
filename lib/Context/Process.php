@@ -98,7 +98,7 @@ class Process implements Context {
         $command = \implode(" ", [
             \escapeshellarg($binary),
             $this->formatOptions($options),
-            $scriptPath,
+            \escapeshellarg($scriptPath),
             $script,
         ]);
 
