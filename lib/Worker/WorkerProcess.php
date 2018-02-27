@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\Parallel\Context\Process;
 
 /**
- * A worker thread that executes task objects.
+ * A worker process that executes task objects.
  */
 class WorkerProcess extends AbstractWorker {
     const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
