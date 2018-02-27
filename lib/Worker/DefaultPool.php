@@ -234,7 +234,7 @@ class DefaultPool implements Pool {
     }
 
     /**
-     * Pushes the worker back into the queue.
+     * Pushes the worker back into the pool and mark it as idle.
      *
      * @param \Amp\Parallel\Worker\Worker $worker
      *
