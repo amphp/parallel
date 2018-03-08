@@ -11,7 +11,7 @@ use Amp\Parallel\Worker\WorkerProcess;
  * @group process
  */
 class ProcessPoolErrorTest extends AbstractPoolErrorTest {
-    protected function createPool(): Pool {
+    protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool {
         $factory = $this->createMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
             return new WorkerProcess;
