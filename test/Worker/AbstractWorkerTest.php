@@ -53,6 +53,35 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
+    /**
+     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedExceptionMessage  The worker has been shut down
+     */
+    public function testEnqueueShouldThrowStatusError()
+    {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            $this->assertTrue($worker->isIdle());
+
+            yield $worker->shutdown();
+            yield $worker->enqueue(new TestTask(42));
+        });
+    }
+
+    /**
+     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedExceptionMessage  The worker is not running
+     */
+    public function testShutdownShouldThrowStatusError()
+    {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+            yield $worker->shutdown();
+            yield $worker->shutdown();
+        });
+    }
+
     public function testEnqueue() {
         Loop::run(function () {
             $worker = $this->createWorker();

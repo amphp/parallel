@@ -39,6 +39,37 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
+    /**
+     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedExceptionMessage  The pool was shutdown
+     */
+    public function testShutdownShouldThrowStatusError() {
+        Loop::run(function () {
+            $pool = $this->createPool();
+
+            $this->assertTrue($pool->isIdle());
+
+            yield $pool->shutdown();
+            yield $pool->shutdown();
+        });
+    }
+
+    /**
+     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedExceptionMessage  The pool was shutdown
+     */
+    public function testPullShouldThrowStatusError() {
+        Loop::run(function () {
+            $pool = $this->createPool();
+
+            $this->assertTrue($pool->isIdle());
+
+            yield $pool->shutdown();
+
+            $pool->get();
+        });
+    }
+
     public function testGetMaxSize() {
         $pool = $this->createPool(17);
         $this->assertEquals(17, $pool->getMaxSize());
