@@ -39,11 +39,9 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    /**
-     * @expectedException         \Amp\Parallel\Context\StatusError
-     * @expectedExceptionMessage  The pool was shutdown
-     */
     public function testShutdownShouldThrowStatusError() {
+        $this->expectException(\Amp\Parallel\Context\StatusError::class);
+        $this->expectExceptionMessage("The pool was shutdown");
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -54,11 +52,9 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    /**
-     * @expectedException         \Amp\Parallel\Context\StatusError
-     * @expectedExceptionMessage  The pool was shutdown
-     */
     public function testPullShouldThrowStatusError() {
+        $this->expectException(\Amp\Parallel\Context\StatusError::class);
+        $this->expectExceptionMessage("The pool was shutdown");
         Loop::run(function () {
             $pool = $this->createPool();
 

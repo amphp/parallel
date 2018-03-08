@@ -15,11 +15,9 @@ abstract class AbstractPoolErrorTest extends TestCase {
      */
     abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
 
-    /**
-     * @expectedException        \Error
-     * @expectedExceptionMessage Maximum size must be a non-negative integer
-     */
     public function testCreatePoolShouldThrowError() {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("Maximum size must be a non-negative integer");
         Loop::run(function () {
             $this->createPool();
         });

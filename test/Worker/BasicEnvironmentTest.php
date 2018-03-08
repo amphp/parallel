@@ -30,8 +30,9 @@ class BasicEnvironmentTest extends TestCase {
     public function testSetWithNullValue() {
         $environment = new BasicEnvironment;
         $key = "key";
+        $environment->set($key, null);
 
-        $this->assertNull($environment->set($key, null));
+        $this->assertNull($environment->get($key));
     }
 
     /**
