@@ -4,10 +4,7 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
 use Amp\Parallel\Worker\Pool;
-use Amp\Parallel\Worker\Task;
-use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\TestCase;
-use Amp\Promise;
 
 abstract class AbstractPoolErrorTest extends TestCase {
     /**

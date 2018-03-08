@@ -54,11 +54,10 @@ abstract class AbstractWorkerTest extends TestCase {
     }
 
     /**
-     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedException         \Amp\Parallel\Context\StatusError
      * @expectedExceptionMessage  The worker has been shut down
      */
-    public function testEnqueueShouldThrowStatusError()
-    {
+    public function testEnqueueShouldThrowStatusError() {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -70,11 +69,10 @@ abstract class AbstractWorkerTest extends TestCase {
     }
 
     /**
-     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedException         \Amp\Parallel\Context\StatusError
      * @expectedExceptionMessage  The worker is not running
      */
-    public function testShutdownShouldThrowStatusError()
-    {
+    public function testShutdownShouldThrowStatusError() {
         Loop::run(function () {
             $worker = $this->createWorker();
             yield $worker->shutdown();

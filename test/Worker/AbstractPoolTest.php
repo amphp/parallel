@@ -40,7 +40,7 @@ abstract class AbstractPoolTest extends TestCase {
     }
 
     /**
-     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedException         \Amp\Parallel\Context\StatusError
      * @expectedExceptionMessage  The pool was shutdown
      */
     public function testShutdownShouldThrowStatusError() {
@@ -55,7 +55,7 @@ abstract class AbstractPoolTest extends TestCase {
     }
 
     /**
-     * @expectedException         Amp\Parallel\Context\StatusError
+     * @expectedException         \Amp\Parallel\Context\StatusError
      * @expectedExceptionMessage  The pool was shutdown
      */
     public function testPullShouldThrowStatusError() {
