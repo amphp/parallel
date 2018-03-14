@@ -233,6 +233,32 @@ class Process implements Context {
     }
 
     /**
+     * Send a signal to the process.
+     *
+     * @see \Amp\Process\Process::signal()
+     *
+     * @param int $signo
+     *
+     * @throws \Amp\Process\ProcessException
+     * @throws \Amp\Process\StatusError
+     */
+    public function signal(int $signo) {
+        $this->process->signal($signo);
+    }
+
+    /**
+     * Returns a promise resolving to the process PID.
+     *
+     * @see \Amp\Process\Process::getPid()
+     *
+     * @return \Amp\Promise
+     * @throws \Amp\Process\StatusError
+     */
+    public function getPid(): Promise {
+        return $this->process->getPid();
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function kill() {
