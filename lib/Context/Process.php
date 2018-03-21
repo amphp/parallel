@@ -18,6 +18,9 @@ class Process implements Context {
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static $pharScriptPath;
 
+    /** @var string|null PHAR path with a '.phar' extension. */
+    private static $pharCopy;
+
     /** @var string|null Cached path to located PHP binary. */
     private static $binaryPath;
 
@@ -32,9 +35,9 @@ class Process implements Context {
      *
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param string|null $cwd Working directory.
-     * @param mixed[] $env Array of environment variables.
-     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|null  $cwd Working directory.
+     * @param mixed[]      $env Array of environment variables.
+     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @return \Amp\Parallel\Context\Process
      */
@@ -47,9 +50,9 @@ class Process implements Context {
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param string|null $cwd Working directory.
-     * @param mixed[] $env Array of environment variables.
-     * @param string $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|null  $cwd Working directory.
+     * @param mixed[]      $env Array of environment variables.
+     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
@@ -59,12 +62,6 @@ class Process implements Context {
             "display_errors" => "0",
             "log_errors" => "1",
         ];
-
-        if (\is_array($script)) {
-            $script = \implode(" ", \array_map("escapeshellarg", $script));
-        } else {
-            $script = \escapeshellarg($script);
-        }
 
         if ($binary === null) {
             if (\PHP_SAPI === "cli") {
@@ -82,8 +79,21 @@ class Process implements Context {
             if (self::$pharScriptPath) {
                 $scriptPath = self::$pharScriptPath;
             } else {
+                $path = \dirname(self::SCRIPT_PATH);
+
+                if (\substr(\Phar::running(false), -5) !== ".phar") {
+                    self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
+                    \copy(\Phar::running(false), self::$pharCopy);
+
+                    \register_shutdown_function(static function () {
+                        @\unlink(self::$pharCopy);
+                    });
+
+                    $path = "phar://" . self::$pharCopy . "/" . \substr($path, \strlen(\Phar::running(true)));
+                }
+
                 $contents = \file_get_contents(self::SCRIPT_PATH);
-                $contents = \str_replace("__DIR__", \var_export(\dirname(self::SCRIPT_PATH), true), $contents);
+                $contents = \str_replace("__DIR__", \var_export($path, true), $contents);
                 self::$pharScriptPath = $scriptPath = \tempnam(\sys_get_temp_dir(), "amp-process-runner-");
                 \file_put_contents($scriptPath, $contents);
 
@@ -91,8 +101,19 @@ class Process implements Context {
                     @\unlink(self::$pharScriptPath);
                 });
             }
+
+            // Monkey-patch the script path in the same way, only supported if the command is given as array.
+            if (isset(self::$pharCopy) && \is_array($script) && isset($script[0])) {
+                $script[0] = "phar://" . self::$pharCopy . \substr($script[0], \strlen(\Phar::running(true)));
+            }
         } else {
             $scriptPath = self::SCRIPT_PATH;
+        }
+
+        if (\is_array($script)) {
+            $script = \implode(" ", \array_map("escapeshellarg", $script));
+        } else {
+            $script = \escapeshellarg($script);
         }
 
         $command = \implode(" ", [
