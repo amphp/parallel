@@ -48,7 +48,7 @@ class ProcessTest extends TestCase {
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
-     * @expectedExceptionMessage Script did not return a callable function
+     * @expectedExceptionMessage did not return a callable function
      */
     public function testNoCallbackReturned() {
         $process = new Process(__DIR__ . "/no-callback-process.php");
