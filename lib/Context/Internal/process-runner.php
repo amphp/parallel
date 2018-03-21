@@ -31,7 +31,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     if (!isset($autoloadPath)) {
-        \fwrite(\STDERR, "Could not locate autoload.php");
+        \fwrite(\STDERR, "Could not locate autoload.php in any of the following files: " . \implode(", ", $paths) . \PHP_EOL);
         exit(1);
     }
 
@@ -59,7 +59,7 @@ Loop::run(function () use ($argc, $argv) {
             $callable = require $argv[0];
 
             if (!\is_callable($callable)) {
-                throw new \Error("Script did not return a callable function");
+                throw new \Error(\sprintf("Script '%s' did not return a callable function", $argv[0]));
             }
 
             return $callable;
