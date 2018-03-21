@@ -31,18 +31,18 @@ class BasicEnvironmentTest extends TestCase {
         $environment = new BasicEnvironment;
         $key = "key";
 
-        $this->assertFalse(isset($environment[$key]));
+        $this->assertArrayNotHasKey($key, $environment);
         $this->assertNull($environment[$key]);
 
         $environment[$key] = 1;
-        $this->assertTrue(isset($environment[$key]));
+        $this->assertArrayHasKey($key, $environment);
         $this->assertSame(1, $environment[$key]);
 
         $environment[$key] = 2;
         $this->assertSame(2, $environment[$key]);
 
         unset($environment[$key]);
-        $this->assertFalse(isset($environment[$key]));
+        $this->assertArrayNotHasKey($key, $environment);
         $this->assertNull($environment[$key]);
     }
 
