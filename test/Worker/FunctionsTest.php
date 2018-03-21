@@ -17,7 +17,7 @@ class FunctionsTest extends TestCase {
 
         Worker\pool($pool);
 
-        $this->assertTrue($pool === Worker\pool());
+        $this->assertSame(Worker\pool(), $pool);
     }
 
     /**
@@ -60,7 +60,7 @@ class FunctionsTest extends TestCase {
 
         Worker\factory($factory);
 
-        $this->assertTrue($factory === Worker\factory());
+        $this->assertSame(Worker\factory(), $factory);
     }
 
     /**
