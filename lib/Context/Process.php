@@ -116,8 +116,11 @@ class Process implements Context {
             $script = \escapeshellarg($script);
         }
 
+        $phpConfig = \get_cfg_var('cfg_file_path');
+
         $command = \implode(" ", [
             \escapeshellarg($binary),
+            $phpConfig ? "-c $phpConfig" : "",
             $this->formatOptions($options),
             \escapeshellarg($scriptPath),
             $script,
