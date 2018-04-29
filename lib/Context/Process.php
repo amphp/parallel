@@ -120,7 +120,7 @@ class Process implements Context {
 
         $command = \implode(" ", [
             \escapeshellarg($binary),
-            $phpConfig ? "-n -c $phpConfig" : "",
+            $phpConfig ? \escapeshellarg("-n -c $phpConfig") : "",
             $this->formatOptions($options),
             \escapeshellarg($scriptPath),
             $script,
