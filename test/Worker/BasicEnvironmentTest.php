@@ -27,6 +27,24 @@ class BasicEnvironmentTest extends TestCase {
         $this->assertNull($environment->get($key));
     }
 
+    public function testSetWithNullValue() {
+        $environment = new BasicEnvironment;
+        $key = "key";
+        $environment->set($key, null);
+
+        $this->assertNull($environment->get($key));
+    }
+
+    /**
+     * @expectedException        \Error
+     * @expectedExceptionMessage The time-to-live must be a positive integer or null
+     */
+    public function testSetShouleThrowError() {
+        $environment = new BasicEnvironment;
+        $key = "key";
+        $environment->set($key, 1, 0);
+    }
+
     public function testArrayAccess() {
         $environment = new BasicEnvironment;
         $key = "key";
