@@ -7,6 +7,7 @@ use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskError;
+use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\TestCase;
 
 class NonAutoloadableTask implements Task {
@@ -97,7 +98,31 @@ abstract class AbstractWorkerTest extends TestCase {
                 });
             }
 
+            yield $promises; // Wait until all tasks have finished before invoking $worker->shutdown().
+
             yield $worker->shutdown();
+        });
+    }
+
+    public function testEnqueueMultipleThenShutdown() {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            $promises = [
+                $worker->enqueue(new TestTask(42, 200)),
+                $worker->enqueue(new TestTask(56, 300)),
+                $worker->enqueue(new TestTask(72, 100))
+            ];
+
+            yield $worker->shutdown();
+
+            \array_shift($promises); // First task will succeed.
+
+            foreach ($promises as $promise) {
+                $promise->onResolve(function ($e, $v) {
+                    $this->assertInstanceOf(WorkerException::class, $e);
+                });
+            }
         });
     }
 

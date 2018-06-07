@@ -71,7 +71,7 @@ abstract class AbstractWorker implements Worker {
                 }
             }
 
-            if (!$this->context->isRunning()) {
+            if ($this->shutdown || !$this->context->isRunning()) {
                 throw new WorkerException("The worker was shutdown");
             }
 
