@@ -15,7 +15,9 @@ Loop::run(function () {
 
     try {
         // Create a new child process that does some blocking stuff.
-        $context = Process::run(__DIR__ . "/blocking-process.php");
+        $context = yield Process::run(__DIR__ . "/blocking-process.php");
+
+        \assert($context instanceof Process);
 
         print "Waiting 2 seconds to send start data...\n";
         yield new Delayed(2000);

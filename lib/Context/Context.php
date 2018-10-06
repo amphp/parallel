@@ -14,7 +14,7 @@ interface Context extends Channel {
     /**
      * Starts the execution context.
      */
-    public function start();
+    public function start(): Promise;
 
     /**
      * Immediately kills the context.

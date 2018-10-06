@@ -3,8 +3,8 @@
 namespace Amp\Parallel\Context;
 
 use Amp\ByteStream;
+use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
@@ -15,6 +15,9 @@ use function Amp\call;
 class Process implements Context {
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
 
+    /** @var ByteStream\ResourceOutputStream */
+    private static $stderr;
+
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static $pharScriptPath;
 
@@ -23,6 +26,9 @@ class Process implements Context {
 
     /** @var string|null Cached path to located PHP binary. */
     private static $binaryPath;
+
+    /** @var Internal\ProcessHub */
+    private $hub;
 
     /** @var \Amp\Process\Process */
     private $process;
@@ -39,12 +45,14 @@ class Process implements Context {
      * @param mixed[]      $env Array of environment variables.
      * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
-     * @return \Amp\Parallel\Context\Process
+     * @return Promise<Process>
      */
-    public static function run($script, string $cwd = null, array $env = [], string $binary = null): self {
+    public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise {
         $process = new self($script, $cwd, $env, $binary);
-        $process->start();
-        return $process;
+        return call(function () use ($process) {
+            yield $process->start();
+            return $process;
+        });
     }
 
     /**
@@ -57,6 +65,12 @@ class Process implements Context {
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
     public function __construct($script, string $cwd = null, array $env = [], string $binary = null) {
+        $this->hub = Loop::getState(self::class);
+        if (!$this->hub instanceof Internal\ProcessHub) {
+            $this->hub = new Internal\ProcessHub;
+            Loop::setState(self::class, $this->hub);
+        }
+
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
@@ -120,6 +134,7 @@ class Process implements Context {
             \escapeshellarg($binary),
             $this->formatOptions($options),
             \escapeshellarg($scriptPath),
+            $this->hub->getUri(),
             $script,
         ]);
 
@@ -162,17 +177,20 @@ class Process implements Context {
     /**
      * {@inheritdoc}
      */
-    public function start() {
-        $this->process->start();
-        $this->channel = new ChannelledStream($this->process->getStdout(), $this->process->getStdin());
+    public function start(): Promise {
+        return call(function () {
+            $this->process->start();
 
-        /** @var ByteStream\ResourceInputStream $childStderr */
-        $childStderr = $this->process->getStderr();
-        $childStderr->unreference();
+            $this->channel = yield $this->hub->accept();
 
-        asyncCall(static function () use ($childStderr) {
-            $stderr = new ByteStream\ResourceOutputStream(\STDERR);
-            yield ByteStream\pipe($childStderr, $stderr);
+            /** @var ByteStream\ResourceInputStream $childStderr */
+            $childStderr = $this->process->getStderr();
+            $childStderr->unreference();
+
+            asyncCall(static function () use ($childStderr) {
+                $stderr = new ByteStream\ResourceOutputStream(\STDERR);
+                yield ByteStream\pipe($childStderr, $stderr);
+            });
         });
     }
 

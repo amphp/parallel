@@ -23,7 +23,7 @@ abstract class AbstractContextTest extends TestCase {
 
             $this->assertFalse($context->isRunning());
 
-            $context->start();
+            yield $context->start();
 
             $this->assertTrue($context->isRunning());
 
@@ -34,27 +34,31 @@ abstract class AbstractContextTest extends TestCase {
     }
 
     public function testKill() {
-        $context = $this->createContext(function () {
-            usleep(1e6);
+        Loop::run(function () {
+            $context = $this->createContext(function () {
+                usleep(1e6);
+            });
+
+            yield $context->start();
+
+            $this->assertRunTimeLessThan([$context, 'kill'], 1000);
+
+            $this->assertFalse($context->isRunning());
         });
-
-        $context->start();
-
-        $this->assertRunTimeLessThan([$context, 'kill'], 1000);
-
-        $this->assertFalse($context->isRunning());
     }
 
     /**
      * @expectedException \Amp\Parallel\Context\StatusError
      */
     public function testStartWhileRunningThrowsError() {
-        $context = $this->createContext(function () {
-            usleep(100);
-        });
+        Loop::run(function () {
+            $context = $this->createContext(function () {
+                usleep(100);
+            });
 
-        $context->start();
-        $context->start();
+            yield $context->start();
+            yield $context->start();
+        });
     }
 
     /**
@@ -67,10 +71,10 @@ abstract class AbstractContextTest extends TestCase {
                     sleep(1);
                 });
 
-                $context->start();
+                yield $context->start();
                 yield $context->join();
 
-                $context->start();
+                yield $context->start();
                 yield $context->join();
             });
         }, 2000);
@@ -85,7 +89,7 @@ abstract class AbstractContextTest extends TestCase {
                 throw new \Exception('Exception in fork.');
             });
 
-            $context->start();
+            yield $context->start();
             yield $context->join();
         });
     }
@@ -99,7 +103,7 @@ abstract class AbstractContextTest extends TestCase {
                 return yield function () {};
             });
 
-            $context->start();
+            yield $context->start();
             yield $context->join();
         });
     }
@@ -111,7 +115,7 @@ abstract class AbstractContextTest extends TestCase {
                     sleep(1);
                 });
 
-                $context->start();
+                yield $context->start();
                 yield $context->join();
             });
         }, 1000);
@@ -136,7 +140,7 @@ abstract class AbstractContextTest extends TestCase {
                 return 42;
             });
 
-            $context->start();
+            yield $context->start();
             $this->assertSame(42, yield $context->join());
         });
     }
@@ -151,7 +155,7 @@ abstract class AbstractContextTest extends TestCase {
 
             $value = 42;
 
-            $context->start();
+            yield $context->start();
             $this->assertSame(1, yield $context->receive());
             yield $context->send($value);
             $this->assertSame($value, yield $context->join());
@@ -169,7 +173,7 @@ abstract class AbstractContextTest extends TestCase {
                 return 42;
             });
 
-            $context->start();
+            yield $context->start();
             $value = yield $context->join();
         });
     }
@@ -215,7 +219,7 @@ abstract class AbstractContextTest extends TestCase {
                 return 42;
             });
 
-            $context->start();
+            yield $context->start();
             $value = yield $context->receive();
             $value = yield $context->receive();
             $value = yield $context->join();
@@ -233,7 +237,7 @@ abstract class AbstractContextTest extends TestCase {
                 return 42;
             });
 
-            $context->start();
+            yield $context->start();
             yield $context->send(new ExitSuccess(0));
             $value = yield $context->join();
         });
@@ -249,7 +253,7 @@ abstract class AbstractContextTest extends TestCase {
                 exit;
             });
 
-            $context->start();
+            yield $context->start();
             $value = yield $context->join();
         });
     }
@@ -264,7 +268,7 @@ abstract class AbstractContextTest extends TestCase {
                 exit;
             });
 
-            $context->start();
+            yield $context->start();
             $value = yield $context->receive();
         });
     }
@@ -279,7 +283,7 @@ abstract class AbstractContextTest extends TestCase {
                 exit;
             });
 
-            $context->start();
+            yield $context->start();
             yield $context->send(\str_pad("", 1024 * 1024, "-"));
         });
     }

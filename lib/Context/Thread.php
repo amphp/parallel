@@ -2,12 +2,14 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Failure;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
+use Amp\Success;
 use function Amp\call;
 
 /**
@@ -57,12 +59,14 @@ class Thread implements Context {
      *     \Amp\Parallel\Sync\Channel.
      * @param mixed ...$args Additional arguments to pass to the given callable.
      *
-     * @return Thread The thread object that was spawned.
+     * @return Promise<Thread> The thread object that was spawned.
      */
-    public static function run(callable $function, ...$args): self {
+    public static function run(callable $function, ...$args): Promise {
         $thread = new self($function, ...$args);
-        $thread->start();
-        return $thread;
+        return call(function () use ($thread) {
+            yield $thread->start();
+            return $thread;
+        });
     }
 
     /**
@@ -120,7 +124,7 @@ class Thread implements Context {
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
      */
-    public function start() {
+    public function start(): Promise {
         if ($this->oid !== 0) {
             throw new StatusError('The thread has already been started.');
         }
@@ -138,7 +142,7 @@ class Thread implements Context {
             if ($error = \error_get_last()) {
                 $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
             }
-            throw new ContextException($message);
+            return new Failure(new ContextException($message));
         }
 
         list($channel, $this->socket) = $sockets;
@@ -146,7 +150,7 @@ class Thread implements Context {
         $thread = $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
 
         if (!$this->thread->start(\PTHREADS_INHERIT_INI)) {
-            throw new ContextException('Failed to start the thread.');
+            return new Failure(new ContextException('Failed to start the thread.'));
         }
 
         $channel = $this->channel = new ChannelledSocket($channel, $channel);
@@ -160,6 +164,8 @@ class Thread implements Context {
         });
 
         Loop::disable($this->watcher);
+
+        return new Success;
     }
 
     /**

@@ -16,7 +16,7 @@ class ThreadTest extends AbstractContextTest {
 
     public function testSpawnStartsThread() {
         Loop::run(function () {
-            $thread = Thread::run(function () {
+            $thread = yield Thread::run(function () {
                 usleep(100);
             });
 

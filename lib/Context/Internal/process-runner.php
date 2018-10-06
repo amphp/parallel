@@ -39,11 +39,23 @@ if (\function_exists("cli_set_process_title")) {
 })();
 
 Loop::run(function () use ($argc, $argv) {
-    $channel = new Sync\ChannelledSocket(\STDIN, \STDOUT);
-
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
+
+    if (!isset($argv[0])) {
+        throw new \Error("No socket path provided");
+    }
+
+    // Remove socket path from process arguments.
+    --$argc;
+    $uri = \array_shift($argv);
+
+    if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
+        throw new \RuntimeException("Could not connect to IPC socket");
+    }
+
+    $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
         // Protect current scope by requiring script within another function.
