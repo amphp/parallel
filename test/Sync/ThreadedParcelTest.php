@@ -20,7 +20,7 @@ class ThreadedParcelTest extends AbstractParcelTest {
             $value = 1;
             $parcel = new ThreadedParcel($value);
 
-            $thread = Thread::run(function (Channel $channel, ThreadedParcel $parcel) {
+            $thread = yield Thread::run(function (Channel $channel, ThreadedParcel $parcel) {
                 $parcel->synchronized(function (int $value) {
                     return $value + 1;
                 });
