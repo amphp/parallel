@@ -15,7 +15,7 @@ return function (Channel $channel) use ($argv): \Generator {
 
     $id = $argv[1];
 
-    printf("Child process using parcel ID %s\n", $id);
+    \printf("Child process using parcel ID %s\n", $id);
 
     $parcel = SharedMemoryParcel::use($id);
 
@@ -23,12 +23,12 @@ return function (Channel $channel) use ($argv): \Generator {
         return $value + 1;
     });
 
-    printf("Value after modifying in child thread: %s\n", $value);
+    \printf("Value after modifying in child thread: %s\n", $value);
 
     yield new Delayed(500); // Parent process should access parcel during this time.
 
     // Unwrapping the parcel now should give value from parent process.
-    printf("Value in child thread after being modified in main thread: %s\n", yield $parcel->unwrap());
+    \printf("Value in child thread after being modified in main thread: %s\n", yield $parcel->unwrap());
 
     yield $parcel->synchronized(function (int $value) {
         return $value + 1;

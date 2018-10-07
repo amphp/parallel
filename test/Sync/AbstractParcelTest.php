@@ -5,18 +5,21 @@ namespace Amp\Parallel\Test\Sync;
 use Amp\PHPUnit\TestCase;
 use Amp\Promise;
 
-abstract class AbstractParcelTest extends TestCase {
+abstract class AbstractParcelTest extends TestCase
+{
     /**
      * @return \Amp\Parallel\Sync\Parcel
      */
     abstract protected function createParcel($value);
 
-    public function testUnwrapIsOfCorrectType() {
+    public function testUnwrapIsOfCorrectType()
+    {
         $object = $this->createParcel(new \stdClass);
         $this->assertInstanceOf('stdClass', Promise\wait($object->unwrap()));
     }
 
-    public function testUnwrapIsEqual() {
+    public function testUnwrapIsEqual()
+    {
         $object = new \stdClass;
         $shared = $this->createParcel($object);
         $this->assertEquals($object, Promise\wait($shared->unwrap()));
@@ -25,12 +28,13 @@ abstract class AbstractParcelTest extends TestCase {
     /**
      * @depends testUnwrapIsEqual
      */
-    public function testSynchronized() {
+    public function testSynchronized()
+    {
         $parcel = $this->createParcel(0);
 
         $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(0, $value);
-            usleep(10000);
+            \usleep(10000);
             return 1;
         });
 
@@ -42,7 +46,7 @@ abstract class AbstractParcelTest extends TestCase {
 
         $awaitable = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
-            usleep(10000);
+            \usleep(10000);
             return 2;
         });
 

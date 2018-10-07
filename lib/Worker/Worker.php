@@ -7,7 +7,8 @@ use Amp\Promise;
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
  */
-interface Worker {
+interface Worker
+{
     /**
      * Checks if the worker is running.
      *

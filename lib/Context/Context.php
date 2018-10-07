@@ -5,7 +5,8 @@ namespace Amp\Parallel\Context;
 use Amp\Parallel\Sync\Channel;
 use Amp\Promise;
 
-interface Context extends Channel {
+interface Context extends Channel
+{
     /**
      * @return bool
      */

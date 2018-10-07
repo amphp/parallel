@@ -5,21 +5,24 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Promise;
 
 /** @internal */
-abstract class TaskResult {
+abstract class TaskResult
+{
     /** @var string Task identifier. */
     private $id;
 
     /**
      * @param string $id Task identifier.
      */
-    public function __construct(string $id) {
+    public function __construct(string $id)
+    {
         $this->id = $id;
     }
 
     /**
      * @return string Task identifier.
      */
-    public function getId(): string {
+    public function getId(): string
+    {
         return $this->id;
     }
 

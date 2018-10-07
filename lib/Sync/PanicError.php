@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-class PanicError extends \Error {
+class PanicError extends \Error
+{
     /** @var string Class name of uncaught exception. */
     private $name;
 
@@ -16,7 +17,8 @@ class PanicError extends \Error {
      * @param string $message The panic message.
      * @param string $trace The panic stack trace.
      */
-    public function __construct(string $name, string $message = '', string $trace = '') {
+    public function __construct(string $name, string $message = '', string $trace = '')
+    {
         parent::__construct($message);
 
         $this->name = $name;
@@ -28,7 +30,8 @@ class PanicError extends \Error {
      *
      * @return string
      */
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
@@ -37,7 +40,8 @@ class PanicError extends \Error {
      *
      * @return string
      */
-    public function getPanicTrace(): string {
+    public function getPanicTrace(): string
+    {
         return $this->trace;
     }
 }

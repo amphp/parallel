@@ -7,8 +7,10 @@ use Amp\Loop;
 use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\PHPUnit\TestCase;
 
-class BasicEnvironmentTest extends TestCase {
-    public function testBasicOperations() {
+class BasicEnvironmentTest extends TestCase
+{
+    public function testBasicOperations()
+    {
         $environment = new BasicEnvironment;
         $key = "key";
 
@@ -27,7 +29,8 @@ class BasicEnvironmentTest extends TestCase {
         $this->assertNull($environment->get($key));
     }
 
-    public function testArrayAccess() {
+    public function testArrayAccess()
+    {
         $environment = new BasicEnvironment;
         $key = "key";
 
@@ -46,7 +49,8 @@ class BasicEnvironmentTest extends TestCase {
         $this->assertNull($environment[$key]);
     }
 
-    public function testClear() {
+    public function testClear()
+    {
         $environment = new BasicEnvironment;
 
         $environment->set("key1", 1);
@@ -58,7 +62,8 @@ class BasicEnvironmentTest extends TestCase {
         $this->assertFalse($environment->exists("key2"));
     }
 
-    public function testTtl() {
+    public function testTtl()
+    {
         Loop::run(function () {
             $environment = new BasicEnvironment;
             $key = "key";
@@ -74,7 +79,8 @@ class BasicEnvironmentTest extends TestCase {
     /**
      * @depends testTtl
      */
-    public function testRemovingTtl() {
+    public function testRemovingTtl()
+    {
         Loop::run(function () {
             $environment = new BasicEnvironment;
             $key = "key";
@@ -90,7 +96,8 @@ class BasicEnvironmentTest extends TestCase {
         });
     }
 
-    public function testShorteningTtl() {
+    public function testShorteningTtl()
+    {
         Loop::run(function () {
             $environment = new BasicEnvironment;
             $key = "key";
@@ -104,7 +111,8 @@ class BasicEnvironmentTest extends TestCase {
         });
     }
 
-    public function testLengtheningTtl() {
+    public function testLengtheningTtl()
+    {
         Loop::run(function () {
             $environment = new BasicEnvironment;
             $key = "key";
@@ -122,7 +130,8 @@ class BasicEnvironmentTest extends TestCase {
         });
     }
 
-    public function testAccessExtendsTtl() {
+    public function testAccessExtendsTtl()
+    {
         Loop::run(function () {
             $environment = new BasicEnvironment;
             $key1 = "key1";

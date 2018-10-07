@@ -11,36 +11,43 @@ use Amp\PHPUnit\TestCase;
 use Amp\Promise;
 use Amp\Success;
 
-class ChannelledStreamTest extends TestCase {
+class ChannelledStreamTest extends TestCase
+{
     /**
      * @return \Amp\ByteStream\InputStream|\Amp\ByteStream\OutputStream
      */
-    protected function createMockStream() {
+    protected function createMockStream()
+    {
         return new class implements InputStream, OutputStream {
             private $buffer = "";
 
-            public function read(): Promise {
+            public function read(): Promise
+            {
                 $data = $this->buffer;
                 $this->buffer = "";
                 return new Success($data);
             }
 
-            public function write(string $data): Promise {
+            public function write(string $data): Promise
+            {
                 $this->buffer .= $data;
                 return new Success(\strlen($data));
             }
 
-            public function end(string $finalData = ""): Promise {
+            public function end(string $finalData = ""): Promise
+            {
                 throw new \BadMethodCallException;
             }
 
-            public function close() {
+            public function close()
+            {
                 throw new \BadMethodCallException;
             }
         };
     }
 
-    public function testSendReceive() {
+    public function testSendReceive()
+    {
         Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock, $mock);
@@ -57,7 +64,8 @@ class ChannelledStreamTest extends TestCase {
     /**
      * @depends testSendReceive
      */
-    public function testSendReceiveLongData() {
+    public function testSendReceiveLongData()
+    {
         Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock, $mock);
@@ -66,7 +74,7 @@ class ChannelledStreamTest extends TestCase {
             $length = 0xffff;
             $message = '';
             for ($i = 0; $i < $length; ++$i) {
-                $message .= chr(mt_rand(0, 255));
+                $message .= \chr(\mt_rand(0, 255));
             }
 
             yield $a->send($message);
@@ -79,14 +87,15 @@ class ChannelledStreamTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testInvalidDataReceived() {
+    public function testInvalidDataReceived()
+    {
         Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock, $mock);
             $b = new ChannelledStream($mock, $mock);
 
             // Close $a. $b should close on next read...
-            yield $mock->write(pack('L', 10) . '1234567890');
+            yield $mock->write(\pack('L', 10) . '1234567890');
             $data = yield $b->receive();
         });
     }
@@ -95,7 +104,8 @@ class ChannelledStreamTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testSendUnserializableData() {
+    public function testSendUnserializableData()
+    {
         Loop::run(function () {
             $mock = $this->createMockStream();
             $a = new ChannelledStream($mock, $mock);
@@ -111,7 +121,8 @@ class ChannelledStreamTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testSendAfterClose() {
+    public function testSendAfterClose()
+    {
         Loop::run(function () {
             $mock = $this->createMock(OutputStream::class);
             $mock->expects($this->once())
@@ -132,7 +143,8 @@ class ChannelledStreamTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testReceiveAfterClose() {
+    public function testReceiveAfterClose()
+    {
         Loop::run(function () {
             $mock = $this->createMock(InputStream::class);
             $mock->expects($this->once())

@@ -10,12 +10,15 @@ use Amp\Parallel\Sync\ThreadedParcel;
 /**
  * @requires extension pthreads
  */
-class ThreadedParcelTest extends AbstractParcelTest {
-    protected function createParcel($value) {
+class ThreadedParcelTest extends AbstractParcelTest
+{
+    protected function createParcel($value)
+    {
         return new ThreadedParcel($value);
     }
 
-    public function testWithinThread() {
+    public function testWithinThread()
+    {
         Loop::run(function () {
             $value = 1;
             $parcel = new ThreadedParcel($value);

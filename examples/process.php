@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-require dirname(__DIR__).'/vendor/autoload.php';
+require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
@@ -24,8 +24,8 @@ Loop::run(function () {
 
         yield $context->send("Start data"); // Data sent to child process, received on line 9 of blocking-process.php
 
-        printf("Received the following from child: %s\n", yield $context->receive()); // Sent on line 14 of blocking-process.php
-        printf("Process ended with value %d!\n", yield $context->join());
+        \printf("Received the following from child: %s\n", yield $context->receive()); // Sent on line 14 of blocking-process.php
+        \printf("Process ended with value %d!\n", yield $context->join());
     } finally {
         Loop::cancel($timer);
     }

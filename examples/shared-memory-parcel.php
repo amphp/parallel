@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-require dirname(__DIR__).'/vendor/autoload.php';
+require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
@@ -9,7 +9,7 @@ use Amp\Parallel\Sync\SharedMemoryParcel;
 
 Loop::run(function () {
     // Create a parcel that then can be accessed in any number of child processes.
-    $parcel = SharedMemoryParcel::create($id = bin2hex(random_bytes(10)), 1);
+    $parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);
 
     $context = Process::run([
         __DIR__ . "/parcel-process.php",
@@ -24,5 +24,5 @@ Loop::run(function () {
 
     yield $context->join(); // Wait for child process to finish.
 
-    printf("Final value of parcel: %d\n", yield $parcel->unwrap());
+    \printf("Final value of parcel: %d\n", yield $parcel->unwrap());
 });

@@ -8,7 +8,8 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Promise;
 use function Amp\call;
 
-class ProcessHub {
+class ProcessHub
+{
     /** @var resource|null */
     private $server;
 
@@ -21,7 +22,8 @@ class ProcessHub {
     /** @var Deferred|null */
     private $acceptor;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->uri = "unix://" . \tempnam(\sys_get_temp_dir(), "amp-cluster-ipc-") . ".sock";
         $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN);
 
@@ -46,16 +48,19 @@ class ProcessHub {
         Loop::disable($this->watcher);
     }
 
-    public function __destruct() {
+    public function __destruct()
+    {
         Loop::cancel($this->watcher);
         \fclose($this->server);
     }
 
-    public function getUri(): string {
+    public function getUri(): string
+    {
         return $this->uri;
     }
 
-    public function accept(): Promise {
+    public function accept(): Promise
+    {
         return call(function () {
             while ($this->acceptor) {
                 yield $this->acceptor->promise();

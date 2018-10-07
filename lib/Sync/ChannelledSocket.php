@@ -5,7 +5,8 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\ResourceInputStream;
 use Amp\ByteStream\ResourceOutputStream;
 
-class ChannelledSocket extends ChannelledStream {
+class ChannelledSocket extends ChannelledStream
+{
     /** @var \Amp\ByteStream\ResourceInputStream */
     private $read;
 
@@ -18,7 +19,8 @@ class ChannelledSocket extends ChannelledStream {
      *
      * @throws \Error If a stream resource is not given for $resource.
      */
-    public function __construct($read, $write) {
+    public function __construct($read, $write)
+    {
         parent::__construct(
             $this->read = new ResourceInputStream($read),
             $this->write = new ResourceOutputStream($write)
@@ -28,7 +30,8 @@ class ChannelledSocket extends ChannelledStream {
     /**
      * Closes the read and write resource streams.
      */
-    public function close() {
+    public function close()
+    {
         $this->read->close();
         $this->write->close();
     }

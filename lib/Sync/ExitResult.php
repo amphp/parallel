@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-interface ExitResult {
+interface ExitResult
+{
     /**
      * @return mixed Return value of the callable given to the execution context.
      *

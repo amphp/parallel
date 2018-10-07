@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-require dirname(__DIR__).'/vendor/autoload.php';
+require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
@@ -17,15 +17,15 @@ Loop::run(function () {
     try {
         // Create a new child thread that does some blocking stuff.
         $context = Thread::run(function (Channel $channel): \Generator {
-            printf("Received the following from parent: %s\n", yield $channel->receive());
+            \printf("Received the following from parent: %s\n", yield $channel->receive());
 
             print "Sleeping for 3 seconds...\n";
-            sleep(3); // Blocking call in thread.
+            \sleep(3); // Blocking call in thread.
 
             yield $channel->send("Data sent from child.");
 
             print "Sleeping for 2 seconds...\n";
-            sleep(2); // Blocking call in thread.
+            \sleep(2); // Blocking call in thread.
 
             return 42;
         });
@@ -35,8 +35,8 @@ Loop::run(function () {
 
         yield $context->send("Start data");
 
-        printf("Received the following from child: %s\n", yield $context->receive());
-        printf("Thread ended with value %d!\n", yield $context->join());
+        \printf("Received the following from child: %s\n", yield $context->receive());
+        \printf("Thread ended with value %d!\n", yield $context->join());
     } finally {
         Loop::cancel($timer);
     }

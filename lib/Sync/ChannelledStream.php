@@ -13,7 +13,8 @@ use function Amp\call;
  *
  * Supports full duplex read and write.
  */
-class ChannelledStream implements Channel {
+class ChannelledStream implements Channel
+{
     /** @var \Amp\ByteStream\InputStream */
     private $read;
 
@@ -32,7 +33,8 @@ class ChannelledStream implements Channel {
      * @param \Amp\ByteStream\InputStream $read
      * @param \Amp\ByteStream\OutputStream $write
      */
-    public function __construct(InputStream $read, OutputStream $write) {
+    public function __construct(InputStream $read, OutputStream $write)
+    {
         $this->read = $read;
         $this->write = $write;
         $this->received = new \SplQueue;
@@ -42,7 +44,8 @@ class ChannelledStream implements Channel {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Promise {
+    public function send($data): Promise
+    {
         return call(function () use ($data) {
             try {
                 return yield $this->write->write($this->parser->encode($data));
@@ -55,7 +58,8 @@ class ChannelledStream implements Channel {
     /**
      * {@inheritdoc}
      */
-    public function receive(): Promise {
+    public function receive(): Promise
+    {
         return call(function () {
             while ($this->received->isEmpty()) {
                 try {

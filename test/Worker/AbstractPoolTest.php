@@ -9,7 +9,8 @@ use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\TestCase;
 use Amp\Promise;
 
-abstract class AbstractPoolTest extends TestCase {
+abstract class AbstractPoolTest extends TestCase
+{
     /**
      * @param int $min
      * @param int $max
@@ -18,7 +19,8 @@ abstract class AbstractPoolTest extends TestCase {
      */
     abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
 
-    public function testIsRunning() {
+    public function testIsRunning()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -29,7 +31,8 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testIsIdleOnStart() {
+    public function testIsIdleOnStart()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -39,12 +42,14 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testGetMaxSize() {
+    public function testGetMaxSize()
+    {
         $pool = $this->createPool(17);
         $this->assertEquals(17, $pool->getMaxSize());
     }
 
-    public function testWorkersIdleOnStart() {
+    public function testWorkersIdleOnStart()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -54,7 +59,8 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testEnqueue() {
+    public function testEnqueue()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -65,7 +71,8 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testEnqueueMultiple() {
+    public function testEnqueueMultiple()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -81,14 +88,16 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testKill() {
+    public function testKill()
+    {
         $pool = $this->createPool();
 
         $this->assertRunTimeLessThan([$pool, 'kill'], 1000);
         $this->assertFalse($pool->isRunning());
     }
 
-    public function testGet() {
+    public function testGet()
+    {
         Loop::run(function () {
             $pool = $this->createPool();
 
@@ -106,7 +115,8 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testBusyPool() {
+    public function testBusyPool()
+    {
         Loop::run(function () {
             $pool = $this->createPool(2);
 
@@ -131,7 +141,8 @@ abstract class AbstractPoolTest extends TestCase {
         });
     }
 
-    public function testCleanGarbageCollection() {
+    public function testCleanGarbageCollection()
+    {
         // See https://github.com/amphp/parallel-functions/issues/5
         Loop::run(function () {
             for ($i = 0; $i < 3; $i++) {

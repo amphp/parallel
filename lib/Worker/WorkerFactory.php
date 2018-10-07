@@ -5,7 +5,8 @@ namespace Amp\Parallel\Worker;
 /**
  * Interface for factories used to create new workers.
  */
-interface WorkerFactory {
+interface WorkerFactory
+{
     /**
      * Creates a new worker instance.
      *

@@ -5,7 +5,8 @@ namespace Amp\Parallel\Worker;
 use Amp\Loop;
 use Amp\Struct;
 
-class BasicEnvironment implements Environment {
+class BasicEnvironment implements Environment
+{
     /** @var array */
     private $data = [];
 
@@ -15,7 +16,8 @@ class BasicEnvironment implements Environment {
     /** @var string */
     private $timer;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->queue = $queue = new \SplPriorityQueue;
         $data = &$this->data;
 
@@ -68,7 +70,8 @@ class BasicEnvironment implements Environment {
      *
      * @return bool
      */
-    public function exists(string $key): bool {
+    public function exists(string $key): bool
+    {
         return isset($this->data[$key]);
     }
 
@@ -77,7 +80,8 @@ class BasicEnvironment implements Environment {
      *
      * @return mixed|null Returns null if the key does not exist.
      */
-    public function get(string $key) {
+    public function get(string $key)
+    {
         if (!isset($this->data[$key])) {
             return null;
         }
@@ -102,7 +106,8 @@ class BasicEnvironment implements Environment {
      *
      * @throws \Error If the time-to-live is not a positive integer.
      */
-    public function set(string $key, $value, int $ttl = null) {
+    public function set(string $key, $value, int $ttl = null)
+    {
         if ($value === null) {
             $this->delete($key);
             return;
@@ -135,7 +140,8 @@ class BasicEnvironment implements Environment {
     /**
      * @param string $key
      */
-    public function delete(string $key) {
+    public function delete(string $key)
+    {
         unset($this->data[$key]);
     }
 
@@ -146,7 +152,8 @@ class BasicEnvironment implements Environment {
      *
      * @return bool
      */
-    public function offsetExists($key) {
+    public function offsetExists($key)
+    {
         return $this->exists($key);
     }
 
@@ -157,7 +164,8 @@ class BasicEnvironment implements Environment {
      *
      * @return mixed
      */
-    public function offsetGet($key) {
+    public function offsetGet($key)
+    {
         return $this->get($key);
     }
 
@@ -167,7 +175,8 @@ class BasicEnvironment implements Environment {
      * @param string $key
      * @param mixed $value
      */
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value)
+    {
         $this->set($key, $value);
     }
 
@@ -176,14 +185,16 @@ class BasicEnvironment implements Environment {
      *
      * @param string $key
      */
-    public function offsetUnset($key) {
+    public function offsetUnset($key)
+    {
         $this->delete($key);
     }
 
     /**
      * Removes all values.
      */
-    public function clear() {
+    public function clear()
+    {
         $this->data = [];
 
         Loop::disable($this->timer);

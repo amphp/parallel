@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
-class TaskError extends \Error {
+class TaskError extends \Error
+{
     /** @var string Class name of error thrown from task. */
     private $name;
 
@@ -14,7 +15,8 @@ class TaskError extends \Error {
      * @param string $message The panic message.
      * @param string $trace The panic stack trace.
      */
-    public function __construct(string $name, string $message = '', string $trace = '') {
+    public function __construct(string $name, string $message = '', string $trace = '')
+    {
         parent::__construct($message);
 
         $this->name = $name;
@@ -26,7 +28,8 @@ class TaskError extends \Error {
      *
      * @return string
      */
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
@@ -35,7 +38,8 @@ class TaskError extends \Error {
      *
      * @return string
      */
-    public function getWorkerTrace(): string {
+    public function getWorkerTrace(): string
+    {
         return $this->trace;
     }
 }

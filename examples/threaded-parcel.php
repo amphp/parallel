@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-require dirname(__DIR__).'/vendor/autoload.php';
+require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
@@ -17,12 +17,12 @@ Loop::run(function () {
             return $value + 1;
         });
 
-        printf("Value after modifying in child thread: %s\n", $value);
+        \printf("Value after modifying in child thread: %s\n", $value);
 
         yield new Delayed(500); // Main thread should access parcel during this time.
 
         // Unwrapping the parcel now should give value from main thread.
-        printf("Value in child thread after being modified in main thread: %s\n", yield $parcel->unwrap());
+        \printf("Value in child thread after being modified in main thread: %s\n", yield $parcel->unwrap());
 
         yield $parcel->synchronized(function (int $value) {
             return $value + 1;
@@ -37,5 +37,5 @@ Loop::run(function () {
 
     yield $context->join(); // Wait for child thread to finish.
 
-    printf("Final value of parcel: %d\n", yield $parcel->unwrap());
+    \printf("Final value of parcel: %d\n", yield $parcel->unwrap());
 });

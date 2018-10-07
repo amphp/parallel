@@ -8,8 +8,10 @@ use Amp\Parallel\Worker\WorkerThread;
  * @group threading
  * @requires extension pthreads
  */
-class WorkerThreadTest extends AbstractWorkerTest {
-    protected function createWorker() {
+class WorkerThreadTest extends AbstractWorkerTest
+{
+    protected function createWorker()
+    {
         return new WorkerThread;
     }
 }

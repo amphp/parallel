@@ -12,7 +12,8 @@ use function Amp\call;
 /**
  * Base class for most common types of task workers.
  */
-abstract class AbstractWorker implements Worker {
+abstract class AbstractWorker implements Worker
+{
     /** @var \Amp\Parallel\Context\Context */
     private $context;
 
@@ -25,7 +26,8 @@ abstract class AbstractWorker implements Worker {
     /**
      * @param \Amp\Parallel\Context\Context $context
      */
-    public function __construct(Context $context) {
+    public function __construct(Context $context)
+    {
         if ($context->isRunning()) {
             throw new \Error("The context was already running");
         }
@@ -36,21 +38,24 @@ abstract class AbstractWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool {
+    public function isRunning(): bool
+    {
         return $this->context->isRunning();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isIdle(): bool {
+    public function isIdle(): bool
+    {
         return $this->pending === null;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task): Promise {
+    public function enqueue(Task $task): Promise
+    {
         if ($this->shutdown) {
             throw new StatusError("The worker has been shut down");
         }
@@ -100,7 +105,8 @@ abstract class AbstractWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): Promise {
+    public function shutdown(): Promise
+    {
         if ($this->shutdown) {
             throw new StatusError("The worker is not running");
         }
@@ -125,7 +131,8 @@ abstract class AbstractWorker implements Worker {
     /**
      * {@inheritdoc}
      */
-    public function kill() {
+    public function kill()
+    {
         $this->cancel();
     }
 
@@ -136,7 +143,8 @@ abstract class AbstractWorker implements Worker {
      *
      * @param \Throwable|null $exception Optional exception to be used as the previous exception.
      */
-    protected function cancel(\Throwable $exception = null) {
+    protected function cancel(\Throwable $exception = null)
+    {
         if ($this->context->isRunning()) {
             $this->context->kill();
         }

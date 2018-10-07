@@ -7,15 +7,15 @@
 use Amp\Parallel\Sync\Channel;
 
 return function (Channel $channel): \Generator {
-    printf("Received the following from parent: %s\n", yield $channel->receive());
+    \printf("Received the following from parent: %s\n", yield $channel->receive());
 
     print "Sleeping for 3 seconds...\n";
-    sleep(3); // Blocking call in process.
+    \sleep(3); // Blocking call in process.
 
     yield $channel->send("Data sent from child.");
 
     print "Sleeping for 2 seconds...\n";
-    sleep(2); // Blocking call in process.
+    \sleep(2); // Blocking call in process.
 
     return 42;
 };

@@ -10,7 +10,8 @@ use function Amp\call;
 /**
  * A thread-safe container that shares a value between multiple threads.
  */
-class ThreadedParcel implements Parcel {
+class ThreadedParcel implements Parcel
+{
     /** @var \Amp\Sync\ThreadedMutex */
     private $mutex;
 
@@ -22,7 +23,8 @@ class ThreadedParcel implements Parcel {
      *
      * @param mixed $value The value to store in the container.
      */
-    public function __construct($value) {
+    public function __construct($value)
+    {
         $this->mutex = new ThreadedMutex;
         $this->storage = new Internal\ParcelStorage($value);
     }
@@ -30,14 +32,16 @@ class ThreadedParcel implements Parcel {
     /**
      * {@inheritdoc}
      */
-    public function unwrap(): Promise {
+    public function unwrap(): Promise
+    {
         return new Success($this->storage->get());
     }
 
     /**
      * @return \Amp\Promise
      */
-    public function synchronized(callable $callback): Promise {
+    public function synchronized(callable $callback): Promise
+    {
         return call(function () use ($callback) {
             /** @var \Amp\Sync\Lock $lock */
             $lock = yield $this->mutex->acquire();

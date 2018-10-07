@@ -5,7 +5,8 @@ namespace Amp\Parallel\Worker;
 /**
  * A runnable unit of execution.
  */
-interface Task {
+interface Task
+{
     /**
      * Runs the task inside the caller's context.
      *

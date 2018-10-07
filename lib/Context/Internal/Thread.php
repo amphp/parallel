@@ -16,7 +16,8 @@ use function Amp\call;
  *
  * @internal
  */
-class Thread extends \Thread {
+class Thread extends \Thread
+{
     const KILL_CHECK_FREQUENCY = 250;
 
     /** @var callable The function to execute in the thread. */
@@ -38,7 +39,8 @@ class Thread extends \Thread {
      * @param callable $function The function to execute in the thread.
      * @param mixed[]  $args     Arguments to pass to the function.
      */
-    public function __construct($socket, callable $function, array $args = []) {
+    public function __construct($socket, callable $function, array $args = [])
+    {
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
@@ -49,7 +51,8 @@ class Thread extends \Thread {
      *
      * @codeCoverageIgnore Only executed in thread.
      */
-    public function run() {
+    public function run()
+    {
         /* First thing we need to do is re-initialize the class autoloader. If
          * we don't do this first, any object of a class that was loaded after
          * the thread started will just be garbage data and unserializable
@@ -106,7 +109,8 @@ class Thread extends \Thread {
     /**
      * Sets a local variable to true so the running event loop can check for a kill signal.
      */
-    public function kill() {
+    public function kill()
+    {
         return $this->killed = true;
     }
 
@@ -117,7 +121,8 @@ class Thread extends \Thread {
      *
      * @codeCoverageIgnore Only executed in thread.
      */
-    private function execute(Channel $channel): \Generator {
+    private function execute(Channel $channel): \Generator
+    {
         try {
             $result = new ExitSuccess(yield call($this->function, $channel, ...$this->args));
         } catch (\Throwable $exception) {

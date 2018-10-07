@@ -7,7 +7,8 @@ use Amp\Parallel\Context\Process;
 /**
  * A worker process that executes task objects.
  */
-class WorkerProcess extends AbstractWorker {
+class WorkerProcess extends AbstractWorker
+{
     const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
 
     /**
@@ -19,7 +20,8 @@ class WorkerProcess extends AbstractWorker {
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, array $env = [], string $binary = null) {
+    public function __construct(string $envClassName = BasicEnvironment::class, array $env = [], string $binary = null)
+    {
         $script = [
             self::SCRIPT_PATH,
             $envClassName,

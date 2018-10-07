@@ -11,8 +11,10 @@ use Amp\Parallel\Worker\WorkerThread;
  * @group threading
  * @requires extension pthreads
  */
-class ThreadPoolTest extends AbstractPoolTest {
-    protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool {
+class ThreadPoolTest extends AbstractPoolTest
+{
+    protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool
+    {
         $factory = $this->createMock(WorkerFactory::class);
         $factory->method('create')->will($this->returnCallback(function () {
             return new WorkerThread;

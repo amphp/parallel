@@ -6,11 +6,13 @@ use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\PHPUnit\TestCase;
 
-class ChannelledSocketTest extends TestCase {
+class ChannelledSocketTest extends TestCase
+{
     /**
      * @return resource[]
      */
-    protected function createSockets() {
+    protected function createSockets()
+    {
         if (($sockets = @\stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
             $message = "Failed to create socket pair";
             if ($error = \error_get_last()) {
@@ -21,7 +23,8 @@ class ChannelledSocketTest extends TestCase {
         return $sockets;
     }
 
-    public function testSendReceive() {
+    public function testSendReceive()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);
@@ -38,7 +41,8 @@ class ChannelledSocketTest extends TestCase {
     /**
      * @depends testSendReceive
      */
-    public function testSendReceiveLongData() {
+    public function testSendReceiveLongData()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);
@@ -47,7 +51,7 @@ class ChannelledSocketTest extends TestCase {
             $length = 0xffff;
             $message = '';
             for ($i = 0; $i < $length; ++$i) {
-                $message .= chr(mt_rand(0, 255));
+                $message .= \chr(\mt_rand(0, 255));
             }
 
             $a->send($message);
@@ -60,13 +64,14 @@ class ChannelledSocketTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testInvalidDataReceived() {
+    public function testInvalidDataReceived()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);
             $b = new ChannelledSocket($right, $right);
 
-            fwrite($left, pack('L', 10) . '1234567890');
+            \fwrite($left, \pack('L', 10) . '1234567890');
             $data = yield $b->receive();
         });
     }
@@ -75,7 +80,8 @@ class ChannelledSocketTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testSendUnserializableData() {
+    public function testSendUnserializableData()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);
@@ -91,7 +97,8 @@ class ChannelledSocketTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testSendAfterClose() {
+    public function testSendAfterClose()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);
@@ -105,7 +112,8 @@ class ChannelledSocketTest extends TestCase {
      * @depends testSendReceive
      * @expectedException \Amp\Parallel\Sync\ChannelException
      */
-    public function testReceiveAfterClose() {
+    public function testReceiveAfterClose()
+    {
         Loop::run(function () {
             list($left, $right) = $this->createSockets();
             $a = new ChannelledSocket($left, $left);

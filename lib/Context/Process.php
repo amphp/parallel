@@ -12,7 +12,8 @@ use Amp\Promise;
 use function Amp\asyncCall;
 use function Amp\call;
 
-class Process implements Context {
+class Process implements Context
+{
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
 
     /** @var ByteStream\ResourceOutputStream */
@@ -47,7 +48,8 @@ class Process implements Context {
      *
      * @return Promise<Process>
      */
-    public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise {
+    public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise
+    {
         $process = new self($script, $cwd, $env, $binary);
         return call(function () use ($process) {
             yield $process->start();
@@ -64,7 +66,8 @@ class Process implements Context {
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $cwd = null, array $env = [], string $binary = null) {
+    public function __construct($script, string $cwd = null, array $env = [], string $binary = null)
+    {
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ProcessHub) {
             $this->hub = new Internal\ProcessHub;
@@ -141,7 +144,8 @@ class Process implements Context {
         $this->process = new BaseProcess($command, $cwd, $env);
     }
 
-    private static function locateBinary(): string {
+    private static function locateBinary(): string
+    {
         $executable = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? "php.exe" : "php";
 
         $paths = \array_filter(\explode(\PATH_SEPARATOR, \getenv("PATH")));
@@ -158,7 +162,8 @@ class Process implements Context {
         throw new \Error("Could not locate PHP executable binary");
     }
 
-    private function formatOptions(array $options) {
+    private function formatOptions(array $options)
+    {
         $result = [];
 
         foreach ($options as $option => $value) {
@@ -171,13 +176,15 @@ class Process implements Context {
     /**
      * Private method to prevent cloning.
      */
-    private function __clone() {
+    private function __clone()
+    {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function start(): Promise {
+    public function start(): Promise
+    {
         return call(function () {
             $this->process->start();
 
@@ -197,14 +204,16 @@ class Process implements Context {
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool {
+    public function isRunning(): bool
+    {
         return $this->process->isRunning();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receive(): Promise {
+    public function receive(): Promise
+    {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
@@ -231,7 +240,8 @@ class Process implements Context {
     /**
      * {@inheritdoc}
      */
-    public function send($data): Promise {
+    public function send($data): Promise
+    {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
@@ -246,7 +256,8 @@ class Process implements Context {
     /**
      * {@inheritdoc}
      */
-    public function join(): Promise {
+    public function join(): Promise
+    {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
@@ -281,7 +292,8 @@ class Process implements Context {
      * @throws \Amp\Process\ProcessException
      * @throws \Amp\Process\StatusError
      */
-    public function signal(int $signo) {
+    public function signal(int $signo)
+    {
         $this->process->signal($signo);
     }
 
@@ -293,14 +305,16 @@ class Process implements Context {
      * @return \Amp\Promise
      * @throws \Amp\Process\StatusError
      */
-    public function getPid(): Promise {
+    public function getPid(): Promise
+    {
         return $this->process->getPid();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function kill() {
+    public function kill()
+    {
         $this->process->kill();
     }
 }

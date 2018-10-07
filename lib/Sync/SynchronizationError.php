@@ -2,5 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-class SynchronizationError extends \Error {
+class SynchronizationError extends \Error
+{
 }

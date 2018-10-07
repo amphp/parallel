@@ -7,7 +7,8 @@ use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ExitSuccess;
 use Amp\PHPUnit\TestCase;
 
-abstract class AbstractContextTest extends TestCase {
+abstract class AbstractContextTest extends TestCase
+{
     /**
      * @param callable $function
      *
@@ -15,10 +16,11 @@ abstract class AbstractContextTest extends TestCase {
      */
     abstract public function createContext(callable $function);
 
-    public function testIsRunning() {
+    public function testIsRunning()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
-                usleep(100);
+                \usleep(100);
             });
 
             $this->assertFalse($context->isRunning());
@@ -33,10 +35,11 @@ abstract class AbstractContextTest extends TestCase {
         });
     }
 
-    public function testKill() {
+    public function testKill()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
-                usleep(1e6);
+                \usleep(1e6);
             });
 
             yield $context->start();
@@ -50,10 +53,11 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @expectedException \Amp\Parallel\Context\StatusError
      */
-    public function testStartWhileRunningThrowsError() {
+    public function testStartWhileRunningThrowsError()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
-                usleep(100);
+                \usleep(100);
             });
 
             yield $context->start();
@@ -64,11 +68,12 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @expectedException \Amp\Parallel\Context\StatusError
      */
-    public function testStartMultipleTimesThrowsError() {
+    public function testStartMultipleTimesThrowsError()
+    {
         $this->assertRunTimeGreaterThan(function () {
             Loop::run(function () {
                 $context = $this->createContext(function () {
-                    sleep(1);
+                    \sleep(1);
                 });
 
                 yield $context->start();
@@ -83,7 +88,8 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
      */
-    public function testExceptionInContextPanics() {
+    public function testExceptionInContextPanics()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 throw new \Exception('Exception in fork.');
@@ -97,7 +103,8 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
      */
-    public function testReturnUnserializableDataPanics() {
+    public function testReturnUnserializableDataPanics()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 return yield function () {};
@@ -108,11 +115,12 @@ abstract class AbstractContextTest extends TestCase {
         });
     }
 
-    public function testJoinWaitsForChild() {
+    public function testJoinWaitsForChild()
+    {
         $this->assertRunTimeGreaterThan(function () {
             Loop::run(function () {
                 $context = $this->createContext(function () {
-                    sleep(1);
+                    \sleep(1);
                 });
 
                 yield $context->start();
@@ -124,17 +132,19 @@ abstract class AbstractContextTest extends TestCase {
     /**
      * @expectedException \Amp\Parallel\Context\StatusError
      */
-    public function testJoinWithoutStartThrowsError() {
+    public function testJoinWithoutStartThrowsError()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
-                usleep(100);
+                \usleep(100);
             });
 
             yield $context->join();
         });
     }
 
-    public function testJoinResolvesWithContextReturn() {
+    public function testJoinResolvesWithContextReturn()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 return 42;
@@ -145,7 +155,8 @@ abstract class AbstractContextTest extends TestCase {
         });
     }
 
-    public function testSendAndReceive() {
+    public function testSendAndReceive()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 yield $channel->send(1);
@@ -166,7 +177,8 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Amp\Parallel\Sync\SynchronizationError
      */
-    public function testJoinWhenContextSendingData() {
+    public function testJoinWhenContextSendingData()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 yield $channel->send(0);
@@ -182,7 +194,8 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Amp\Parallel\Context\StatusError
      */
-    public function testReceiveBeforeContextHasStarted() {
+    public function testReceiveBeforeContextHasStarted()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 yield $channel->send(0);
@@ -197,7 +210,8 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Amp\Parallel\Context\StatusError
      */
-    public function testSendBeforeContextHasStarted() {
+    public function testSendBeforeContextHasStarted()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 yield $channel->send(0);
@@ -212,7 +226,8 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Amp\Parallel\Sync\SynchronizationError
      */
-    public function testReceiveWhenContextHasReturned() {
+    public function testReceiveWhenContextHasReturned()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 yield $channel->send(0);
@@ -230,7 +245,8 @@ abstract class AbstractContextTest extends TestCase {
      * @depends testSendAndReceive
      * @expectedException \Error
      */
-    public function testSendExitResult() {
+    public function testSendExitResult()
+    {
         Loop::run(function () {
             $context = $this->createContext(function (Channel $channel) {
                 $value = yield $channel->receive();
@@ -247,7 +263,8 @@ abstract class AbstractContextTest extends TestCase {
      * @expectedException \Amp\Parallel\Context\ContextException
      * @expectedExceptionMessage The context stopped responding
      */
-    public function testExitingContextOnJoin() {
+    public function testExitingContextOnJoin()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 exit;
@@ -262,7 +279,8 @@ abstract class AbstractContextTest extends TestCase {
      * @expectedException \Amp\Parallel\Sync\ChannelException
      * @expectedExceptionMessage The channel closed unexpectedly
      */
-    public function testExitingContextOnReceive() {
+    public function testExitingContextOnReceive()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 exit;
@@ -277,7 +295,8 @@ abstract class AbstractContextTest extends TestCase {
      * @expectedException \Amp\Parallel\Sync\ChannelException
      * @expectedExceptionMessage Sending on the channel failed
      */
-    public function testExitingContextOnSend() {
+    public function testExitingContextOnSend()
+    {
         Loop::run(function () {
             $context = $this->createContext(function () {
                 exit;

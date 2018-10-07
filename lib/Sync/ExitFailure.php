@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-class ExitFailure implements ExitResult {
+class ExitFailure implements ExitResult
+{
     /** @var string */
     private $type;
 
@@ -15,7 +16,8 @@ class ExitFailure implements ExitResult {
     /** @var array */
     private $trace;
 
-    public function __construct(\Throwable $exception) {
+    public function __construct(\Throwable $exception)
+    {
         $this->type = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
@@ -25,7 +27,8 @@ class ExitFailure implements ExitResult {
     /**
      * {@inheritdoc}
      */
-    public function getResult() {
+    public function getResult()
+    {
         throw new PanicError(
             $this->type,
             \sprintf(

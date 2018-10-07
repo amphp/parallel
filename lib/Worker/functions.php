@@ -15,7 +15,8 @@ const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
  *
  * @return \Amp\Parallel\Worker\Pool The global worker pool instance.
  */
-function pool(Pool $pool = null): Pool {
+function pool(Pool $pool = null): Pool
+{
     if ($pool === null) {
         $pool = Loop::getState(LOOP_POOL_IDENTIFIER);
         if ($pool) {
@@ -36,7 +37,8 @@ function pool(Pool $pool = null): Pool {
  *
  * @return \Amp\Promise<mixed>
  */
-function enqueue(Task $task): Promise {
+function enqueue(Task $task): Promise
+{
     return pool()->enqueue($task);
 }
 
@@ -45,7 +47,8 @@ function enqueue(Task $task): Promise {
  *
  * @return \Amp\Parallel\Worker\Worker
  */
-function get(): Worker {
+function get(): Worker
+{
     return pool()->get();
 }
 
@@ -54,7 +57,8 @@ function get(): Worker {
  *
  * @return \Amp\Parallel\Worker\Worker
  */
-function create(): Worker {
+function create(): Worker
+{
     return factory()->create();
 }
 
@@ -65,7 +69,8 @@ function create(): Worker {
  *
  * @return \Amp\Parallel\Worker\WorkerFactory
  */
-function factory(WorkerFactory $factory = null): WorkerFactory {
+function factory(WorkerFactory $factory = null): WorkerFactory
+{
     if ($factory === null) {
         $factory = Loop::getState(LOOP_FACTORY_IDENTIFIER);
         if ($factory) {

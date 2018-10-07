@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-require dirname(__DIR__).'/vendor/autoload.php';
+require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Coroutine;
 use Amp\Loop;
@@ -20,7 +20,7 @@ $tasks = [
 // Event loop for parallel tasks
 Loop::run(function () use (&$results, &$tasks) {
     $timer = Loop::repeat(200, function () {
-        printf(".");
+        \printf(".");
     });
     Loop::unreference($timer);
 
@@ -32,12 +32,12 @@ Loop::run(function () use (&$results, &$tasks) {
         $coroutines[] = function () use ($pool, $task, &$results) {
             $result = yield $pool->enqueue($task);
             $url = $task->getArgs()[0];
-            printf("\nRead from %s: %d bytes\n", $url, strlen($result));
+            \printf("\nRead from %s: %d bytes\n", $url, \strlen($result));
             $results[$url] = $result;
         };
     }
 
-    $coroutines = array_map(function (callable $coroutine): Coroutine {
+    $coroutines = \array_map(function (callable $coroutine): Coroutine {
         return new Coroutine($coroutine());
     }, $coroutines);
 
@@ -47,4 +47,4 @@ Loop::run(function () use (&$results, &$tasks) {
 });
 
 echo "\nResult array keys:\n";
-echo var_export(array_keys($results), true);
+echo \var_export(\array_keys($results), true);

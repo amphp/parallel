@@ -10,19 +10,23 @@ use Amp\Parallel\Worker\TaskError;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\TestCase;
 
-class NonAutoloadableTask implements Task {
-    public function run(Environment $environment) {
+class NonAutoloadableTask implements Task
+{
+    public function run(Environment $environment)
+    {
         return 1;
     }
 }
 
-abstract class AbstractWorkerTest extends TestCase {
+abstract class AbstractWorkerTest extends TestCase
+{
     /**
      * @return \Amp\Parallel\Worker\Worker
      */
     abstract protected function createWorker();
 
-    public function testWorkerConstantDefined() {
+    public function testWorkerConstantDefined()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
             $this->assertTrue(yield $worker->enqueue(new ConstantTask));
@@ -30,7 +34,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testIsRunning() {
+    public function testIsRunning()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
             $this->assertFalse($worker->isRunning());
@@ -44,7 +49,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testIsIdleOnStart() {
+    public function testIsIdleOnStart()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -54,7 +60,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testEnqueue() {
+    public function testEnqueue()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -65,7 +72,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testEnqueueMultipleSynchronous() {
+    public function testEnqueueMultipleSynchronous()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -81,7 +89,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testEnqueueMultipleAsynchronous() {
+    public function testEnqueueMultipleAsynchronous()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -104,7 +113,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testEnqueueMultipleThenShutdown() {
+    public function testEnqueueMultipleThenShutdown()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -126,7 +136,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testNotIdleOnEnqueue() {
+    public function testNotIdleOnEnqueue()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -138,7 +149,8 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testKill() {
+    public function testKill()
+    {
         $worker = $this->createWorker();
 
         $worker->enqueue(new TestTask(42));
@@ -147,7 +159,8 @@ abstract class AbstractWorkerTest extends TestCase {
         $this->assertFalse($worker->isRunning());
     }
 
-    public function testNonAutoloadableTask() {
+    public function testNonAutoloadableTask()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
@@ -163,13 +176,15 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testUnserializableTask() {
+    public function testUnserializableTask()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
             try {
                 yield $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-                    public function run(Environment $environment) {
+                    public function run(Environment $environment)
+                    {
                     }
                 });
                 $this->fail("Tasks that cannot be autoloaded should throw an exception");
@@ -181,12 +196,14 @@ abstract class AbstractWorkerTest extends TestCase {
         });
     }
 
-    public function testUnserializableTaskFollowedByValidTask() {
+    public function testUnserializableTaskFollowedByValidTask()
+    {
         Loop::run(function () {
             $worker = $this->createWorker();
 
             $promise1 = $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-                public function run(Environment $environment) {
+                public function run(Environment $environment)
+                {
                 }
             });
             $promise2 = $worker->enqueue(new TestTask(42));

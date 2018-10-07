@@ -2,5 +2,6 @@
 
 namespace Amp\Parallel\Context;
 
-class StatusError extends \Error {
+class StatusError extends \Error
+{
 }

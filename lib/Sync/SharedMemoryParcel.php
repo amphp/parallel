@@ -30,7 +30,8 @@ use function Amp\call;
  * @see http://man7.org/linux/man-pages/man2/shmctl.2.html How shared memory works on Linux.
  * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
  */
-class SharedMemoryParcel implements Parcel {
+class SharedMemoryParcel implements Parcel
+{
     /** @var int The byte offset to the start of the object data in memory. */
     const MEM_DATA_OFFSET = 7;
 
@@ -64,7 +65,8 @@ class SharedMemoryParcel implements Parcel {
      *
      * @return \Amp\Parallel\Sync\SharedMemoryParcel
      */
-    public static function create(string $id, $value, int $size = 8192, int $permissions = 0600): self {
+    public static function create(string $id, $value, int $size = 8192, int $permissions = 0600): self
+    {
         $parcel = new self($id);
         $parcel->init($value, $size, $permissions);
         return $parcel;
@@ -75,7 +77,8 @@ class SharedMemoryParcel implements Parcel {
      *
      * @return \Amp\Parallel\Sync\SharedMemoryParcel
      */
-    public static function use(string $id): self {
+    public static function use(string $id): self
+    {
         $parcel = new self($id);
         $parcel->open();
         return $parcel;
@@ -93,7 +96,8 @@ class SharedMemoryParcel implements Parcel {
      * @param int   $permissions The access permissions to set for the object.
      *                           If not specified defaults to 0600.
      */
-    private function __construct(string $id) {
+    private function __construct(string $id)
+    {
         if (!\extension_loaded("shmop")) {
             throw new \Error(__CLASS__ . " requires the shmop extension.");
         }
@@ -107,7 +111,8 @@ class SharedMemoryParcel implements Parcel {
      * @param int   $size
      * @param int   $permissions
      */
-    private function init($value, int $size = 8192, int $permissions = 0600) {
+    private function init($value, int $size = 8192, int $permissions = 0600)
+    {
         $this->semaphore = PosixSemaphore::create($this->id, 1);
         $this->initializer = \getmypid();
 
@@ -116,7 +121,8 @@ class SharedMemoryParcel implements Parcel {
         $this->wrap($value);
     }
 
-    private function open() {
+    private function open()
+    {
         $this->semaphore = PosixSemaphore::use($this->id);
         $this->memOpen($this->key, 'w', 0, 0);
     }
@@ -129,7 +135,8 @@ class SharedMemoryParcel implements Parcel {
      *
      * @return bool True if the object is freed, otherwise false.
      */
-    private function isFreed(): bool {
+    private function isFreed(): bool
+    {
         // If we are no longer connected to the memory segment, check if it has
         // been invalidated.
         if ($this->handle !== null) {
@@ -144,7 +151,8 @@ class SharedMemoryParcel implements Parcel {
     /**
      * {@inheritdoc}
      */
-    public function unwrap(): Promise {
+    public function unwrap(): Promise
+    {
         if ($this->isFreed()) {
             return new Failure(new SharedMemoryException('The object has already been freed.'));
         }
@@ -169,7 +177,8 @@ class SharedMemoryParcel implements Parcel {
      * memory segment on the next read attempt. Once all running processes and
      * threads disconnect from the old segment, it will be freed by the OS.
      */
-    protected function wrap($value) {
+    protected function wrap($value)
+    {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed.');
         }
@@ -203,7 +212,8 @@ class SharedMemoryParcel implements Parcel {
     /**
      * {@inheritdoc}
      */
-    public function synchronized(callable $callback): Promise {
+    public function synchronized(callable $callback): Promise
+    {
         return call(function () use ($callback) {
             /** @var \Amp\Sync\Lock $lock */
             $lock = yield $this->semaphore->acquire();
@@ -230,7 +240,8 @@ class SharedMemoryParcel implements Parcel {
      * process disconnect from the object, the shared memory block will be
      * destroyed by the OS.
      */
-    public function __destruct() {
+    public function __destruct()
+    {
         if ($this->initializer === 0 || $this->initializer !== \getmypid()) {
             return;
         }
@@ -253,20 +264,23 @@ class SharedMemoryParcel implements Parcel {
     /**
      * Private method to prevent cloning.
      */
-    private function __clone() {
+    private function __clone()
+    {
     }
 
     /**
      * Private method to prevent serialization.
      */
-    private function __sleep() {
+    private function __sleep()
+    {
     }
 
     /**
      * Updates the current memory segment handle, handling any moves made on the
      * data.
      */
-    private function handleMovedMemory() {
+    private function handleMovedMemory()
+    {
         // Read from the memory block and handle moved blocks until we find the
         // correct block.
         while (true) {
@@ -289,7 +303,8 @@ class SharedMemoryParcel implements Parcel {
      *
      * @return array An associative array of header data.
      */
-    private function getHeader(): array {
+    private function getHeader(): array
+    {
         $data = $this->memGet(0, self::MEM_DATA_OFFSET);
         return \unpack('Cstate/Lsize/Spermissions', $data);
     }
@@ -301,7 +316,8 @@ class SharedMemoryParcel implements Parcel {
      * @param int $size        The size of the stored data, or other value.
      * @param int $permissions The permissions mask on the memory segment.
      */
-    private function setHeader(int $state, int $size, int $permissions) {
+    private function setHeader(int $state, int $size, int $permissions)
+    {
         $header = \pack('CLS', $state, $size, $permissions);
         $this->memSet(0, $header);
     }
@@ -314,7 +330,8 @@ class SharedMemoryParcel implements Parcel {
      * @param int    $permissions Process permissions on the shared memory.
      * @param int    $size        The size to crate the shared memory in bytes.
      */
-    private function memOpen(int $key, string $mode, int $permissions, int $size) {
+    private function memOpen(int $key, string $mode, int $permissions, int $size)
+    {
         $this->handle = @\shmop_open($key, $mode, $permissions, $size);
         if ($this->handle === false) {
             throw new SharedMemoryException('Failed to create shared memory block.');
@@ -329,7 +346,8 @@ class SharedMemoryParcel implements Parcel {
      *
      * @return string The binary data at the given offset.
      */
-    private function memGet(int $offset, int $size): string {
+    private function memGet(int $offset, int $size): string
+    {
         $data = \shmop_read($this->handle, $offset, $size);
         if ($data === false) {
             throw new SharedMemoryException('Failed to read from shared memory block.');
@@ -343,7 +361,8 @@ class SharedMemoryParcel implements Parcel {
      * @param int    $offset The offset to write to.
      * @param string $data   The binary data to write.
      */
-    private function memSet(int $offset, string $data) {
+    private function memSet(int $offset, string $data)
+    {
         if (!\shmop_write($this->handle, $data, $offset)) {
             throw new SharedMemoryException('Failed to write to shared memory block.');
         }
@@ -352,13 +371,15 @@ class SharedMemoryParcel implements Parcel {
     /**
      * Requests the shared memory segment to be deleted.
      */
-    private function memDelete() {
+    private function memDelete()
+    {
         if (!\shmop_delete($this->handle)) {
             throw new SharedMemoryException('Failed to discard shared memory block.');
         }
     }
 
-    private static function makeKey(string $id): int {
+    private static function makeKey(string $id): int
+    {
         return \abs(\unpack("l", \md5($id, true))[1]);
     }
 }

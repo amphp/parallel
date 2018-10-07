@@ -6,8 +6,10 @@ use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\PanicError;
 use Amp\PHPUnit\TestCase;
 
-class ExitFailureTest extends TestCase {
-    public function testGetResult() {
+class ExitFailureTest extends TestCase
+{
+    public function testGetResult()
+    {
         $message = "Test message";
         $exception = new \Exception($message);
         $result = new ExitFailure($exception);

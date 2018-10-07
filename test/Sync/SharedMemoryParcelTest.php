@@ -10,21 +10,25 @@ use Amp\Promise;
  * @requires extension shmop
  * @requires extension sysvmsg
  */
-class SharedMemoryParcelTest extends AbstractParcelTest {
+class SharedMemoryParcelTest extends AbstractParcelTest
+{
     const ID = __CLASS__;
 
     private $parcel;
 
-    protected function createParcel($value) {
+    protected function createParcel($value)
+    {
         $this->parcel = SharedMemoryParcel::create(self::ID, $value);
         return $this->parcel;
     }
 
-    public function tearDown() {
+    public function tearDown()
+    {
         $this->parcel = null;
     }
 
-    public function testObjectOverflowMoved() {
+    public function testObjectOverflowMoved()
+    {
         $object = SharedMemoryParcel::create(self::ID, 'hi', 2);
         $awaitable = $object->synchronized(function () {
             return 'hello world';
@@ -38,7 +42,8 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
      * @group posix
      * @requires extension pcntl
      */
-    public function testSetInSeparateProcess() {
+    public function testSetInSeparateProcess()
+    {
         $object = SharedMemoryParcel::create(self::ID, 42);
 
         $this->doInFork(function () use ($object) {
@@ -55,7 +60,8 @@ class SharedMemoryParcelTest extends AbstractParcelTest {
      * @group posix
      * @requires extension pcntl
      */
-    public function testInSeparateProcess() {
+    public function testInSeparateProcess()
+    {
         $parcel = SharedMemoryParcel::create(self::ID, 42);
 
         $this->doInFork(function () {

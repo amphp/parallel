@@ -2,18 +2,21 @@
 
 namespace Amp\Parallel\Sync;
 
-class ExitSuccess implements ExitResult {
+class ExitSuccess implements ExitResult
+{
     /** @var mixed */
     private $result;
 
-    public function __construct($result) {
+    public function __construct($result)
+    {
         $this->result = $result;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getResult() {
+    public function getResult()
+    {
         return $this->result;
     }
 }

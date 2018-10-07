@@ -8,7 +8,8 @@ use Amp\Parallel\Worker\TaskException;
 use Amp\Promise;
 
 /** @internal */
-class TaskFailure extends TaskResult {
+class TaskFailure extends TaskResult
+{
     const PARENT_EXCEPTION = 0;
     const PARENT_ERROR = 1;
 
@@ -27,7 +28,8 @@ class TaskFailure extends TaskResult {
     /** @var array */
     private $trace;
 
-    public function __construct(string $id, \Throwable $exception) {
+    public function __construct(string $id, \Throwable $exception)
+    {
         parent::__construct($id);
         $this->type = \get_class($exception);
         $this->parent = $exception instanceof \Error ? self::PARENT_ERROR : self::PARENT_EXCEPTION;
@@ -36,12 +38,13 @@ class TaskFailure extends TaskResult {
         $this->trace = $exception->getTraceAsString();
     }
 
-    public function promise(): Promise {
+    public function promise(): Promise
+    {
         switch ($this->parent) {
             case self::PARENT_ERROR:
                 $exception = new TaskError(
                     $this->type,
-                    sprintf(
+                    \sprintf(
                         'Uncaught %s in worker with message "%s" and code "%s"',
                         $this->type,
                         $this->message,
@@ -54,7 +57,7 @@ class TaskFailure extends TaskResult {
             default:
                 $exception = new TaskException(
                     $this->type,
-                    sprintf(
+                    \sprintf(
                         'Uncaught %s in worker with message "%s" and code "%s"',
                         $this->type,
                         $this->message,

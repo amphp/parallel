@@ -11,8 +11,10 @@ use Amp\PHPUnit\TestCase;
 use Amp\Promise;
 use Amp\Success;
 
-class FunctionsTest extends TestCase {
-    public function testPool() {
+class FunctionsTest extends TestCase
+{
+    public function testPool()
+    {
         $pool = $this->createMock(Pool::class);
 
         Worker\pool($pool);
@@ -23,7 +25,8 @@ class FunctionsTest extends TestCase {
     /**
      * @depends testPool
      */
-    public function testEnqueue() {
+    public function testEnqueue()
+    {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
             ->will($this->returnCallback(function (Task $task): Promise {
@@ -44,7 +47,8 @@ class FunctionsTest extends TestCase {
     /**
      * @depends testPool
      */
-    public function testGet() {
+    public function testGet()
+    {
         $pool = $this->createMock(Pool::class);
         $pool->expects($this->once())
             ->method('get')
@@ -55,7 +59,8 @@ class FunctionsTest extends TestCase {
         $worker = Worker\get();
     }
 
-    public function testFactory() {
+    public function testFactory()
+    {
         $factory = $this->createMock(WorkerFactory::class);
 
         Worker\factory($factory);
@@ -66,7 +71,8 @@ class FunctionsTest extends TestCase {
     /**
      * @depends testFactory
      */
-    public function testCreate() {
+    public function testCreate()
+    {
         $factory = $this->createMock(WorkerFactory::class);
         $factory->expects($this->once())
             ->method('create')

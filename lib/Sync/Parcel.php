@@ -17,7 +17,8 @@ use Amp\Promise;
  * methods to acquire a lock for exclusive access to the parcel first before
  * accessing the contained value.
  */
-interface Parcel {
+interface Parcel
+{
     /**
      * Asynchronously invokes a callback while maintaining an exclusive lock on the parcel. The current value of the
      * parcel is provided as the first argument to the callback function.

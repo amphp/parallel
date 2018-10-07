@@ -7,7 +7,8 @@ use Amp\Promise;
 /**
  * Interface for sending messages between execution contexts.
  */
-interface Channel {
+interface Channel
+{
     /**
      * @return \Amp\Promise<mixed>
      *

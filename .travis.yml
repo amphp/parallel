@@ -39,3 +39,9 @@ script:
 
 after_script:
   - ./coveralls.phar -v
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.php-cs-fixer
+    - $HOME/.local

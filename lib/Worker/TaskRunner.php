@@ -7,14 +7,16 @@ use Amp\Parallel\Sync\Channel;
 use Amp\Promise;
 use function Amp\call;
 
-class TaskRunner {
+class TaskRunner
+{
     /** @var \Amp\Parallel\Sync\Channel */
     private $channel;
 
     /** @var \Amp\Parallel\Worker\Environment */
     private $environment;
 
-    public function __construct(Channel $channel, Environment $environment) {
+    public function __construct(Channel $channel, Environment $environment)
+    {
         $this->channel = $channel;
         $this->environment = $environment;
     }
@@ -24,7 +26,8 @@ class TaskRunner {
      *
      * @return \Amp\Promise
      */
-    public function run(): Promise {
+    public function run(): Promise
+    {
         return new Coroutine($this->execute());
     }
 
@@ -33,7 +36,8 @@ class TaskRunner {
      *
      * @return \Generator
      */
-    private function execute(): \Generator {
+    private function execute(): \Generator
+    {
         $job = yield $this->channel->receive();
 
         while ($job instanceof Internal\Job) {

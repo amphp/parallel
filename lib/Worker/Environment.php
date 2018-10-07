@@ -2,7 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
-interface Environment extends \ArrayAccess {
+interface Environment extends \ArrayAccess
+{
     /**
      * @param string $key
      *
