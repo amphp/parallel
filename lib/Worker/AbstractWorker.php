@@ -108,7 +108,7 @@ abstract class AbstractWorker implements Worker
     public function shutdown(): Promise
     {
         if ($this->shutdown) {
-            throw new StatusError("The worker is not running");
+            return new Success(0);
         }
 
         $this->shutdown = true;
@@ -138,12 +138,8 @@ abstract class AbstractWorker implements Worker
 
     /**
      * Cancels all pending tasks and kills the context.
-     *
-     * @TODO Parameter kept for BC, remove in future version.
-     *
-     * @param \Throwable|null $exception Optional exception to be used as the previous exception.
      */
-    protected function cancel(\Throwable $exception = null)
+    protected function cancel()
     {
         if ($this->context->isRunning()) {
             $this->context->kill();
