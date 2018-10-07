@@ -16,30 +16,31 @@ class BasicEnvironment implements Environment {
     private $timer;
 
     public function __construct() {
-        $this->queue = new \SplPriorityQueue;
+        $this->queue = $queue = new \SplPriorityQueue;
+        $data = &$this->data;
 
-        $this->timer = Loop::repeat(1000, function () {
+        $this->timer = Loop::repeat(1000, static function ($watcherId) use ($queue, &$data) {
             $time = \time();
-            while (!$this->queue->isEmpty()) {
-                list($key, $expiration) = $this->queue->top();
+            while (!$queue->isEmpty()) {
+                list($key, $expiration) = $queue->top();
 
-                if (!isset($this->data[$key])) {
+                if (!isset($data[$key])) {
                     // Item removed.
-                    $this->queue->extract();
+                    $queue->extract();
                     continue;
                 }
 
-                $struct = $this->data[$key];
+                $struct = $data[$key];
 
                 if ($struct->expire === 0) {
                     // Item was set again without a TTL.
-                    $this->queue->extract();
+                    $queue->extract();
                     continue;
                 }
 
                 if ($struct->expire !== $expiration) {
                     // Expiration changed or TTL updated.
-                    $this->queue->extract();
+                    $queue->extract();
                     continue;
                 }
 
@@ -48,13 +49,13 @@ class BasicEnvironment implements Environment {
                     break;
                 }
 
-                unset($this->data[$key]);
+                unset($data[$key]);
 
-                $this->queue->extract();
+                $queue->extract();
             }
 
-            if ($this->queue->isEmpty()) {
-                Loop::disable($this->timer);
+            if ($queue->isEmpty()) {
+                Loop::disable($watcherId);
             }
         });
 
