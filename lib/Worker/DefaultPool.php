@@ -84,6 +84,13 @@ class DefaultPool implements Pool
         };
     }
 
+    public function __destruct()
+    {
+        if ($this->isRunning()) {
+            $this->kill();
+        }
+    }
+
     /**
      * Checks if the pool is running.
      *
