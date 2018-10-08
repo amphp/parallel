@@ -38,7 +38,7 @@ abstract class AbstractWorkerTest extends TestCase
     {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $this->assertFalse($worker->isRunning());
+            $this->assertTrue($worker->isRunning());
 
             $worker->enqueue(new TestTask(42)); // Enqueue a task to start the worker.
 

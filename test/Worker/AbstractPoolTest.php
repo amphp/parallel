@@ -137,7 +137,7 @@ abstract class AbstractPoolTest extends TestCase
             $worker = $pool->get();
             $this->assertInstanceOf(Worker::class, $worker);
 
-            $this->assertFalse($worker->isRunning());
+            $this->assertTrue($worker->isRunning());
             $this->assertTrue($worker->isIdle());
 
             $this->assertSame(42, yield $worker->enqueue(new TestTask(42)));

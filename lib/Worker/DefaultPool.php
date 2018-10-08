@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CallableMaker;
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
 
@@ -15,8 +14,6 @@ use Amp\Promise;
  */
 class DefaultPool implements Pool
 {
-    use CallableMaker;
-
     /** @var bool Indicates if the pool is currently running. */
     private $running = true;
 
@@ -198,7 +195,7 @@ class DefaultPool implements Pool
      *
      * @return Worker The worker created.
      */
-    private function createWorker()
+    private function createWorker(): Worker
     {
         $worker = $this->factory->create();
         $this->workers->attach($worker, 0);

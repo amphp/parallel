@@ -4,7 +4,6 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Worker\Internal\TaskResult;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
@@ -40,7 +39,7 @@ abstract class AbstractWorker implements Worker
      */
     public function isRunning(): bool
     {
-        return $this->context->isRunning();
+        return !$this->shutdown;
     }
 
     /**
@@ -60,7 +59,7 @@ abstract class AbstractWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
-        $promise = $this->pending = call(function () use (&$promise, $task) {
+        $promise = $this->pending = call(function () use ($task) {
             if ($this->pending) {
                 try {
                     yield $this->pending;
@@ -82,12 +81,14 @@ abstract class AbstractWorker implements Worker
             yield $this->context->send($job);
             $result = yield $this->context->receive();
 
-            if (!$result instanceof TaskResult) {
-                $this->cancel(new WorkerException("Context did not return a task result"));
+            if (!$result instanceof Internal\TaskResult) {
+                $this->kill();
+                throw new WorkerException("Context did not return a task result");
             }
 
             if ($result->getId() !== $job->getId()) {
-                $this->cancel(new WorkerException("Task results returned out of order"));
+                $this->kill();
+                throw new WorkerException("Task results returned out of order");
             }
 
             return $result->promise();
@@ -133,14 +134,8 @@ abstract class AbstractWorker implements Worker
      */
     public function kill()
     {
-        $this->cancel();
-    }
+        $this->shutdown = true;
 
-    /**
-     * Cancels all pending tasks and kills the context.
-     */
-    protected function cancel()
-    {
         if ($this->context->isRunning()) {
             $this->context->kill();
         }
