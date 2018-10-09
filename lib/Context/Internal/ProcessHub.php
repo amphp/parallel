@@ -4,12 +4,16 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Deferred;
 use Amp\Loop;
+use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Promise;
+use Amp\TimeoutException;
 use function Amp\call;
 
 class ProcessHub
 {
+    const PROCESS_START_TIMEOUT = 5000;
+
     /** @var resource|null */
     private $server;
 
@@ -24,8 +28,25 @@ class ProcessHub
 
     public function __construct()
     {
-        $this->uri = "unix://" . \tempnam(\sys_get_temp_dir(), "amp-cluster-ipc-") . ".sock";
+        $isWindows = \strncasecmp(\PHP_OS, "WIN", 3) === 0;
+
+        if ($isWindows) {
+            $this->uri = "tcp://localhost:0";
+        } else {
+            $this->uri = "unix://" . \tempnam(\sys_get_temp_dir(), "amp-parallel-ipc-") . ".sock";
+        }
+
         $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN);
+
+        if (!$this->server) {
+            throw new \RuntimeException(\sprintf("Could not create IPC server: (Errno: %d) %s", $errno, $errstr));
+        }
+
+        if ($isWindows) {
+            $name = \stream_socket_get_name($this->server, false);
+            $port = \substr($name, \strrpos($name, ":") + 1);
+            $this->uri = "tcp://localhost:" . $port;
+        }
 
         $acceptor = &$this->acceptor;
         $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$acceptor) {
@@ -40,11 +61,9 @@ class ProcessHub
 
             if (!$acceptor) {
                 Loop::disable($watcher);
-                Loop::unreference($watcher);
             }
         });
 
-        Loop::unreference($this->watcher);
         Loop::disable($this->watcher);
     }
 
@@ -68,10 +87,14 @@ class ProcessHub
 
             $this->acceptor = new Deferred;
 
-            Loop::reference($this->watcher);
             Loop::enable($this->watcher);
 
-            return $this->acceptor->promise();
+            try {
+                return yield Promise\timeout($this->acceptor->promise(), self::PROCESS_START_TIMEOUT);
+            } catch (TimeoutException $exception) {
+                Loop::disable($this->watcher);
+                throw new ContextException("Starting the process timed out", 0, $exception);
+            }
         });
     }
 }
