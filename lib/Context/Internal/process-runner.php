@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Loop;
+use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
 use function Amp\call;
 
@@ -51,11 +52,20 @@ Loop::run(function () use ($argc, $argv) {
     --$argc;
     $uri = \array_shift($argv);
 
+    // Read random key from STDIN and send back to parent over IPC socket to authenticate.
+    $key = \fread(\STDIN, Process::KEY_LENGTH);
+
     if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        throw new \RuntimeException("Could not connect to IPC socket");
+        exit(1); // Parent context died, simply exit.
     }
 
     $channel = new Sync\ChannelledSocket($socket, $socket);
+
+    try {
+        yield $channel->send($key);
+    } catch (\Throwable $exception) {
+        exit(1); // Parent context died, simply exit.
+    }
 
     try {
         // Protect current scope by requiring script within another function.

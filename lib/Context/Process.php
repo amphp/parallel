@@ -15,6 +15,7 @@ use function Amp\call;
 class Process implements Context
 {
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
+    const KEY_LENGTH = 16;
 
     /** @var ByteStream\ResourceOutputStream */
     private static $stderr;
@@ -188,9 +189,20 @@ class Process implements Context
         return call(function () {
             $this->process->start();
 
-            $this->channel = yield $this->hub->accept();
+            $pid = yield $this->process->getPid();
 
-            /** @var ByteStream\ResourceInputStream $childStderr */
+            yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
+
+            $this->channel = yield $this->hub->accept($pid);
+
+            $childStdout = $this->process->getStdout();
+            $childStdout->unreference();
+
+            asyncCall(static function () use ($childStdout) {
+                $stdout = new ByteStream\ResourceOutputStream(\STDOUT);
+                yield ByteStream\pipe($childStdout, $stdout);
+            });
+
             $childStderr = $this->process->getStderr();
             $childStderr->unreference();
 

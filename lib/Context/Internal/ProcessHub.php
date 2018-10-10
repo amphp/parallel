@@ -13,6 +13,7 @@ use function Amp\call;
 class ProcessHub
 {
     const PROCESS_START_TIMEOUT = 5000;
+    const KEY_RECEIVE_TIMEOUT = 1000;
 
     /** @var resource|null */
     private $server;
@@ -20,11 +21,14 @@ class ProcessHub
     /** @var string|null */
     private $uri;
 
+    /** @var string[] */
+    private $keys;
+
     /** @var string|null */
     private $watcher;
 
-    /** @var Deferred|null */
-    private $acceptor;
+    /** @var Deferred[] */
+    private $acceptor = [];
 
     public function __construct()
     {
@@ -48,18 +52,33 @@ class ProcessHub
             $this->uri = "tcp://localhost:" . $port;
         }
 
+        $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$acceptor) {
+        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor) {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
             if (!$client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
                 return; // Accepting client failed.
             }
 
-            $deferred = $acceptor;
-            $acceptor = null;
-            $deferred->resolve(new ChannelledSocket($client, $client));
+            $channel = new ChannelledSocket($client, $client);
 
-            if (!$acceptor) {
+            try {
+                $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
+            } catch (TimeoutException $exception) {
+                return; // Ignore possible foreign connection attempt.
+            }
+
+            if (!\is_string($received) || !isset($keys[$received])) {
+                return; // Ignore possible foreign connection attempt.
+            }
+
+            $pid = $keys[$received];
+
+            $deferred = $acceptor[$pid];
+            unset($acceptor[$pid], $keys[$received]);
+            $deferred->resolve($channel);
+
+            if (empty($acceptor)) {
                 Loop::disable($watcher);
             }
         });
@@ -78,21 +97,29 @@ class ProcessHub
         return $this->uri;
     }
 
-    public function accept(): Promise
+    public function generateKey(int $pid, int $length): string
     {
-        return call(function () {
-            while ($this->acceptor) {
-                yield $this->acceptor->promise();
-            }
+        $key = \random_bytes($length);
+        $this->keys[$key] = $pid;
+        return $key;
+    }
 
-            $this->acceptor = new Deferred;
+    public function accept(int $pid): Promise
+    {
+        return call(function () use ($pid) {
+            $this->acceptor[$pid] = new Deferred;
 
             Loop::enable($this->watcher);
 
             try {
-                return yield Promise\timeout($this->acceptor->promise(), self::PROCESS_START_TIMEOUT);
+                return yield Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT);
             } catch (TimeoutException $exception) {
-                Loop::disable($this->watcher);
+                unset($this->acceptor[$pid], $this->keys[$pid]);
+
+                if (empty($this->acceptor)) {
+                    Loop::disable($this->watcher);
+                }
+
                 throw new ContextException("Starting the process timed out", 0, $exception);
             }
         });
