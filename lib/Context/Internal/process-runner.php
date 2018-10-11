@@ -52,8 +52,15 @@ Loop::run(function () use ($argc, $argv) {
     --$argc;
     $uri = \array_shift($argv);
 
+    $key = "";
+
     // Read random key from STDIN and send back to parent over IPC socket to authenticate.
-    $key = \fread(\STDIN, Process::KEY_LENGTH);
+    do {
+        if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false) {
+            exit(1); // STDIN closed, parent context died.
+        }
+        $key .= $chunk;
+    } while (\strlen($key) < Process::KEY_LENGTH);
 
     if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
         exit(1); // Parent context died, simply exit.

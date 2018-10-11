@@ -15,10 +15,7 @@ use function Amp\call;
 class Process implements Context
 {
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
-    const KEY_LENGTH = 16;
-
-    /** @var ByteStream\ResourceOutputStream */
-    private static $stderr;
+    const KEY_LENGTH = 32;
 
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static $pharScriptPath;
