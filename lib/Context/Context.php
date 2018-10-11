@@ -14,6 +14,8 @@ interface Context extends Channel
 
     /**
      * Starts the execution context.
+     *
+     * @return Promise<null> Resolved once the context has started.
      */
     public function start(): Promise;
 

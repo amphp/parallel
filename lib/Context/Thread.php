@@ -128,6 +128,8 @@ class Thread implements Context
     /**
      * Spawns the thread and begins the thread's execution.
      *
+     * @return Promise<null> Resolved once the thread has started.
+     *
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
      */

@@ -21,7 +21,7 @@ class ProcessHub
     /** @var string|null */
     private $uri;
 
-    /** @var string[] */
+    /** @var int[] */
     private $keys;
 
     /** @var string|null */
@@ -114,7 +114,8 @@ class ProcessHub
             try {
                 return yield Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT);
             } catch (TimeoutException $exception) {
-                unset($this->acceptor[$pid], $this->keys[$pid]);
+                $key = \array_search($pid, $this->keys, true);
+                unset($this->acceptor[$pid], $this->keys[$key]);
 
                 if (empty($this->acceptor)) {
                     Loop::disable($this->watcher);
