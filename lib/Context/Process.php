@@ -2,14 +2,14 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\ByteStream;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
+use Amp\Process\ProcessInputStream;
+use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
-use function Amp\asyncCall;
 use function Amp\call;
 
 class Process implements Context
@@ -184,29 +184,11 @@ class Process implements Context
     public function start(): Promise
     {
         return call(function () {
-            $this->process->start();
-
-            $pid = yield $this->process->getPid();
+            $pid = yield $this->process->start();
 
             yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
 
             $this->channel = yield $this->hub->accept($pid);
-
-            $childStdout = $this->process->getStdout();
-            $childStdout->unreference();
-
-            asyncCall(static function () use ($childStdout) {
-                $stdout = new ByteStream\ResourceOutputStream(\STDOUT);
-                yield ByteStream\pipe($childStdout, $stdout);
-            });
-
-            $childStderr = $this->process->getStderr();
-            $childStderr->unreference();
-
-            asyncCall(static function () use ($childStderr) {
-                $stderr = new ByteStream\ResourceOutputStream(\STDERR);
-                yield ByteStream\pipe($childStderr, $stderr);
-            });
         });
     }
 
@@ -307,16 +289,59 @@ class Process implements Context
     }
 
     /**
-     * Returns a promise resolving to the process PID.
+     * Returns the PID of the process.
      *
      * @see \Amp\Process\Process::getPid()
      *
-     * @return \Amp\Promise
+     * @return int
+     *
      * @throws \Amp\Process\StatusError
      */
-    public function getPid(): Promise
+    public function getPid(): int
     {
         return $this->process->getPid();
+    }
+
+    /**
+     * Returns the STDIN stream of the process.
+     *
+     * @see \Amp\Process\Process::getStdin()
+     *
+     * @return ProcessOutputStream
+     *
+     * @throws \Amp\Process\StatusError
+     */
+    public function getStdin(): ProcessOutputStream
+    {
+        return $this->process->getStdin();
+    }
+
+    /**
+     * Returns the STDOUT stream of the process.
+     *
+     * @see \Amp\Process\Process::getStdout()
+     *
+     * @return ProcessInputStream
+     *
+     * @throws \Amp\Process\StatusError
+     */
+    public function getStdout(): ProcessInputStream
+    {
+        return $this->process->getStdout();
+    }
+
+    /**
+     * Returns the STDOUT stream of the process.
+     *
+     * @see \Amp\Process\Process::getStderr()
+     *
+     * @return ProcessInputStream
+     *
+     * @throws \Amp\Process\StatusError
+     */
+    public function getStderr(): ProcessInputStream
+    {
+        return $this->process->getStderr();
     }
 
     /**
