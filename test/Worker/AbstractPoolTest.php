@@ -174,6 +174,17 @@ abstract class AbstractPoolTest extends TestCase
         });
     }
 
+    /**
+     * @expectedException        \Error
+     * @expectedExceptionMessage Maximum size must be a non-negative integer
+     */
+    public function testCreatePoolShouldThrowError()
+    {
+        Loop::run(function () {
+            $this->createPool(-1);
+        });
+    }
+
     public function testCleanGarbageCollection()
     {
         // See https://github.com/amphp/parallel-functions/issues/5
