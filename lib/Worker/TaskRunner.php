@@ -7,7 +7,7 @@ use Amp\Parallel\Sync\Channel;
 use Amp\Promise;
 use function Amp\call;
 
-class TaskRunner
+final class TaskRunner
 {
     /** @var \Amp\Parallel\Sync\Channel */
     private $channel;

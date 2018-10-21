@@ -19,7 +19,7 @@ use function Amp\call;
  * maintained both in the context that creates the thread and in the thread
  * itself.
  */
-class Thread implements Context
+final class Thread implements Context
 {
     const EXIT_CHECK_FREQUENCY = 250;
 

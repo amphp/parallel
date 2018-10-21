@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-class TaskError extends \Error
+final class TaskError extends \Error
 {
     /** @var string Class name of error thrown from task. */
     private $name;

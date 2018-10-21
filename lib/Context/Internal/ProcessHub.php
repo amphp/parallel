@@ -10,7 +10,7 @@ use Amp\Promise;
 use Amp\TimeoutException;
 use function Amp\call;
 
-class ProcessHub
+final class ProcessHub
 {
     const PROCESS_START_TIMEOUT = 5000;
     const KEY_RECEIVE_TIMEOUT = 1000;

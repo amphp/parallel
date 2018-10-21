@@ -12,7 +12,7 @@ use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
 use function Amp\call;
 
-class Process implements Context
+final class Process implements Context
 {
     const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     const KEY_LENGTH = 32;

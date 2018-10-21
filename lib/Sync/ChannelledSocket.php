@@ -4,13 +4,17 @@ namespace Amp\Parallel\Sync;
 
 use Amp\ByteStream\ResourceInputStream;
 use Amp\ByteStream\ResourceOutputStream;
+use Amp\Promise;
 
-class ChannelledSocket extends ChannelledStream
+final class ChannelledSocket implements Channel
 {
-    /** @var \Amp\ByteStream\ResourceInputStream */
+    /** @var ChannelledStream */
+    private $channel;
+
+    /** @var ResourceInputStream */
     private $read;
 
-    /** @var \Amp\ByteStream\ResourceOutputStream */
+    /** @var ResourceOutputStream */
     private $write;
 
     /**
@@ -21,10 +25,26 @@ class ChannelledSocket extends ChannelledStream
      */
     public function __construct($read, $write)
     {
-        parent::__construct(
+        $this->channel = new ChannelledStream(
             $this->read = new ResourceInputStream($read),
             $this->write = new ResourceOutputStream($write)
         );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function receive(): Promise
+    {
+        return $this->channel->receive();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function send($data): Promise
+    {
+        return $this->channel->send($data);
     }
 
     /**

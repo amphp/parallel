@@ -7,7 +7,7 @@ use Amp\Parallel\Context\Thread;
 /**
  * The built-in worker factory type.
  */
-class DefaultWorkerFactory implements WorkerFactory
+final class DefaultWorkerFactory implements WorkerFactory
 {
     /** @var string */
     private $className;

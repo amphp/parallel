@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\Loop;
 use Amp\Struct;
 
-class BasicEnvironment implements Environment
+final class BasicEnvironment implements Environment
 {
     /** @var array */
     private $data = [];

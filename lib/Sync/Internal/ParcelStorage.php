@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync\Internal;
 
-class ParcelStorage extends \Threaded
+final class ParcelStorage extends \Threaded
 {
     /** @var mixed */
     private $value;

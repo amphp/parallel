@@ -30,7 +30,7 @@ use function Amp\call;
  * @see http://man7.org/linux/man-pages/man2/shmctl.2.html How shared memory works on Linux.
  * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
  */
-class SharedMemoryParcel implements Parcel
+final class SharedMemoryParcel implements Parcel
 {
     /** @var int The byte offset to the start of the object data in memory. */
     const MEM_DATA_OFFSET = 7;

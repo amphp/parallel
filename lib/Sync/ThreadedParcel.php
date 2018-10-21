@@ -10,7 +10,7 @@ use function Amp\call;
 /**
  * A thread-safe container that shares a value between multiple threads.
  */
-class ThreadedParcel implements Parcel
+final class ThreadedParcel implements Parcel
 {
     /** @var \Amp\Sync\ThreadedMutex */
     private $mutex;

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-class PanicError extends \Error
+final class PanicError extends \Error
 {
     /** @var string Class name of uncaught exception. */
     private $name;

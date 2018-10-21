@@ -12,7 +12,7 @@ use Amp\Promise;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-class DefaultPool implements Pool
+final class DefaultPool implements Pool
 {
     /** @var bool Indicates if the pool is currently running. */
     private $running = true;

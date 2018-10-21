@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-class TaskException extends \Exception
+final class TaskException extends \Exception
 {
     /** @var string Class name of exception thrown from task. */
     private $name;

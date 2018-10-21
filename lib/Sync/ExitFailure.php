@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-class ExitFailure implements ExitResult
+final class ExitFailure implements ExitResult
 {
     /** @var string */
     private $type;

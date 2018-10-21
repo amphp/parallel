@@ -8,7 +8,7 @@ use Amp\Parallel\Worker\TaskException;
 use Amp\Promise;
 
 /** @internal */
-class TaskFailure extends TaskResult
+final class TaskFailure extends TaskResult
 {
     const PARENT_EXCEPTION = 0;
     const PARENT_ERROR = 1;

@@ -5,7 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\CallableMaker;
 use Amp\Parser\Parser;
 
-class ChannelParser extends Parser
+final class ChannelParser extends Parser
 {
     use CallableMaker;
 

@@ -16,7 +16,7 @@ use function Amp\call;
  *
  * @internal
  */
-class Thread extends \Thread
+final class Thread extends \Thread
 {
     const KILL_CHECK_FREQUENCY = 250;
 

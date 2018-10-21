@@ -13,7 +13,7 @@ use function Amp\call;
  *
  * Supports full duplex read and write.
  */
-class ChannelledStream implements Channel
+final class ChannelledStream implements Channel
 {
     /** @var \Amp\ByteStream\InputStream */
     private $read;
