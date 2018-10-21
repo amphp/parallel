@@ -211,12 +211,12 @@ class DefaultPool implements Pool
     }
 
     /**
-     * Pulls a worker from the pool. The worker should be put back into the pool with push() to be marked as idle.
+     * Pulls a worker from the pool.
      *
      * @return \Amp\Parallel\Worker\Worker
      * @throws \Amp\Parallel\Context\StatusError
      */
-    protected function pull(): Worker
+    private function pull(): Worker
     {
         if (!$this->isRunning()) {
             throw new StatusError("The pool was shutdown");
@@ -248,17 +248,5 @@ class DefaultPool implements Pool
         $this->workers[$worker] += 1;
 
         return $worker;
-    }
-
-    /**
-     * Pushes the worker back into the pool and mark it as idle.
-     *
-     * @param \Amp\Parallel\Worker\Worker $worker
-     *
-     * @throws \Error If the worker was not part of this queue.
-     */
-    protected function push(Worker $worker)
-    {
-        ($this->push)($worker); // Kept for BC
     }
 }
