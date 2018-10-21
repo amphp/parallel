@@ -1,7 +1,6 @@
 <?php
 
 // The function returned by this script is run by shared-memory-process.php in a separate process.
-// echo, print, printf, etc. in this script are written to STDERR of the parent.
 // $argc and $argv are available in this process as any other cli PHP script.
 
 use Amp\Delayed;

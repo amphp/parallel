@@ -2,6 +2,7 @@
 <?php
 require \dirname(__DIR__).'/vendor/autoload.php';
 
+use Amp\ByteStream;
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Context\Process;
@@ -18,6 +19,9 @@ Loop::run(function () {
         $context = yield Process::run(__DIR__ . "/blocking-process.php");
 
         \assert($context instanceof Process);
+
+        // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
+        Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), new ByteStream\ResourceOutputStream(STDOUT)));
 
         print "Waiting 2 seconds to send start data...\n";
         yield new Delayed(2000);

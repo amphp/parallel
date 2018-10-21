@@ -12,7 +12,7 @@ use Amp\Parallel\Sync\ThreadedParcel;
 Loop::run(function () {
     $parcel = new ThreadedParcel(1);
 
-    $context = Thread::run(function (Channel $channel, Parcel $parcel) {
+    $context = yield Thread::run(function (Channel $channel, Parcel $parcel) {
         $value = yield $parcel->synchronized(function (int $value) {
             return $value + 1;
         });
@@ -28,6 +28,8 @@ Loop::run(function () {
             return $value + 1;
         });
     }, $parcel);
+
+    \assert($context instanceof Thread);
 
     yield new Delayed(100); // Give the thread time to start and access the parcel.
 
