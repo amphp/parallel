@@ -26,7 +26,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     if (!isset($autoloadPath)) {
-        \fwrite(\STDERR, "Could not locate autoload.php in any of the following files: " . \implode(", ", $paths) . \PHP_EOL);
+        \trigger_error(E_USER_ERROR, "Could not locate autoload.php in any of the following files: " . \implode(", ", $paths));
         exit(1);
     }
 
@@ -51,13 +51,15 @@ Loop::run(function () use ($argc, $argv) {
     // Read random key from STDIN and send back to parent over IPC socket to authenticate.
     do {
         if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false) {
-            exit(1); // STDIN closed, parent context died.
+            \trigger_error(E_USER_ERROR, "Could not read key from parent");
+            exit(1);
         }
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
 
     if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        exit(1); // Parent context died, simply exit.
+        \trigger_error(E_USER_ERROR, "Could not connect to IPC socket");
+        exit(1);
     }
 
     $channel = new Sync\ChannelledSocket($socket, $socket);
@@ -65,7 +67,8 @@ Loop::run(function () use ($argc, $argv) {
     try {
         yield $channel->send($key);
     } catch (\Throwable $exception) {
-        exit(1); // Parent context died, simply exit.
+        \trigger_error(E_USER_ERROR, "Could not send key to parent");
+        exit(1);
     }
 
     try {
@@ -88,7 +91,8 @@ Loop::run(function () use ($argc, $argv) {
 
         $result = new Sync\ExitSuccess(yield call($callable, $channel));
     } catch (Sync\ChannelException $exception) {
-        exit(1); // Parent context died, simply exit.
+        \trigger_error(E_USER_ERROR, "Communication with the parent failed");
+        exit(1);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }
@@ -101,6 +105,7 @@ Loop::run(function () use ($argc, $argv) {
             yield $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
-        exit(1); // Parent context died, simply exit.
+        \trigger_error(E_USER_ERROR, "Could not send result to parent");
+        exit(1);
     }
 });
