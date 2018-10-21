@@ -43,7 +43,7 @@ class DefaultWorkerFactory implements WorkerFactory
      */
     public function create(): Worker
     {
-        if (Thread::supported()) {
+        if (Thread::isSupported()) {
             return new WorkerThread($this->className);
         }
 

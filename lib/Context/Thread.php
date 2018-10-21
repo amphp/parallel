@@ -49,7 +49,7 @@ class Thread implements Context
      *
      * @return bool True if threading is enabled, otherwise false.
      */
-    public static function supported(): bool
+    public static function isSupported(): bool
     {
         return \extension_loaded('pthreads');
     }
@@ -83,7 +83,7 @@ class Thread implements Context
      */
     public function __construct(callable $function, ...$args)
     {
-        if (!self::supported()) {
+        if (!self::isSupported()) {
             throw new \Error("The pthreads extension is required to create threads.");
         }
 
