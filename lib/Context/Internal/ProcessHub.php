@@ -35,7 +35,7 @@ class ProcessHub
         $isWindows = \strncasecmp(\PHP_OS, "WIN", 3) === 0;
 
         if ($isWindows) {
-            $this->uri = "tcp://localhost:0";
+            $this->uri = "tcp://127.0.0.1:0";
         } else {
             $this->uri = "unix://" . \tempnam(\sys_get_temp_dir(), "amp-parallel-ipc-") . ".sock";
         }
@@ -49,7 +49,7 @@ class ProcessHub
         if ($isWindows) {
             $name = \stream_socket_get_name($this->server, false);
             $port = \substr($name, \strrpos($name, ":") + 1);
-            $this->uri = "tcp://localhost:" . $port;
+            $this->uri = "tcp://127.0.0.1:" . $port;
         }
 
         $keys = &$this->keys;
