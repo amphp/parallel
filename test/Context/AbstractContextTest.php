@@ -302,7 +302,7 @@ abstract class AbstractContextTest extends TestCase
                 exit;
             });
 
-            yield $context->start();
+            $context->start();
             yield $context->send(\str_pad("", 1024 * 1024, "-"));
         });
     }
