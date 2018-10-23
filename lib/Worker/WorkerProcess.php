@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Parallel\Context\Process;
-
 /**
  * A worker process that executes task objects.
  */
@@ -26,6 +24,7 @@ final class WorkerProcess extends AbstractWorker
             self::SCRIPT_PATH,
             $envClassName,
         ];
-        parent::__construct(new Process($script, null, $env, $binary));
+
+        parent::__construct(new Internal\WorkerProcess($script, $env, $binary));
     }
 }
