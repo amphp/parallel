@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Context;
 
+use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ExitSuccess;
@@ -299,10 +300,11 @@ abstract class AbstractContextTest extends TestCase
     {
         Loop::run(function () {
             $context = $this->createContext(function () {
+                yield new Delayed(1000);
                 exit;
             });
 
-            $context->start();
+            yield $context->start();
             yield $context->send(\str_pad("", 1024 * 1024, "-"));
         });
     }
