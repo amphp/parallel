@@ -7,6 +7,7 @@ use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskError;
+use Amp\Parallel\Worker\TaskException;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\TestCase;
 
@@ -203,9 +204,41 @@ abstract class AbstractWorkerTest extends TestCase
                     {
                     }
                 });
-                $this->fail("Tasks that cannot be autoloaded should throw an exception");
+                $this->fail("Tasks that cannot be serialized should throw an exception");
             } catch (SerializationException $exception) {
                 $this->assertSame(0, \strpos($exception->getMessage(), "The given data cannot be sent because it is not serializable"));
+            }
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testUnserializableResult()
+    {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            try {
+                yield $worker->enqueue(new UnserializableResultTask);
+                $this->fail("Tasks results that cannot be serialized should throw an exception");
+            } catch (TaskException $exception) {
+                $this->assertSame(0, \strpos($exception->getMessage(), "Uncaught Amp\Parallel\Sync\SerializationException in worker"));
+            }
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testNonAutoloadableResult()
+    {
+        Loop::run(function () {
+            $worker = $this->createWorker();
+
+            try {
+                yield $worker->enqueue(new NonAutoloadableResultTask);
+                $this->fail("Tasks results that cannot be autoloaded should throw an exception");
+            } catch (\Error $exception) {
+                $this->assertSame(0, \strpos($exception->getMessage(), "Class instances returned from Amp\Parallel\Worker\Task::run() must be autoloadable by the Composer autoloader"));
             }
 
             yield $worker->shutdown();

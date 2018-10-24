@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Coroutine;
 use Amp\Parallel\Sync\Channel;
+use Amp\Parallel\Sync\SerializationException;
 use Amp\Promise;
 use function Amp\call;
 
@@ -50,7 +51,12 @@ final class TaskRunner
 
             $job = null; // Free memory from last job.
 
-            yield $this->channel->send($result);
+            try {
+                yield $this->channel->send($result);
+            } catch (SerializationException $exception) {
+                // Could not serialize task result.
+                yield $this->channel->send(new Internal\TaskFailure($result->getId(), $exception));
+            }
 
             $result = null; // Free memory from last result.
 
