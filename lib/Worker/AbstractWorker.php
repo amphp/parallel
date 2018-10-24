@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Sync\ChannelException;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
@@ -23,7 +24,7 @@ abstract class AbstractWorker implements Worker
     private $pending;
 
     /**
-     * @param \Amp\Parallel\Context\Context $context
+     * @param \Amp\Parallel\Context\Context $context A context running an instance of TaskRunner.
      */
     public function __construct(Context $context)
     {
@@ -78,8 +79,12 @@ abstract class AbstractWorker implements Worker
 
             $job = new Internal\Job($task);
 
-            yield $this->context->send($job);
-            $result = yield $this->context->receive();
+            try {
+                yield $this->context->send($job);
+                $result = yield $this->context->receive();
+            } catch (ChannelException $exception) {
+                throw new WorkerException("Communicating with the worker failed", $exception);
+            }
 
             if (!$result instanceof Internal\TaskResult) {
                 $this->kill();

@@ -65,10 +65,12 @@ final class ProcessHub
             try {
                 $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
             } catch (TimeoutException $exception) {
+                $channel->close();
                 return; // Ignore possible foreign connection attempt.
             }
 
             if (!\is_string($received) || !isset($keys[$received])) {
+                $channel->close();
                 return; // Ignore possible foreign connection attempt.
             }
 
@@ -77,10 +79,6 @@ final class ProcessHub
             $deferred = $acceptor[$pid];
             unset($acceptor[$pid], $keys[$received]);
             $deferred->resolve($channel);
-
-            if (empty($acceptor)) {
-                Loop::disable($watcher);
-            }
         });
 
         Loop::disable($this->watcher);
@@ -112,17 +110,19 @@ final class ProcessHub
             Loop::enable($this->watcher);
 
             try {
-                return yield Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT);
+                $channel = yield Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT);
             } catch (TimeoutException $exception) {
                 $key = \array_search($pid, $this->keys, true);
+                \assert(\is_string($key), "Key for {$pid} not found");
                 unset($this->acceptor[$pid], $this->keys[$key]);
-
+                throw new ContextException("Starting the process timed out", 0, $exception);
+            } finally {
                 if (empty($this->acceptor)) {
                     Loop::disable($this->watcher);
                 }
-
-                throw new ContextException("Starting the process timed out", 0, $exception);
             }
+
+            return $channel;
         });
     }
 }

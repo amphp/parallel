@@ -184,11 +184,16 @@ final class Process implements Context
     public function start(): Promise
     {
         return call(function () {
-            $pid = yield $this->process->start();
+            try {
+                $pid = yield $this->process->start();
 
-            yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
+                yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
 
-            $this->channel = yield $this->hub->accept($pid);
+                $this->channel = yield $this->hub->accept($pid);
+            } catch (\Throwable $exception) {
+                $this->process->kill();
+                throw new ContextException("Staring the process failed", 0, $exception);
+            }
         });
     }
 
