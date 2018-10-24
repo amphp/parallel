@@ -50,7 +50,7 @@ Loop::run(function () use ($argc, $argv) {
 
     // Read random key from STDIN and send back to parent over IPC socket to authenticate.
     do {
-        if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false) {
+        if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false || \feof(\STDIN)) {
             \trigger_error(E_USER_ERROR, "Could not read key from parent");
             exit(1);
         }
