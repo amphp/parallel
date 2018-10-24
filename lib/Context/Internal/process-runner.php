@@ -90,9 +90,6 @@ Loop::run(function () use ($argc, $argv) {
         }
 
         $result = new Sync\ExitSuccess(yield call($callable, $channel));
-    } catch (Sync\ChannelException $exception) {
-        \trigger_error(E_USER_ERROR, "Communication with the parent failed");
-        exit(1);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }
