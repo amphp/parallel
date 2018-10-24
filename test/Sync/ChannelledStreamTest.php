@@ -102,7 +102,7 @@ class ChannelledStreamTest extends TestCase
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
+     * @expectedException \Amp\Parallel\Sync\SerializationException
      */
     public function testSendUnserializableData()
     {
