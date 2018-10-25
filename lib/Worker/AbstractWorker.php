@@ -83,7 +83,7 @@ abstract class AbstractWorker implements Worker
                 yield $this->context->send($job);
                 $result = yield $this->context->receive();
             } catch (ChannelException $exception) {
-                throw new WorkerException("Communicating with the worker failed", $exception);
+                throw new WorkerException("Communicating with the worker failed", 0, $exception);
             }
 
             if (!$result instanceof Internal\TaskResult) {

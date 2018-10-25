@@ -73,7 +73,7 @@ final class ChannelParser extends Parser
             try {
                 $data = \unserialize($data);
             } catch (\Throwable $exception) {
-                throw new SerializationException("Exception thrown when unserializing data", $exception);
+                throw new SerializationException("Exception thrown when unserializing data", 0, $exception);
             } finally {
                 \restore_error_handler();
             }

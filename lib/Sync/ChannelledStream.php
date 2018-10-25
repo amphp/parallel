@@ -50,7 +50,7 @@ final class ChannelledStream implements Channel
             try {
                 return yield $this->write->write($this->parser->encode($data));
             } catch (StreamException $exception) {
-                throw new ChannelException("Sending on the channel failed. Did the context die?", $exception);
+                throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
             }
         });
     }
@@ -65,7 +65,7 @@ final class ChannelledStream implements Channel
                 try {
                     $chunk = yield $this->read->read();
                 } catch (StreamException $exception) {
-                    throw new ChannelException("Reading from the channel failed. Did the context die?", $exception);
+                    throw new ChannelException("Reading from the channel failed. Did the context die?", 0, $exception);
                 }
 
                 if ($chunk === null) {
