@@ -21,7 +21,7 @@ Loop::run(function () {
         \assert($context instanceof Process);
 
         // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
-        Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), new ByteStream\ResourceOutputStream(STDOUT)));
+        Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
 
         print "Waiting 2 seconds to send start data...\n";
         yield new Delayed(2000);

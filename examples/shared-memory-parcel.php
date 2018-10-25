@@ -20,7 +20,7 @@ Loop::run(function () {
     \assert($context instanceof Process);
 
     // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
-    Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), new ByteStream\ResourceOutputStream(STDOUT)));
+    Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
 
     yield new Delayed(100); // Give the process time to start and access the parcel.
 

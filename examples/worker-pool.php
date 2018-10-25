@@ -2,7 +2,6 @@
 <?php
 require \dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Parallel\Example\BlockingTask;
 use Amp\Parallel\Worker\DefaultPool;
@@ -18,7 +17,7 @@ $tasks = [
 ];
 
 // Event loop for parallel tasks
-Loop::run(function () use (&$results, &$tasks) {
+Loop::run(function () use (&$results, $tasks) {
     $timer = Loop::repeat(200, function () {
         \printf(".");
     });
@@ -29,19 +28,15 @@ Loop::run(function () use (&$results, &$tasks) {
     $coroutines = [];
 
     foreach ($tasks as $task) {
-        $coroutines[] = function () use ($pool, $task, &$results) {
+        $coroutines[] = Amp\call(function () use ($pool, $task) {
             $result = yield $pool->enqueue($task);
             $url = $task->getArgs()[0];
             \printf("\nRead from %s: %d bytes\n", $url, \strlen($result));
-            $results[$url] = $result;
-        };
+            return $result;
+        });
     }
 
-    $coroutines = \array_map(function (callable $coroutine): Coroutine {
-        return new Coroutine($coroutine());
-    }, $coroutines);
-
-    yield Amp\Promise\all($coroutines);
+    $results = yield Amp\Promise\all($coroutines);
 
     return yield $pool->shutdown();
 });
