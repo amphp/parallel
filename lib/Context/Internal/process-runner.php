@@ -26,7 +26,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     if (!isset($autoloadPath)) {
-        \trigger_error(E_USER_ERROR, "Could not locate autoload.php in any of the following files: " . \implode(", ", $paths));
+        \trigger_error("Could not locate autoload.php in any of the following files: " . \implode(", ", $paths), E_USER_ERROR);
         exit(1);
     }
 
@@ -51,14 +51,14 @@ Loop::run(function () use ($argc, $argv) {
     // Read random key from STDIN and send back to parent over IPC socket to authenticate.
     do {
         if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false || \feof(\STDIN)) {
-            \trigger_error(E_USER_ERROR, "Could not read key from parent");
+            \trigger_error("Could not read key from parent", E_USER_ERROR);
             exit(1);
         }
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
 
     if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        \trigger_error(E_USER_ERROR, "Could not connect to IPC socket");
+        \trigger_error("Could not connect to IPC socket", E_USER_ERROR);
         exit(1);
     }
 
@@ -67,7 +67,7 @@ Loop::run(function () use ($argc, $argv) {
     try {
         yield $channel->send($key);
     } catch (\Throwable $exception) {
-        \trigger_error(E_USER_ERROR, "Could not send key to parent");
+        \trigger_error("Could not send key to parent", E_USER_ERROR);
         exit(1);
     }
 
@@ -102,7 +102,7 @@ Loop::run(function () use ($argc, $argv) {
             yield $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
-        \trigger_error(E_USER_ERROR, "Could not send result to parent");
+        \trigger_error("Could not send result to parent", E_USER_ERROR);
         exit(1);
     }
 });
