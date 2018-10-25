@@ -9,7 +9,7 @@ interface Environment extends \ArrayAccess
      *
      * @return bool
      */
-    public function exists(string $key);
+    public function exists(string $key): bool;
 
     /**
      * @param string $key
