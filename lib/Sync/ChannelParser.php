@@ -33,6 +33,7 @@ final class ChannelParser extends Parser
         } catch (\Throwable $exception) {
             throw new SerializationException(
                 "The given data cannot be sent because it is not serializable.",
+                0,
                 $exception
             );
         }
