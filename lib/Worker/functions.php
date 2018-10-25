@@ -47,13 +47,13 @@ function enqueue(Task $task): Promise
  *
  * @return \Amp\Parallel\Worker\Worker
  */
-function get(): Worker
+function worker(): Worker
 {
-    return pool()->get();
+    return pool()->getWorker();
 }
 
 /**
- * Creates a worker using the global worker factory. The worker is automatically started.
+ * Creates a worker using the global worker factory.
  *
  * @return \Amp\Parallel\Worker\Worker
  */

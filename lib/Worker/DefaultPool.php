@@ -205,7 +205,7 @@ final class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function get(): Worker
+    public function getWorker(): Worker
     {
         return new Internal\PooledWorker($this->pull(), $this->push);
     }

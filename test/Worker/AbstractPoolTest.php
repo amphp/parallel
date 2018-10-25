@@ -71,7 +71,7 @@ abstract class AbstractPoolTest extends TestCase
 
             yield $pool->shutdown();
 
-            $pool->get();
+            $pool->getWorker();
         });
     }
 
@@ -134,7 +134,7 @@ abstract class AbstractPoolTest extends TestCase
         Loop::run(function () {
             $pool = $this->createPool();
 
-            $worker = $pool->get();
+            $worker = $pool->getWorker();
             $this->assertInstanceOf(Worker::class, $worker);
 
             $this->assertTrue($worker->isRunning());
