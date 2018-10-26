@@ -12,7 +12,7 @@ use function Amp\call;
 /**
  * Base class for most common types of task workers.
  */
-abstract class AbstractWorker implements Worker
+abstract class TaskWorker implements Worker
 {
     /** @var \Amp\Parallel\Context\Context */
     private $context;

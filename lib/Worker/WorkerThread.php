@@ -9,7 +9,7 @@ use Amp\Promise;
 /**
  * A worker thread that executes task objects.
  */
-final class WorkerThread extends AbstractWorker
+final class WorkerThread extends TaskWorker
 {
     /**
      * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate.

@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 /**
  * A worker process that executes task objects.
  */
-final class WorkerProcess extends AbstractWorker
+final class WorkerProcess extends TaskWorker
 {
     const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
 
