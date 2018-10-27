@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Failure;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
@@ -17,11 +18,11 @@ abstract class TaskWorker implements Worker
     /** @var \Amp\Parallel\Context\Context */
     private $context;
 
-    /** @var bool */
-    private $shutdown = false;
-
     /** @var \Amp\Promise|null */
     private $pending;
+
+    /** @var \Amp\Promise|null */
+    private $exitStatus;
 
     /**
      * @param \Amp\Parallel\Context\Context $context A context running an instance of TaskRunner.
@@ -40,7 +41,7 @@ abstract class TaskWorker implements Worker
      */
     public function isRunning(): bool
     {
-        return !$this->shutdown;
+        return !$this->exitStatus;
     }
 
     /**
@@ -56,7 +57,7 @@ abstract class TaskWorker implements Worker
      */
     public function enqueue(Task $task): Promise
     {
-        if ($this->shutdown) {
+        if ($this->exitStatus) {
             throw new StatusError("The worker has been shut down");
         }
 
@@ -69,7 +70,7 @@ abstract class TaskWorker implements Worker
                 }
             }
 
-            if ($this->shutdown) {
+            if ($this->exitStatus) {
                 throw new WorkerException("The worker was shutdown");
             }
 
@@ -113,17 +114,15 @@ abstract class TaskWorker implements Worker
      */
     public function shutdown(): Promise
     {
-        if ($this->shutdown) {
-            return new Success(0);
+        if ($this->exitStatus) {
+            return $this->exitStatus;
         }
-
-        $this->shutdown = true;
 
         if (!$this->context->isRunning()) {
-            return new Success(0);
+            return $this->exitStatus = new Success(0);
         }
 
-        return call(function () {
+        return $this->exitStatus = call(function () {
             if ($this->pending) {
                 // If a task is currently running, wait for it to finish.
                 yield Promise\any([$this->pending]);
@@ -139,10 +138,16 @@ abstract class TaskWorker implements Worker
      */
     public function kill()
     {
-        $this->shutdown = true;
+        if ($this->exitStatus) {
+            return;
+        }
 
         if ($this->context->isRunning()) {
             $this->context->kill();
+            $this->exitStatus = new Failure(new WorkerException("The worker was killed"));
+            return;
         }
+
+        $this->exitStatus = new Success(0);
     }
 }
