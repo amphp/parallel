@@ -38,8 +38,14 @@ class WorkerProcess implements Context
         return call(function () {
             $result = yield $this->process->start();
 
-            ByteStream\pipe($this->process->getStdout(), ByteStream\getStdout());
-            ByteStream\pipe($this->process->getStderr(), ByteStream\getStderr());
+            $stdout = $this->process->getStdout();
+            $stdout->unreference();
+
+            $stderr = $this->process->getStderr();
+            $stderr->unreference();
+
+            ByteStream\pipe($stdout, ByteStream\getStdout());
+            ByteStream\pipe($stderr, ByteStream\getStderr());
 
             return $result;
         });
