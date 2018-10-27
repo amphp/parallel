@@ -42,19 +42,15 @@ abstract class AbstractPoolTest extends TestCase
         });
     }
 
-    /**
-     * @expectedException         \Amp\Parallel\Context\StatusError
-     * @expectedExceptionMessage  The pool was shutdown
-     */
-    public function testShutdownShouldThrowStatusError()
+    public function testShutdownShouldReturnSameResult()
     {
         Loop::run(function () {
             $pool = $this->createPool();
 
             $this->assertTrue($pool->isIdle());
 
-            yield $pool->shutdown();
-            yield $pool->shutdown();
+            $result = yield $pool->shutdown();
+            $this->assertSame($result, yield $pool->shutdown());
         });
     }
 

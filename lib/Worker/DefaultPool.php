@@ -35,6 +35,9 @@ final class DefaultPool implements Pool
     /** @var \Closure */
     private $push;
 
+    /** @var \Amp\Promise|null */
+    private $exitStatus;
+
     /**
      * Creates a new worker pool.
      *
@@ -162,8 +165,8 @@ final class DefaultPool implements Pool
      */
     public function shutdown(): Promise
     {
-        if (!$this->isRunning()) {
-            throw new StatusError("The pool was shutdown");
+        if ($this->exitStatus) {
+            return $this->exitStatus;
         }
 
         $this->running = false;
@@ -175,7 +178,7 @@ final class DefaultPool implements Pool
             }
         }
 
-        return Promise\all($shutdowns);
+        return $this->exitStatus = Promise\all($shutdowns);
     }
 
     /**
