@@ -47,16 +47,16 @@ class FunctionsTest extends TestCase
     /**
      * @depends testPool
      */
-    public function testGet()
+    public function testWorker()
     {
         $pool = $this->createMock(Pool::class);
         $pool->expects($this->once())
-            ->method('get')
+            ->method('getWorker')
             ->will($this->returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\pool($pool);
 
-        $worker = Worker\get();
+        $worker = Worker\worker();
     }
 
     public function testFactory()
