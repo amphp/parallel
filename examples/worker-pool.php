@@ -1,9 +1,10 @@
 #!/usr/bin/env php
 <?php
-require \dirname(__DIR__).'/vendor/autoload.php';
+
+require \dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Loop;
-use Amp\Parallel\Example\BlockingTask;
+use Amp\Parallel\Worker\CallableTask;
 use Amp\Parallel\Worker\DefaultPool;
 
 // A variable to store our fetched results
@@ -11,9 +12,9 @@ $results = [];
 
 // We can first define tasks and then run them
 $tasks = [
-    new BlockingTask('file_get_contents', 'http://php.net'),
-    new BlockingTask('file_get_contents', 'https://amphp.org'),
-    new BlockingTask('file_get_contents', 'https://github.com'),
+    new CallableTask('file_get_contents', 'http://php.net'),
+    new CallableTask('file_get_contents', 'https://amphp.org'),
+    new CallableTask('file_get_contents', 'https://github.com'),
 ];
 
 // Event loop for parallel tasks
