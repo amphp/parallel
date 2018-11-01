@@ -47,6 +47,40 @@ class FunctionsTest extends TestCase
     /**
      * @depends testPool
      */
+    public function testEnqueueCallable()
+    {
+        $pool = $this->createMock(Pool::class);
+        $pool->method('enqueue')
+            ->will($this->returnCallback(function (Task $task): Promise {
+                return new Success($task->run($this->createMock(Environment::class)));
+            }));
+
+        Worker\pool($pool);
+
+        $value = 42;
+
+        $promise = Worker\enqueueCallable('strval', $value);
+
+        $this->assertSame('42', Promise\wait($promise));
+    }
+
+    /**
+     * @depends testEnqueueCallable
+     */
+    public function testEnqueueCallableIntegration()
+    {
+        Worker\pool(new Worker\DefaultPool());
+
+        $value = 42;
+
+        $promise = Worker\enqueueCallable('strval', $value);
+
+        $this->assertSame('42', Promise\wait($promise));
+    }
+
+    /**
+     * @depends testPool
+     */
     public function testWorker()
     {
         $pool = $this->createMock(Pool::class);
@@ -79,7 +113,6 @@ class FunctionsTest extends TestCase
             ->will($this->returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\factory($factory);
-
-        $worker = Worker\create();
+        Worker\create(); // shouldn't throw
     }
 }

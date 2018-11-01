@@ -33,13 +33,26 @@ function pool(Pool $pool = null): Pool
 /**
  * Enqueues a task to be executed by the global worker pool.
  *
- * @param \Amp\Parallel\Worker\Task $task The task to enqueue.
+ * @param Task $task The task to enqueue.
  *
- * @return \Amp\Promise<mixed>
+ * @return Promise<mixed>
  */
 function enqueue(Task $task): Promise
 {
     return pool()->enqueue($task);
+}
+
+/**
+ * Enqueues a callable to be executed by the global worker pool.
+ *
+ * @param callable $callable Callable needs to be serializable.
+ * @param mixed    ...$args Arguments have to be serializable.
+ *
+ * @return Promise<mixed>
+ */
+function enqueueCallable(callable $callable, ...$args)
+{
+    return enqueue(new CallableTask($callable, $args));
 }
 
 /**
