@@ -1,5 +1,5 @@
 ---
-title: Custom tasks
+title: Custom Tasks
 permalink: /custom-tasks
 ---
 Instead of passing simple callables to workers, this package also allows custom implementations of the `Task` interface to dispatch work in child processes or threads.
