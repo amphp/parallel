@@ -9,11 +9,7 @@
 <a href="https://github.com/amphp/parallel/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"/></a>
 </p>
 
-<p align="center"><strong>True parallel processing using multiple processes or native threads for concurrent PHP code execution, <em>without</em> blocking, no extensions required.</strong></p>
-
-<hr/>
-
-`amphp/parallel` is a component for [Amp](https://amphp.org) that provides native threading, multiprocessing, process synchronization, shared memory, and task workers for concurrently executing PHP code. Like other Amp components, this library uses [Coroutines](http://amphp.org/amp/coroutines/) built from [Promises](http://amphp.org/amp/promises/) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) to make writing asynchronous code more like writing synchronous code.
+`amphp/parallel` provides *true parallel processing* for PHP using multiple processes or native threads, *without blocking and no extensions required*.
 
 To be as flexible as possible, this library comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" worker API that allows you to assign units of work to a pool of worker threads or processes.
 
@@ -25,9 +21,41 @@ This package can be installed as a [Composer](https://getcomposer.org/) dependen
 composer require amphp/parallel
 ```
 
-## Requirements
+## Usage
 
-- PHP 7.0+ (no extensions required)
+The basic usage of this library is to submit blocking tasks to be executed by a worker pool in order to avoid blocking the main event loop.
+
+```php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Amp\Parallel\Worker;
+use Amp\Promise;
+
+$urls = [
+    'https://secure.php.net',
+    'https://amphp.org',
+    'https://github.com',
+];
+
+$promises = [];
+foreach ($urls as $url) {
+    $promises[$url] = Worker\enqueueCallable('file_get_contents', $url);
+}
+
+$responses = Promise\wait(Promise\all($promises));
+
+foreach ($responses as $url => $response) {
+    \printf("Read %d bytes from %s\n", \strlen($response), $url);
+}
+```
+
+[`file_get_contents`](https://secure.php.net/file_get_contents) is just used as an example for a blocking function here.
+If you just want to fetch multiple HTTP resources concurrently, it's better to use [Artax](https://amphp.org/artax/), our non-blocking HTTP client.
+
+The functions you call must be predefined or autoloadable by Composer so they also exist in the worker processes.
+Instead of simple callables, you can also enqueue `Task` instances with `Amp\Parallel\Worker\enqueue()`.
 
 ## Documentation
 
@@ -51,6 +79,8 @@ Want to hack on the source? A [Vagrant](http://vagrantup.com) box is provided wi
 
 Starting up and logging into the virtual machine is as simple as
 
-    vagrant up && vagrant ssh
+```bash
+vagrant up && vagrant ssh
+```
 
 Once inside the VM, you can install PHP extensions with [Pickle](https://github.com/FriendsOfPHP/pickle), switch versions with `newphp VERSION`, and test for memory leaks with [Valgrind](http://valgrind.org).
