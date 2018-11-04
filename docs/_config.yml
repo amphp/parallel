@@ -25,6 +25,4 @@ shared_asset_path: "/parallel/asset"
 
 navigation:
  - custom-tasks
- - context
- - sync
- - worker
+ - processes
