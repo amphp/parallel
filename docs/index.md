@@ -46,4 +46,4 @@ foreach ($responses as $url => $response) {
 If you just want to fetch multiple HTTP resources concurrently, it's better to use [Artax](https://amphp.org/artax/), our non-blocking HTTP client.
 
 The functions you call must be predefined or autoloadable by Composer so they also exist in the worker processes.
-Instead of simple callables, you can also enqueue `Task` instances with `Amp\Parallel\Worker\enqueue()`.
+Instead of simple callables, you can also [enqueue `Task` instances](./custom-tasks.md) with `Amp\Parallel\Worker\enqueue()`.
