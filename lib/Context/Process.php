@@ -190,6 +190,8 @@ final class Process implements Context
                 yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
 
                 $this->channel = yield $this->hub->accept($pid);
+
+                return $pid;
             } catch (\Throwable $exception) {
                 $this->process->kill();
                 throw new ContextException("Staring the process failed", 0, $exception);
