@@ -1,5 +1,5 @@
 ---
-title: Responses
+title: Processes
 permalink: /processes
 ---
 `Process` simplifies writing and running PHP in parallel. A script written to be run in parallel must return a callable that will be run in a child process. The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes. Any serializable data can be sent across this channel. The `Process` object is the other end of the communication channel, as it implements `Context`, which extends `Channel`.
