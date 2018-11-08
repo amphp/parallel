@@ -194,7 +194,7 @@ final class Process implements Context
                 return $pid;
             } catch (\Throwable $exception) {
                 $this->process->kill();
-                throw new ContextException("Staring the process failed", 0, $exception);
+                throw new ContextException("Starting the process failed", 0, $exception);
             }
         });
     }
