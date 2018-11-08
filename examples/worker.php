@@ -10,7 +10,7 @@ Amp\Loop::run(function () {
 
     $worker = $factory->create();
 
-    $result = yield $worker->enqueue(new CallableTask('file_get_contents', 'https://google.com'));
+    $result = yield $worker->enqueue(new CallableTask('file_get_contents', ['https://google.com']));
     \printf("Read %d bytes\n", \strlen($result));
 
     $code = yield $worker->shutdown();
