@@ -12,9 +12,9 @@ $results = [];
 
 // We can first define tasks and then run them
 $tasks = [
-    new CallableTask('file_get_contents', 'http://php.net'),
-    new CallableTask('file_get_contents', 'https://amphp.org'),
-    new CallableTask('file_get_contents', 'https://github.com'),
+    new CallableTask('file_get_contents', ['http://php.net']),
+    new CallableTask('file_get_contents', ['https://amphp.org']),
+    new CallableTask('file_get_contents', ['https://github.com']),
 ];
 
 // Event loop for parallel tasks
