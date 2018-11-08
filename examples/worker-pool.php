@@ -28,11 +28,10 @@ Loop::run(function () use (&$results, $tasks) {
 
     $coroutines = [];
 
-    foreach ($tasks as $task) {
-        $coroutines[] = Amp\call(function () use ($pool, $task) {
+    foreach ($tasks as $index => $task) {
+        $coroutines[] = Amp\call(function () use ($pool, $index, $task) {
             $result = yield $pool->enqueue($task);
-            $url = $task->getArgs()[0];
-            \printf("\nRead from %s: %d bytes\n", $url, \strlen($result));
+            \printf("\nRead from task %d: %d bytes\n", $index, \strlen($result));
             return $result;
         });
     }
