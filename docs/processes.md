@@ -6,7 +6,8 @@ permalink: /processes
 
 In the example below, a child process is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [Artax](https://amphp.org/artax) for non-blocking HTTP requests). The result of that function is then sent back to the parent using the `Channel` object. The return value of the child process callable is available using the `Process::join()` method.
 
-#### Child Process
+## Child Process
+
 ```php
 # child.php
 
@@ -23,7 +24,8 @@ return function (Channel $channel): \Generator {
 });
 ```
 
-#### Parent Process
+## Parent Process
+
 ```php
 # parent.php
 
