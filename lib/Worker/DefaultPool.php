@@ -70,6 +70,11 @@ final class DefaultPool implements Pool
         $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue) {
             \assert($workers->contains($worker), "The provided worker was not part of this queue");
 
+            if (!$worker->isRunning()) {
+                $workers->detach($worker);
+                return;
+            }
+
             if (($workers[$worker] -= 1) === 0) {
                 // Worker is completely idle, remove from busy queue and add to idle queue.
                 foreach ($busyQueue as $key => $busy) {

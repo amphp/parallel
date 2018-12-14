@@ -201,4 +201,20 @@ abstract class AbstractPoolTest extends TestCase
             }
         });
     }
+
+    public function testPooledKill()
+    {
+        $exception = null;
+        try {
+            Loop::run(function () {
+                $pool = $this->createPool(1);
+                $worker = $pool->getWorker();
+                $worker->kill();
+                $worker2 = $pool->getWorker();
+                $worker->__destruct();
+            });
+        } catch (\Throwable $exception) {
+        }
+        $this->assertNull($exception);
+    }
 }
