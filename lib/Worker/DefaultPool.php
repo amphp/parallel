@@ -68,19 +68,19 @@ final class DefaultPool implements Pool
         $busyQueue = $this->busyQueue;
 
         $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue) {
-            \assert($workers->contains($worker), "The provided worker was not part of this queue");
-
-            if (($workers[$worker] -= 1) === 0) {
-                // Worker is completely idle, remove from busy queue and add to idle queue.
-                foreach ($busyQueue as $key => $busy) {
-                    if ($busy === $worker) {
-                        unset($busyQueue[$key]);
-                        break;
-                    }
-                }
-
-                $idleWorkers->push($worker);
+            if (!$workers->contains($worker) || ($workers[$worker] -= 1) > 0) {
+                return;
             }
+
+            // Worker is completely idle, remove from busy queue and add to idle queue.
+            foreach ($busyQueue as $key => $busy) {
+                if ($busy === $worker) {
+                    unset($busyQueue[$key]);
+                    break;
+                }
+            }
+
+            $idleWorkers->push($worker);
         };
     }
 
@@ -194,18 +194,6 @@ final class DefaultPool implements Pool
     }
 
     /**
-     * Creates a worker and adds them to the pool.
-     *
-     * @return Worker The worker created.
-     */
-    private function createWorker(): Worker
-    {
-        $worker = $this->factory->create();
-        $this->workers->attach($worker, 0);
-        return $worker;
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function getWorker(): Worker
@@ -232,7 +220,8 @@ final class DefaultPool implements Pool
                     $worker = $this->busyQueue->shift();
                 } else {
                     // Max worker count has not been reached, so create another worker.
-                    $worker = $this->createWorker();
+                    $worker = $this->factory->create();
+                    $this->workers->attach($worker, 0);
                     break;
                 }
             } else {
