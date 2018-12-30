@@ -38,13 +38,18 @@ abstract class TaskWorker implements Worker
         $this->context = $context;
 
         $context = &$this->context;
-        \register_shutdown_function(static function () use (&$context) {
+        $pending = &$this->pending;
+        \register_shutdown_function(static function () use (&$context, &$pending) {
             if ($context === null || !$context->isRunning()) {
                 return;
             }
 
             try {
-                Promise\wait(Promise\timeout(call(function () use ($context) {
+                Promise\wait(Promise\timeout(call(function () use ($context, $pending) {
+                    if ($pending) {
+                        yield $pending;
+                    }
+
                     yield $context->send(0);
                     return yield $context->join();
                 }), self::SHUTDOWN_TIMEOUT));
