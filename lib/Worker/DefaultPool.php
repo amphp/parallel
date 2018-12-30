@@ -84,13 +84,6 @@ final class DefaultPool implements Pool
         };
     }
 
-    public function __destruct()
-    {
-        if ($this->isRunning()) {
-            $this->kill();
-        }
-    }
-
     /**
      * Checks if the pool is running.
      *
@@ -189,7 +182,10 @@ final class DefaultPool implements Pool
         $this->running = false;
 
         foreach ($this->workers as $worker) {
-            $worker->kill();
+            \assert($worker instanceof Worker);
+            if ($worker->isRunning()) {
+                $worker->kill();
+            }
         }
     }
 

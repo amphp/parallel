@@ -53,7 +53,9 @@ class WorkerProcess implements Context
 
     public function kill()
     {
-        $this->process->kill();
+        if ($this->process->isRunning()) {
+            $this->process->kill();
+        }
     }
 
     public function join(): Promise
