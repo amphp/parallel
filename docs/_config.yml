@@ -24,5 +24,6 @@ defaults:
 shared_asset_path: "/parallel/asset"
 
 navigation:
- - custom-tasks
  - processes
+ - workers
+ - worker-pool

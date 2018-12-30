@@ -1,12 +1,65 @@
 ---
-title: Custom Tasks
-permalink: /custom-tasks
+title: Workers
+permalink: /workers
 ---
-Instead of passing simple callables to workers, this package also allows custom implementations of the `Task` interface to dispatch work in child processes or threads.
+
+## `Worker`
+
+`Worker` provides a simple interface for executing PHP code in parallel in a separate PHP process or thread.
+Classes implementing [`Task`](#task) are used to define the code to be run in parallel.
+
+```php
+<?php
+
+namespace Amp\Parallel\Worker;
+
+use Amp\Promise;
+
+/**
+ * An interface for a parallel worker thread that runs a queue of tasks.
+ */
+interface Worker
+{
+    /**
+     * Checks if the worker is running.
+     *
+     * @return bool True if the worker is running, otherwise false.
+     */
+    public function isRunning(): bool;
+
+    /**
+     * Checks if the worker is currently idle.
+     *
+     * @return bool
+     */
+    public function isIdle(): bool;
+
+    /**
+     * Enqueues a task to be executed by the worker.
+     *
+     * @param Task $task The task to enqueue.
+     *
+     * @return \Amp\Promise<mixed> Resolves with the return value of Task::run().
+     */
+    public function enqueue(Task $task): Promise;
+
+    /**
+     * @return \Amp\Promise<int> Exit code.
+     */
+    public function shutdown(): Promise;
+
+    /**
+     * Immediately kills the context.
+     */
+    public function kill();
+}
+```
 
 ## `Task`
 
 The `Task` interface has a single `run()` method that gets invoked in the worker to dispatch the work that needs to be done.
+The `run()` method can be written using blocking code since the code is executed in a separate process or thread. The method
+may also be asynchronous, returning a `Promise` or `Generator` that is run as a coroutine.
 
 ```php
 <?php
