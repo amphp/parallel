@@ -8,8 +8,8 @@ to execute tasks. This allows multiple tasks to be executed simultaneously.
 
 ## `Pool`
 
-The `Pool` interface extends [`Worker`](/parallel/workers#worker), adding methods to get information about the pool or pull a single `Worker` instance
-out of the pool. A pool uses multiple `Worker` instances to execute enqueued [tasks](/parallel/workers#task).
+The `Pool` interface extends [`Worker`](./workers#worker), adding methods to get information about the pool or pull a single `Worker` instance
+out of the pool. A pool uses multiple `Worker` instances to execute enqueued [tasks](./workers#task).
 
 ```php
 <?php
@@ -28,7 +28,7 @@ interface Pool extends Worker
      * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of
      * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
      *
-     * @return \Amp\Parallel\Worker\Worker
+     * @return Worker
      *
      * @throws \Amp\Parallel\Context\StatusError If the queue is not running.
      */
