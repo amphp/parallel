@@ -102,7 +102,7 @@ Loop::run(function () use ($argc, $argv) {
             yield $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
-        \trigger_error("Could not send result to parent", E_USER_ERROR);
+        \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
         exit(1);
     }
 });
