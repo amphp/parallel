@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Context\Internal;
 
-use Amp\Loop;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
+use Amp\Promise;
 use function Amp\call;
 
 // Doesn't exist in phpdbg...
@@ -33,7 +33,7 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-Loop::run(function () use (&$result, $argc, $argv) {
+(function () use ($argc, $argv) {
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
@@ -65,7 +65,7 @@ Loop::run(function () use (&$result, $argc, $argv) {
     $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
-        yield $channel->send($key);
+        Promise\wait($channel->send($key));
     } catch (\Throwable $exception) {
         \trigger_error("Could not send key to parent", E_USER_ERROR);
         exit(1);
@@ -89,25 +89,22 @@ Loop::run(function () use (&$result, $argc, $argv) {
             throw new \Error(\sprintf("Script '%s' did not return a callable function", $argv[0]));
         }
 
-        $result = new Sync\ExitSuccess(yield call($callable, $channel));
+        $result = new Sync\ExitSuccess(Promise\wait(call($callable, $channel)));
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }
 
     try {
-        try {
-            yield $channel->send($result);
-        } catch (Sync\SerializationException $exception) {
-            // Serializing the result failed. Send the reason why.
-            yield $channel->send(new Sync\ExitFailure($exception));
-        }
+        Promise\wait(call(function () use ($channel, $result) {
+            try {
+                yield $channel->send($result);
+            } catch (Sync\SerializationException $exception) {
+                // Serializing the result failed. Send the reason why.
+                yield $channel->send(new Sync\ExitFailure($exception));
+            }
+        }));
     } catch (\Throwable $exception) {
         \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
         exit(1);
     }
-});
-
-if ($result === null) {
-    \trigger_error("The script did not resolve the promise returned from the callable function", E_USER_ERROR);
-    exit(1);
-}
+})();
