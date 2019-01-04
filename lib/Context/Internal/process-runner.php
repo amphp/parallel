@@ -33,7 +33,7 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-Loop::run(function () use ($argc, $argv) {
+Loop::run(function () use (&$result, $argc, $argv) {
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
@@ -106,3 +106,8 @@ Loop::run(function () use ($argc, $argv) {
         exit(1);
     }
 });
+
+if ($result === null) {
+    \trigger_error("The script did not resolve the promise returned from the callable function", E_USER_ERROR);
+    exit(1);
+}
