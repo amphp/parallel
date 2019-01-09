@@ -267,8 +267,10 @@ final class Process implements Context
                     throw new SynchronizationError("Did not receive an exit result from process");
                 }
             } catch (\Throwable $exception) {
-                $this->kill();
-                throw $exception;
+                if ($this->isRunning()) {
+                    $this->kill();
+                }
+                throw new ContextException("Failed to receive result from process", 0, $exception);
             }
 
             $this->channel->close();

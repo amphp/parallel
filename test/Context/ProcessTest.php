@@ -35,12 +35,12 @@ class ProcessTest extends TestCase
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
-     * @expectedExceptionMessage No script found at 'test-process.php'
+     * @expectedExceptionMessage No script found at '../test-process.php'
      */
     public function testInvalidScriptPath()
     {
         Loop::run(function () {
-            $process = new Process("test-process.php");
+            $process = new Process("../test-process.php");
             yield $process->start();
             yield $process->join();
         });
@@ -82,6 +82,25 @@ class ProcessTest extends TestCase
             $process = new Process(__DIR__ . "/parse-error-process.inc");
             yield $process->start();
             \var_dump(yield $process->join());
+        });
+    }
+
+    /**
+     * @expectedException \Amp\Parallel\Context\ContextException
+     * @expectedExceptionMessage Failed to receive result from process
+     */
+    public function testKillWhenJoining()
+    {
+        Loop::run(function () {
+            $process = new Process([
+                __DIR__ . "/sleep-process.php",
+                5,
+            ]);
+            yield $process->start();
+            $promise = $process->join();
+            $process->kill();
+            $this->assertFalse($process->isRunning());
+            yield $promise;
         });
     }
 }
