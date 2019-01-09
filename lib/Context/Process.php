@@ -32,7 +32,7 @@ final class Process implements Context
     /** @var \Amp\Process\Process */
     private $process;
 
-    /** @var \Amp\Parallel\Sync\Channel */
+    /** @var \Amp\Parallel\Sync\ChannelledSocket */
     private $channel;
 
     /**
@@ -271,10 +271,13 @@ final class Process implements Context
                 throw $exception;
             }
 
+            $this->channel->close();
+
             $code = yield $this->process->join();
             if ($code !== 0) {
                 throw new ContextException(\sprintf("Process exited with code %d", $code));
             }
+
 
             return $data->getResult();
         });
@@ -357,5 +360,9 @@ final class Process implements Context
     public function kill()
     {
         $this->process->kill();
+
+        if ($this->channel !== null) {
+            $this->channel->close();
+        }
     }
 }

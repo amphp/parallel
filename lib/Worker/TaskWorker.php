@@ -54,7 +54,9 @@ abstract class TaskWorker implements Worker
                     return yield $context->join();
                 }), self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
-                $context->kill();
+                if ($context !== null) {
+                    $context->kill();
+                }
             }
         });
     }
@@ -160,7 +162,9 @@ abstract class TaskWorker implements Worker
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
             } finally {
-                $this->context = null; // Null property to free memory because shutdown function has reference to context.
+                // Null properties to free memory because the shutdown function has references to these.
+                $this->context = null;
+                $this->pending = null;
             }
         });
     }
@@ -181,6 +185,9 @@ abstract class TaskWorker implements Worker
         }
 
         $this->exitStatus = new Success(0);
-        $this->context = null; // Null property to free memory because shutdown function has reference to context.
+
+        // Null properties to free memory because the shutdown function has references to these.
+        $this->context = null;
+        $this->pending = null;
     }
 }
