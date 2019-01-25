@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Test\Worker;
+namespace Amp\Parallel\Test\Worker\Fixtures;
 
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;

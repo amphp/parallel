@@ -9,7 +9,7 @@ class JobTest extends TestCase
 {
     public function testGetJob()
     {
-        $task = new TestTask(42);
+        $task = new Fixtures\TestTask(42);
         $job = new Job($task);
         $this->assertSame($task, $job->getTask());
     }
@@ -20,7 +20,7 @@ class JobTest extends TestCase
      */
     public function testUnserialiableClass()
     {
-        $task = new TestTask(42);
+        $task = new Fixtures\TestTask(42);
         $job = new Job($task);
         $serialized = \serialize($job);
         $job = \unserialize($serialized, ['allowed_classes' => [Job::class]]);

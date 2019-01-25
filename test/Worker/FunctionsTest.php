@@ -37,7 +37,7 @@ class FunctionsTest extends TestCase
 
         $value = 42;
 
-        $task = new TestTask($value);
+        $task = new Fixtures\TestTask($value);
 
         $awaitable = Worker\enqueue($task);
 

@@ -11,13 +11,14 @@ final class TaskError extends \Error
     private $trace;
 
     /**
-     * @param string $name The exception class name.
-     * @param string $message The panic message.
-     * @param string $trace The panic stack trace.
+     * @param string          $name     The exception class name.
+     * @param string          $message  The panic message.
+     * @param string          $trace    The panic stack trace.
+     * @param \Throwable|null $previous Previous exception.
      */
-    public function __construct(string $name, string $message = '', string $trace = '')
+    public function __construct(string $name, string $message = '', string $trace = '', \Throwable $previous = null)
     {
-        parent::__construct($message);
+        parent::__construct($message, 0, $previous);
 
         $this->name = $name;
         $this->trace = $trace;

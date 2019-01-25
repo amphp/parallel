@@ -93,7 +93,7 @@ abstract class AbstractPoolTest extends TestCase
         Loop::run(function () {
             $pool = $this->createPool();
 
-            $returnValue = yield $pool->enqueue(new TestTask(42));
+            $returnValue = yield $pool->enqueue(new Fixtures\TestTask(42));
             $this->assertEquals(42, $returnValue);
 
             yield $pool->shutdown();
@@ -106,9 +106,9 @@ abstract class AbstractPoolTest extends TestCase
             $pool = $this->createPool();
 
             $values = yield \Amp\Promise\all([
-                $pool->enqueue(new TestTask(42)),
-                $pool->enqueue(new TestTask(56)),
-                $pool->enqueue(new TestTask(72))
+                $pool->enqueue(new Fixtures\TestTask(42)),
+                $pool->enqueue(new Fixtures\TestTask(56)),
+                $pool->enqueue(new Fixtures\TestTask(72))
             ]);
 
             $this->assertEquals([42, 56, 72], $values);
@@ -136,7 +136,7 @@ abstract class AbstractPoolTest extends TestCase
             $this->assertTrue($worker->isRunning());
             $this->assertTrue($worker->isIdle());
 
-            $this->assertSame(42, yield $worker->enqueue(new TestTask(42)));
+            $this->assertSame(42, yield $worker->enqueue(new Fixtures\TestTask(42)));
 
             yield $worker->shutdown();
 
@@ -151,7 +151,7 @@ abstract class AbstractPoolTest extends TestCase
 
             $values = [42, 56, 72];
             $tasks = \array_map(function (int $value): Task {
-                return new TestTask($value);
+                return new Fixtures\TestTask($value);
             }, $values);
 
             $promises = \array_map(function (Task $task) use ($pool): Promise {
@@ -190,7 +190,7 @@ abstract class AbstractPoolTest extends TestCase
 
                 $values = \range(1, 50);
                 $tasks = \array_map(function (int $value): Task {
-                    return new TestTask($value);
+                    return new Fixtures\TestTask($value);
                 }, $values);
 
                 $promises = \array_map(function (Task $task) use ($pool): Promise {

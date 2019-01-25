@@ -28,6 +28,9 @@ final class TaskFailure extends TaskResult
     /** @var array */
     private $trace;
 
+    /** @var self|null */
+    private $previous;
+
     public function __construct(string $id, \Throwable $exception)
     {
         parent::__construct($id);
@@ -36,37 +39,45 @@ final class TaskFailure extends TaskResult
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
         $this->trace = $exception->getTraceAsString();
+
+        if ($previous = $exception->getPrevious()) {
+            $this->previous = new self($id, $previous);
+        }
     }
 
     public function promise(): Promise
     {
-        switch ($this->parent) {
-            case self::PARENT_ERROR:
-                $exception = new TaskError(
-                    $this->type,
-                    \sprintf(
-                        'Uncaught %s in worker with message "%s" and code "%s"',
-                        $this->type,
-                        $this->message,
-                        $this->code
-                    ),
-                    $this->trace
-                );
-                break;
+        return new Failure($this->createException());
+    }
 
-            default:
-                $exception = new TaskException(
+    private function createException(): \Throwable
+    {
+        $previous = $this->previous ? $this->previous->createException() : null;
+
+        if ($this->parent === self::PARENT_ERROR) {
+            return new TaskError(
+                $this->type,
+                \sprintf(
+                    'Uncaught %s in worker with message "%s" and code "%s"',
                     $this->type,
-                    \sprintf(
-                        'Uncaught %s in worker with message "%s" and code "%s"',
-                        $this->type,
-                        $this->message,
-                        $this->code
-                    ),
-                    $this->trace
-                );
+                    $this->message,
+                    $this->code
+                ),
+                $this->trace,
+                $previous
+            );
         }
 
-        return new Failure($exception);
+        return new TaskException(
+            $this->type,
+            \sprintf(
+                'Uncaught %s in worker with message "%s" and code "%s"',
+                $this->type,
+                $this->message,
+                $this->code
+            ),
+            $this->trace,
+            $previous
+        );
     }
 }

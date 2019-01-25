@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Test\Worker;
+namespace Amp\Parallel\Test\Worker\Fixtures;
 
 use Amp\Delayed;
 use Amp\Parallel\Worker\Environment;
