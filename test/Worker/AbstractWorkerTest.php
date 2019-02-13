@@ -30,7 +30,7 @@ abstract class AbstractWorkerTest extends TestCase
     {
         Loop::run(function () {
             $worker = $this->createWorker();
-            $this->assertTrue(yield $worker->enqueue(new ConstantTask));
+            $this->assertTrue(yield $worker->enqueue(new Fixtures\ConstantTask));
             yield $worker->shutdown();
         });
     }
