@@ -74,7 +74,7 @@ class ProcessTest extends TestCase
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
-     * @expectedExceptionMessage Uncaught ParseError in execution context
+     * @expectedExceptionMessage contains a parse error
      */
     public function testParseError()
     {
