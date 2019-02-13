@@ -71,7 +71,7 @@ class ParallelTest extends TestCase
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
-     * @expectedExceptionMessage Uncaught ParseError in execution context
+     * @expectedExceptionMessageRegExp /Script (.*) contains a parse error/
      */
     public function testParseError()
     {

@@ -2,15 +2,16 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Failure;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\ExitSuccess;
+use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
-use parallel\Exception as ParallelException;
 use parallel\Runtime;
 use function Amp\call;
 
@@ -32,13 +33,13 @@ final class Parallel implements Context
     /** @var Internal\ProcessHub */
     private $hub;
 
-    /** @var Runtime */
+    /** @var Runtime|null */
     private $runtime;
 
-    /** @var ChannelledSocket A channel for communicating with the parallel thread. */
+    /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
     private $channel;
 
-    /** @var callable */
+    /** @var string Script path. */
     private $script;
 
     /** @var mixed[] */
@@ -168,13 +169,19 @@ final class Parallel implements Context
             throw new StatusError('The thread has already been started.');
         }
 
+        try {
+            $arguments = \serialize($this->args);
+        } catch (\Throwable $exception) {
+            return new Failure(new SerializationException("Arguments must be serializable.", 0, $exception));
+        }
+
         $this->oid = \getmypid();
 
         $this->runtime = new Runtime(self::$autoloadPath);
 
         $id = \random_int(0, \PHP_INT_MAX);
 
-        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, array $arguments): int {
+        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, string $arguments): int {
             \define("AMP_CONTEXT", "parallel");
 
             if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
@@ -192,15 +199,32 @@ final class Parallel implements Context
             }
 
             try {
+                \set_error_handler(__NAMESPACE__ . '\\Internal\\errorHandler');
+
+                // Attempt to unserialize function arguments
+                try {
+                    $arguments = \unserialize($arguments);
+                } catch (\Throwable $exception) {
+                    throw new SerializationException("Exception thrown when unserializing data", 0, $exception);
+                } finally {
+                    \restore_error_handler();
+                }
+
+                if (!\is_array($arguments)) { // This *should not* be able to happen.
+                    throw new \Error("Arguments did not unserialize to an array");
+                }
+
                 if (!\is_file($path)) {
                     throw new \Error(\sprintf("No script found at '%s' (be sure to provide the full path to the script)", $path));
                 }
 
-                // Protect current scope by requiring script within another function.
-                $callable = Internal\loadCallable($path);
-
-                if (!\is_callable($callable)) {
-                    throw new \Error(\sprintf("Script '%s' did not return a callable function", $path));
+                try {
+                    // Protect current scope by requiring script within another function.
+                    $callable = Internal\loadCallable($path);
+                } catch (\TypeError $exception) {
+                    throw new \Error(\sprintf("Script '%s' did not return a callable function", $path), 0, $exception);
+                } catch (\ParseError $exception) {
+                    throw new \Error(\sprintf("Script '%s' contains a parse error", $path), 0, $exception);
                 }
 
                 $result = new ExitSuccess(Promise\wait(call($callable, $channel, ...$arguments)));
@@ -220,14 +244,14 @@ final class Parallel implements Context
             $this->hub->getUri(),
             $this->hub->generateKey($id, self::KEY_LENGTH),
             $this->script,
-            $this->args
+            $arguments
         ]);
 
         return call(function () use ($id) {
             try {
                 $this->channel = yield $this->hub->accept($id);
             } catch (\Throwable $exception) {
-                $this->close();
+                $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
             }
         });
@@ -238,7 +262,13 @@ final class Parallel implements Context
      */
     public function kill()
     {
-        $this->close();
+        if ($this->runtime !== null) {
+            try {
+                //$this->runtime->kill();
+            } finally {
+                $this->close();
+            }
+        }
     }
 
     /**
