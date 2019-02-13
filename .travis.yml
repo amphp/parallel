@@ -26,6 +26,10 @@ install:
   - if [ "$TRAVIS_PHP_VERSION" != "7.0" ] && [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
       travis/install-pthreads.sh;
     fi
+  # parallel is only supported on PHP 7.1+
+  - if [ "$TRAVIS_PHP_VERSION" != "7.0" ]; then
+      travis/install-parallel.sh;
+    fi
   - wget https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.2/coveralls.phar
   - chmod +x coveralls.phar
 

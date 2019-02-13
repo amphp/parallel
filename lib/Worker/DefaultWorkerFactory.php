@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Parallel\Context\Thread;
+use Amp\Parallel\Context\Parallel;
 
 /**
  * The built-in worker factory type.
@@ -43,9 +43,11 @@ final class DefaultWorkerFactory implements WorkerFactory
      */
     public function create(): Worker
     {
-        if (Thread::isSupported()) {
+        if (Parallel::isSupported()) {
             return new WorkerThread($this->className);
         }
+
+        // Thread context is not use as pthreads is deprecated.
 
         return new WorkerProcess(
             $this->className,
