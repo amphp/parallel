@@ -53,6 +53,8 @@ final class Thread extends \Thread
      */
     public function run()
     {
+        \define("AMP_CONTEXT", "thread");
+
         /* First thing we need to do is re-initialize the class autoloader. If
          * we don't do this first, any object of a class that was loaded after
          * the thread started will just be garbage data and unserializable

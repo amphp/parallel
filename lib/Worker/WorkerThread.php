@@ -29,7 +29,7 @@ final class WorkerThread extends TaskWorker
             $environment = new $className;
 
             if (!\defined("AMP_WORKER")) {
-                \define("AMP_WORKER", "amp-worker");
+                \define("AMP_WORKER", "thread");
             }
 
             $runner = new TaskRunner($channel, $environment);

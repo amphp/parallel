@@ -7,6 +7,8 @@ use Amp\Parallel\Sync;
 use Amp\Promise;
 use function Amp\call;
 
+\define("AMP_CONTEXT", "process");
+
 // Doesn't exist in phpdbg...
 if (\function_exists("cli_set_process_title")) {
     @\cli_set_process_title("amp-process");
@@ -39,7 +41,8 @@ if (\function_exists("cli_set_process_title")) {
     \array_shift($argv);
 
     if (!isset($argv[0])) {
-        throw new \Error("No socket path provided");
+        \trigger_error("No socket path provided", E_USER_ERROR);
+        exit(1);
     }
 
     // Remove socket path from process arguments.
