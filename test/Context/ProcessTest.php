@@ -12,7 +12,7 @@ class ProcessTest extends TestCase
     {
         Loop::run(function () {
             $process = new Process([
-                __DIR__ . "/test-process.php",
+                __DIR__ . "/Fixtures/test-process.php",
                 "Test"
             ]);
             yield $process->start();
@@ -27,7 +27,7 @@ class ProcessTest extends TestCase
     public function testFailingProcess()
     {
         Loop::run(function () {
-            $process = new Process(__DIR__ . "/test-process.php");
+            $process = new Process(__DIR__ . "/Fixtures/test-process.php");
             yield $process->start();
             yield $process->join();
         });
@@ -53,7 +53,7 @@ class ProcessTest extends TestCase
     public function testInvalidResult()
     {
         Loop::run(function () {
-            $process = new Process(__DIR__ . "/invalid-result-process.php");
+            $process = new Process(__DIR__ . "/Fixtures/invalid-result-process.php");
             yield $process->start();
             \var_dump(yield $process->join());
         });
@@ -66,7 +66,7 @@ class ProcessTest extends TestCase
     public function testNoCallbackReturned()
     {
         Loop::run(function () {
-            $process = new Process(__DIR__ . "/no-callback-process.php");
+            $process = new Process(__DIR__ . "/Fixtures/no-callback-process.php");
             yield $process->start();
             \var_dump(yield $process->join());
         });
@@ -79,7 +79,7 @@ class ProcessTest extends TestCase
     public function testParseError()
     {
         Loop::run(function () {
-            $process = new Process(__DIR__ . "/parse-error-process.inc");
+            $process = new Process(__DIR__ . "/Fixtures/parse-error-process.inc");
             yield $process->start();
             \var_dump(yield $process->join());
         });
@@ -93,7 +93,7 @@ class ProcessTest extends TestCase
     {
         Loop::run(function () {
             $process = new Process([
-                __DIR__ . "/sleep-process.php",
+                __DIR__ . "/Fixtures/sleep-process.php",
                 5,
             ]);
             yield $process->start();
