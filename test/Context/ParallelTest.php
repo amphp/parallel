@@ -89,7 +89,7 @@ class ParallelTest extends TestCase
     public function testKillWhenJoining()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/Fixtures/sleep-parallel.php");
+            $thread = new Parallel(__DIR__ . "/Fixtures/sleep-parallel.php", 10);
             yield $thread->start();
             $promise = $thread->join();
             $thread->kill();

@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ExitFailure;
@@ -12,8 +13,14 @@ use function Amp\call;
 
 final class ParallelRunner
 {
+    const EXIT_CHECK_FREQUENCY = 250;
+
     public static function execute(Channel $channel, string $path, string $arguments): int
     {
+        Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
+            // Empty function. This timer exists to provide a breakpoint for the thread to be killed.
+        }));
+
         try {
             \set_error_handler(function ($errno, $errstr, $errfile, $errline) {
                 if ($errno & \error_reporting()) {

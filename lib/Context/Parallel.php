@@ -23,7 +23,6 @@ use function Amp\call;
  */
 final class Parallel implements Context
 {
-    const EXIT_CHECK_FREQUENCY = 250;
     const KEY_LENGTH = 32;
 
     /** @var string|null */
