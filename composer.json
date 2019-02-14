@@ -37,7 +37,6 @@
             "Amp\\Parallel\\": "lib"
         },
         "files": [
-            "lib/Context/Internal/functions.php",
             "lib/Worker/functions.php"
         ]
     },

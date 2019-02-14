@@ -11,7 +11,7 @@ class ParallelTest extends TestCase
     public function testBasicProcess()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/test-parallel.php", "Test");
+            $thread = new Parallel(__DIR__ . "/Fixtures/test-parallel.php", "Test");
             yield $thread->start();
             $this->assertSame("Test", yield $thread->join());
         });
@@ -24,7 +24,7 @@ class ParallelTest extends TestCase
     public function testFailingProcess()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/test-process.php");
+            $thread = new Parallel(__DIR__ . "/Fixtures/test-process.php");
             yield $thread->start();
             yield $thread->join();
         });
@@ -50,7 +50,7 @@ class ParallelTest extends TestCase
     public function testInvalidResult()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/invalid-result-process.php");
+            $thread = new Parallel(__DIR__ . "/Fixtures/invalid-result-process.php");
             yield $thread->start();
             \var_dump(yield $thread->join());
         });
@@ -63,7 +63,7 @@ class ParallelTest extends TestCase
     public function testNoCallbackReturned()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/no-callback-process.php");
+            $thread = new Parallel(__DIR__ . "/Fixtures/no-callback-process.php");
             yield $thread->start();
             \var_dump(yield $thread->join());
         });
@@ -76,7 +76,7 @@ class ParallelTest extends TestCase
     public function testParseError()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/parse-error-process.inc");
+            $thread = new Parallel(__DIR__ . "/Fixtures/parse-error-process.inc");
             yield $thread->start();
             \var_dump(yield $thread->join());
         });
@@ -89,7 +89,7 @@ class ParallelTest extends TestCase
     public function testKillWhenJoining()
     {
         Loop::run(function () {
-            $thread = new Parallel(__DIR__ . "/sleep-process.php");
+            $thread = new Parallel(__DIR__ . "/Fixtures/sleep-parallel.php");
             yield $thread->start();
             $promise = $thread->join();
             $thread->kill();
