@@ -47,6 +47,16 @@ final class ChannelledSocket implements Channel
         return $this->channel->send($data);
     }
 
+    public function unreference()
+    {
+        $this->read->unreference();
+    }
+
+    public function reference()
+    {
+        $this->read->reference();
+    }
+
     /**
      * Closes the read and write resource streams.
      */
