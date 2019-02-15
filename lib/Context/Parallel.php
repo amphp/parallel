@@ -10,7 +10,6 @@ use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
-use parallel\Exception as ParallelException;
 use parallel\Runtime;
 use function Amp\call;
 
@@ -35,7 +34,10 @@ final class Parallel implements Context
     private $runtime;
 
     /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
-    private $channel;
+    private $communicationChannel;
+
+    /** @var ChannelledSocket|null */
+    private $signalChannel;
 
     /** @var string Script path. */
     private $script;
@@ -45,6 +47,9 @@ final class Parallel implements Context
 
     /** @var int */
     private $oid = 0;
+
+    /** @var bool */
+    private $killed = false;
 
     /** @var \parallel\Future|null */
     private $future;
@@ -127,8 +132,11 @@ final class Parallel implements Context
     public function __clone()
     {
         $this->runtime = null;
-        $this->channel = null;
+        $this->future = null;
+        $this->communicationChannel = null;
+        $this->signalChannel = null;
         $this->oid = 0;
+        $this->killed = false;
     }
 
     /**
@@ -150,7 +158,7 @@ final class Parallel implements Context
      */
     public function isRunning(): bool
     {
-        return $this->channel !== null;
+        return $this->communicationChannel !== null && $this->signalChannel !== null;
     }
 
     /**
@@ -177,9 +185,13 @@ final class Parallel implements Context
 
         $this->runtime = new Runtime(self::$autoloadPath);
 
-        $id = \random_int(0, \PHP_INT_MAX);
+        $cid = \random_int(\PHP_INT_MIN, \PHP_INT_MAX);
 
-        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, string $arguments): int {
+        do {
+            $sid = \random_int(\PHP_INT_MIN, \PHP_INT_MAX);
+        } while ($sid === $cid);
+
+        $this->future = $this->runtime->run(static function (string $uri, string $channelKey, string $signalKey, string $path, string $arguments): int {
             \define("AMP_CONTEXT", "parallel");
 
             if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
@@ -187,29 +199,52 @@ final class Parallel implements Context
                 return 1;
             }
 
-            $channel = new ChannelledSocket($socket, $socket);
+            $communicationChannel = new ChannelledSocket($socket, $socket);
 
             try {
-                Promise\wait($channel->send($key));
+                Promise\wait($communicationChannel->send($channelKey));
             } catch (\Throwable $exception) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
                 return 1;
             }
 
-            return Internal\ParallelRunner::execute($channel, $path, $arguments);
+            if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
+                \trigger_error("Could not connect to IPC socket", E_USER_ERROR);
+                return 1;
+            }
+
+            $signalChannel = new ChannelledSocket($socket, $socket);
+            $signalChannel->unreference();
+
+            try {
+                Promise\wait($signalChannel->send($signalKey));
+            } catch (\Throwable $exception) {
+                \trigger_error("Could not send key to parent", E_USER_ERROR);
+                return 1;
+            }
+
+            Promise\rethrow(Internal\ParallelRunner::handleSignals($signalChannel));
+
+            return Internal\ParallelRunner::execute($communicationChannel, $path, $arguments);
         }, [
             $this->hub->getUri(),
-            $this->hub->generateKey($id, self::KEY_LENGTH),
+            $this->hub->generateKey($cid, self::KEY_LENGTH),
+            $this->hub->generateKey($sid, self::KEY_LENGTH),
             $this->script,
             $arguments
         ]);
 
-        return call(function () use ($id) {
+        return call(function () use ($cid, $sid) {
             try {
-                $this->channel = yield $this->hub->accept($id);
+                $this->communicationChannel = yield $this->hub->accept($cid);
+                $this->signalChannel = yield $this->hub->accept($sid);
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
+            }
+
+            if ($this->killed) {
+                $this->kill();
             }
         });
     }
@@ -219,11 +254,12 @@ final class Parallel implements Context
      */
     public function kill()
     {
-        if ($this->runtime !== null) {
+        $this->killed = true;
+
+        if ($this->signalChannel !== null) {
             try {
-                $this->runtime->kill();
-            } catch (ParallelException $exception) {
-                // Ignore runtime being unusable since we're killing it anyway.
+                $this->signalChannel->send(Internal\ParallelRunner::KILL);
+                $this->signalChannel->close();
             } finally {
                 $this->close();
             }
@@ -235,11 +271,16 @@ final class Parallel implements Context
      */
     private function close()
     {
-        if ($this->channel !== null) {
-            $this->channel->close();
+        if ($this->communicationChannel !== null) {
+            $this->communicationChannel->close();
         }
 
-        $this->channel = null;
+        if ($this->signalChannel !== null) {
+            $this->signalChannel->close();
+        }
+
+        $this->communicationChannel = null;
+        $this->signalChannel = null;
     }
 
     /**
@@ -254,13 +295,13 @@ final class Parallel implements Context
      */
     public function join(): Promise
     {
-        if ($this->channel == null || $this->runtime === null || $this->future === null) {
+        if ($this->communicationChannel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
         return call(function () {
             try {
-                $response = yield $this->channel->receive();
+                $response = yield $this->communicationChannel->receive();
 
                 if (!$response instanceof ExitResult) {
                     throw new SynchronizationError('Did not receive an exit result from thread.');
@@ -288,12 +329,12 @@ final class Parallel implements Context
      */
     public function receive(): Promise
     {
-        if ($this->channel === null) {
+        if ($this->communicationChannel === null) {
             throw new StatusError('The process has not been started.');
         }
 
         return call(function () {
-            $data = yield $this->channel->receive();
+            $data = yield $this->communicationChannel->receive();
 
             if ($data instanceof ExitResult) {
                 $data = $data->getResult();
@@ -312,7 +353,7 @@ final class Parallel implements Context
      */
     public function send($data): Promise
     {
-        if ($this->channel === null) {
+        if ($this->communicationChannel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
@@ -320,6 +361,6 @@ final class Parallel implements Context
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return $this->channel->send($data);
+        return $this->communicationChannel->send($data);
     }
 }
