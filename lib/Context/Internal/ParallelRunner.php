@@ -13,8 +13,7 @@ use function Amp\call;
 
 final class ParallelRunner
 {
-    const KILL = 9;
-    const TERMINATE = 15;
+    const EXIT_CHECK_FREQUENCY = 250;
 
     public static function unserializeArguments(string $arguments): array
     {
@@ -46,28 +45,13 @@ final class ParallelRunner
         return \array_values($arguments);
     }
 
-    public static function handleSignals(Channel $channel): Promise
-    {
-        return call(function () use ($channel) {
-            try {
-                $signal = yield $channel->receive();
-
-                switch ($signal) {
-                    case self::TERMINATE:
-                        Loop::stop();
-                        return;
-
-                    case self::KILL:
-                        exit(1);
-                }
-            } catch (ChannelException $exception) {
-                // Channel closed unexpectedly, ignore.
-            }
-        });
-    }
-
     public static function execute(Channel $channel, string $path, string $arguments): int
     {
+        Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
+            // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
+            // select() will not be interrupted.
+        }));
+
         try {
             if (!\is_file($path)) {
                 throw new \Error(\sprintf("No script found at '%s' (be sure to provide the full path to the script)", $path));
