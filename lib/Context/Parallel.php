@@ -8,6 +8,7 @@ use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
 use parallel\Runtime;
+use parallel\TimeoutException as ParallelTimeoutException;
 use function Amp\call;
 
 /**
@@ -19,16 +20,26 @@ use function Amp\call;
  */
 final class Parallel implements Context
 {
+    const EXIT_CHECK_FREQUENCY = 250;
     const KEY_LENGTH = 32;
 
     /** @var string|null */
     private static $autoloadPath;
 
     /** @var int Next ID to be used for IPC hub. */
-    private static $id = 1;
+    private static $nextId = 1;
+
+    /** @var array Array of [\parallel\Future, ChannelledSocket] pairs. */
+    private static $futures = [];
+
+    /** @var string|null */
+    private static $watcher;
 
     /** @var Internal\ProcessHub */
     private $hub;
+
+    /** @var int|null */
+    private $id;
 
     /** @var Runtime|null */
     private $runtime;
@@ -39,7 +50,7 @@ final class Parallel implements Context
     /** @var string Script path. */
     private $script;
 
-    /** @var mixed[] */
+    /** @var string[] */
     private $args = [];
 
     /** @var int */
@@ -47,9 +58,6 @@ final class Parallel implements Context
 
     /** @var bool */
     private $killed = false;
-
-    /** @var \parallel\Future|null */
-    private $future;
 
     /**
      * Checks if threading is enabled.
@@ -130,8 +138,8 @@ final class Parallel implements Context
     public function __clone()
     {
         $this->runtime = null;
-        $this->future = null;
         $this->channel = null;
+        $this->id = null;
         $this->oid = 0;
         $this->killed = false;
     }
@@ -172,13 +180,28 @@ final class Parallel implements Context
             throw new StatusError('The thread has already been started.');
         }
 
+        if (self::$watcher === null) {
+            self::$watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () {
+                foreach (self::$futures as list($future, $channel)) {
+                    try {
+                        $future->value(0);
+                    } catch (ParallelTimeoutException $exception) {
+                        // Ignore timeout – that just means the thread is still running.
+                    } catch (\Throwable $exception) {
+                        $channel->close();
+                    }
+                }
+            });
+            Loop::unreference(self::$watcher);
+        }
+
         $this->oid = \getmypid();
 
         $this->runtime = new Runtime(self::$autoloadPath);
 
-        $id = self::$id++;
+        $this->id = self::$nextId++;
 
-        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, array $argv): int {
+        $future = $this->runtime->run(static function (string $uri, string $key, string $path, array $argv): int {
             \define("AMP_CONTEXT", "parallel");
 
             if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
@@ -204,14 +227,15 @@ final class Parallel implements Context
             return $result;
         }, [
             $this->hub->getUri(),
-            $this->hub->generateKey($id, self::KEY_LENGTH),
+            $this->hub->generateKey($this->id, self::KEY_LENGTH),
             $this->script,
             $this->args
         ]);
 
-        return call(function () use ($id) {
+        return call(function () use ($future) {
             try {
-                $this->channel = yield $this->hub->accept($id);
+                $this->channel = $channel = yield $this->hub->accept($this->id);
+                self::$futures[$this->id] = [$future, $channel];
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
@@ -244,6 +268,8 @@ final class Parallel implements Context
      */
     private function close()
     {
+        unset(self::$futures[$this->id]);
+
         $this->runtime = null;
 
         if ($this->channel !== null) {
