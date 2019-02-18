@@ -186,16 +186,22 @@ final class Parallel implements Context
                 return 1;
             }
 
-            $communicationChannel = new ChannelledSocket($socket, $socket);
+            $channel = new ChannelledSocket($socket, $socket);
 
             try {
-                Promise\wait($communicationChannel->send($key));
+                Promise\wait($channel->send($key));
             } catch (\Throwable $exception) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
                 return 1;
             }
 
-            return Internal\ParallelRunner::run($communicationChannel, $path, $argv);
+            try {
+                $result = Internal\ParallelRunner::run($channel, $path, $argv);
+            } finally {
+                $channel->close();
+            }
+
+            return $result;
         }, [
             $this->hub->getUri(),
             $this->hub->generateKey($id, self::KEY_LENGTH),
