@@ -269,15 +269,15 @@ final class Parallel implements Context
         return call(function () {
             try {
                 $response = yield $this->channel->receive();
-
-                if (!$response instanceof ExitResult) {
-                    throw new SynchronizationError('Did not receive an exit result from thread.');
-                }
+                $this->close();
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Failed to receive result from thread", 0, $exception);
-            } finally {
-                $this->close();
+            }
+
+            if (!$response instanceof ExitResult) {
+                $this->kill();
+                throw new SynchronizationError('Did not receive an exit result from thread.');
             }
 
             return $response->getResult();

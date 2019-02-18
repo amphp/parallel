@@ -263,14 +263,18 @@ final class Process implements Context
         return call(function () {
             try {
                 $data = yield $this->channel->receive();
-                if (!$data instanceof ExitResult) {
-                    throw new SynchronizationError("Did not receive an exit result from process");
-                }
             } catch (\Throwable $exception) {
                 if ($this->isRunning()) {
                     $this->kill();
                 }
                 throw new ContextException("Failed to receive result from process", 0, $exception);
+            }
+
+            if (!$data instanceof ExitResult) {
+                if ($this->isRunning()) {
+                    $this->kill();
+                }
+                throw new SynchronizationError("Did not receive an exit result from process");
             }
 
             $this->channel->close();

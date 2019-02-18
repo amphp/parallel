@@ -269,7 +269,7 @@ class ThreadTest extends TestCase
 
     /**
      * @expectedException \Amp\Parallel\Context\ContextException
-     * @expectedExceptionMessage The context stopped responding
+     * @expectedExceptionMessage Failed to receive result
      */
     public function testExitingContextOnJoin()
     {
