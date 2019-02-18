@@ -4,7 +4,6 @@ namespace Amp\Parallel\Context;
 
 use Amp\Failure;
 use Amp\Loop;
-use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
