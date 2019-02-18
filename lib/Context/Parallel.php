@@ -43,7 +43,7 @@ final class Parallel implements Context
     private $script;
 
     /** @var mixed[] */
-    private $args;
+    private $args = [];
 
     /** @var int */
     private $oid = 0;
@@ -67,15 +67,15 @@ final class Parallel implements Context
     /**
      * Creates and starts a new thread.
      *
-     * @param callable $function The callable to invoke in the thread. First argument is an instance of
-     *     \Amp\Parallel\Sync\Channel.
+     * @param string|array $script Path to PHP script or array with first element as path and following elements options
+     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      * @param mixed ...$args Additional arguments to pass to the given callable.
      *
      * @return Promise<Thread> The thread object that was spawned.
      */
-    public static function run(string $path, ...$args): Promise
+    public static function run($script): Promise
     {
-        $thread = new self($path, ...$args);
+        $thread = new self($script);
         return call(function () use ($thread) {
             yield $thread->start();
             return $thread;
@@ -83,15 +83,12 @@ final class Parallel implements Context
     }
 
     /**
-     * Creates a new thread.
-     *
-     * @param callable $function The callable to invoke in the thread. First argument is an instance of
-     *     \Amp\Parallel\Sync\Channel.
-     * @param mixed ...$args Additional arguments to pass to the given callable.
+     * @param string|array $script Path to PHP script or array with first element as path and following elements options
+     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */
-    public function __construct(string $script, ...$args)
+    public function __construct($script)
     {
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ProcessHub) {
@@ -103,8 +100,12 @@ final class Parallel implements Context
             throw new \Error("The parallel extension is required to create parallel threads.");
         }
 
-        $this->script = $script;
-        $this->args = $args;
+        if (\is_array($script)) {
+            $this->script = (string) \array_shift($script);
+            $this->args = \array_map("strval", $script);
+        } else {
+            $this->script = (string) $script;
+        }
 
         if (self::$autoloadPath === null) {
             $paths = [
@@ -174,19 +175,13 @@ final class Parallel implements Context
             throw new StatusError('The thread has already been started.');
         }
 
-        try {
-            $arguments = \serialize($this->args);
-        } catch (\Throwable $exception) {
-            return new Failure(new SerializationException("Arguments must be serializable.", 0, $exception));
-        }
-
         $this->oid = \getmypid();
 
         $this->runtime = new Runtime(self::$autoloadPath);
 
         $id = self::$id++;
 
-        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, string $arguments): int {
+        $this->future = $this->runtime->run(static function (string $uri, string $key, string $path, array $argv): int {
             \define("AMP_CONTEXT", "parallel");
 
             if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
@@ -203,12 +198,12 @@ final class Parallel implements Context
                 return 1;
             }
 
-            return Internal\ParallelRunner::execute($communicationChannel, $path, $arguments);
+            return Internal\ParallelRunner::run($communicationChannel, $path, $argv);
         }, [
             $this->hub->getUri(),
             $this->hub->generateKey($id, self::KEY_LENGTH),
             $this->script,
-            $arguments
+            $this->args
         ]);
 
         return call(function () use ($id) {
@@ -234,7 +229,7 @@ final class Parallel implements Context
 
         if ($this->runtime !== null) {
             try {
-                $this->runtime->kill(true);
+                $this->runtime->kill();
             } finally {
                 $this->close();
             }
@@ -278,16 +273,9 @@ final class Parallel implements Context
                 if (!$response instanceof ExitResult) {
                     throw new SynchronizationError('Did not receive an exit result from thread.');
                 }
-            } catch (ChannelException $exception) {
-                $this->kill();
-                throw new ContextException(
-                    "The context stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception
-                );
             } catch (\Throwable $exception) {
                 $this->kill();
-                throw $exception;
+                throw new ContextException("Failed to receive result from thread", 0, $exception);
             } finally {
                 $this->close();
             }

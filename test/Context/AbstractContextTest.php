@@ -4,98 +4,33 @@ namespace Amp\Parallel\Test\Context;
 
 use Amp\Delayed;
 use Amp\Loop;
-use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\ExitSuccess;
+use Amp\Parallel\Context\Context;
 use Amp\PHPUnit\TestCase;
 
 abstract class AbstractContextTest extends TestCase
 {
-    /**
-     * @param callable $function
-     *
-     * @return \Amp\Parallel\Context\Context
-     */
-    abstract public function createContext(callable $function);
+    abstract public function createContext($script): Context;
 
-    public function testIsRunning()
+    public function testBasicProcess()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                \usleep(100);
-            });
-
-            $this->assertFalse($context->isRunning());
-
+            $context = $this->createContext([
+                __DIR__ . "/Fixtures/test-process.php",
+                "Test"
+            ]);
             yield $context->start();
-
-            $this->assertTrue($context->isRunning());
-
-            yield $context->join();
-
-            $this->assertFalse($context->isRunning());
+            $this->assertSame("Test", yield $context->join());
         });
-    }
-
-    public function testKill()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function () {
-                \usleep(1e6);
-            });
-
-            yield $context->start();
-
-            $this->assertRunTimeLessThan([$context, 'kill'], 1000);
-
-            $this->assertFalse($context->isRunning());
-        });
-    }
-
-    /**
-     * @expectedException \Amp\Parallel\Context\StatusError
-     */
-    public function testStartWhileRunningThrowsError()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function () {
-                \usleep(100);
-            });
-
-            yield $context->start();
-            yield $context->start();
-        });
-    }
-
-    /**
-     * @expectedException \Amp\Parallel\Context\StatusError
-     */
-    public function testStartMultipleTimesThrowsError()
-    {
-        $this->assertRunTimeGreaterThan(function () {
-            Loop::run(function () {
-                $context = $this->createContext(function () {
-                    \sleep(1);
-                });
-
-                yield $context->start();
-                yield $context->join();
-
-                yield $context->start();
-                yield $context->join();
-            });
-        }, 2000);
     }
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage No string provided
      */
-    public function testExceptionInContextPanics()
+    public function testFailingProcess()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                throw new \Exception('Exception in fork.');
-            });
-
+            $context = $this->createContext(__DIR__ . "/Fixtures/test-process.php");
             yield $context->start();
             yield $context->join();
         });
@@ -103,209 +38,93 @@ abstract class AbstractContextTest extends TestCase
 
     /**
      * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage No script found at '../test-process.php'
      */
-    public function testReturnUnserializableDataPanics()
+    public function testInvalidScriptPath()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                return yield function () {};
-            });
-
+            $context = $this->createContext("../test-process.php");
             yield $context->start();
             yield $context->join();
         });
     }
 
-    public function testJoinWaitsForChild()
-    {
-        $this->assertRunTimeGreaterThan(function () {
-            Loop::run(function () {
-                $context = $this->createContext(function () {
-                    \sleep(1);
-                });
-
-                yield $context->start();
-                yield $context->join();
-            });
-        }, 1000);
-    }
-
     /**
-     * @expectedException \Amp\Parallel\Context\StatusError
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage The given data cannot be sent because it is not serializable
      */
-    public function testJoinWithoutStartThrowsError()
+    public function testInvalidResult()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                \usleep(100);
-            });
-
-            yield $context->join();
-        });
-    }
-
-    public function testJoinResolvesWithContextReturn()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function () {
-                return 42;
-            });
-
+            $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
             yield $context->start();
-            $this->assertSame(42, yield $context->join());
+            \var_dump(yield $context->join());
         });
     }
 
-    public function testSendAndReceive()
+    /**
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage did not return a callable function
+     */
+    public function testNoCallbackReturned()
     {
         Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                yield $channel->send(1);
-                $value = yield $channel->receive();
-                return $value;
-            });
-
-            $value = 42;
-
+            $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
             yield $context->start();
-            $this->assertSame(1, yield $context->receive());
-            yield $context->send($value);
-            $this->assertSame($value, yield $context->join());
+            \var_dump(yield $context->join());
         });
     }
 
     /**
-     * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\Sync\SynchronizationError
+     * @expectedException \Amp\Parallel\Sync\PanicError
+     * @expectedExceptionMessage contains a parse error
      */
-    public function testJoinWhenContextSendingData()
+    public function testParseError()
     {
         Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                yield $channel->send(0);
-                return 42;
-            });
-
+            $context = $this->createContext(__DIR__ . "/Fixtures/parse-error-process.inc");
             yield $context->start();
-            $value = yield $context->join();
-        });
-    }
-
-    /**
-     * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\Context\StatusError
-     */
-    public function testReceiveBeforeContextHasStarted()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                yield $channel->send(0);
-                return 42;
-            });
-
-            $value = yield $context->receive();
-        });
-    }
-
-    /**
-     * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\Context\StatusError
-     */
-    public function testSendBeforeContextHasStarted()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                yield $channel->send(0);
-                return 42;
-            });
-
-            yield $context->send(0);
-        });
-    }
-
-    /**
-     * @depends testSendAndReceive
-     * @expectedException \Amp\Parallel\Sync\SynchronizationError
-     */
-    public function testReceiveWhenContextHasReturned()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                yield $channel->send(0);
-                return 42;
-            });
-
-            yield $context->start();
-            $value = yield $context->receive();
-            $value = yield $context->receive();
-            $value = yield $context->join();
-        });
-    }
-
-    /**
-     * @depends testSendAndReceive
-     * @expectedException \Error
-     */
-    public function testSendExitResult()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function (Channel $channel) {
-                $value = yield $channel->receive();
-                return 42;
-            });
-
-            yield $context->start();
-            yield $context->send(new ExitSuccess(0));
-            $value = yield $context->join();
+            \var_dump(yield $context->join());
         });
     }
 
     /**
      * @expectedException \Amp\Parallel\Context\ContextException
-     * @expectedExceptionMessage The context stopped responding
+     * @expectedExceptionMessage Failed to receive result
      */
-    public function testExitingContextOnJoin()
+    public function testKillWhenJoining()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                exit;
-            });
-
+            $context = $this->createContext([
+                __DIR__ . "/Fixtures/delayed-process.php",
+                5,
+            ]);
             yield $context->start();
-            $value = yield $context->join();
+            yield new Delayed(100);
+            $promise = $context->join();
+            $context->kill();
+            $this->assertFalse($context->isRunning());
+            yield $promise;
         });
     }
 
     /**
-     * @expectedException \Amp\Parallel\Sync\ChannelException
-     * @expectedExceptionMessage The channel closed unexpectedly
+     * @expectedException \Amp\Parallel\Context\ContextException
+     * @expectedExceptionMessage Failed to receive result
      */
-    public function testExitingContextOnReceive()
+    public function testKillBusyContext()
     {
         Loop::run(function () {
-            $context = $this->createContext(function () {
-                exit;
-            });
-
+            $context = $this->createContext([
+                __DIR__ . "/Fixtures/sleep-process.php",
+                5,
+            ]);
             yield $context->start();
-            $value = yield $context->receive();
-        });
-    }
-
-    /**
-     * @expectedException \Amp\Parallel\Sync\ChannelException
-     * @expectedExceptionMessage Sending on the channel failed
-     */
-    public function testExitingContextOnSend()
-    {
-        Loop::run(function () {
-            $context = $this->createContext(function () {
-                yield new Delayed(1000);
-                exit;
-            });
-
-            yield $context->start();
-            yield $context->send(\str_pad("", 1024 * 1024, "-"));
+            yield new Delayed(100);
+            $promise = $context->join();
+            $context->kill();
+            $this->assertFalse($context->isRunning());
+            yield $promise;
         });
     }
 }

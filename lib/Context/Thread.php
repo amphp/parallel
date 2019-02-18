@@ -234,16 +234,9 @@ final class Thread implements Context
                 if (!$response instanceof ExitResult) {
                     throw new SynchronizationError('Did not receive an exit result from thread.');
                 }
-            } catch (ChannelException $exception) {
-                $this->kill();
-                throw new ContextException(
-                    "The context stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception
-                );
             } catch (\Throwable $exception) {
                 $this->kill();
-                throw $exception;
+                throw new ContextException("Failed to receive result from thread", 0, $exception);
             } finally {
                 Loop::disable($this->watcher);
                 $this->close();

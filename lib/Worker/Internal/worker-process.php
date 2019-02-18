@@ -8,7 +8,7 @@ use Amp\Promise;
 
 return function (Sync\Channel $channel) use ($argv): Promise {
     if (!\defined("AMP_WORKER")) {
-        \define("AMP_WORKER", "process");
+        \define("AMP_WORKER", \AMP_CONTEXT);
     }
 
     if (!isset($argv[1])) {

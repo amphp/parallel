@@ -4,7 +4,6 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
@@ -15,37 +14,7 @@ final class ParallelRunner
 {
     const EXIT_CHECK_FREQUENCY = 250;
 
-    public static function unserializeArguments(string $arguments): array
-    {
-        \set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            if ($errno & \error_reporting()) {
-                throw new ChannelException(\sprintf(
-                    'Received corrupted data. Errno: %d; %s in file %s on line %d',
-                    $errno,
-                    $errstr,
-                    $errfile,
-                    $errline
-                ));
-            }
-        });
-
-        // Attempt to unserialize function arguments
-        try {
-            $arguments = \unserialize($arguments);
-        } catch (\Throwable $exception) {
-            throw new SerializationException("Exception thrown when unserializing data", 0, $exception);
-        } finally {
-            \restore_error_handler();
-        }
-
-        if (!\is_array($arguments)) {
-            throw new SerializationException("Argument list did not unserialize to an array");
-        }
-
-        return \array_values($arguments);
-    }
-
-    public static function execute(Channel $channel, string $path, string $arguments): int
+    public static function run(Channel $channel, string $path, array $argv): int
     {
         Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
             // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
@@ -57,10 +26,12 @@ final class ParallelRunner
                 throw new \Error(\sprintf("No script found at '%s' (be sure to provide the full path to the script)", $path));
             }
 
+            $argc = \array_unshift($argv, $path);
+
             try {
                 // Protect current scope by requiring script within another function.
-                $callable = (function () use ($path): callable {
-                    return require $path;
+                $callable = (function () use ($argc, $argv): callable { // Using $argc so it is available to the required script.
+                    return require $argv[0];
                 })();
             } catch (\TypeError $exception) {
                 throw new \Error(\sprintf("Script '%s' did not return a callable function", $path), 0, $exception);
@@ -68,9 +39,7 @@ final class ParallelRunner
                 throw new \Error(\sprintf("Script '%s' contains a parse error", $path), 0, $exception);
             }
 
-            $arguments = self::unserializeArguments($arguments);
-
-            $result = new ExitSuccess(Promise\wait(call($callable, $channel, ...$arguments)));
+            $result = new ExitSuccess(Promise\wait(call($callable, $channel)));
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
         }
