@@ -64,7 +64,7 @@ final class ProcessHub
 
             try {
                 $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
-            } catch (TimeoutException $exception) {
+            } catch (\Throwable $exception) {
                 $channel->close();
                 return; // Ignore possible foreign connection attempt.
             }
