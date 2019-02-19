@@ -12,11 +12,7 @@ use parallel\Runtime;
 use function Amp\call;
 
 /**
- * Implements an execution context using native multi-threading.
- *
- * The thread context is not itself threaded. A local instance of the context is
- * maintained both in the context that creates the thread and in the thread
- * itself.
+ * Implements an execution context using native threads provided by the parallel extension.
  */
 final class Parallel implements Context
 {
@@ -26,7 +22,7 @@ final class Parallel implements Context
     /** @var string|null */
     private static $autoloadPath;
 
-    /** @var int Next ID to be used for IPC hub. */
+    /** @var int Next thread ID. */
     private static $nextId = 1;
 
     /** @var Future[] */
@@ -110,7 +106,7 @@ final class Parallel implements Context
 
         if (\is_array($script)) {
             $this->script = (string) \array_shift($script);
-            $this->args = \array_map("strval", $script);
+            $this->args = \array_values(\array_map("strval", $script));
         } else {
             $this->script = (string) $script;
         }
@@ -185,10 +181,9 @@ final class Parallel implements Context
 
         if (self::$watcher === null) {
             self::$watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () {
-                $futures = self::$futures;
                 $resolved = $errored = $timedout = [];
 
-                Future::select($futures, $resolved, $errored, $timedout, 0);
+                Future::select(self::$futures, $resolved, $errored, $timedout, 0);
 
                 foreach ($errored as $id => $future) {
                     self::$channels[$id]->close();
@@ -354,5 +349,21 @@ final class Parallel implements Context
         }
 
         return $this->channel->send($data);
+    }
+
+    /**
+     * Returns the ID of the thread. This ID will be unique to this process.
+     *
+     * @return int
+     *
+     * @throws \Amp\Process\StatusError
+     */
+    public function getId(): int
+    {
+        if ($this->id === null) {
+            throw new StatusError('The thread has not been started');
+        }
+
+        return $this->id;
     }
 }
