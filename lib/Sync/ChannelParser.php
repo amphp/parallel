@@ -2,13 +2,10 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\CallableMaker;
 use Amp\Parser\Parser;
 
 final class ChannelParser extends Parser
 {
-    use CallableMaker;
-
     const HEADER_LENGTH = 5;
 
     /**
@@ -16,7 +13,7 @@ final class ChannelParser extends Parser
      */
     public function __construct(callable $callback)
     {
-        parent::__construct(self::parser($callback, self::callableFromStaticMethod("errorHandler")));
+        parent::__construct(self::parser($callback));
     }
 
     /**
@@ -43,14 +40,13 @@ final class ChannelParser extends Parser
 
     /**
      * @param callable $push
-     * @param callable $errorHandler
      *
      * @return \Generator
      *
      * @throws \Amp\Parallel\Sync\ChannelException
      * @throws \Amp\Parallel\Sync\SerializationException
      */
-    private static function parser(callable $push, callable $errorHandler): \Generator
+    private static function parser(callable $push): \Generator
     {
         while (true) {
             $header = yield self::HEADER_LENGTH;
@@ -58,41 +54,35 @@ final class ChannelParser extends Parser
 
             if ($data["prefix"] !== 0) {
                 $data = $header . yield;
-
-                $data = \preg_replace_callback("/[^\x20-\x7e]/", function (array $matches) {
-                    return "\\x" . \dechex(\ord($matches[0]));
-                }, $data);
-
-                throw new ChannelException("Invalid packet received: " . $data);
+                throw new ChannelException("Invalid packet received: " . self::encodeUnprintableChars($data));
             }
 
             $data = yield $data["length"];
 
-            \set_error_handler($errorHandler);
-
             // Attempt to unserialize the received data.
             try {
-                $data = \unserialize($data);
+                $result = \unserialize($data);
+
+                if ($result === false && $data !== \serialize(false)) {
+                    throw new ChannelException("Received invalid data: " . self::encodeUnprintableChars($data));
+                }
             } catch (\Throwable $exception) {
                 throw new SerializationException("Exception thrown when unserializing data", 0, $exception);
-            } finally {
-                \restore_error_handler();
             }
 
-            $push($data);
+            $push($result);
         }
     }
 
-    private static function errorHandler($errno, $errstr, $errfile, $errline)
+    /**
+     * @param string $data Binary data.
+     *
+     * @return string Unprintable characters encoded as \x##.
+     */
+    private static function encodeUnprintableChars(string $data): string
     {
-        if ($errno & \error_reporting()) {
-            throw new ChannelException(\sprintf(
-                'Received corrupted data. Errno: %d; %s in file %s on line %d',
-                $errno,
-                $errstr,
-                $errfile,
-                $errline
-            ));
-        }
+        return \preg_replace_callback("/[^\x20-\x7e]/", function (array $matches) {
+            return "\\x" . \dechex(\ord($matches[0]));
+        }, $data);
     }
 }
