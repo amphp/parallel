@@ -15,15 +15,24 @@ final class WorkerProcess extends TaskWorker
      * @param mixed[] $env Array of environment variables to pass to the worker. Empty array inherits from the current
      *     PHP process. See the $env parameter of \Amp\Process\Process::__construct().
      * @param string|null $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|null $autoloadPath Path to custom autoloader.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, array $env = [], string $binary = null)
-    {
+    public function __construct(
+        string $envClassName = BasicEnvironment::class,
+        array $env = [],
+        string $binary = null,
+        string $autoloadPath = null
+    ) {
         $script = [
             self::SCRIPT_PATH,
             $envClassName,
         ];
+
+        if ($autoloadPath !== null) {
+            $script[] = $autoloadPath;
+        }
 
         parent::__construct(new Internal\WorkerProcess($script, $env, $binary));
     }

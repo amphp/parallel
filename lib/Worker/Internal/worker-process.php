@@ -6,9 +6,20 @@ use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
 use Amp\Promise;
 
-return function (Sync\Channel $channel) use ($argv): Promise {
+return function (Sync\Channel $channel) use ($argc, $argv): Promise {
     if (!\defined("AMP_WORKER")) {
         \define("AMP_WORKER", \AMP_CONTEXT);
+    }
+
+    if (isset($argv[2])) {
+        if (!\is_file($argv[2])) {
+            throw new \Error(\sprintf("No file found at autoload path given '%s'", $argv[2]));
+        }
+
+        // Include file within closure to protect scope.
+        (function () use ($argc, $argv) {
+            require $argv[2];
+        })();
     }
 
     if (!isset($argv[1])) {

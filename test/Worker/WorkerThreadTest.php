@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\Parallel\Worker\WorkerThread;
 
 /**
@@ -10,8 +11,8 @@ use Amp\Parallel\Worker\WorkerThread;
  */
 class WorkerThreadTest extends AbstractWorkerTest
 {
-    protected function createWorker()
+    protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null)
     {
-        return new WorkerThread;
+        return new WorkerThread($envClassName, $autoloadPath);
     }
 }

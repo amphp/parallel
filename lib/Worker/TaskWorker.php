@@ -8,6 +8,7 @@ use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Promise;
 use Amp\Success;
+use Amp\TimeoutException;
 use function Amp\call;
 
 /**
@@ -109,8 +110,14 @@ abstract class TaskWorker implements Worker
                 yield $this->context->send($job);
                 $result = yield $this->context->receive();
             } catch (ChannelException $exception) {
-                $this->kill();
-                throw new WorkerException("Communicating with the worker failed", 0, $exception);
+                try {
+                    yield Promise\timeout($this->context->join(), 0);
+                } catch (TimeoutException $timeout) {
+                    $this->kill();
+                    throw new WorkerException("The worker failed unexpectedly", 0, $exception);
+                }
+
+                throw new WorkerException("The worker exited unexpectedly", 0, $exception);
             }
 
             if (!$result instanceof Internal\TaskResult) {

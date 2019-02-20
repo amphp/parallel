@@ -3,7 +3,9 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
+use Amp\Parallel\Sync\PanicError;
 use Amp\Parallel\Sync\SerializationException;
+use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskError;
@@ -22,9 +24,12 @@ class NonAutoloadableTask implements Task
 abstract class AbstractWorkerTest extends TestCase
 {
     /**
+     * @param string $envClassName
+     * @param string|null $autoloadPath
+     *
      * @return \Amp\Parallel\Worker\Worker
      */
-    abstract protected function createWorker();
+    abstract protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null);
 
     public function testWorkerConstantDefined()
     {
@@ -306,6 +311,31 @@ abstract class AbstractWorkerTest extends TestCase
             $promise2 = $worker->enqueue(new Fixtures\TestTask(42));
 
             $this->assertSame(42, yield $promise2);
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testCustomAutoloader()
+    {
+        Loop::run(function () {
+            $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-autoloader.php');
+
+            $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
+
+            yield $worker->shutdown();
+        });
+    }
+
+    public function testInvalidCustomAutoloader()
+    {
+        $this->expectException(PanicError::class);
+        $this->expectExceptionMessage('No file found at autoload path given');
+
+        Loop::run(function () {
+            $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');
+
+            $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
 
             yield $worker->shutdown();
         });
