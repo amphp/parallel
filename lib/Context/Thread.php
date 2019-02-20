@@ -22,6 +22,9 @@ final class Thread implements Context
 {
     const EXIT_CHECK_FREQUENCY = 250;
 
+    /** @var int */
+    private static $nextId = 1;
+
     /** @var Internal\Thread An internal thread instance. */
     private $thread;
 
@@ -36,6 +39,9 @@ final class Thread implements Context
 
     /** @var mixed[] */
     private $args;
+
+    /** @var int|null */
+    private $id;
 
     /** @var int */
     private $oid = 0;
@@ -127,7 +133,7 @@ final class Thread implements Context
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @return Promise<null> Resolved once the thread has started.
+     * @return Promise<int> Resolved once the thread has started.
      *
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
@@ -156,7 +162,9 @@ final class Thread implements Context
 
         list($channel, $this->socket) = $sockets;
 
-        $thread = $this->thread = new Internal\Thread($this->socket, $this->function, $this->args);
+        $this->id = self::$nextId++;
+
+        $thread = $this->thread = new Internal\Thread($this->id, $this->socket, $this->function, $this->args);
 
         if (!$this->thread->start(\PTHREADS_INHERIT_INI)) {
             return new Failure(new ContextException('Failed to start the thread.'));
@@ -174,7 +182,7 @@ final class Thread implements Context
 
         Loop::disable($this->watcher);
 
-        return new Success;
+        return new Success($this->id);
     }
 
     /**
@@ -300,5 +308,21 @@ final class Thread implements Context
 
             return $result;
         });
+    }
+
+    /**
+     * Returns the ID of the thread. This ID will be unique to this process.
+     *
+     * @return int
+     *
+     * @throws \Amp\Process\StatusError
+     */
+    public function getId(): int
+    {
+        if ($this->id === null) {
+            throw new StatusError('The thread has not been started');
+        }
+
+        return $this->id;
     }
 }

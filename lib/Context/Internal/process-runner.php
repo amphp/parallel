@@ -8,6 +8,7 @@ use Amp\Promise;
 use function Amp\call;
 
 \define("AMP_CONTEXT", "process");
+\define("AMP_CONTEXT_ID", \getmypid());
 
 // Doesn't exist in phpdbg...
 if (\function_exists("cli_set_process_title")) {

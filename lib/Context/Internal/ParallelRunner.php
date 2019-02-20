@@ -14,7 +14,7 @@ final class ParallelRunner
 {
     const EXIT_CHECK_FREQUENCY = 250;
 
-    public static function run(Channel $channel, string $path, array $argv): int
+    public static function run(Channel $channel, string $path, array $argv): void
     {
         Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
             // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
@@ -44,20 +44,13 @@ final class ParallelRunner
             $result = new ExitFailure($exception);
         }
 
-        try {
-            Promise\wait(call(function () use ($channel, $result) {
-                try {
-                    yield $channel->send($result);
-                } catch (SerializationException $exception) {
-                    // Serializing the result failed. Send the reason why.
-                    yield $channel->send(new ExitFailure($exception));
-                }
-            }));
-        } catch (\Throwable $exception) {
-            \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
-            return 1;
-        }
-
-        return 0;
+        Promise\wait(call(function () use ($channel, $result) {
+            try {
+                yield $channel->send($result);
+            } catch (SerializationException $exception) {
+                // Serializing the result failed. Send the reason why.
+                yield $channel->send(new ExitFailure($exception));
+            }
+        }));
     }
 }

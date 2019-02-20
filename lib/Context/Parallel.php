@@ -168,7 +168,7 @@ final class Parallel implements Context
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @return Promise<null> Resolved once the thread has started.
+     * @return Promise<int> Resolved once the thread has started.
      *
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
@@ -198,8 +198,9 @@ final class Parallel implements Context
 
         $this->id = self::$nextId++;
 
-        $future = $this->runtime->run(static function (string $uri, string $key, string $path, array $argv): int {
+        $future = $this->runtime->run(static function (int $id, string $uri, string $key, string $path, array $argv): int {
             \define("AMP_CONTEXT", "parallel");
+            \define("AMP_CONTEXT_ID", $id);
 
             if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
                 \trigger_error("Could not connect to IPC socket", E_USER_ERROR);
@@ -216,13 +217,17 @@ final class Parallel implements Context
             }
 
             try {
-                $result = Internal\ParallelRunner::run($channel, $path, $argv);
+                Internal\ParallelRunner::run($channel, $path, $argv);
+            } catch (\Throwable $exception) {
+                \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
+                return 1;
             } finally {
                 $channel->close();
             }
 
-            return $result;
+            return 0;
         }, [
+            $this->id,
             $this->hub->getUri(),
             $this->hub->generateKey($this->id, self::KEY_LENGTH),
             $this->script,
@@ -242,6 +247,8 @@ final class Parallel implements Context
             if ($this->killed) {
                 $this->kill();
             }
+
+            return $this->id;
         });
     }
 

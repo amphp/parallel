@@ -20,6 +20,8 @@ final class Thread extends \Thread
 {
     const KILL_CHECK_FREQUENCY = 250;
 
+    private $id;
+
     /** @var callable The function to execute in the thread. */
     private $function;
 
@@ -35,12 +37,14 @@ final class Thread extends \Thread
     /**
      * Creates a new thread object.
      *
+     * @param int $id            Thread ID.
      * @param resource $socket   IPC communication socket.
      * @param callable $function The function to execute in the thread.
      * @param mixed[]  $args     Arguments to pass to the function.
      */
-    public function __construct($socket, callable $function, array $args = [])
+    public function __construct(int $id, $socket, callable $function, array $args = [])
     {
+        $this->id = $id;
         $this->function = $function;
         $this->args = $args;
         $this->socket = $socket;
@@ -54,6 +58,7 @@ final class Thread extends \Thread
     public function run()
     {
         \define("AMP_CONTEXT", "thread");
+        \define("AMP_CONTEXT_ID", $this->id);
 
         /* First thing we need to do is re-initialize the class autoloader. If
          * we don't do this first, any object of a class that was loaded after
