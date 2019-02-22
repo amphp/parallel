@@ -319,7 +319,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testCustomAutoloader()
     {
         Loop::run(function () {
-            $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-autoloader.php');
+            $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-bootstrap.php');
 
             $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
 
@@ -330,7 +330,7 @@ abstract class AbstractWorkerTest extends TestCase
     public function testInvalidCustomAutoloader()
     {
         $this->expectException(PanicError::class);
-        $this->expectExceptionMessage('No file found at autoload path given');
+        $this->expectExceptionMessage('No file found at bootstrap file path given');
 
         Loop::run(function () {
             $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');

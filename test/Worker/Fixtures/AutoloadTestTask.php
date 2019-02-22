@@ -9,8 +9,6 @@ class AutoloadTestTask implements Task
 {
     public function run(Environment $environment): bool
     {
-        \class_exists('Amp\\NonExistentClass', true);
-
-        return \defined("AMP_TEST_CUSTOM_AUTOLOADER");
+        return \class_exists('CustomAutoloadClass', true);
     }
 }

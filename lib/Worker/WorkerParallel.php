@@ -14,19 +14,19 @@ final class WorkerParallel extends TaskWorker
     /**
      * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate.
      *     Defaults to \Amp\Parallel\Worker\BasicEnvironment.
-     * @param string|null Path to custom autoloader.
+     * @param string|null Path to custom bootstrap file.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, string $autoloadPath = null)
+    public function __construct(string $envClassName = BasicEnvironment::class, string $bootstrapPath = null)
     {
         $script = [
             self::SCRIPT_PATH,
             $envClassName,
         ];
 
-        if ($autoloadPath !== null) {
-            $script[] = $autoloadPath;
+        if ($bootstrapPath !== null) {
+            $script[] = $bootstrapPath;
         }
 
         parent::__construct(new Parallel($script));

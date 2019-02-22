@@ -3,14 +3,14 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Loop;
-use Amp\Parallel\Worker\AutoloadingWorkerFactory;
+use Amp\Parallel\Worker\BootstrapWorkerFactory;
 use Amp\PHPUnit\TestCase;
 
-class AutoloadingWorkerFactoryTest extends TestCase
+class BootstrapWorkerFactoryTest extends TestCase
 {
     public function testAutoloading()
     {
-        $factory = new AutoloadingWorkerFactory(__DIR__ . '/Fixtures/custom-autoloader.php');
+        $factory = new BootstrapWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php');
 
         Loop::run(function () use ($factory) {
             $worker = $factory->create();
@@ -26,7 +26,7 @@ class AutoloadingWorkerFactoryTest extends TestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('No file found at autoload path given');
 
-        $factory = new AutoloadingWorkerFactory(__DIR__ . '/Fixtures/not-found.php');
+        $factory = new BootstrapWorkerFactory(__DIR__ . '/Fixtures/not-found.php');
     }
 
     public function testInvalidClassName()
@@ -34,7 +34,7 @@ class AutoloadingWorkerFactoryTest extends TestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("Invalid environment class name 'Invalid'");
 
-        $factory = new AutoloadingWorkerFactory(__DIR__ . '/Fixtures/custom-autoloader.php', "Invalid");
+        $factory = new BootstrapWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php', "Invalid");
     }
 
     public function testNonEnvironmentClassName()
@@ -42,9 +42,9 @@ class AutoloadingWorkerFactoryTest extends TestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("does not implement 'Amp\Parallel\Worker\Environment'");
 
-        $factory = new AutoloadingWorkerFactory(
-            __DIR__ . '/Fixtures/custom-autoloader.php',
-            AutoloadingWorkerFactory::class
+        $factory = new BootstrapWorkerFactory(
+            __DIR__ . '/Fixtures/custom-bootstrap.php',
+            BootstrapWorkerFactory::class
         );
     }
 }

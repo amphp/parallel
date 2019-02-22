@@ -6,27 +6,27 @@ use Amp\Parallel\Context\Parallel;
 use Amp\Parallel\Context\Thread;
 
 /**
- * The built-in worker factory type.
+ * Worker factory that includes a custom bootstrap file after initializing the worker.
  */
-final class AutoloadingWorkerFactory implements WorkerFactory
+final class BootstrapWorkerFactory implements WorkerFactory
 {
     /** @var string */
-    private $autoloadPath;
+    private $bootstrapPath;
 
     /** @var string */
     private $className;
 
     /**
-     * @param string $autoloadFilePath Path to custom autoloader.
-     * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
+     * @param string $bootstrapFilePath Path to custom bootstrap file.
+     * @param string $envClassName      Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
      *     worker. Defaults to \Amp\Parallel\Worker\BasicEnvironment.
      *
      * @throws \Error If the given class name does not exist or does not implement \Amp\Parallel\Worker\Environment.
      */
-    public function __construct(string $autoloadFilePath, string $envClassName = BasicEnvironment::class)
+    public function __construct(string $bootstrapFilePath, string $envClassName = BasicEnvironment::class)
     {
-        if (!\file_exists($autoloadFilePath)) {
-            throw new \Error(\sprintf("No file found at autoload path given '%s'", $autoloadFilePath));
+        if (!\file_exists($bootstrapFilePath)) {
+            throw new \Error(\sprintf("No file found at autoload path given '%s'", $bootstrapFilePath));
         }
 
         if (!\class_exists($envClassName)) {
@@ -41,7 +41,7 @@ final class AutoloadingWorkerFactory implements WorkerFactory
             ));
         }
 
-        $this->autoloadPath = $autoloadFilePath;
+        $this->bootstrapPath = $bootstrapFilePath;
         $this->className = $envClassName;
     }
 
@@ -54,18 +54,18 @@ final class AutoloadingWorkerFactory implements WorkerFactory
     public function create(): Worker
     {
         if (Parallel::isSupported()) {
-            return new WorkerParallel($this->className, $this->autoloadPath);
+            return new WorkerParallel($this->className, $this->bootstrapPath);
         }
 
         if (Thread::isSupported()) {
-            return new WorkerThread($this->className, $this->autoloadPath);
+            return new WorkerThread($this->className, $this->bootstrapPath);
         }
 
         return new WorkerProcess(
             $this->className,
             [],
             \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null),
-            $this->autoloadPath
+            $this->bootstrapPath
         );
     }
 }
