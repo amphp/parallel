@@ -54,15 +54,13 @@ final class TaskFailure extends TaskResult
     {
         $previous = $this->previous ? $this->previous->createException() : null;
 
+        $format = 'Uncaught %s in worker with message "%s" and code "%s"; use %s::getWorkerTrace() '
+            . 'for the stack trace in the worker';
+
         if ($this->parent === self::PARENT_ERROR) {
             return new TaskError(
                 $this->type,
-                \sprintf(
-                    'Uncaught %s in worker with message "%s" and code "%s"',
-                    $this->type,
-                    $this->message,
-                    $this->code
-                ),
+                \sprintf($format, $this->type, $this->message, $this->code, TaskError::class),
                 $this->trace,
                 $previous
             );
@@ -70,12 +68,7 @@ final class TaskFailure extends TaskResult
 
         return new TaskException(
             $this->type,
-            \sprintf(
-                'Uncaught %s in worker with message "%s" and code "%s"',
-                $this->type,
-                $this->message,
-                $this->code
-            ),
+            \sprintf($format, $this->type, $this->message, $this->code, TaskException::class),
             $this->trace,
             $previous
         );

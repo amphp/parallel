@@ -46,10 +46,12 @@ final class ExitFailure implements ExitResult
         return new PanicError(
             $this->type,
             \sprintf(
-                'Uncaught %s in execution context with message "%s" and code "%s"',
+                'Uncaught %s in worker with message "%s" and code "%s"; use %s::getPanicTrace() '
+                    . 'for the stack trace in the context',
                 $this->type,
                 $this->message,
-                $this->code
+                $this->code,
+                PanicError::class
             ),
             $this->trace,
             $previous
