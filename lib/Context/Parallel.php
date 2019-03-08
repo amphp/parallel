@@ -236,9 +236,9 @@ final class Parallel implements Context
 
         return call(function () use ($future) {
             try {
-                $this->channel = $channel = yield $this->hub->accept($this->id);
+                $this->channel = yield $this->hub->accept($this->id);
                 self::$futures[$this->id] = $future;
-                self::$channels[$this->id] = $channel;
+                self::$channels[$this->id] = $this->channel;
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
@@ -273,8 +273,6 @@ final class Parallel implements Context
      */
     private function close()
     {
-        unset(self::$futures[$this->id], self::$channels[$this->id]);
-
         $this->runtime = null;
 
         if ($this->channel !== null) {
@@ -282,6 +280,13 @@ final class Parallel implements Context
         }
 
         $this->channel = null;
+
+        unset(self::$futures[$this->id], self::$channels[$this->id]);
+
+        if (empty(self::$futures)) {
+            Loop::cancel(self::$watcher);
+            self::$watcher = null;
+        }
     }
 
     /**
