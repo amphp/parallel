@@ -316,13 +316,36 @@ class ThreadTest extends TestCase
         });
     }
 
-    public function testSpawnStartsThread()
+    public function testGetId()
+    {
+        Loop::run(function () {
+            $context = $this->createContext(function () {
+                yield new Delayed(100);
+            });
+
+            yield $context->start();
+            $this->assertInternalType('int', $context->getId());
+            yield $context->join();
+
+            $context = $this->createContext(function () {
+                yield new Delayed(100);
+            });
+
+            $this->expectException(\Error::class);
+            $this->expectExceptionMessage('The thread has not been started');
+
+            $context->getId();
+        });
+    }
+
+    public function testRunStartsThread()
     {
         Loop::run(function () {
             $thread = yield Thread::run(function () {
                 \usleep(100);
             });
 
+            $this->assertInstanceOf(Thread::class, $thread);
             $this->assertTrue($thread->isRunning());
 
             return yield $thread->join();

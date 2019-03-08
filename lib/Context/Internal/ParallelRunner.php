@@ -10,6 +10,9 @@ use Amp\Parallel\Sync\SerializationException;
 use Amp\Promise;
 use function Amp\call;
 
+/**
+ * @codeCoverageIgnore Only executed in thread.
+ */
 final class ParallelRunner
 {
     const EXIT_CHECK_FREQUENCY = 250;

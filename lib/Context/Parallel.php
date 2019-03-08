@@ -199,6 +199,8 @@ final class Parallel implements Context
         $this->id = self::$nextId++;
 
         $future = $this->runtime->run(static function (int $id, string $uri, string $key, string $path, array $argv): int {
+            // @codeCoverageIgnoreStart
+            // Only executed in thread.
             \define("AMP_CONTEXT", "parallel");
             \define("AMP_CONTEXT_ID", $id);
 
@@ -226,6 +228,7 @@ final class Parallel implements Context
             }
 
             return 0;
+        // @codeCoverageIgnoreEnd
         }, [
             $this->id,
             $this->hub->getUri(),
