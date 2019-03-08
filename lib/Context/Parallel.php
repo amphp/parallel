@@ -283,7 +283,7 @@ final class Parallel implements Context
 
         unset(self::$futures[$this->id], self::$channels[$this->id]);
 
-        if (empty(self::$futures)) {
+        if (empty(self::$futures) && self::$watcher !== null) {
             Loop::cancel(self::$watcher);
             self::$watcher = null;
         }
