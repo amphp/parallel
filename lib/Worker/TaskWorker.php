@@ -17,6 +17,7 @@ use function Amp\call;
 abstract class TaskWorker implements Worker
 {
     const SHUTDOWN_TIMEOUT = 1000;
+    const ERROR_TIMEOUT = 250;
 
     /** @var \Amp\Parallel\Context\Context */
     private $context;
@@ -111,7 +112,7 @@ abstract class TaskWorker implements Worker
                 $result = yield $this->context->receive();
             } catch (ChannelException $exception) {
                 try {
-                    yield Promise\timeout($this->context->join(), 0);
+                    yield Promise\timeout($this->context->join(), self::ERROR_TIMEOUT);
                 } catch (TimeoutException $timeout) {
                     $this->kill();
                     throw new WorkerException("The worker failed unexpectedly", 0, $exception);
