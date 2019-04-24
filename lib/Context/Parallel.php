@@ -7,7 +7,7 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
-use parallel\Future;
+use parallel\Events;
 use parallel\Runtime;
 use function Amp\call;
 
@@ -25,8 +25,8 @@ final class Parallel implements Context
     /** @var int Next thread ID. */
     private static $nextId = 1;
 
-    /** @var Future[] */
-    private static $futures = [];
+    /** @var Events|null */
+    private static $events;
 
     /** @var ChannelledSocket[] */
     private static $channels = [];
@@ -98,6 +98,11 @@ final class Parallel implements Context
         if (!$this->hub instanceof Internal\ProcessHub) {
             $this->hub = new Internal\ProcessHub;
             Loop::setState(self::class, $this->hub);
+        }
+
+        if (self::$events === null) {
+            self::$events = new Events;
+            self::$events->setTimeout(0);
         }
 
         if (!self::isSupported()) {
@@ -181,12 +186,8 @@ final class Parallel implements Context
 
         if (self::$watcher === null) {
             self::$watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () {
-                $resolved = $errored = $timedout = [];
-
-                Future::select(self::$futures, $resolved, $errored, $timedout, 0);
-
-                foreach ($errored as $id => $future) {
-                    self::$channels[$id]->close();
+                while ($event = self::$events->poll()) {
+                    self::$channels[$event->source]->close();
                 }
             });
             Loop::unreference(self::$watcher);
@@ -240,8 +241,8 @@ final class Parallel implements Context
         return call(function () use ($future) {
             try {
                 $this->channel = yield $this->hub->accept($this->id);
-                self::$futures[$this->id] = $future;
                 self::$channels[$this->id] = $this->channel;
+                self::$events->addFuture($this->id, $future);
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
@@ -284,9 +285,12 @@ final class Parallel implements Context
 
         $this->channel = null;
 
-        unset(self::$futures[$this->id], self::$channels[$this->id]);
+        if (isset(self::$channels[$this->id])) {
+            unset(self::$channels[$this->id]);
+            self::$events->remove($this->id);
+        }
 
-        if (empty(self::$futures) && self::$watcher !== null) {
+        if (empty(self::$channels) && self::$watcher !== null) {
             Loop::cancel(self::$watcher);
             self::$watcher = null;
         }
