@@ -7,7 +7,6 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
-use parallel\Events;
 use parallel\Runtime;
 use function Amp\call;
 
@@ -24,15 +23,6 @@ final class Parallel implements Context
 
     /** @var int Next thread ID. */
     private static $nextId = 1;
-
-    /** @var Events|null */
-    private static $events;
-
-    /** @var ChannelledSocket[] */
-    private static $channels = [];
-
-    /** @var string|null */
-    private static $watcher;
 
     /** @var Internal\ProcessHub */
     private $hub;
@@ -94,19 +84,14 @@ final class Parallel implements Context
      */
     public function __construct($script)
     {
-        $this->hub = Loop::getState(self::class);
-        if (!$this->hub instanceof Internal\ProcessHub) {
-            $this->hub = new Internal\ProcessHub;
-            Loop::setState(self::class, $this->hub);
-        }
-
-        if (self::$events === null) {
-            self::$events = new Events;
-            self::$events->setTimeout(0);
-        }
-
         if (!self::isSupported()) {
             throw new \Error("The parallel extension is required to create parallel threads.");
+        }
+
+        $this->hub = Loop::getState(self::class);
+        if (!$this->hub instanceof Internal\ParallelHub) {
+            $this->hub = new Internal\ParallelHub();
+            Loop::setState(self::class, $this->hub);
         }
 
         if (\is_array($script)) {
@@ -184,15 +169,6 @@ final class Parallel implements Context
             throw new StatusError('The thread has already been started.');
         }
 
-        if (self::$watcher === null) {
-            self::$watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () {
-                while ($event = self::$events->poll()) {
-                    self::$channels[(int) $event->source]->close();
-                }
-            });
-            Loop::unreference(self::$watcher);
-        }
-
         $this->oid = \getmypid();
 
         $this->runtime = new Runtime(self::$autoloadPath);
@@ -241,8 +217,7 @@ final class Parallel implements Context
         return call(function () use ($future) {
             try {
                 $this->channel = yield $this->hub->accept($this->id);
-                self::$channels[$this->id] = $this->channel;
-                self::$events->addFuture((string) $this->id, $future);
+                $this->hub->add($this->id, $this->channel, $future);
             } catch (\Throwable $exception) {
                 $this->kill();
                 throw new ContextException("Starting the parallel runtime failed", 0, $exception);
@@ -285,15 +260,7 @@ final class Parallel implements Context
 
         $this->channel = null;
 
-        if (isset(self::$channels[$this->id])) {
-            unset(self::$channels[$this->id]);
-            self::$events->remove((string) $this->id);
-        }
-
-        if (empty(self::$channels) && self::$watcher !== null) {
-            Loop::cancel(self::$watcher);
-            self::$watcher = null;
-        }
+        $this->hub->remove($this->id);
     }
 
     /**
