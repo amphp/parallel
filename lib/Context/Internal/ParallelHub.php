@@ -34,7 +34,9 @@ class ParallelHub extends ProcessHub
                 while ($event = $events->poll()) {
                     $id = (int) $event->source;
                     \assert(isset($channels[$id]), 'Channel for context ID not found');
-                    $channels[$id]->close();
+                    $channel = $channels[$id];
+                    unset($channels[$id]);
+                    $channel->close();
                 }
             } catch (Timeout $exception) {
                 // Ignore poll timeout.

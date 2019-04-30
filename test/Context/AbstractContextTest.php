@@ -127,4 +127,20 @@ abstract class AbstractContextTest extends TestCase
             yield $promise;
         });
     }
+
+    /**
+     * @expectedException \Amp\Parallel\Context\ContextException
+     * @expectedExceptionMessage Failed to receive result
+     */
+    public function testExitingProcess()
+    {
+        Loop::run(function () {
+            $context = $this->createContext([
+                __DIR__ . "/Fixtures/exiting-process.php",
+                5,
+            ]);
+            yield $context->start();
+            yield $context->join();
+        });
+    }
 }
