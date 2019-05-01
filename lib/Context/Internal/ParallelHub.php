@@ -26,20 +26,16 @@ class ParallelHub extends ProcessHub
         parent::__construct();
 
         $events = $this->events = new Events;
-        $this->events->setTimeout(0);
+        $this->events->setBlocking(false);
 
         $channels = &$this->channels;
         $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (&$channels, $events): void {
-            try {
-                while ($event = $events->poll()) {
-                    $id = (int) $event->source;
-                    \assert(isset($channels[$id]), 'Channel for context ID not found');
-                    $channel = $channels[$id];
-                    unset($channels[$id]);
-                    $channel->close();
-                }
-            } catch (Timeout $exception) {
-                // Ignore poll timeout.
+            while ($event = $events->poll()) {
+                $id = (int) $event->source;
+                \assert(isset($channels[$id]), 'Channel for context ID not found');
+                $channel = $channels[$id];
+                unset($channels[$id]);
+                $channel->close();
             }
         });
         Loop::disable($this->watcher);
