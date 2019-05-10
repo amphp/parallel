@@ -5,7 +5,6 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelledSocket;
 use parallel\Events;
-use parallel\Events\Error\Timeout;
 use parallel\Future;
 
 class ParallelHub extends ProcessHub
