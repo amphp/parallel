@@ -93,7 +93,7 @@ final class Parallel implements Context
 
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ParallelHub) {
-            $this->hub = new Internal\ParallelHub();
+            $this->hub = new Internal\ParallelHub;
             Loop::setState(self::class, $this->hub);
         }
 
@@ -215,7 +215,7 @@ final class Parallel implements Context
                         // Protect current scope by requiring script within another function.
                         $callable = (function () use ($argc, $argv): callable { // Using $argc so it is available to the required script.
                             return require $argv[0];
-                        })();
+                        })->bindTo(null, null)();
                     } catch (\TypeError $exception) {
                         throw new \Error(\sprintf("Script '%s' did not return a callable function", $path), 0, $exception);
                     } catch (\ParseError $exception) {
