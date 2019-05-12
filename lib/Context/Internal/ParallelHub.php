@@ -56,7 +56,12 @@ class ParallelHub extends ProcessHub
         }
 
         unset($this->channels[$id]);
-        $this->events->remove((string) $id);
+
+        try {
+            $this->events->remove((string) $id);
+        } catch (Events\Error\Existence $ex) {
+            /* parallel may have removed the future already */
+        }
 
         if (empty($this->channels)) {
             Loop::disable($this->watcher);
