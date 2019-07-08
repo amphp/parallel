@@ -29,6 +29,9 @@ class ProcessHub
 
     /** @var Deferred[] */
     private $acceptor = [];
+    
+    /** @var string|null */
+    private $toClean;
 
     public function __construct()
     {
@@ -37,7 +40,11 @@ class ProcessHub
         if ($isWindows) {
             $this->uri = "tcp://127.0.0.1:0";
         } else {
-            $this->uri = "unix://" . \tempnam(\sys_get_temp_dir(), "amp-parallel-ipc-") . ".sock";
+            $temp = \tempnam(\sys_get_temp_dir(), "amp-parallel-ipc-");
+            unlink($temp);
+            $temp .= '.sock';
+            $this->toClean = $temp;
+            $this->uri = "unix://" . $temp;
         }
 
         $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN);
@@ -88,6 +95,9 @@ class ProcessHub
     {
         Loop::cancel($this->watcher);
         \fclose($this->server);
+        if ($this->toClean) {
+            unlink($this->toClean);
+        }
     }
 
     public function getUri(): string
