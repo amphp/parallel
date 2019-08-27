@@ -42,7 +42,7 @@ final class ThreadedParcel implements Parcel
      */
     public function synchronized(callable $callback): Promise
     {
-        return call(function () use ($callback) {
+        return call(function () use ($callback): \Generator {
             /** @var \Amp\Sync\Lock $lock */
             $lock = yield $this->mutex->acquire();
 

@@ -21,7 +21,7 @@ final class BasicEnvironment implements Environment
         $this->queue = $queue = new \SplPriorityQueue;
         $data = &$this->data;
 
-        $this->timer = Loop::repeat(1000, static function ($watcherId) use ($queue, &$data) {
+        $this->timer = Loop::repeat(1000, static function (string $watcherId) use ($queue, &$data): void {
             $time = \time();
             while (!$queue->isEmpty()) {
                 list($key, $expiration) = $queue->top();
@@ -106,7 +106,7 @@ final class BasicEnvironment implements Environment
      *
      * @throws \Error If the time-to-live is not a positive integer.
      */
-    public function set(string $key, $value, int $ttl = null)
+    public function set(string $key, $value, int $ttl = null): void
     {
         if ($value === null) {
             $this->delete($key);
@@ -140,7 +140,7 @@ final class BasicEnvironment implements Environment
     /**
      * @param string $key
      */
-    public function delete(string $key)
+    public function delete(string $key): void
     {
         unset($this->data[$key]);
     }
@@ -152,7 +152,7 @@ final class BasicEnvironment implements Environment
      *
      * @return bool
      */
-    public function offsetExists($key)
+    public function offsetExists($key): bool
     {
         return $this->exists($key);
     }
@@ -175,7 +175,7 @@ final class BasicEnvironment implements Environment
      * @param string $key
      * @param mixed $value
      */
-    public function offsetSet($key, $value)
+    public function offsetSet($key, $value): void
     {
         $this->set($key, $value);
     }
@@ -185,7 +185,7 @@ final class BasicEnvironment implements Environment
      *
      * @param string $key
      */
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         $this->delete($key);
     }
@@ -193,7 +193,7 @@ final class BasicEnvironment implements Environment
     /**
      * Removes all values.
      */
-    public function clear()
+    public function clear(): void
     {
         $this->data = [];
 

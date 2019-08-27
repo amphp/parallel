@@ -73,7 +73,7 @@ final class Parallel implements Context
     public static function run($script): Promise
     {
         $thread = new self($script);
-        return call(function () use ($thread) {
+        return call(function () use ($thread): \Generator {
             yield $thread->start();
             return $thread;
         });
@@ -199,7 +199,7 @@ final class Parallel implements Context
             }
 
             try {
-                Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function () {
+                Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
                     // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
                     // select() will not be interrupted.
                 }));
@@ -227,7 +227,7 @@ final class Parallel implements Context
                     $result = new ExitFailure($exception);
                 }
 
-                Promise\wait(call(function () use ($channel, $result) {
+                Promise\wait(call(function () use ($channel, $result): \Generator {
                     try {
                         yield $channel->send($result);
                     } catch (SerializationException $exception) {
@@ -252,7 +252,7 @@ final class Parallel implements Context
             $this->args
         ]);
 
-        return call(function () use ($future) {
+        return call(function () use ($future): \Generator {
             try {
                 $this->channel = yield $this->hub->accept($this->id);
                 $this->hub->add($this->id, $this->channel, $future);
@@ -272,7 +272,7 @@ final class Parallel implements Context
     /**
      * Immediately kills the context.
      */
-    public function kill()
+    public function kill(): void
     {
         $this->killed = true;
 
@@ -288,7 +288,7 @@ final class Parallel implements Context
     /**
      * Closes channel and socket if still open.
      */
-    private function close()
+    private function close(): void
     {
         $this->runtime = null;
 
@@ -317,7 +317,7 @@ final class Parallel implements Context
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        return call(function () {
+        return call(function (): \Generator {
             try {
                 $response = yield $this->channel->receive();
                 $this->close();
@@ -344,7 +344,7 @@ final class Parallel implements Context
             throw new StatusError('The process has not been started.');
         }
 
-        return call(function () {
+        return call(function (): \Generator {
             $data = yield $this->channel->receive();
 
             if ($data instanceof ExitResult) {

@@ -111,7 +111,7 @@ final class SharedMemoryParcel implements Parcel
      * @param int   $size
      * @param int   $permissions
      */
-    private function init($value, int $size = 8192, int $permissions = 0600)
+    private function init($value, int $size = 8192, int $permissions = 0600): void
     {
         $this->semaphore = PosixSemaphore::create($this->id, 1);
         $this->initializer = \getmypid();
@@ -121,7 +121,7 @@ final class SharedMemoryParcel implements Parcel
         $this->wrap($value);
     }
 
-    private function open()
+    private function open(): void
     {
         $this->semaphore = PosixSemaphore::use($this->id);
         $this->memOpen($this->key, 'w', 0, 0);
@@ -177,7 +177,7 @@ final class SharedMemoryParcel implements Parcel
      * memory segment on the next read attempt. Once all running processes and
      * threads disconnect from the old segment, it will be freed by the OS.
      */
-    protected function wrap($value)
+    private function wrap($value): void
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed.');
@@ -195,7 +195,7 @@ final class SharedMemoryParcel implements Parcel
            the old handle.
         */
         if (\shmop_size($this->handle) < $size + self::MEM_DATA_OFFSET) {
-            $this->key = $this->key < 0xffffffff ? $this->key + 1 : \mt_rand(0x10, 0xfffffffe);
+            $this->key = $this->key < 0xffffffff ? $this->key + 1 : \random_int(0x10, 0xfffffffe);
             $this->setHeader(self::STATE_MOVED, $this->key, 0);
 
             $this->memDelete();
@@ -214,7 +214,7 @@ final class SharedMemoryParcel implements Parcel
      */
     public function synchronized(callable $callback): Promise
     {
-        return call(function () use ($callback) {
+        return call(function () use ($callback): \Generator {
             /** @var \Amp\Sync\Lock $lock */
             $lock = yield $this->semaphore->acquire();
 
@@ -279,7 +279,7 @@ final class SharedMemoryParcel implements Parcel
      * Updates the current memory segment handle, handling any moves made on the
      * data.
      */
-    private function handleMovedMemory()
+    private function handleMovedMemory(): void
     {
         // Read from the memory block and handle moved blocks until we find the
         // correct block.
@@ -316,7 +316,7 @@ final class SharedMemoryParcel implements Parcel
      * @param int $size        The size of the stored data, or other value.
      * @param int $permissions The permissions mask on the memory segment.
      */
-    private function setHeader(int $state, int $size, int $permissions)
+    private function setHeader(int $state, int $size, int $permissions): void
     {
         $header = \pack('CLS', $state, $size, $permissions);
         $this->memSet(0, $header);
@@ -330,7 +330,7 @@ final class SharedMemoryParcel implements Parcel
      * @param int    $permissions Process permissions on the shared memory.
      * @param int    $size        The size to crate the shared memory in bytes.
      */
-    private function memOpen(int $key, string $mode, int $permissions, int $size)
+    private function memOpen(int $key, string $mode, int $permissions, int $size): void
     {
         $this->handle = @\shmop_open($key, $mode, $permissions, $size);
         if ($this->handle === false) {
@@ -361,7 +361,7 @@ final class SharedMemoryParcel implements Parcel
      * @param int    $offset The offset to write to.
      * @param string $data   The binary data to write.
      */
-    private function memSet(int $offset, string $data)
+    private function memSet(int $offset, string $data): void
     {
         if (!\shmop_write($this->handle, $data, $offset)) {
             throw new SharedMemoryException('Failed to write to shared memory block.');
@@ -371,7 +371,7 @@ final class SharedMemoryParcel implements Parcel
     /**
      * Requests the shared memory segment to be deleted.
      */
-    private function memDelete()
+    private function memDelete(): void
     {
         if (!\shmop_delete($this->handle)) {
             throw new SharedMemoryException('Failed to discard shared memory block.');

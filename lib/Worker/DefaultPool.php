@@ -67,7 +67,7 @@ final class DefaultPool implements Pool
         $idleWorkers = $this->idleWorkers;
         $busyQueue = $this->busyQueue;
 
-        $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue) {
+        $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue): void {
             if (!$workers->contains($worker) || ($workers[$worker] -= 1) > 0) {
                 return;
             }
@@ -150,7 +150,7 @@ final class DefaultPool implements Pool
         $worker = $this->pull();
 
         $promise = $worker->enqueue($task);
-        $promise->onResolve(function () use ($worker) {
+        $promise->onResolve(function () use ($worker): void {
             ($this->push)($worker);
         });
         return $promise;
@@ -184,7 +184,7 @@ final class DefaultPool implements Pool
     /**
      * Kills all workers in the pool and halts the worker pool.
      */
-    public function kill()
+    public function kill(): void
     {
         $this->running = false;
 

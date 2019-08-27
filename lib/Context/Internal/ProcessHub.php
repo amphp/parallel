@@ -60,7 +60,7 @@ class ProcessHub
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor) {
+        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor): \Generator {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
             if (!$client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
                 return; // Accepting client failed.
@@ -113,7 +113,7 @@ class ProcessHub
 
     public function accept(int $pid): Promise
     {
-        return call(function () use ($pid) {
+        return call(function () use ($pid): \Generator {
             $this->acceptor[$pid] = new Deferred;
 
             Loop::enable($this->watcher);

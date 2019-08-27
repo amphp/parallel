@@ -46,7 +46,7 @@ final class ChannelledStream implements Channel
      */
     public function send($data): Promise
     {
-        return call(function () use ($data) {
+        return call(function () use ($data): \Generator {
             try {
                 return yield $this->write->write($this->parser->encode($data));
             } catch (StreamException $exception) {
@@ -60,7 +60,7 @@ final class ChannelledStream implements Channel
      */
     public function receive(): Promise
     {
-        return call(function () {
+        return call(function (): \Generator {
             while ($this->received->isEmpty()) {
                 try {
                     $chunk = yield $this->read->read();

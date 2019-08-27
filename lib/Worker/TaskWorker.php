@@ -41,13 +41,13 @@ abstract class TaskWorker implements Worker
 
         $context = &$this->context;
         $pending = &$this->pending;
-        \register_shutdown_function(static function () use (&$context, &$pending) {
+        \register_shutdown_function(static function () use (&$context, &$pending): void {
             if ($context === null || !$context->isRunning()) {
                 return;
             }
 
             try {
-                Promise\wait(Promise\timeout(call(function () use ($context, $pending) {
+                Promise\wait(Promise\timeout(call(function () use ($context, $pending): \Generator {
                     if ($pending) {
                         yield $pending;
                     }
@@ -88,7 +88,7 @@ abstract class TaskWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
-        $promise = $this->pending = call(function () use ($task) {
+        $promise = $this->pending = call(function () use ($task): \Generator {
             if ($this->pending) {
                 try {
                     yield $this->pending;
@@ -134,7 +134,7 @@ abstract class TaskWorker implements Worker
             return $result->promise();
         });
 
-        $promise->onResolve(function () use ($promise) {
+        $promise->onResolve(function () use ($promise): void {
             if ($this->pending === $promise) {
                 $this->pending = null;
             }
@@ -156,7 +156,7 @@ abstract class TaskWorker implements Worker
             return $this->exitStatus = new Success(0);
         }
 
-        return $this->exitStatus = call(function () {
+        return $this->exitStatus = call(function (): \Generator {
             if ($this->pending) {
                 // If a task is currently running, wait for it to finish.
                 yield Promise\any([$this->pending]);
@@ -180,7 +180,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function kill()
+    public function kill(): void
     {
         if ($this->exitStatus || $this->context === null) {
             return;

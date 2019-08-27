@@ -26,7 +26,7 @@ final class ParcelStorage extends \Threaded
     /**
      * @param mixed $value
      */
-    public function set($value)
+    public function set($value): void
     {
         $this->value = $value;
     }

@@ -49,7 +49,7 @@ final class Process implements Context
     public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise
     {
         $process = new self($script, $cwd, $env, $binary);
-        return call(function () use ($process) {
+        return call(function () use ($process): \Generator {
             yield $process->start();
             return $process;
         });
@@ -100,7 +100,7 @@ final class Process implements Context
                     self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
                     \copy(\Phar::running(false), self::$pharCopy);
 
-                    \register_shutdown_function(static function () {
+                    \register_shutdown_function(static function (): void {
                         @\unlink(self::$pharCopy);
                     });
 
@@ -113,7 +113,7 @@ final class Process implements Context
                 self::$pharScriptPath = $scriptPath = \sys_get_temp_dir() . "/amp-process-runner-" . $suffix . ".php";
                 \file_put_contents($scriptPath, $contents);
 
-                \register_shutdown_function(static function () {
+                \register_shutdown_function(static function (): void {
                     @\unlink(self::$pharScriptPath);
                 });
             }
@@ -161,7 +161,7 @@ final class Process implements Context
         throw new \Error("Could not locate PHP executable binary");
     }
 
-    private function formatOptions(array $options)
+    private function formatOptions(array $options): string
     {
         $result = [];
 
@@ -184,7 +184,7 @@ final class Process implements Context
      */
     public function start(): Promise
     {
-        return call(function () {
+        return call(function (): \Generator {
             try {
                 $pid = yield $this->process->start();
 
@@ -217,7 +217,7 @@ final class Process implements Context
             throw new StatusError("The process has not been started");
         }
 
-        return call(function () {
+        return call(function (): \Generator {
             try {
                 $data = yield $this->channel->receive();
             } catch (ChannelException $e) {
@@ -261,7 +261,7 @@ final class Process implements Context
             throw new StatusError("The process has not been started");
         }
 
-        return call(function () {
+        return call(function (): \Generator {
             try {
                 $data = yield $this->channel->receive();
             } catch (\Throwable $exception) {
@@ -300,7 +300,7 @@ final class Process implements Context
      * @throws \Amp\Process\ProcessException
      * @throws \Amp\Process\StatusError
      */
-    public function signal(int $signo)
+    public function signal(int $signo): void
     {
         $this->process->signal($signo);
     }
@@ -364,7 +364,7 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function kill()
+    public function kill(): void
     {
         $this->process->kill();
 

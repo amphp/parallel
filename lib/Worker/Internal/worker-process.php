@@ -17,7 +17,7 @@ return function (Sync\Channel $channel) use ($argc, $argv): Promise {
         }
 
         // Include file within closure to protect scope.
-        (function () use ($argc, $argv) {
+        (function () use ($argc, $argv): void {
             require $argv[2];
         })();
     }

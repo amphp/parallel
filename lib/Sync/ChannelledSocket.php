@@ -47,12 +47,12 @@ final class ChannelledSocket implements Channel
         return $this->channel->send($data);
     }
 
-    public function unreference()
+    public function unreference(): void
     {
         $this->read->unreference();
     }
 
-    public function reference()
+    public function reference(): void
     {
         $this->read->reference();
     }
@@ -60,7 +60,7 @@ final class ChannelledSocket implements Channel
     /**
      * Closes the read and write resource streams.
      */
-    public function close()
+    public function close(): void
     {
         $this->read->close();
         $this->write->close();

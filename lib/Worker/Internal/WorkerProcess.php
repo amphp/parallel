@@ -51,7 +51,7 @@ class WorkerProcess implements Context
         });
     }
 
-    public function kill()
+    public function kill(): void
     {
         if ($this->process->isRunning()) {
             $this->process->kill();

@@ -68,7 +68,7 @@ final class Thread extends \Thread
          */
 
         // Protect scope by using an unbound closure (protects static access as well).
-        (static function () {
+        (static function (): void {
             $paths = [
                 \dirname(__DIR__, 3) . \DIRECTORY_SEPARATOR . "vendor" . \DIRECTORY_SEPARATOR . "autoload.php",
                 \dirname(__DIR__, 5) . \DIRECTORY_SEPARATOR . "autoload.php",
@@ -94,8 +94,8 @@ final class Thread extends \Thread
             return; // Thread killed while requiring autoloader, simply exit.
         }
 
-        Loop::run(function () {
-            $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function () {
+        Loop::run(function (): \Generator {
+            $watcher = Loop::repeat(self::KILL_CHECK_FREQUENCY, function (): void {
                 if ($this->killed) {
                     Loop::stop();
                 }

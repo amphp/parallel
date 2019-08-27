@@ -68,7 +68,7 @@ final class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function kill()
+    public function kill(): void
     {
         $this->worker->kill();
     }

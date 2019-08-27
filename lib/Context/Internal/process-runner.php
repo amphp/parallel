@@ -15,7 +15,7 @@ if (\function_exists("cli_set_process_title")) {
     @\cli_set_process_title("amp-process");
 }
 
-(function () {
+(function (): void {
     $paths = [
         \dirname(__DIR__, 5) . "/autoload.php",
         \dirname(__DIR__, 3) . "/vendor/autoload.php",
@@ -36,7 +36,7 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-(function () use ($argc, $argv) {
+(function () use ($argc, $argv): void {
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
@@ -101,7 +101,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     try {
-        Promise\wait(call(function () use ($channel, $result) {
+        Promise\wait(call(function () use ($channel, $result): \Generator {
             try {
                 yield $channel->send($result);
             } catch (Sync\SerializationException $exception) {
