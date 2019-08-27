@@ -109,7 +109,8 @@ final class Process implements Context
 
                 $contents = \file_get_contents(self::SCRIPT_PATH);
                 $contents = \str_replace("__DIR__", \var_export($path, true), $contents);
-                self::$pharScriptPath = $scriptPath = \tempnam(\sys_get_temp_dir(), "amp-process-runner-");
+                $suffix = \bin2hex(\random_bytes(10));
+                self::$pharScriptPath = $scriptPath = \sys_get_temp_dir() . "/amp-process-runner-" . $suffix . ".php";
                 \file_put_contents($scriptPath, $contents);
 
                 \register_shutdown_function(static function () {
