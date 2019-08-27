@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\TaskError;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class TaskErrorTest extends TestCase
+class TaskErrorTest extends AsyncTestCase
 {
     public function testGetWorkerTrace()
     {

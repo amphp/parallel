@@ -4,25 +4,23 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Worker\Worker;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class DefaultWorkerFactoryTest extends TestCase
+class DefaultWorkerFactoryTest extends AsyncTestCase
 {
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Invalid environment class name 'Invalid'
-     */
     public function testInvalidClassName()
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("Invalid environment class name 'Invalid'");
+
         $factory = new DefaultWorkerFactory("Invalid");
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage does not implement 'Amp\Parallel\Worker\Environment'
-     */
     public function testNonEnvironmentClassName()
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("does not implement 'Amp\\Parallel\\Worker\\Environment'");
+
         $factory = new DefaultWorkerFactory(DefaultWorkerFactory::class);
     }
 

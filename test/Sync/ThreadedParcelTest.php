@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Loop;
 use Amp\Parallel\Context\Thread;
 use Amp\Parallel\Sync\Channel;
+use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\ThreadedParcel;
 
 /**
@@ -12,26 +12,24 @@ use Amp\Parallel\Sync\ThreadedParcel;
  */
 class ThreadedParcelTest extends AbstractParcelTest
 {
-    protected function createParcel($value)
+    protected function createParcel($value): Parcel
     {
         return new ThreadedParcel($value);
     }
 
     public function testWithinThread()
     {
-        Loop::run(function () {
-            $value = 1;
-            $parcel = new ThreadedParcel($value);
+        $value = 1;
+        $parcel = new ThreadedParcel($value);
 
-            $thread = yield Thread::run(function (Channel $channel, ThreadedParcel $parcel) {
-                $parcel->synchronized(function (int $value) {
-                    return $value + 1;
-                });
-                return 0;
-            }, $parcel);
+        $thread = yield Thread::run(function (Channel $channel, ThreadedParcel $parcel) {
+            $parcel->synchronized(function (int $value) {
+                return $value + 1;
+            });
+            return 0;
+        }, $parcel);
 
-            $this->assertSame(0, yield $thread->join());
-            $this->assertSame($value + 1, yield $parcel->unwrap());
-        });
+        $this->assertSame(0, yield $thread->join());
+        $this->assertSame($value + 1, yield $parcel->unwrap());
     }
 }

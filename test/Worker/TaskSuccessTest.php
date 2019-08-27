@@ -3,10 +3,10 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\Internal\TaskSuccess;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 
-class TaskSuccessTest extends TestCase
+class TaskSuccessTest extends AsyncTestCase
 {
     public function testGetId()
     {

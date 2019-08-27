@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\TaskException;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class TaskExceptionTest extends TestCase
+class TaskExceptionTest extends AsyncTestCase
 {
     public function testGetName()
     {

@@ -4,9 +4,9 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\PanicError;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class ExitFailureTest extends TestCase
+class ExitFailureTest extends AsyncTestCase
 {
     public function testGetResult()
     {

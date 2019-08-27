@@ -7,11 +7,11 @@ use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 
-class FunctionsTest extends TestCase
+class FunctionsTest extends AsyncTestCase
 {
     public function testPool()
     {

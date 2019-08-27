@@ -21,15 +21,16 @@
         }
     ],
     "require": {
+        "php": ">=7.1",
         "amphp/amp": "^2",
-        "amphp/byte-stream": "^1.5",
+        "amphp/byte-stream": "^1.6.1",
         "amphp/parser": "^1",
         "amphp/process": "^1",
         "amphp/sync": "^1.0.1"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6",
-        "amphp/phpunit-util": "^1",
+        "phpunit/phpunit": "^8 || ^7",
+        "amphp/phpunit-util": "^1.1",
         "amphp/php-cs-fixer-config": "dev-master"
     },
     "autoload": {
@@ -44,11 +45,6 @@
         "psr-4": {
             "Amp\\Parallel\\Example\\": "examples",
             "Amp\\Parallel\\Test\\": "test"
-        }
-    },
-    "config": {
-        "platform": {
-            "php": "7.0.0"
         }
     },
     "scripts": {

@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\ExitSuccess;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class ExitSuccessTest extends TestCase
+class ExitSuccessTest extends AsyncTestCase
 {
     public function testGetResult()
     {

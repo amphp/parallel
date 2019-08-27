@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\Internal\Job;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class JobTest extends TestCase
+class JobTest extends AsyncTestCase
 {
     public function testGetJob()
     {
@@ -14,12 +14,11 @@ class JobTest extends TestCase
         $this->assertSame($task, $job->getTask());
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Classes implementing Amp\Parallel\Worker\Task must be autoloadable by the Composer autoloader
-     */
     public function testUnserialiableClass()
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Classes implementing Amp\\Parallel\\Worker\\Task must be autoloadable by the Composer autoloader');
+
         $task = new Fixtures\TestTask(42);
         $job = new Job($task);
         $serialized = \serialize($job);

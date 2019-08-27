@@ -2,9 +2,10 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Loop;
+use Amp\Delayed;
+use Amp\Parallel\Context\Process;
+use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\SharedMemoryParcel;
-use Amp\Promise;
 
 /**
  * @requires extension shmop
@@ -16,13 +17,13 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
     private $parcel;
 
-    protected function createParcel($value)
+    protected function createParcel($value): Parcel
     {
         $this->parcel = SharedMemoryParcel::create(self::ID, $value);
         return $this->parcel;
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->parcel = null;
     }
@@ -30,12 +31,11 @@ class SharedMemoryParcelTest extends AbstractParcelTest
     public function testObjectOverflowMoved()
     {
         $object = SharedMemoryParcel::create(self::ID, 'hi', 2);
-        $awaitable = $object->synchronized(function () {
+        yield $object->synchronized(function () {
             return 'hello world';
         });
-        Promise\wait($awaitable);
 
-        $this->assertEquals('hello world', Promise\wait($object->unwrap()));
+        $this->assertEquals('hello world', yield $object->unwrap());
     }
 
     /**
@@ -46,36 +46,19 @@ class SharedMemoryParcelTest extends AbstractParcelTest
     {
         $object = SharedMemoryParcel::create(self::ID, 42);
 
-        $this->doInFork(function () use ($object) {
-            $awaitable = $object->synchronized(function ($value) {
-                return $value + 1;
-            });
-            Promise\wait($awaitable);
+        $process = new Process([__DIR__ . '/Fixture/parcel.php', self::ID]);
+
+        $promise = $object->synchronized(function (int $value): \Generator {
+            $this->assertSame(42, $value);
+            yield new Delayed(500); // Child must wait until parent finishes with parcel.
+            return $value + 1;
         });
 
-        $this->assertEquals(43, Promise\wait($object->unwrap()));
-    }
+        yield $process->start();
 
-    /**
-     * @group posix
-     * @requires extension pcntl
-     */
-    public function testInSeparateProcess()
-    {
-        $parcel = SharedMemoryParcel::create(self::ID, 42);
+        $this->assertSame(43, yield $promise);
 
-        $this->doInFork(function () {
-            Loop::run(function () {
-                $parcel = SharedMemoryParcel::use(self::ID);
-                $this->assertSame(43, yield $parcel->synchronized(function ($value) {
-                    $this->assertSame(42, $value);
-                    return $value + 1;
-                }));
-            });
-        });
-
-        Loop::run(function () use ($parcel) {
-            $this->assertSame(43, yield $parcel->unwrap());
-        });
+        $this->assertSame(44, yield $process->join()); // Wait for child process to finish.
+        $this->assertEquals(44, yield $object->unwrap());
     }
 }

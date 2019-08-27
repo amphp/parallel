@@ -2,23 +2,20 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Loop;
 use Amp\Parallel\Worker\BootstrapWorkerFactory;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class BootstrapWorkerFactoryTest extends TestCase
+class BootstrapWorkerFactoryTest extends AsyncTestCase
 {
     public function testAutoloading()
     {
         $factory = new BootstrapWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php');
 
-        Loop::run(function () use ($factory) {
-            $worker = $factory->create();
+        $worker = $factory->create();
 
-            $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
+        $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
 
-            yield $worker->shutdown();
-        });
+        yield $worker->shutdown();
     }
 
     public function testInvalidAutoloaderPath()

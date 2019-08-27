@@ -2,11 +2,12 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Loop;
+use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\PHPUnit\TestCase;
+use Amp\Parallel\Sync\SerializationException;
+use Amp\PHPUnit\AsyncTestCase;
 
-class ChannelledSocketTest extends TestCase
+class ChannelledSocketTest extends AsyncTestCase
 {
     /**
      * @return resource[]
@@ -25,17 +26,15 @@ class ChannelledSocketTest extends TestCase
 
     public function testSendReceive()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $b = new ChannelledSocket($right, $right);
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $b = new ChannelledSocket($right, $right);
 
-            $message = 'hello';
+        $message = 'hello';
 
-            yield $a->send($message);
-            $data = yield $b->receive();
-            $this->assertSame($message, $data);
-        });
+        yield $a->send($message);
+        $data = yield $b->receive();
+        $this->assertSame($message, $data);
     }
 
     /**
@@ -43,83 +42,77 @@ class ChannelledSocketTest extends TestCase
      */
     public function testSendReceiveLongData()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $b = new ChannelledSocket($right, $right);
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $b = new ChannelledSocket($right, $right);
 
-            $length = 0xffff;
-            $message = '';
-            for ($i = 0; $i < $length; ++$i) {
-                $message .= \chr(\mt_rand(0, 255));
-            }
+        $length = 0xffff;
+        $message = '';
+        for ($i = 0; $i < $length; ++$i) {
+            $message .= \chr(\mt_rand(0, 255));
+        }
 
-            $a->send($message);
-            $data = yield $b->receive();
-            $this->assertSame($message, $data);
-        });
+        $a->send($message);
+        $data = yield $b->receive();
+        $this->assertSame($message, $data);
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testInvalidDataReceived()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $b = new ChannelledSocket($right, $right);
+        $this->expectException(ChannelException::class);
 
-            \fwrite($left, \pack('L', 10) . '1234567890');
-            $data = yield $b->receive();
-        });
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $b = new ChannelledSocket($right, $right);
+
+        \fwrite($left, \pack('L', 10) . '1234567890');
+        $data = yield $b->receive();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\SerializationException
      */
     public function testSendUnserializableData()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $b = new ChannelledSocket($right, $right);
+        $this->expectException(SerializationException::class);
 
-            // Close $a. $b should close on next read...
-            yield $a->send(function () {});
-            $data = yield $b->receive();
-        });
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $b = new ChannelledSocket($right, $right);
+
+        // Close $a. $b should close on next read...
+        yield $a->send(function () {});
+        $data = yield $b->receive();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testSendAfterClose()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $a->close();
+        $this->expectException(ChannelException::class);
 
-            yield $a->send('hello');
-        });
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $a->close();
+
+        yield $a->send('hello');
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testReceiveAfterClose()
     {
-        Loop::run(function () {
-            list($left, $right) = $this->createSockets();
-            $a = new ChannelledSocket($left, $left);
-            $a->close();
+        $this->expectException(ChannelException::class);
 
-            $data = yield $a->receive();
-        });
+        list($left, $right) = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $a->close();
+
+        $data = yield $a->receive();
     }
 }

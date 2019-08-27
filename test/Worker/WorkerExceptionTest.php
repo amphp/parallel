@@ -3,9 +3,9 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\WorkerException;
-use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class WorkerExceptionTest extends TestCase
+class WorkerExceptionTest extends AsyncTestCase
 {
     public function testConstructorShouldBeInstance()
     {

@@ -5,13 +5,14 @@ namespace Amp\Parallel\Test\Sync;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
-use Amp\Loop;
+use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\PHPUnit\TestCase;
+use Amp\Parallel\Sync\SerializationException;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 
-class ChannelledStreamTest extends TestCase
+class ChannelledStreamTest extends AsyncTestCase
 {
     /**
      * @return \Amp\ByteStream\InputStream|\Amp\ByteStream\OutputStream
@@ -48,17 +49,15 @@ class ChannelledStreamTest extends TestCase
 
     public function testSendReceive()
     {
-        Loop::run(function () {
-            $mock = $this->createMockStream();
-            $a = new ChannelledStream($mock, $mock);
-            $b = new ChannelledStream($mock, $mock);
+        $mock = $this->createMockStream();
+        $a = new ChannelledStream($mock, $mock);
+        $b = new ChannelledStream($mock, $mock);
 
-            $message = 'hello';
+        $message = 'hello';
 
-            yield $a->send($message);
-            $data = yield $b->receive();
-            $this->assertSame($message, $data);
-        });
+        yield $a->send($message);
+        $data = yield $b->receive();
+        $this->assertSame($message, $data);
     }
 
     /**
@@ -66,94 +65,88 @@ class ChannelledStreamTest extends TestCase
      */
     public function testSendReceiveLongData()
     {
-        Loop::run(function () {
-            $mock = $this->createMockStream();
-            $a = new ChannelledStream($mock, $mock);
-            $b = new ChannelledStream($mock, $mock);
+        $mock = $this->createMockStream();
+        $a = new ChannelledStream($mock, $mock);
+        $b = new ChannelledStream($mock, $mock);
 
-            $length = 0xffff;
-            $message = '';
-            for ($i = 0; $i < $length; ++$i) {
-                $message .= \chr(\mt_rand(0, 255));
-            }
+        $length = 0xffff;
+        $message = '';
+        for ($i = 0; $i < $length; ++$i) {
+            $message .= \chr(\mt_rand(0, 255));
+        }
 
-            yield $a->send($message);
-            $data = yield $b->receive();
-            $this->assertSame($message, $data);
-        });
+        yield $a->send($message);
+        $data = yield $b->receive();
+        $this->assertSame($message, $data);
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testInvalidDataReceived()
     {
-        Loop::run(function () {
-            $mock = $this->createMockStream();
-            $a = new ChannelledStream($mock, $mock);
-            $b = new ChannelledStream($mock, $mock);
+        $this->expectException(ChannelException::class);
 
-            // Close $a. $b should close on next read...
-            yield $mock->write(\pack('L', 10) . '1234567890');
-            $data = yield $b->receive();
-        });
+        $mock = $this->createMockStream();
+        $a = new ChannelledStream($mock, $mock);
+        $b = new ChannelledStream($mock, $mock);
+
+        // Close $a. $b should close on next read...
+        yield $mock->write(\pack('L', 10) . '1234567890');
+        $data = yield $b->receive();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\SerializationException
      */
     public function testSendUnserializableData()
     {
-        Loop::run(function () {
-            $mock = $this->createMockStream();
-            $a = new ChannelledStream($mock, $mock);
-            $b = new ChannelledStream($mock, $mock);
+        $this->expectException(SerializationException::class);
 
-            // Close $a. $b should close on next read...
-            yield $a->send(function () {});
-            $data = yield $b->receive();
-        });
+        $mock = $this->createMockStream();
+        $a = new ChannelledStream($mock, $mock);
+        $b = new ChannelledStream($mock, $mock);
+
+        // Close $a. $b should close on next read...
+        yield $a->send(function () {});
+        $data = yield $b->receive();
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testSendAfterClose()
     {
-        Loop::run(function () {
-            $mock = $this->createMock(OutputStream::class);
-            $mock->expects($this->once())
+        $this->expectException(ChannelException::class);
+
+        $mock = $this->createMock(OutputStream::class);
+        $mock->expects($this->once())
                 ->method('write')
                 ->will($this->throwException(new StreamException));
 
-            $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
-            $b = new ChannelledStream(
+        $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
+        $b = new ChannelledStream(
                 $this->createMock(InputStream::class),
                 $this->createMock(OutputStream::class)
             );
 
-            yield $a->send('hello');
-        });
+        yield $a->send('hello');
     }
 
     /**
      * @depends testSendReceive
-     * @expectedException \Amp\Parallel\Sync\ChannelException
      */
     public function testReceiveAfterClose()
     {
-        Loop::run(function () {
-            $mock = $this->createMock(InputStream::class);
-            $mock->expects($this->once())
+        $this->expectException(ChannelException::class);
+
+        $mock = $this->createMock(InputStream::class);
+        $mock->expects($this->once())
                 ->method('read')
                 ->willReturn(new Success(null));
 
-            $a = new ChannelledStream($mock, $this->createMock(OutputStream::class));
+        $a = new ChannelledStream($mock, $this->createMock(OutputStream::class));
 
-            $data = yield $a->receive();
-        });
+        $data = yield $a->receive();
     }
 }
