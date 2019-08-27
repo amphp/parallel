@@ -126,9 +126,9 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
         $b = new ChannelledStream(
-                $this->createMock(InputStream::class),
-                $this->createMock(OutputStream::class)
-            );
+            $this->createMock(InputStream::class),
+            $this->createMock(OutputStream::class)
+        );
 
         yield $a->send('hello');
     }

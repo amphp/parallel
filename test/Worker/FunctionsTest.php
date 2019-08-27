@@ -11,6 +11,11 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 
+function nonAutoloadableFunction(): void
+{
+    // Empty test function
+}
+
 class FunctionsTest extends AsyncTestCase
 {
     public function testPool()
@@ -39,9 +44,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        $awaitable = Worker\enqueue($task);
-
-        $this->assertSame($value, Promise\wait($awaitable));
+        $this->assertSame($value, yield Worker\enqueue($task));
     }
 
     /**
@@ -59,9 +62,7 @@ class FunctionsTest extends AsyncTestCase
 
         $value = 42;
 
-        $promise = Worker\enqueueCallable('strval', $value);
-
-        $this->assertSame('42', Promise\wait($promise));
+        $this->assertSame('42', yield Worker\enqueueCallable('strval', $value));
     }
 
     /**
@@ -69,15 +70,25 @@ class FunctionsTest extends AsyncTestCase
      */
     public function testEnqueueCallableIntegration()
     {
-        Worker\pool(new Worker\DefaultPool());
+        Worker\pool(new Worker\DefaultPool);
 
         $value = 42;
 
-        $promise = Worker\enqueueCallable('strval', $value);
-
-        $this->assertSame('42', Promise\wait($promise));
+        $this->assertSame('42', yield Worker\enqueueCallable('strval', $value));
     }
 
+    /**
+     * @depends testEnqueueCallable
+     */
+    public function testEnqueueNonAutoloadableCallable()
+    {
+        $this->expectException(Worker\TaskError::class);
+        $this->expectExceptionMessage('User-defined functions must be autoloadable');
+
+        Worker\pool(new Worker\DefaultPool);
+
+        yield Worker\enqueueCallable(__NAMESPACE__ . '\\nonAutoloadableFunction');
+    }
     /**
      * @depends testPool
      */
