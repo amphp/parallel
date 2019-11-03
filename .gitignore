@@ -3,5 +3,6 @@
 .vagrant
 build
 composer.lock
+docs/Gemfile.lock
 phpunit.xml
 vendor
