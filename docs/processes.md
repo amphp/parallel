@@ -41,11 +41,11 @@ Loop::run(function () {
 
     yield $process->send($url);
 
-    $requestData = $process->receive();
+    $requestData = yield $process->receive();
 
     printf("Received %d bytes from %s\n", \strlen($requestData), $url);
 
-    $returnValue = $process->join();
+    $returnValue = yield $process->join();
 
     printf("Child processes exited with '%s'\n", $returnValue);
 });
