@@ -97,7 +97,7 @@ Additionally `Environment` allows setting a TTL for entries, so can be used as a
 
 namespace Amp\Parallel\Worker;
 
-interface Environment implements \ArrayAccess
+interface Environment extends \ArrayAccess
 {
     /**
      * @param string $key
