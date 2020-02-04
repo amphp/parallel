@@ -17,6 +17,8 @@ use function Amp\call;
  * The thread context is not itself threaded. A local instance of the context is
  * maintained both in the context that creates the thread and in the thread
  * itself.
+ *
+ * @deprecated ext-pthreads development has been halted, see https://github.com/krakjoe/pthreads/issues/929
  */
 final class Thread implements Context
 {

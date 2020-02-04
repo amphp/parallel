@@ -9,6 +9,8 @@ use function Amp\call;
 
 /**
  * A thread-safe container that shares a value between multiple threads.
+ *
+ * @deprecated ext-pthreads development has been halted, see https://github.com/krakjoe/pthreads/issues/929
  */
 final class ThreadedParcel implements Parcel
 {

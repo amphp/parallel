@@ -8,6 +8,8 @@ use Amp\Promise;
 
 /**
  * A worker thread that executes task objects.
+ *
+ * @deprecated ext-pthreads development has been halted, see https://github.com/krakjoe/pthreads/issues/929
  */
 final class WorkerThread extends TaskWorker
 {
