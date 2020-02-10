@@ -62,14 +62,15 @@ final class Process implements Context
      * @param string|null  $cwd Working directory.
      * @param mixed[]      $env Array of environment variables.
      * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param boolean      $useFIFO Whether to use FIFOs instead of the more reliable UNIX socket server (CHOSEN AUTOMATICALLY, only for testing purposes)
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct($script, string $cwd = null, array $env = [], string $binary = null, bool $useFIFO = false)
     {
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ProcessHub) {
-            $this->hub = new Internal\ProcessHub;
+            $this->hub = new Internal\ProcessHub($useFIFO);
             Loop::setState(self::class, $this->hub);
         }
 
