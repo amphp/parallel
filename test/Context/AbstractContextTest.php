@@ -49,6 +49,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
         yield $context->start();
+        yield new Delayed(100);
         yield $context->send(1);
     }
 
@@ -156,6 +157,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
         yield $context->start();
+        yield new Delayed(500);
         yield $context->send(1);
     }
 }
