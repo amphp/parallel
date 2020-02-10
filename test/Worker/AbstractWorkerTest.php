@@ -154,7 +154,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     public function testKill()
     {
-        $this->setTimeout(250);
+        $this->setTimeout(500);
 
 
         $worker = $this->createWorker();
