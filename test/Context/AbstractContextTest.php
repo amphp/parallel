@@ -32,6 +32,26 @@ abstract class AbstractContextTest extends AsyncTestCase
         yield $context->join();
     }
 
+    public function testThrowingProcessOnReceive()
+    {
+        $this->expectException(PanicError::class);
+        $this->expectExceptionMessage('Test message');
+
+        $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
+        yield $context->start();
+        yield $context->receive();
+    }
+
+    public function testThrowingProcessOnSend()
+    {
+        $this->expectException(PanicError::class);
+        $this->expectExceptionMessage('Test message');
+
+        $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
+        yield $context->start();
+        yield $context->send(1);
+    }
+
     public function testInvalidScriptPath()
     {
         $this->expectException(PanicError::class);
@@ -117,5 +137,25 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         yield $context->start();
         yield $context->join();
+    }
+
+    public function testExitingProcessOnReceive()
+    {
+        $this->expectException(ContextException::class);
+        $this->expectExceptionMessage('stopped responding');
+
+        $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
+        yield $context->start();
+        yield $context->receive();
+    }
+
+    public function testExitingProcessOnSend()
+    {
+        $this->expectException(ContextException::class);
+        $this->expectExceptionMessage('stopped responding');
+
+        $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
+        yield $context->start();
+        yield $context->send(1);
     }
 }
