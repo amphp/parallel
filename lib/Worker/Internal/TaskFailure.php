@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Failure;
+use Amp\Parallel\Sync;
 use Amp\Parallel\Worker\TaskError;
 use Amp\Parallel\Worker\TaskException;
 use Amp\Promise;
@@ -25,7 +26,7 @@ final class TaskFailure extends TaskResult
     /** @var int|string */
     private $code;
 
-    /** @var array */
+    /** @var string[] */
     private $trace;
 
     /** @var self|null */
@@ -38,7 +39,7 @@ final class TaskFailure extends TaskResult
         $this->parent = $exception instanceof \Error ? self::PARENT_ERROR : self::PARENT_EXCEPTION;
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
-        $this->trace = $exception->getTraceAsString();
+        $this->trace = Sync\flattenThrowableBacktrace($exception);
 
         if ($previous = $exception->getPrevious()) {
             $this->previous = new self($id, $previous);
@@ -61,7 +62,7 @@ final class TaskFailure extends TaskResult
             return new TaskError(
                 $this->type,
                 \sprintf($format, $this->type, $this->message, $this->code, TaskError::class),
-                $this->trace,
+                \implode("\n", $this->trace),
                 $previous
             );
         }
@@ -69,7 +70,7 @@ final class TaskFailure extends TaskResult
         return new TaskException(
             $this->type,
             \sprintf($format, $this->type, $this->message, $this->code, TaskException::class),
-            $this->trace,
+            \implode("\n", $this->trace),
             $previous
         );
     }
