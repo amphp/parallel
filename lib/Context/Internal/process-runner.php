@@ -65,7 +65,7 @@ if (\function_exists("cli_set_process_title")) {
         $suffix = \bin2hex(\random_bytes(10));
         $prefix = \sys_get_temp_dir()."/amp-".$suffix.".fifo";
 
-        if (\strlen($prefix) > 0xFF) {
+        if (\strlen($prefix) > 0xFFFF) {
             \trigger_error("Prefix is too long!", E_USER_ERROR);
             exit(1);
         }
@@ -84,20 +84,20 @@ if (\function_exists("cli_set_process_title")) {
                 @\unlink($socket);
             });
 
-            if (!$socket = \fopen($socket, 'r+')) { // Open in either read or write mode to send a close signal when done
+            if (!$socket = \fopen($socket, 'r+')) { // Open in r+w mode to prevent blocking if there is no reader
                 \trigger_error("Could not open FIFO client socket", E_USER_ERROR);
                 exit(1);
             }
         }
 
-        if (!$tempSocket = \fopen($uri, 'r+')) {
+        if (!$tempSocket = \fopen($uri, 'r+')) { // Open in r+w mode to prevent blocking if there is no reader
             \trigger_error("Could not connect to FIFO server", E_USER_ERROR);
             exit(1);
         }
         \stream_set_blocking($tempSocket, false);
         \stream_set_write_buffer($tempSocket, 0);
 
-        if (!\fwrite($tempSocket, \chr(\strlen($prefix)).$prefix)) {
+        if (!\fwrite($tempSocket, \pack('v', \strlen($prefix)).$prefix)) {
             \trigger_error("Failure sending request to FIFO server", E_USER_ERROR);
             exit(1);
         }
