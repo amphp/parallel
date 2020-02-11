@@ -17,8 +17,8 @@ if (\function_exists("cli_set_process_title")) {
 
 (function (): void {
     $paths = [
-        \dirname(__DIR__, 5)."/autoload.php",
-        \dirname(__DIR__, 3)."/vendor/autoload.php",
+        \dirname(__DIR__, 6)."/autoload.php",
+        \dirname(__DIR__, 4)."/vendor/autoload.php",
     ];
 
     foreach ($paths as $path) {
@@ -36,7 +36,19 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-(function () use ($argc, $argv): void {
+$fromWeb = false;
+if (!isset($argv)) { // Running from web
+    $argv = $_REQUEST['argv'] ?? [];
+    array_unshift($argv, __DIR__);
+    $argc = count($argv);
+    $fromWeb = true;
+
+    @\ini_set('html_errors', 0);
+    @\ini_set('display_errors', 0);
+    @\ini_set('log_errors', 1);
+}
+
+(function () use ($argc, $argv, $fromWeb): void {
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
@@ -50,16 +62,16 @@ if (\function_exists("cli_set_process_title")) {
     --$argc;
     $uri = \array_shift($argv);
 
-    $key = "";
+    $key = $fromWeb ? $_REQUEST['key'] : "";
 
     // Read random key from STDIN and send back to parent over IPC socket to authenticate.
-    do {
+    while (\strlen($key) < Process::KEY_LENGTH) {
         if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false || \feof(\STDIN)) {
             \trigger_error("Could not read key from parent", E_USER_ERROR);
             exit(1);
         }
         $key .= $chunk;
-    } while (\strlen($key) < Process::KEY_LENGTH);
+    }
 
     if (\strpos($uri, 'tcp://') === false && \strpos($uri, 'unix://') === false) {
         $suffix = \bin2hex(\random_bytes(10));
@@ -119,6 +131,17 @@ if (\function_exists("cli_set_process_title")) {
     } catch (\Throwable $exception) {
         \trigger_error("Could not send key to parent", E_USER_ERROR);
         exit(1);
+    }
+
+    if ($fromWeb) { // Set environment variables only after auth
+        if (isset($_REQUEST['cwd'])) {
+            chdir($_REQUEST['cwd']);
+        }
+        if (isset($_REQUEST['env']) && is_array($_REQUEST['env'])) {
+            foreach ($_REQUEST['env'] as $key => $value) {
+                @\putenv("$key=$value");
+            }
+        }
     }
 
     try {

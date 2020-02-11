@@ -16,7 +16,7 @@ final class ProcessRunner extends RunnerAbstract
     /** @var \Amp\Process\Process */
     private $process;
     /**
-     * Constructor
+     * Constructor.
      *
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
@@ -25,7 +25,7 @@ final class ProcessRunner extends RunnerAbstract
      * @param array  $env          Environment variables
      * @param string $binary       PHP binary path
      */
-    public function __construct($script, string $runPath, ProcessHub $hub, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct($script, ProcessHub $hub, string $cwd = null, array $env = [], string $binary = null)
     {
         if ($binary === null) {
             if (\PHP_SAPI === "cli") {
@@ -37,22 +37,30 @@ final class ProcessRunner extends RunnerAbstract
             throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
         }
 
-        if (\is_array($script)) {
-            $script = \implode(" ", \array_map("escapeshellarg", $script));
-        } else {
-            $script = \escapeshellarg($script);
-        }
-
         $options = [
             "html_errors" => "0",
             "display_errors" => "0",
             "log_errors" => "1",
         ];
 
+        $runner = self::getScriptPath();
+
+        // Monkey-patch the script path in the same way, only supported if the command is given as array.
+        if (isset(self::$pharCopy) && \is_array($script) && isset($script[0])) {
+            $script[0] = "phar://".self::$pharCopy.\substr($script[0], \strlen(\Phar::running(true)));
+        }
+
+        if (\is_array($script)) {
+            $script = \implode(" ", \array_map("escapeshellarg", $script));
+        } else {
+            $script = \escapeshellarg($script);
+        }
+
+
         $command = \implode(" ", [
             \escapeshellarg($binary),
             self::formatOptions($options),
-            \escapeshellarg($runPath),
+            \escapeshellarg($runner),
             $hub->getUri(),
             $script,
         ]);
@@ -90,10 +98,10 @@ final class ProcessRunner extends RunnerAbstract
 
 
     /**
-     * Set process key
+     * Set process key.
      *
      * @param string $key Process key
-     * 
+     *
      * @return Promise
      */
     public function setProcessKey(string $key): Promise
@@ -205,5 +213,4 @@ final class ProcessRunner extends RunnerAbstract
     {
         return $this->process->getStderr();
     }
-
 }

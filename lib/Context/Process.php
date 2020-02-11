@@ -4,6 +4,7 @@ namespace Amp\Parallel\Context;
 
 use Amp\Loop;
 use Amp\Parallel\Context\Internal\Runner\ProcessRunner;
+use Amp\Parallel\Context\Internal\Runner\WebRunner;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
@@ -15,14 +16,7 @@ use function Amp\call;
 
 final class Process implements Context
 {
-    const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     const KEY_LENGTH = 32;
-
-    /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
-    private static $pharScriptPath;
-
-    /** @var string|null PHAR path with a '.phar' extension. */
-    private static $pharCopy;
 
     /** @var Internal\ProcessHub */
     private $hub;
@@ -59,10 +53,11 @@ final class Process implements Context
      * @param string|null  $cwd Working directory.
      * @param mixed[]      $env Array of environment variables.
      * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param bool         $useWeb Whether to use the WebRunner by default
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct($script, string $cwd = null, array $env = [], string $binary = null, bool $useWeb = false)
     {
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ProcessHub) {
@@ -70,45 +65,15 @@ final class Process implements Context
             Loop::setState(self::class, $this->hub);
         }
 
-        // Write process runner to external file if inside a PHAR,
-        // because PHP can't open files inside a PHAR directly except for the stub.
-        if (\strpos(self::SCRIPT_PATH, "phar://") === 0) {
-            if (self::$pharScriptPath) {
-                $scriptPath = self::$pharScriptPath;
-            } else {
-                $path = \dirname(self::SCRIPT_PATH);
-
-                if (\substr(\Phar::running(false), -5) !== ".phar") {
-                    self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
-                    \copy(\Phar::running(false), self::$pharCopy);
-
-                    \register_shutdown_function(static function (): void {
-                        @\unlink(self::$pharCopy);
-                    });
-
-                    $path = "phar://" . self::$pharCopy . "/" . \substr($path, \strlen(\Phar::running(true)));
-                }
-
-                $contents = \file_get_contents(self::SCRIPT_PATH);
-                $contents = \str_replace("__DIR__", \var_export($path, true), $contents);
-                $suffix = \bin2hex(\random_bytes(10));
-                self::$pharScriptPath = $scriptPath = \sys_get_temp_dir() . "/amp-process-runner-" . $suffix . ".php";
-                \file_put_contents($scriptPath, $contents);
-
-                \register_shutdown_function(static function (): void {
-                    @\unlink(self::$pharScriptPath);
-                });
+        try {
+            if (!$useWeb) {
+                $this->process = new ProcessRunner($script, $this->hub, $cwd, $env, $binary);
             }
-
-            // Monkey-patch the script path in the same way, only supported if the command is given as array.
-            if (isset(self::$pharCopy) && \is_array($script) && isset($script[0])) {
-                $script[0] = "phar://" . self::$pharCopy . \substr($script[0], \strlen(\Phar::running(true)));
-            }
-        } else {
-            $scriptPath = self::SCRIPT_PATH;
+        } catch (\Throwable $e) {
         }
-
-        $this->process = new ProcessRunner($script, $scriptPath, $this->hub, $cwd, $env, $binary);
+        if (!$this->process) {
+            $this->process = new WebRunner($script, $this->hub, $cwd, $env);
+        }
     }
 
 

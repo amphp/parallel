@@ -1,7 +1,9 @@
 <?php
 
-namespace Amp\Parallel\Context;
+namespace Amp\Parallel\Context\Internal\Runner;
 
+use Amp\ByteStream\ResourceOutputStream;
+use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Internal\ProcessHub;
 use Amp\Parallel\Context\Internal\Runner\RunnerAbstract;
 use Amp\Promise;
@@ -9,6 +11,8 @@ use Amp\Success;
 
 final class WebRunner extends RunnerAbstract
 {
+    /** @var string|null Cached path to the runner script. */
+    private static $runPath;
     /**
      * PID.
      *
@@ -27,6 +31,13 @@ final class WebRunner extends RunnerAbstract
      * @var boolean
      */
     private $running = false;
+
+    /**
+     * Socket
+     *
+     * @var ResourceOutputStream
+     */
+    private $res;
     /**
      * Constructor.
      *
@@ -37,21 +48,67 @@ final class WebRunner extends RunnerAbstract
      * @param array  $env          Environment variables
      * @param string $binary       PHP binary path
      */
-    public function __construct($script, string $runPath, ProcessHub $hub, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct($script, ProcessHub $hub, string $cwd = null, array $env = [], string $binary = null)
     {
         if (!isset($_SERVER['SERVER_NAME'])) {
             throw new ContextException("Could not initialize web runner!");
+        }
+
+        if (!self::$runPath) {
+            $uri = \parse_url('tcp://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            if (\substr($uri, -1) === '/') { // http://example.com/path/ (assumed index.php)
+                $uri .= 'index'; // Add fake file name
+            }
+            $uri = str_replace('//', '/', $uri);
+
+            $rootDir = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            $rootDir = \end($rootDir)['file'] ?? '';
+            if (!$rootDir) {
+                throw new ContextException('Could not get entry file!');
+            }
+            $rootDir = \dirname($rootDir);
+            $uriDir = \dirname($uri);
+
+            if (\substr($rootDir, -\strlen($uriDir)) !== $uriDir) {
+                throw new ContextException("Mismatch between absolute root dir ($rootDir) and URI dir ($uriDir)");
+            }
+
+            // Absolute root of (presumably) readable document root
+            $localRootDir = \substr($rootDir, 0, \strlen($rootDir)-\strlen($uriDir)).DIRECTORY_SEPARATOR;
+
+            $runPath = self::getScriptPath($localRootDir);
+
+            if (\substr($runPath, 0, \strlen($localRootDir)) === $localRootDir) { // Process runner is within readable document root
+                self::$runPath = \substr($runPath, \strlen($localRootDir)-1);
+            } else {
+                $contents = \file_get_contents(self::SCRIPT_PATH);
+                $contents = \str_replace("__DIR__", \var_export($localRootDir, true), $contents);
+                $suffix = \bin2hex(\random_bytes(10));
+                $runPath = $localRootDir."/amp-process-runner-".$suffix.".php";
+                \file_put_contents($runPath, $contents);
+
+                self::$runPath = \substr($runPath, \strlen($localRootDir)-1);
+
+                \register_shutdown_function(static function () use ($runPath): void {
+                    @\unlink($runPath);
+                });
+            }
+
+            self::$runPath = \str_replace(DIRECTORY_SEPARATOR, '/', self::$runPath);
+            self::$runPath = \str_replace('//', '/', self::$runPath);
+        }
+
+        // Monkey-patch the script path in the same way, only supported if the command is given as array.
+        if (isset(self::$pharCopy) && \is_array($script) && isset($script[0])) {
+            $script[0] = "phar://".self::$pharCopy.\substr($script[0], \strlen(\Phar::running(true)));
         }
 
         if (!\is_array($script)) {
             $script = [$script];
         }
         $this->params = [
-            'options' => [
-                "html_errors" => "0",
-                "display_errors" => "0",
-                "log_errors" => "1",
-            ],
+            'cwd' => $cwd,
+            'env' => $env,
             'argv' => [
                 $hub->getUri(),
                 ...$script
@@ -85,23 +142,20 @@ final class WebRunner extends RunnerAbstract
     public function setProcessKey(string $key): Promise
     {
         $this->params['key'] = $key;
-        $params = \http_build_query($params);
+        $params = \http_build_query($this->params);
 
         $address = ($_SERVER['HTTPS'] ?? false ? 'tls' : 'tcp').'://'.$_SERVER['SERVER_NAME'];
         $port = $_SERVER['SERVER_PORT'];
-        $uri = $_SERVER['REQUEST_URI'];
-        $params = $_GET;
 
-        $url = \explode('?', $uri, 2)[0] ?? '';
-        $query = \http_build_query($params);
-        $uri = \implode('?', [$url, $query]);
+        $uri = self::$runPath.'?'.$params;
 
-        $this->payload = "GET $uri HTTP/1.1\r\nHost: ${_SERVER['SERVER_NAME']}\r\n\r\n";
+        $payload = "GET $uri HTTP/1.1\r\nHost: ${_SERVER['SERVER_NAME']}\r\n\r\n";
 
-        $a = \fsockopen($address, $port);
-        \fwrite($a, $payload);
-
-        $this->running =true;
+        // We don't care for results or timeouts here, PHP doesn't count IOwait time as execution time anyway
+        // Technically should use amphp/socket, but I guess it's OK to not introduce another dependency just for a socket that will be used once.
+        $this->res = new ResourceOutputStream(\fsockopen($address, $port)); 
+        $this->running = true;
+        return $this->res->write($payload);
     }
 
     /**
@@ -119,7 +173,7 @@ final class WebRunner extends RunnerAbstract
      */
     public function start(): Promise
     {
-        return new Success();
+        return new Success($this->pid);
     }
 
     /**
@@ -127,7 +181,10 @@ final class WebRunner extends RunnerAbstract
      */
     public function kill(): void
     {
-        $this->process->kill();
+        if (isset($this->res)) {
+            unset($this->res);
+        }
+        $this->isRunning = false;
     }
 
     /**
@@ -135,6 +192,6 @@ final class WebRunner extends RunnerAbstract
      */
     public function join(): Promise
     {
-        return new Success();
+        return new Success(0);
     }
 }
