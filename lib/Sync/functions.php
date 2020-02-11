@@ -71,5 +71,9 @@ function flattenArgument($value): string
         return 'null';
     }
 
+    if (\is_bool($value)) {
+        return $value ? 'true' : 'false';
+    }
+
     return (string) $value;
 }
