@@ -106,13 +106,11 @@ final class WebRunner extends RunnerAbstract
         if (!\is_array($script)) {
             $script = [$script];
         }
+        array_unshift($script, $hub->getUri());
         $this->params = [
             'cwd' => $cwd,
             'env' => $env,
-            'argv' => [
-                $hub->getUri(),
-                ...$script
-            ]
+            'argv' => $script
         ];
         $this->pid = \random_int(0, PHP_INT_MAX);
     }
