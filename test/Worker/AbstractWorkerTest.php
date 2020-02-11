@@ -3,13 +3,13 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Sync\PanicError;
+use Amp\Parallel\Sync\ContextPanicError;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
-use Amp\Parallel\Worker\TaskError;
-use Amp\Parallel\Worker\TaskException;
+use Amp\Parallel\Worker\TaskFailureError;
+use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\AsyncTestCase;
 
@@ -172,8 +172,8 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             yield $worker->enqueue(new Fixtures\FailingTask(\Exception::class));
-        } catch (TaskException $exception) {
-            $this->assertSame(\Exception::class, $exception->getName());
+        } catch (TaskFailureException $exception) {
+            $this->assertSame(\Exception::class, $exception->getOriginalClassName());
         }
 
         yield $worker->shutdown();
@@ -185,8 +185,8 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             yield $worker->enqueue(new Fixtures\FailingTask(\Error::class));
-        } catch (TaskError $exception) {
-            $this->assertSame(\Error::class, $exception->getName());
+        } catch (TaskFailureError $exception) {
+            $this->assertSame(\Error::class, $exception->getOriginalClassName());
         }
 
         yield $worker->shutdown();
@@ -198,11 +198,11 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             yield $worker->enqueue(new Fixtures\FailingTask(\Error::class, \Exception::class));
-        } catch (TaskError $exception) {
-            $this->assertSame(\Error::class, $exception->getName());
+        } catch (TaskFailureError $exception) {
+            $this->assertSame(\Error::class, $exception->getOriginalClassName());
             $previous = $exception->getPrevious();
-            $this->assertInstanceOf(TaskException::class, $previous);
-            $this->assertSame(\Exception::class, $previous->getName());
+            $this->assertInstanceOf(TaskFailureException::class, $previous);
+            $this->assertSame(\Exception::class, $previous->getOriginalClassName());
         }
 
         yield $worker->shutdown();
@@ -215,8 +215,8 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         try {
             yield $worker->enqueue(new NonAutoloadableTask);
             $this->fail("Tasks that cannot be autoloaded should throw an exception");
-        } catch (TaskError $exception) {
-            $this->assertSame("Error", $exception->getName());
+        } catch (TaskFailureError $exception) {
+            $this->assertSame("Error", $exception->getOriginalClassName());
             $this->assertGreaterThan(0, \strpos($exception->getMessage(), \sprintf("Classes implementing %s", Task::class)));
         }
 
@@ -248,7 +248,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         try {
             yield $worker->enqueue(new Fixtures\UnserializableResultTask);
             $this->fail("Tasks results that cannot be serialized should throw an exception");
-        } catch (TaskException $exception) {
+        } catch (TaskFailureException $exception) {
             $this->assertSame(0, \strpos($exception->getMessage(), "Uncaught Amp\Parallel\Sync\SerializationException in worker"));
         }
 
@@ -296,7 +296,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     public function testInvalidCustomAutoloader()
     {
-        $this->expectException(PanicError::class);
+        $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('No file found at bootstrap file path given');
 
         $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');

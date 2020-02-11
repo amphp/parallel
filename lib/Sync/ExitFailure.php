@@ -39,22 +39,10 @@ final class ExitFailure implements ExitResult
         throw $this->createException();
     }
 
-    private function createException(): PanicError
+    private function createException(): ContextPanicError
     {
         $previous = $this->previous ? $this->previous->createException() : null;
 
-        return new PanicError(
-            $this->type,
-            \sprintf(
-                'Uncaught %s in worker with message "%s" and code "%s"; use %s::getPanicTrace() '
-                    . 'for the stack trace in the context',
-                $this->type,
-                $this->message,
-                $this->code,
-                PanicError::class
-            ),
-            \implode("\n", $this->trace),
-            $previous
-        );
+        return new ContextPanicError($this->type, $this->message, $this->code, $this->trace, $previous);
     }
 }

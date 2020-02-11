@@ -5,34 +5,47 @@ namespace Amp\Parallel\Sync;
 /**
  * @param \Throwable $exception
  *
- * @return string[] Serializable array of strings representing the exception backtrace including function arguments.
+ * @return array Serializable exception backtrace, with all function arguments flattened to strings.
  */
 function flattenThrowableBacktrace(\Throwable $exception): array
 {
-    $output = [];
-    $counter = 0;
     $trace = $exception->getTrace();
 
-    foreach ($trace as $call) {
+    foreach ($trace as &$call) {
+        unset($call['object']);
+        $call['args'] = \array_map(__NAMESPACE__ . '\\flattenArgument', $call['args']);
+    }
+
+    return $trace;
+}
+
+/**
+ * @param array $trace Backtrace produced by {@see formatFlattenedBacktrace()}.
+ *
+ * @return string
+ */
+function formatFlattenedBacktrace(array $trace): string
+{
+    $output = [];
+
+    foreach ($trace as $index => $call) {
         if (isset($call['class'])) {
             $name = $call['class'] . $call['type'] . $call['function'];
         } else {
             $name = $call['function'];
         }
 
-        $args = \implode(', ', \array_map(__NAMESPACE__ . '\\flattenArgument', $call['args']));
-
         $output[] = \sprintf(
             '#%d %s(%d): %s(%s)',
-            $counter++,
+            $index,
             $call['file'] ?? '[internal function]',
             $call['line'] ?? 0,
             $name,
-            $args
+            \implode(', ', $call['args'])
         );
     }
 
-    return $output;
+    return \implode("\n", $output);
 }
 
 /**

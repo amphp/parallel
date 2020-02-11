@@ -2,7 +2,10 @@
 
 namespace Amp\Parallel\Worker;
 
-final class TaskError extends \Error
+/**
+ * @deprecated TaskFailureError will be thrown from failed Tasks instead of this class.
+ */
+class TaskError extends \Error
 {
     /** @var string Class name of error thrown from task. */
     private $name;
@@ -16,7 +19,7 @@ final class TaskError extends \Error
      * @param string          $trace    The panic stack trace.
      * @param \Throwable|null $previous Previous exception.
      */
-    public function __construct(string $name, string $message = '', string $trace = '', \Throwable $previous = null)
+    public function __construct(string $name, string $message = '', string $trace = '', ?\Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
 
@@ -25,6 +28,8 @@ final class TaskError extends \Error
     }
 
     /**
+     * @deprecated Use TaskFailureThrowable::getOriginalClassName() instead.
+     *
      * Returns the class name of the error thrown from the task.
      *
      * @return string
@@ -35,6 +40,8 @@ final class TaskError extends \Error
     }
 
     /**
+     * @deprecated Use TaskFailureThrowable::getOriginalTraceAsString() instead.
+     *
      * Gets the stack trace at the point the error was thrown in the task.
      *
      * @return string

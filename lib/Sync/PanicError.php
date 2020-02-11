@@ -2,7 +2,11 @@
 
 namespace Amp\Parallel\Sync;
 
-final class PanicError extends \Error
+/**
+ * @deprecated ContextPanicError will be thrown from uncaught exceptions in child processes and threads instead of
+ * this class.
+ */
+class PanicError extends \Error
 {
     /** @var string Class name of uncaught exception. */
     private $name;
@@ -18,7 +22,7 @@ final class PanicError extends \Error
      * @param string          $trace    The panic stack trace.
      * @param \Throwable|null $previous Previous exception.
      */
-    public function __construct(string $name, string $message = '', string $trace = '', \Throwable $previous = null)
+    public function __construct(string $name, string $message = '', string $trace = '', ?\Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
 
@@ -27,6 +31,8 @@ final class PanicError extends \Error
     }
 
     /**
+     * @deprecated Use ContextPanicError::getOriginalClassName() instead.
+     *
      * Returns the class name of the uncaught exception.
      *
      * @return string
@@ -37,6 +43,8 @@ final class PanicError extends \Error
     }
 
     /**
+     * @deprecated Use ContextPanicError::getOriginalTraceAsString() instead.
+     *
      * Gets the stack trace at the point the panic occurred.
      *
      * @return string
