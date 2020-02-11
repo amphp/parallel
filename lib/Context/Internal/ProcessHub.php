@@ -43,6 +43,9 @@ class ProcessHub
         $isWindows = \strncasecmp(\PHP_OS, "WIN", 3) === 0;
 
         if ($isWindows) {
+            if ($useFIFO) {
+                throw new \RuntimeException("Cannot use FIFOs on windows");
+            }
             $this->uri = "tcp://127.0.0.1:0";
         } else {
             $suffix = \bin2hex(\random_bytes(10));
