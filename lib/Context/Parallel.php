@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Loop;
+use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\ExitResult;
@@ -10,6 +11,7 @@ use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
+use Amp\TimeoutException;
 use parallel\Runtime;
 use function Amp\call;
 
@@ -341,16 +343,20 @@ final class Parallel implements Context
     public function receive(): Promise
     {
         if ($this->channel === null) {
-            throw new StatusError('The process has not been started.');
+            throw new StatusError('The thread has not been started.');
         }
 
         return call(function (): \Generator {
-            $data = yield $this->channel->receive();
+            try {
+                $data = yield $this->channel->receive();
+            } catch (ChannelException $e) {
+                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            }
 
             if ($data instanceof ExitResult) {
                 $data = $data->getResult();
                 throw new SynchronizationError(\sprintf(
-                    'Thread process unexpectedly exited with result of type: %s',
+                    'Thread unexpectedly exited with result of type: %s',
                     \is_object($data) ? \get_class($data) : \gettype($data)
                 ));
             }
@@ -372,7 +378,27 @@ final class Parallel implements Context
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return $this->channel->send($data);
+        return call(function () use ($data): \Generator {
+            try {
+                return yield $this->channel->send($data);
+            } catch (ChannelException $e) {
+                if ($this->channel === null) {
+                    throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                }
+
+                try {
+                    $data = yield Promise\timeout($this->join(), 100);
+                } catch (ContextException | ChannelException | TimeoutException $ex) {
+                    $this->kill();
+                    throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                }
+
+                throw new SynchronizationError(\sprintf(
+                    'Thread unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ), 0, $e);
+            }
+        });
     }
 
     /**
