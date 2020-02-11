@@ -3,10 +3,10 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Loop;
+use Amp\Parallel\Context\Internal\Runner\ProcessRunner;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
-use Amp\Process\Process as BaseProcess;
 use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
@@ -23,13 +23,10 @@ final class Process implements Context
     /** @var string|null PHAR path with a '.phar' extension. */
     private static $pharCopy;
 
-    /** @var string|null Cached path to located PHP binary. */
-    private static $binaryPath;
-
     /** @var Internal\ProcessHub */
     private $hub;
 
-    /** @var \Amp\Process\Process */
+    /** @var Internal\Runner\RunnerAbstract */
     private $process;
 
     /** @var \Amp\Parallel\Sync\ChannelledSocket */
@@ -73,22 +70,6 @@ final class Process implements Context
             Loop::setState(self::class, $this->hub);
         }
 
-        $options = [
-            "html_errors" => "0",
-            "display_errors" => "0",
-            "log_errors" => "1",
-        ];
-
-        if ($binary === null) {
-            if (\PHP_SAPI === "cli") {
-                $binary = \PHP_BINARY;
-            } else {
-                $binary = self::$binaryPath ?? self::locateBinary();
-            }
-        } elseif (!\is_executable($binary)) {
-            throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
-        }
-
         // Write process runner to external file if inside a PHAR,
         // because PHP can't open files inside a PHAR directly except for the stub.
         if (\strpos(self::SCRIPT_PATH, "phar://") === 0) {
@@ -127,51 +108,9 @@ final class Process implements Context
             $scriptPath = self::SCRIPT_PATH;
         }
 
-        if (\is_array($script)) {
-            $script = \implode(" ", \array_map("escapeshellarg", $script));
-        } else {
-            $script = \escapeshellarg($script);
-        }
-
-        $command = \implode(" ", [
-            \escapeshellarg($binary),
-            $this->formatOptions($options),
-            \escapeshellarg($scriptPath),
-            $this->hub->getUri(),
-            $script,
-        ]);
-
-        $this->process = new BaseProcess($command, $cwd, $env);
+        $this->process = new ProcessRunner($script, $scriptPath, $this->hub, $cwd, $env, $binary);
     }
 
-    private static function locateBinary(): string
-    {
-        $executable = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? "php.exe" : "php";
-
-        $paths = \array_filter(\explode(\PATH_SEPARATOR, \getenv("PATH")));
-        $paths[] = \PHP_BINDIR;
-        $paths = \array_unique($paths);
-
-        foreach ($paths as $path) {
-            $path .= \DIRECTORY_SEPARATOR . $executable;
-            if (\is_executable($path)) {
-                return self::$binaryPath = $path;
-            }
-        }
-
-        throw new \Error("Could not locate PHP executable binary");
-    }
-
-    private function formatOptions(array $options): string
-    {
-        $result = [];
-
-        foreach ($options as $option => $value) {
-            $result[] = \sprintf("-d%s=%s", $option, $value);
-        }
-
-        return \implode(" ", $result);
-    }
 
     /**
      * Private method to prevent cloning.
@@ -189,7 +128,7 @@ final class Process implements Context
             try {
                 $pid = yield $this->process->start();
 
-                yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
+                yield $this->process->setProcessKey($this->hub->generateKey($pid, self::KEY_LENGTH));
 
                 $this->channel = yield $this->hub->accept($pid);
 
