@@ -4,14 +4,13 @@ php:
   - 7.1
   - 7.2
   - 7.3
-  - 7.4snapshot
+  - 7.4
   - nightly
 
 sudo: false
 
 matrix:
   allow_failures:
-    - php: 7.4snapshot
     - php: nightly
   fast_finish: true
 
@@ -19,15 +18,21 @@ env:
   - AMP_DEBUG=true
 
 before_install:
-  - phpenv config-rm xdebug.ini || echo "No xdebug config."
+  # xdebug causes hangs on PHP 7.1 and 7.2
+  - if [ "$TRAVIS_PHP_VERSION" == "7.1" ] || [ "$TRAVIS_PHP_VERSION" == "7.2" ]; then
+      phpenv config-rm xdebug.ini || echo "No xdebug config.";
+    fi
 
 install:
   - composer update -n --prefer-dist
-  # pthreads is now only supported on PHP 7.2+
-  - if [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
+  # ext-pthreads is only supported on PHP 7.2 and 7.3
+  - if [ "$TRAVIS_PHP_VERSION" == "7.2" ] || [ "$TRAVIS_PHP_VERSION" == "7.3" ]; then
       travis/install-pthreads.sh;
     fi
-  - travis/install-parallel.sh;
+  # ext-parallel is only supported on PHP 7.2+
+  - if [ "$TRAVIS_PHP_VERSION" != "7.1" ]; then
+      travis/install-parallel.sh;
+    fi
   - wget https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.2/coveralls.phar
   - chmod +x coveralls.phar
 

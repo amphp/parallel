@@ -38,6 +38,8 @@
             "Amp\\Parallel\\": "lib"
         },
         "files": [
+            "lib/Context/functions.php",
+            "lib/Sync/functions.php",
             "lib/Worker/functions.php"
         ]
     },

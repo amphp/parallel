@@ -10,6 +10,7 @@ use Amp\Process\Process as BaseProcess;
 use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
+use Amp\TimeoutException;
 use function Amp\call;
 
 final class Process implements Context
@@ -222,7 +223,7 @@ final class Process implements Context
             try {
                 $data = yield $this->channel->receive();
             } catch (ChannelException $e) {
-                throw new ContextException("The context stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
 
             if ($data instanceof ExitResult) {
@@ -250,7 +251,29 @@ final class Process implements Context
             throw new \Error("Cannot send exit result objects");
         }
 
-        return $this->channel->send($data);
+        return call(function () use ($data): \Generator {
+            try {
+                return yield $this->channel->send($data);
+            } catch (ChannelException $e) {
+                if ($this->channel === null) {
+                    throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                }
+
+                try {
+                    $data = yield Promise\timeout($this->join(), 100);
+                } catch (ContextException | ChannelException | TimeoutException $ex) {
+                    if ($this->isRunning()) {
+                        $this->kill();
+                    }
+                    throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                }
+
+                throw new SynchronizationError(\sprintf(
+                    'Process unexpectedly exited with result of type: %s',
+                    \is_object($data) ? \get_class($data) : \gettype($data)
+                ), 0, $e);
+            }
+        });
     }
 
     /**

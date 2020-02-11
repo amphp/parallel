@@ -13,7 +13,7 @@ final class ExitFailure implements ExitResult
     /** @var int|string */
     private $code;
 
-    /** @var array */
+    /** @var string[] */
     private $trace;
 
     /** @var self|null */
@@ -24,7 +24,7 @@ final class ExitFailure implements ExitResult
         $this->type = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
-        $this->trace = $exception->getTraceAsString();
+        $this->trace = flattenThrowableBacktrace($exception);
 
         if ($previous = $exception->getPrevious()) {
             $this->previous = new self($previous);
@@ -53,7 +53,7 @@ final class ExitFailure implements ExitResult
                 $this->code,
                 PanicError::class
             ),
-            $this->trace,
+            \implode("\n", $this->trace),
             $previous
         );
     }
