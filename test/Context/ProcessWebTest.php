@@ -5,7 +5,6 @@ namespace Amp\Parallel\Test\Context;
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Internal\ProcessHub;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\PanicError;
@@ -17,21 +16,23 @@ class ProcessWebTest extends AsyncTestCase
     private static $proc;
     public static function setUpBeforeClass(): void
     {
-        self::$proc = proc_open(self::locateBinary()." -S localhost:8080", [2 => ["pipe", "w"]], $pipes, $root = realpath(__DIR__.'/../../'));
-        fgets($pipes[2]);
+        self::$proc = \proc_open(self::locateBinary()." -S localhost:8080", [2 => ['pipe', 'r']], $pipes, $root = \realpath(__DIR__.'/../../'));
+        while (!@\file_get_contents('http://localhost:8080/composer.json')) {
+            \usleep(500);
+        }
 
         $server = new ApacheCGI($root);
-        
-        $file = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        $file = end($file)['file'];
-        $file = substr($file, strlen($root));
+
+        $file = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        $file = \end($file)['file'];
+        $file = \substr($file, \strlen($root));
 
         // now simulate an HTTP request
         $server->setHttpRequest("http://localhost:8080/$file?baz=2");
     }
     public static function tearDownAfterClass(): void
     {
-        proc_terminate(self::$proc);
+        \proc_terminate(self::$proc);
     }
 
     private static function locateBinary(): string
@@ -63,7 +64,7 @@ class ProcessWebTest extends AsyncTestCase
     public function testBasicProcess()
     {
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/test-process.php",
+                __DIR__."/Fixtures/test-process.php",
                 "Test"
             ]);
         yield $context->start();
@@ -75,7 +76,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('No string provided');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/test-process.php");
+        $context = $this->createContext(__DIR__."/Fixtures/test-process.php");
         yield $context->start();
         yield $context->join();
     }
@@ -85,7 +86,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('Test message');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
+        $context = $this->createContext(__DIR__."/Fixtures/throwing-process.php");
         yield $context->start();
         yield $context->receive();
     }
@@ -95,7 +96,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('Test message');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
+        $context = $this->createContext(__DIR__."/Fixtures/throwing-process.php");
         yield $context->start();
         yield new Delayed(100);
         yield $context->send(1);
@@ -116,7 +117,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('The given data cannot be sent because it is not serializable');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
+        $context = $this->createContext(__DIR__."/Fixtures/invalid-result-process.php");
         yield $context->start();
         \var_dump(yield $context->join());
     }
@@ -126,7 +127,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('did not return a callable function');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
+        $context = $this->createContext(__DIR__."/Fixtures/no-callback-process.php");
         yield $context->start();
         \var_dump(yield $context->join());
     }
@@ -136,7 +137,7 @@ class ProcessWebTest extends AsyncTestCase
         $this->expectException(PanicError::class);
         $this->expectExceptionMessage('contains a parse error');
 
-        $context = $this->createContext(__DIR__ . "/Fixtures/parse-error-process.inc");
+        $context = $this->createContext(__DIR__."/Fixtures/parse-error-process.inc");
         yield $context->start();
         yield $context->join();
     }
