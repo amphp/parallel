@@ -16,7 +16,7 @@ class ProcessWebTest extends AsyncTestCase
     private static $proc;
     public static function setUpBeforeClass(): void
     {
-        self::$proc = \proc_open(self::locateBinary()." -S localhost:8080", [2 => ['pipe', 'r']], $pipes, $root = \realpath(__DIR__.'/../../'));
+        self::$proc = \proc_open(self::locateBinary()." -S localhost:8080", [2 => ['pipe', 'r']], $pipes, $root = \realpath(__DIR__.'/../../'), ['PHPRC' => '/tmp']);
         while (!@\file_get_contents('http://localhost:8080/composer.json')) {
             \usleep(500);
         }
