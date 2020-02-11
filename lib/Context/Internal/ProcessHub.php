@@ -66,7 +66,7 @@ class ProcessHub
             if (!\posix_mkfifo($path, 0777)) {
                 throw new \RuntimeException(\sprintf("Could not create the FIFO socket, and could not create IPC server: (Errno: %d) %s", $errno, $errstr));
             }
-            if (!$this->server = \fopen($path, 'r+')) {
+            if (!$this->server = \fopen($path, 'r+')) { // Open in r+w mode to prevent blocking if there is no reader
                 throw new \RuntimeException(\sprintf("Could not connect to the FIFO socket, and could not create IPC server: (Errno: %d) %s", $errno, $errstr));
             }
             \stream_set_blocking($this->server, false);
@@ -84,7 +84,7 @@ class ProcessHub
         $acceptor = &$this->acceptor;
         $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor, &$fifo): \Generator {
             if ($fifo) {
-                $length = \ord(\fread($server, 1));
+                $length = \unpack('v', \fread($server, 2))[1];
                 if (!$length) {
                     return; // Could not accept, wrong length read
                 }
@@ -100,6 +100,7 @@ class ProcessHub
                         }
                         return; // Is not a FIFO
                     }
+                    // Open in either read or write mode to send a close signal when done
                     if (!$socket = \fopen($socket, $k ? 'w' : 'r')) {
                         if ($k) {
                             \fclose($sockets[0]);
