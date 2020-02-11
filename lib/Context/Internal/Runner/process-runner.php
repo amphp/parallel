@@ -39,8 +39,8 @@ if (\function_exists("cli_set_process_title")) {
 $fromWeb = false;
 if (!isset($argv)) { // Running from web
     $argv = $_REQUEST['argv'] ?? [];
-    array_unshift($argv, __DIR__);
-    $argc = count($argv);
+    \array_unshift($argv, __DIR__);
+    $argc = \count($argv);
     $fromWeb = true;
 
     @\ini_set('html_errors', 0);
@@ -135,9 +135,9 @@ if (!isset($argv)) { // Running from web
 
     if ($fromWeb) { // Set environment variables only after auth
         if (isset($_REQUEST['cwd'])) {
-            chdir($_REQUEST['cwd']);
+            \chdir($_REQUEST['cwd']);
         }
-        if (isset($_REQUEST['env']) && is_array($_REQUEST['env'])) {
+        if (isset($_REQUEST['env']) && \is_array($_REQUEST['env'])) {
             foreach ($_REQUEST['env'] as $key => $value) {
                 @\putenv("$key=$value");
             }

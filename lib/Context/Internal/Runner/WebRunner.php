@@ -5,7 +5,6 @@ namespace Amp\Parallel\Context\Internal\Runner;
 use Amp\ByteStream\ResourceOutputStream;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Internal\ProcessHub;
-use Amp\Parallel\Context\Internal\Runner\RunnerAbstract;
 use Amp\Promise;
 use Amp\Success;
 
@@ -33,7 +32,7 @@ final class WebRunner extends RunnerAbstract
     private $running = false;
 
     /**
-     * Socket
+     * Socket.
      *
      * @var ResourceOutputStream
      */
@@ -59,7 +58,7 @@ final class WebRunner extends RunnerAbstract
             if (\substr($uri, -1) === '/') { // http://example.com/path/ (assumed index.php)
                 $uri .= 'index'; // Add fake file name
             }
-            $uri = str_replace('//', '/', $uri);
+            $uri = \str_replace('//', '/', $uri);
 
             $rootDir = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             $rootDir = \end($rootDir)['file'] ?? '';
@@ -106,7 +105,7 @@ final class WebRunner extends RunnerAbstract
         if (!\is_array($script)) {
             $script = [$script];
         }
-        array_unshift($script, $hub->getUri());
+        \array_unshift($script, $hub->getUri());
         $this->params = [
             'cwd' => $cwd,
             'env' => $env,
@@ -151,7 +150,7 @@ final class WebRunner extends RunnerAbstract
 
         // We don't care for results or timeouts here, PHP doesn't count IOwait time as execution time anyway
         // Technically should use amphp/socket, but I guess it's OK to not introduce another dependency just for a socket that will be used once.
-        $this->res = new ResourceOutputStream(\fsockopen($address, $port)); 
+        $this->res = new ResourceOutputStream(\fsockopen($address, $port));
         $this->running = true;
         return $this->res->write($payload);
     }
