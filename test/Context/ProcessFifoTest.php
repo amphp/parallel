@@ -2,16 +2,20 @@
 
 namespace Amp\Parallel\Test\Context;
 
+use Amp\Loop;
 use Amp\Parallel\Context\Context;
+use Amp\Parallel\Context\Internal\ProcessHub;
 use Amp\Parallel\Context\Process;
 
-/**
- * @requires OS Linux
- */
 class ProcessFifoTest extends AbstractContextTest
 {
     public function createContext($script): Context
     {
-        return new Process($script, null, [], null, true);
+        if (\strncasecmp(\PHP_OS, "WIN", 3) === 0) {
+            $this->markTestSkipped('FIFO pipes do not work on Windows');
+        }
+
+        Loop::setState(Process::class, new ProcessHub(true)); // Manually set ProcessHub using FIFO pipes.
+        return new Process($script);
     }
 }

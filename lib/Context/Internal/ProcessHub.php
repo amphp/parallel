@@ -34,8 +34,6 @@ class ProcessHub
     private $toUnlink;
 
     /**
-     * Constructor.
-     *
      * @param boolean $useFIFO Whether to use FIFOs instead of the more reliable UNIX socket server (CHOSEN AUTOMATICALLY, only for testing purposes)
      */
     public function __construct(bool $useFIFO = false)
@@ -49,8 +47,8 @@ class ProcessHub
             $this->uri = "tcp://127.0.0.1:0";
         } else {
             $suffix = \bin2hex(\random_bytes(10));
-            $path = \sys_get_temp_dir()."/amp-parallel-ipc-".$suffix.".sock";
-            $this->uri = "unix://".$path;
+            $path = \sys_get_temp_dir() . "/amp-parallel-ipc-" . $suffix . ".sock";
+            $this->uri = "unix://" . $path;
             $this->toUnlink = $path;
         }
 
@@ -77,22 +75,24 @@ class ProcessHub
         if ($isWindows) {
             $name = \stream_socket_get_name($this->server, false);
             $port = \substr($name, \strrpos($name, ":") + 1);
-            $this->uri = "tcp://127.0.0.1:".$port;
+            $this->uri = "tcp://127.0.0.1:" . $port;
         }
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor, &$fifo): \Generator {
+        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor, $fifo): \Generator {
             if ($fifo) {
                 $length = \unpack('v', \fread($server, 2))[1];
                 if (!$length) {
                     return; // Could not accept, wrong length read
                 }
+
                 $prefix = \fread($server, $length);
                 $sockets = [
-                    $prefix."1",
-                    $prefix."2",
+                    $prefix . '1',
+                    $prefix . '2',
                 ];
+
                 foreach ($sockets as $k => &$socket) {
                     if (@\filetype($socket) !== 'fifo') {
                         if ($k) {
@@ -100,6 +100,7 @@ class ProcessHub
                         }
                         return; // Is not a FIFO
                     }
+
                     // Open in either read or write mode to send a close signal when done
                     if (!$socket = \fopen($socket, $k ? 'w' : 'r')) {
                         if ($k) {
@@ -116,7 +117,6 @@ class ProcessHub
                 }
                 $channel = new ChannelledSocket($client, $client);
             }
-
 
             try {
                 $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
