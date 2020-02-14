@@ -68,7 +68,6 @@ final class Parallel implements Context
      *
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param mixed ...$args Additional arguments to pass to the given callable.
      *
      * @return Promise<Thread> The thread object that was spawned.
      */

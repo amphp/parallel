@@ -21,7 +21,7 @@ final class BootstrapWorkerFactory implements WorkerFactory
      * @param string $envClassName      Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
      *     worker. Defaults to \Amp\Parallel\Worker\BasicEnvironment.
      *
-     * @throws \Error If the given class name does not exist or does not implement \Amp\Parallel\Worker\Environment.
+     * @throws \Error If the given class name does not exist or does not implement {@see Environment}.
      */
     public function __construct(string $bootstrapFilePath, string $envClassName = BasicEnvironment::class)
     {

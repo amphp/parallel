@@ -27,7 +27,7 @@ abstract class TaskResult
     }
 
     /**
-     * @return \Amp\Promise<mixed> Resolved with the task result or failure reason.
+     * @return Promise<mixed> Resolved with the task result or failure reason.
      */
     abstract public function promise(): Promise;
 }

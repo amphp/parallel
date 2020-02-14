@@ -11,9 +11,9 @@ const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
 /**
  * Gets or sets the global worker pool.
  *
- * @param \Amp\Parallel\Worker\Pool|null $pool A worker pool instance.
+ * @param Pool|null $pool A worker pool instance.
  *
- * @return \Amp\Parallel\Worker\Pool The global worker pool instance.
+ * @return Pool The global worker pool instance.
  */
 function pool(Pool $pool = null): Pool
 {
@@ -78,9 +78,9 @@ function create(): Worker
 /**
  * Gets or sets the global worker factory.
  *
- * @param \Amp\Parallel\Worker\WorkerFactory|null $factory
+ * @param WorkerFactory|null $factory
  *
- * @return \Amp\Parallel\Worker\WorkerFactory
+ * @return WorkerFactory
  */
 function factory(WorkerFactory $factory = null): WorkerFactory
 {

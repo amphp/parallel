@@ -43,8 +43,8 @@ final class ChannelParser extends Parser
      *
      * @return \Generator
      *
-     * @throws \Amp\Parallel\Sync\ChannelException
-     * @throws \Amp\Parallel\Sync\SerializationException
+     * @throws ChannelException
+     * @throws SerializationException
      */
     private static function parser(callable $push): \Generator
     {

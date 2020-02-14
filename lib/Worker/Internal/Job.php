@@ -10,7 +10,7 @@ final class Job
     /** @var string */
     private $id;
 
-    /** @var \Amp\Parallel\Worker\Task */
+    /** @var Task */
     private $task;
 
     public function __construct(Task $task)

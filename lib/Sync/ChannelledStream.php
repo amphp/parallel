@@ -15,23 +15,23 @@ use function Amp\call;
  */
 final class ChannelledStream implements Channel
 {
-    /** @var \Amp\ByteStream\InputStream */
+    /** @var InputStream */
     private $read;
 
-    /** @var \Amp\ByteStream\OutputStream */
+    /** @var OutputStream */
     private $write;
 
     /** @var \SplQueue */
     private $received;
 
-    /** @var \Amp\Parser\Parser */
+    /** @var ChannelParser */
     private $parser;
 
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
      *
-     * @param \Amp\ByteStream\InputStream $read
-     * @param \Amp\ByteStream\OutputStream $write
+     * @param InputStream $read
+     * @param OutputStream $write
      */
     public function __construct(InputStream $read, OutputStream $write)
     {

@@ -30,7 +30,7 @@ final class Thread implements Context
     /** @var Internal\Thread An internal thread instance. */
     private $thread;
 
-    /** @var \Amp\Parallel\Sync\ChannelledSocket A channel for communicating with the thread. */
+    /** @var ChannelledSocket A channel for communicating with the thread. */
     private $channel;
 
     /** @var resource */

@@ -10,10 +10,10 @@ use function Amp\call;
 
 final class TaskRunner
 {
-    /** @var \Amp\Parallel\Sync\Channel */
+    /** @var Channel */
     private $channel;
 
-    /** @var \Amp\Parallel\Worker\Environment */
+    /** @var Environment */
     private $environment;
 
     public function __construct(Channel $channel, Environment $environment)

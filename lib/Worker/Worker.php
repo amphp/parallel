@@ -24,16 +24,18 @@ interface Worker
     public function isIdle(): bool;
 
     /**
-     * Enqueues a task to be executed by the worker.
+     * Enqueues a {@see Task} to be executed by the worker.
      *
      * @param Task $task The task to enqueue.
      *
-     * @return \Amp\Promise<mixed> Resolves with the return value of Task::run().
+     * @return Promise<mixed> Resolves with the return value of {@see Task::run()}.
+     *
+     * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */
     public function enqueue(Task $task): Promise;
 
     /**
-     * @return \Amp\Promise<int> Exit code.
+     * @return Promise<int> Resolves with the worker exit code.
      */
     public function shutdown(): Promise;
 

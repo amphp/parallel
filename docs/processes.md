@@ -1,12 +1,12 @@
 ---
-title: Processes
+title: Processes and Threads
 permalink: /processes
 ---
-`Process` simplifies writing and running PHP in parallel. A script written to be run in parallel must return a callable that will be run in a child process. The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes. Any serializable data can be sent across this channel. The `Process` object is the other end of the communication channel, as it implements `Context`, which extends `Channel`.
+The `Process` and `Parallel` classes simplify writing and running PHP in parallel. A script written to be run in parallel must return a callable that will be run in a child process (or a thread if [`ext-parallel`](https://github.com/krakjoe/parallel) is installed). The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes. Any serializable data can be sent across this channel. The `Context` object, which extends the `Channel` interface, is the other end of the communication channel.
 
-In the example below, a child process is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [Artax](https://amphp.org/artax) for non-blocking HTTP requests). The result of that function is then sent back to the parent using the `Channel` object. The return value of the child process callable is available using the `Process::join()` method.
+In the example below, a child process or thread is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests). The result of that function is then sent back to the parent using the `Channel` object. The return value of the child process callable is available using the `Context::join()` method.
 
-## Child Process
+## Child process or thread
 
 ```php
 # child.php
@@ -30,22 +30,23 @@ return function (Channel $channel): \Generator {
 # parent.php
 
 use Amp\Loop;
-use Amp\Parallel\Context\Process;
+use Amp\Parallel\Context;
 
 Loop::run(function () {
-    $process = new Process(__DIR__ . '/child.php');
+	// Creates a context using Process, or if ext-parallel is installed, Parallel.
+    $context = Context\create(__DIR__ . '/child.php');
 
-    $pid = yield $process->start();
+    $pid = yield $context->start();
 
     $url = 'https://google.com';
 
-    yield $process->send($url);
+    yield $context->send($url);
 
     $requestData = yield $process->receive();
 
     printf("Received %d bytes from %s\n", \strlen($requestData), $url);
 
-    $returnValue = yield $process->join();
+    $returnValue = yield $context->join();
 
     printf("Child processes exited with '%s'\n", $returnValue);
 });

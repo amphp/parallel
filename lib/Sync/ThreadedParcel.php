@@ -14,7 +14,7 @@ use function Amp\call;
  */
 final class ThreadedParcel implements Parcel
 {
-    /** @var \Amp\Sync\ThreadedMutex */
+    /** @var ThreadedMutex */
     private $mutex;
 
     /** @var \Threaded */

@@ -63,7 +63,7 @@ final class SharedMemoryParcel implements Parcel
      *     necessary.
      * @param int $permissions Permissions to access the semaphore. Use file permission format specified as 0xxx.
      *
-     * @return \Amp\Parallel\Sync\SharedMemoryParcel
+     * @return self
      */
     public static function create(string $id, $value, int $size = 8192, int $permissions = 0600): self
     {
@@ -75,7 +75,7 @@ final class SharedMemoryParcel implements Parcel
     /**
      * @param string $id
      *
-     * @return \Amp\Parallel\Sync\SharedMemoryParcel
+     * @return self
      */
     public static function use(string $id): self
     {

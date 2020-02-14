@@ -4,6 +4,7 @@ namespace Amp\Parallel\Context;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
+use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
@@ -30,10 +31,10 @@ final class Process implements Context
     /** @var Internal\ProcessHub */
     private $hub;
 
-    /** @var \Amp\Process\Process */
+    /** @var Process */
     private $process;
 
-    /** @var \Amp\Parallel\Sync\ChannelledSocket */
+    /** @var ChannelledSocket */
     private $channel;
 
     /**
