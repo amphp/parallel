@@ -6,7 +6,7 @@ use Amp\Promise;
 
 class DefaultContextFactory implements ContextFactory
 {
-    function create($script): Context
+    public function create($script): Context
     {
         /**
          * Creates a thread if ext-parallel is installed, otherwise creates a child process.
@@ -25,7 +25,7 @@ class DefaultContextFactory implements ContextFactory
      *
      * @inheritdoc
      */
-    function run($script): Promise
+    public function run($script): Promise
     {
         if (Parallel::isSupported()) {
             return Parallel::run($script);

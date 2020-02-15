@@ -7,7 +7,7 @@ use Amp\Parallel\Context\DefaultContextFactory;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
 
-class DefaultWorkerFactoryTest extends AsyncTestCase
+class DefaultContextFactoryTest extends AsyncTestCase
 {
     public function testCreate(): void
     {
