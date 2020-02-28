@@ -6,6 +6,7 @@ use Amp\Delayed;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\SharedMemoryParcel;
+use Amp\Sync\SyncException;
 
 /**
  * @requires extension shmop
@@ -28,7 +29,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         $this->parcel = null;
     }
 
-    public function testObjectOverflowMoved()
+    public function testObjectOverflowMoved(): \Generator
     {
         $object = SharedMemoryParcel::create(self::ID, 'hi', 2);
         yield $object->synchronized(function () {
@@ -42,7 +43,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
      * @group posix
      * @requires extension pcntl
      */
-    public function testSetInSeparateProcess()
+    public function testSetInSeparateProcess(): \Generator
     {
         $object = SharedMemoryParcel::create(self::ID, 42);
 
@@ -60,5 +61,30 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
         $this->assertSame(44, yield $process->join()); // Wait for child process to finish.
         $this->assertEquals(44, yield $object->unwrap());
+    }
+
+    public function testInvalidSize(): void
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('size must be greater than 0');
+
+        SharedMemoryParcel::create(self::ID, 42, -1);
+    }
+
+    public function testInvalidPermissions(): void
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Invalid permissions');
+
+        SharedMemoryParcel::create(self::ID, 42, 8192, 0);
+    }
+
+
+    public function testNotFound(): void
+    {
+        $this->expectException(SyncException::class);
+        $this->expectExceptionMessage('No semaphore with that ID found');
+
+        SharedMemoryParcel::use('invalid');
     }
 }
