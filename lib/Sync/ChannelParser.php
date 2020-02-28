@@ -21,7 +21,7 @@ final class ChannelParser extends Parser
      *
      * @return string Encoded data that can be parsed by this class.
      *
-     * @throws \Amp\Parallel\Sync\SerializationException
+     * @throws SerializationException
      */
     public function encode($data): string
     {
@@ -29,7 +29,7 @@ final class ChannelParser extends Parser
             $data = \serialize($data);
         } catch (\Throwable $exception) {
             throw new SerializationException(
-                "The given data cannot be sent because it is not serializable.",
+                \sprintf("The given data cannot be sent because it is not serializable: %s", $exception->getMessage()),
                 0,
                 $exception
             );
