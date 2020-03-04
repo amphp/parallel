@@ -5,6 +5,7 @@ namespace Amp\Parallel\Test\Sync;
 use Amp\Delayed;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\Parcel;
+use Amp\Parallel\Sync\SharedMemoryException;
 use Amp\Parallel\Sync\SharedMemoryParcel;
 use Amp\Sync\SyncException;
 
@@ -86,5 +87,22 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         $this->expectExceptionMessage('No semaphore with that ID found');
 
         SharedMemoryParcel::use('invalid');
+    }
+
+    public function testDoubleCreate(): void
+    {
+        $this->expectException(SyncException::class);
+        $this->expectExceptionMessage('A semaphore with that ID already exists');
+
+        $parcel1 = SharedMemoryParcel::create(self::ID, 42);
+        $parcel2 = SharedMemoryParcel::create(self::ID, 42);
+    }
+
+    public function testTooBig(): void
+    {
+        $this->expectException(SharedMemoryException::class);
+        $this->expectExceptionMessage('Failed to create shared memory block');
+
+        SharedMemoryParcel::create(self::ID, 42, 1 << 30);
     }
 }

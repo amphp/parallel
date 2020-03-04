@@ -5,6 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
+use Amp\Sync\Lock;
 use Amp\Sync\PosixSemaphore;
 use Amp\Sync\SyncException;
 use function Amp\call;
@@ -229,7 +230,7 @@ final class SharedMemoryParcel implements Parcel
     public function synchronized(callable $callback): Promise
     {
         return call(function () use ($callback): \Generator {
-            /** @var \Amp\Sync\Lock $lock */
+            /** @var Lock $lock */
             $lock = yield $this->semaphore->acquire();
 
             try {
@@ -356,7 +357,10 @@ final class SharedMemoryParcel implements Parcel
     {
         $handle = @\shmop_open($key, $mode, $permissions, $size);
         if ($handle === false) {
-            throw new SharedMemoryException('Failed to create shared memory block');
+            $error = \error_get_last();
+            throw new SharedMemoryException(
+                'Failed to create shared memory block: ' . ($error['message'] ?? 'unknown error')
+            );
         }
         $this->handle = $handle;
     }
@@ -375,7 +379,10 @@ final class SharedMemoryParcel implements Parcel
     {
         $data = \shmop_read($this->handle, $offset, $size);
         if ($data === false) {
-            throw new SharedMemoryException('Failed to read from shared memory block');
+            $error = \error_get_last();
+            throw new SharedMemoryException(
+                'Failed to read from shared memory block: ' . ($error['message'] ?? 'unknown error')
+            );
         }
         return $data;
     }
@@ -391,7 +398,10 @@ final class SharedMemoryParcel implements Parcel
     private function memSet(int $offset, string $data): void
     {
         if (!\shmop_write($this->handle, $data, $offset)) {
-            throw new SharedMemoryException('Failed to write to shared memory block');
+            $error = \error_get_last();
+            throw new SharedMemoryException(
+                'Failed to write to shared memory block: ' . ($error['message'] ?? 'unknown error')
+            );
         }
     }
 
@@ -403,7 +413,10 @@ final class SharedMemoryParcel implements Parcel
     private function memDelete(): void
     {
         if (!\shmop_delete($this->handle)) {
-            throw new SharedMemoryException('Failed to discard shared memory block');
+            $error = \error_get_last();
+            throw new SharedMemoryException(
+                'Failed to discard shared memory block' . ($error['message'] ?? 'unknown error')
+            );
         }
     }
 
