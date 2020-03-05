@@ -6,6 +6,7 @@ use Amp\Failure;
 use Amp\Parallel\Sync;
 use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
+use Amp\Parallel\Worker\TaskFailureThrowable;
 use Amp\Promise;
 
 /** @internal */
@@ -51,7 +52,7 @@ final class TaskFailure extends TaskResult
         return new Failure($this->createException());
     }
 
-    private function createException(): \Throwable
+    private function createException(): TaskFailureThrowable
     {
         $previous = $this->previous ? $this->previous->createException() : null;
 
