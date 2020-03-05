@@ -2,6 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-class SharedMemoryException extends \Exception
+class SharedMemoryException extends ParcelException
 {
 }

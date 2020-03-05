@@ -8,12 +8,17 @@ final class ChannelParser extends Parser
 {
     const HEADER_LENGTH = 5;
 
+    /** @var Serializer */
+    private $serializer;
+
     /**
      * @param callable(mixed $data) Callback invoked when data is parsed.
+     * @param Serializer|null $serializer
      */
-    public function __construct(callable $callback)
+    public function __construct(callable $callback, ?Serializer $serializer = null)
     {
-        parent::__construct(self::parser($callback));
+        $this->serializer = $serializer ?? new BuiltInSerializer;
+        parent::__construct(self::parser($callback, $this->serializer));
     }
 
     /**
@@ -25,28 +30,20 @@ final class ChannelParser extends Parser
      */
     public function encode($data): string
     {
-        try {
-            $data = \serialize($data);
-        } catch (\Throwable $exception) {
-            throw new SerializationException(
-                \sprintf("The given data cannot be sent because it is not serializable: %s", $exception->getMessage()),
-                0,
-                $exception
-            );
-        }
-
+        $data = $this->serializer->serialize($data);
         return \pack("CL", 0, \strlen($data)) . $data;
     }
 
     /**
      * @param callable $push
+     * @param Serializer $serializer
      *
      * @return \Generator
      *
      * @throws ChannelException
      * @throws SerializationException
      */
-    private static function parser(callable $push): \Generator
+    private static function parser(callable $push, Serializer $serializer): \Generator
     {
         while (true) {
             $header = yield self::HEADER_LENGTH;
@@ -54,35 +51,12 @@ final class ChannelParser extends Parser
 
             if ($data["prefix"] !== 0) {
                 $data = $header . yield;
-                throw new ChannelException("Invalid packet received: " . self::encodeUnprintableChars($data));
+                throw new ChannelException("Invalid packet received: " . encodeUnprintableChars($data));
             }
 
             $data = yield $data["length"];
 
-            // Attempt to unserialize the received data.
-            try {
-                $result = \unserialize($data);
-
-                if ($result === false && $data !== \serialize(false)) {
-                    throw new ChannelException("Received invalid data: " . self::encodeUnprintableChars($data));
-                }
-            } catch (\Throwable $exception) {
-                throw new SerializationException("Exception thrown when unserializing data", 0, $exception);
-            }
-
-            $push($result);
+            $push($serializer->unserialize($data));
         }
-    }
-
-    /**
-     * @param string $data Binary data.
-     *
-     * @return string Unprintable characters encoded as \x##.
-     */
-    private static function encodeUnprintableChars(string $data): string
-    {
-        return \preg_replace_callback("/[^\x20-\x7e]/", function (array $matches): string {
-            return "\\x" . \dechex(\ord($matches[0]));
-        }, $data);
     }
 }

@@ -32,13 +32,14 @@ final class ChannelledStream implements Channel
      *
      * @param InputStream $read
      * @param OutputStream $write
+     * @param Serializer|null $serializer
      */
-    public function __construct(InputStream $read, OutputStream $write)
+    public function __construct(InputStream $read, OutputStream $write, ?Serializer $serializer = null)
     {
         $this->read = $read;
         $this->write = $write;
         $this->received = new \SplQueue;
-        $this->parser = new ChannelParser([$this->received, 'push']);
+        $this->parser = new ChannelParser([$this->received, 'push'], $serializer);
     }
 
     /**

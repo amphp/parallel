@@ -4,9 +4,10 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Delayed;
 use Amp\Parallel\Context\Process;
-use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\SharedMemoryException;
 use Amp\Parallel\Sync\SharedMemoryParcel;
+use Amp\Promise;
+use Amp\Success;
 use Amp\Sync\SyncException;
 
 /**
@@ -19,10 +20,10 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
     private $parcel;
 
-    protected function createParcel($value): Parcel
+    protected function createParcel($value): Promise
     {
         $this->parcel = SharedMemoryParcel::create(self::ID, $value);
-        return $this->parcel;
+        return new Success($this->parcel);
     }
 
     public function tearDown(): void

@@ -58,12 +58,15 @@ final class SharedMemoryParcel implements Parcel
     /** @var int */
     private $initializer = 0;
 
+    private $serializer;
+
     /**
      * @param string $id
      * @param mixed $value
      * @param int $size The initial size in bytes of the shared memory segment. It will automatically be expanded as
      *     necessary.
      * @param int $permissions Permissions to access the semaphore. Use file permission format specified as 0xxx.
+     * @param Serializer|null $serializer
      *
      * @return self
      *
@@ -71,31 +74,38 @@ final class SharedMemoryParcel implements Parcel
      * @throws SyncException
      * @throws \Error If the size or permissions are invalid.
      */
-    public static function create(string $id, $value, int $size = 8192, int $permissions = 0600): self
-    {
-        $parcel = new self($id);
+    public static function create(
+        string $id,
+        $value,
+        int $size = 8192,
+        int $permissions = 0600,
+        ?Serializer $serializer = null
+    ): self {
+        $parcel = new self($id, $serializer);
         $parcel->init($value, $size, $permissions);
         return $parcel;
     }
 
     /**
      * @param string $id
+     * @param Serializer|null $serializer
      *
      * @return self
      *
      * @throws SharedMemoryException
      */
-    public static function use(string $id): self
+    public static function use(string $id, ?Serializer $serializer = null): self
     {
-        $parcel = new self($id);
+        $parcel = new self($id, $serializer);
         $parcel->open();
         return $parcel;
     }
 
     /**
      * @param string $id
+     * @param Serializer|null $serializer
      */
-    private function __construct(string $id)
+    private function __construct(string $id, ?Serializer $serializer = null)
     {
         if (!\extension_loaded("shmop")) {
             throw new \Error(__CLASS__ . " requires the shmop extension");
@@ -103,6 +113,7 @@ final class SharedMemoryParcel implements Parcel
 
         $this->id = $id;
         $this->key = self::makeKey($this->id);
+        $this->serializer = $serializer ?? new BuiltInSerializer;
     }
 
     /**
@@ -178,7 +189,7 @@ final class SharedMemoryParcel implements Parcel
 
             // Read the actual value data from memory and unserialize it.
             $data = $this->memGet(self::MEM_DATA_OFFSET, $header['size']);
-            return new Success(\unserialize($data));
+            return new Success($this->serializer->unserialize($data));
         } catch (\Exception $exception) {
             return new Failure($exception);
         }
@@ -198,7 +209,7 @@ final class SharedMemoryParcel implements Parcel
             throw new SharedMemoryException('The object has already been freed');
         }
 
-        $serialized = \serialize($value);
+        $serialized = $this->serializer->serialize($value);
         $size = \strlen($serialized);
         $header = $this->getHeader();
 

@@ -4,53 +4,51 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\Parcel;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\Promise;
 
 abstract class AbstractParcelTest extends AsyncTestCase
 {
-    abstract protected function createParcel($value): Parcel;
+    /**
+     * @param mixed $value
+     *
+     * @return Promise<Parcel>
+     */
+    abstract protected function createParcel($value): Promise;
 
-    public function testUnwrapIsOfCorrectType()
+    public function testUnwrapIsOfCorrectType(): \Generator
     {
-        $object = $this->createParcel(new \stdClass);
-        $this->assertInstanceOf('stdClass', yield $object->unwrap());
+        $parcel = yield $this->createParcel(new \stdClass);
+        \assert($parcel instanceof Parcel);
+        $this->assertInstanceOf('stdClass', yield $parcel->unwrap());
     }
 
-    public function testUnwrapIsEqual()
+    public function testUnwrapIsEqual(): \Generator
     {
         $object = new \stdClass;
-        $shared = $this->createParcel($object);
-        $this->assertEquals($object, yield $shared->unwrap());
+        $parcel = yield $this->createParcel($object);
+        \assert($parcel instanceof Parcel);
+        $this->assertEquals($object, yield $parcel->unwrap());
     }
 
-    /**
-     * @depends testUnwrapIsEqual
-     */
-    public function testSynchronized()
+    public function testSynchronized(): \Generator
     {
-        $parcel = $this->createParcel(0);
+        $parcel = yield $this->createParcel(0);
+        \assert($parcel instanceof Parcel);
 
-        $awaitable = $parcel->synchronized(function ($value) {
+        $value = yield $parcel->synchronized(function ($value) {
             $this->assertSame(0, $value);
             \usleep(10000);
             return 1;
         });
 
-        $callback = $this->createCallback(1);
-        $callback->method('__invoke')
-            ->with($this->identicalTo(null), $this->identicalTo(1));
+        $this->assertSame(1, $value);
 
-        $awaitable->onResolve($callback);
-
-        $awaitable = $parcel->synchronized(function ($value) {
+        $value = yield $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
             \usleep(10000);
             return 2;
         });
 
-        $callback = $this->createCallback(1);
-        $callback->method('__invoke')
-            ->with($this->identicalTo(null), $this->identicalTo(2));
-
-        $awaitable->onResolve($callback);
+        $this->assertSame(2, $value);
     }
 }
