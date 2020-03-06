@@ -235,7 +235,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
             });
             $this->fail("Tasks that cannot be serialized should throw an exception");
         } catch (SerializationException $exception) {
-            $this->assertSame(0, \strpos($exception->getMessage(), "The given data cannot be sent because it is not serializable"));
+            $this->assertSame(0, \strpos($exception->getMessage(), "The given data could not be serialized"));
         }
 
         yield $worker->shutdown();

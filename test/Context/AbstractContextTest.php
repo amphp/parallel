@@ -66,7 +66,7 @@ abstract class AbstractContextTest extends AsyncTestCase
     public function testInvalidResult()
     {
         $this->expectException(ContextPanicError::class);
-        $this->expectExceptionMessage('The given data cannot be sent because it is not serializable');
+        $this->expectExceptionMessage('The given data could not be serialized');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
         yield $context->start();
