@@ -4,17 +4,18 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Context\Thread;
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\ThreadedParcel;
+use Amp\Promise;
+use Amp\Success;
 
 /**
  * @requires extension pthreads
  */
 class ThreadedParcelTest extends AbstractParcelTest
 {
-    protected function createParcel($value): Parcel
+    protected function createParcel($value): Promise
     {
-        return new ThreadedParcel($value);
+        return new Success(new ThreadedParcel($value));
     }
 
     public function testWithinThread()
