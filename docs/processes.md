@@ -21,7 +21,7 @@ return function (Channel $channel): \Generator {
     yield $channel->send($data);
 
     return 'Any serializable data';
-});
+};
 ```
 
 ## Parent Process
