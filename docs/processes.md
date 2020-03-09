@@ -42,7 +42,7 @@ Loop::run(function () {
 
     yield $context->send($url);
 
-    $requestData = yield $process->receive();
+    $requestData = yield $context->receive();
 
     printf("Received %d bytes from %s\n", \strlen($requestData), $url);
 
