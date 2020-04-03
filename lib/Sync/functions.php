@@ -2,6 +2,11 @@
 
 namespace Amp\Parallel\Sync;
 
+use Amp\Serialization\SerializationException as SerializerException;
+
+// Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
+\class_alias(SerializerException::class, SerializationException::class);
+
 /**
  * @param \Throwable $exception
  *
@@ -13,7 +18,7 @@ function flattenThrowableBacktrace(\Throwable $exception): array
 
     foreach ($trace as &$call) {
         unset($call['object']);
-        $call['args'] = \array_map(__NAMESPACE__ . '\\flattenArgument', $call['args']);
+        $call['args'] = \array_map(__NAMESPACE__ . '\\flattenArgument', $call['args'] ?? []);
     }
 
     return $trace;
@@ -41,7 +46,7 @@ function formatFlattenedBacktrace(array $trace): string
             $call['file'] ?? '[internal function]',
             $call['line'] ?? 0,
             $name,
-            \implode(', ', $call['args'])
+            \implode(', ', $call['args'] ?? ['...'])
         );
     }
 
@@ -91,14 +96,3 @@ function flattenArgument($value): string
     return (string) $value;
 }
 
-/**
- * @param string $data Binary data.
- *
- * @return string Unprintable characters encoded as \x##.
- */
-function encodeUnprintableChars(string $data): string
-{
-    return \preg_replace_callback("/[^\x20-\x7e]/", function (array $matches): string {
-        return "\\x" . \dechex(\ord($matches[0]));
-    }, $data);
-}

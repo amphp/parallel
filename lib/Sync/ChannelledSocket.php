@@ -5,6 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\ResourceInputStream;
 use Amp\ByteStream\ResourceOutputStream;
 use Amp\Promise;
+use Amp\Serialization\Serializer;
 
 final class ChannelledSocket implements Channel
 {

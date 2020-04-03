@@ -249,7 +249,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
             yield $worker->enqueue(new Fixtures\UnserializableResultTask);
             $this->fail("Tasks results that cannot be serialized should throw an exception");
         } catch (TaskFailureException $exception) {
-            $this->assertSame(0, \strpos($exception->getMessage(), "Uncaught Amp\Parallel\Sync\SerializationException in worker"));
+            $this->assertSame(0, \strpos($exception->getMessage(), "Uncaught Amp\Serialization\SerializationException in worker"));
         }
 
         yield $worker->shutdown();

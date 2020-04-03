@@ -26,6 +26,7 @@
         "amphp/byte-stream": "^1.6.1",
         "amphp/parser": "^1",
         "amphp/process": "^1",
+        "amphp/serialization": "^1",
         "amphp/sync": "^1.0.1"
     },
     "require-dev": {

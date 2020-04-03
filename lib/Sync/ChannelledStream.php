@@ -6,6 +6,7 @@ use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
 use Amp\Promise;
+use Amp\Serialization\Serializer;
 use function Amp\call;
 
 /**

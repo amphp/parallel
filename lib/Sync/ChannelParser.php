@@ -3,6 +3,9 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\Parser\Parser;
+use Amp\Serialization\NativeSerializer;
+use Amp\Serialization\Serializer;
+use function Amp\Serialization\encodeUnprintableChars;
 
 final class ChannelParser extends Parser
 {
@@ -17,7 +20,7 @@ final class ChannelParser extends Parser
      */
     public function __construct(callable $callback, ?Serializer $serializer = null)
     {
-        $this->serializer = $serializer ?? new BuiltInSerializer;
+        $this->serializer = $serializer ?? new NativeSerializer;
         parent::__construct(self::parser($callback, $this->serializer));
     }
 

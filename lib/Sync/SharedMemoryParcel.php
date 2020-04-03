@@ -4,7 +4,9 @@ namespace Amp\Parallel\Sync;
 
 use Amp\Failure;
 use Amp\Promise;
+use Amp\Serialization\NativeSerializer;
 use Amp\Success;
+use Amp\Serialization\Serializer;
 use Amp\Sync\Lock;
 use Amp\Sync\PosixSemaphore;
 use Amp\Sync\SyncException;
@@ -113,7 +115,7 @@ final class SharedMemoryParcel implements Parcel
 
         $this->id = $id;
         $this->key = self::makeKey($this->id);
-        $this->serializer = $serializer ?? new BuiltInSerializer;
+        $this->serializer = $serializer ?? new NativeSerializer;
     }
 
     /**
