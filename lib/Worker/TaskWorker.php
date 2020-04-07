@@ -157,7 +157,7 @@ abstract class TaskWorker implements Worker
      */
     public function shutdown(): Promise
     {
-        if ($this->exitStatus) {
+        if ($this->exitStatus !== null) {
             return $this->exitStatus;
         }
 
@@ -191,7 +191,7 @@ abstract class TaskWorker implements Worker
      */
     public function kill(): void
     {
-        if ($this->exitStatus || $this->context === null) {
+        if ($this->exitStatus !== null || $this->context === null) {
             return;
         }
 

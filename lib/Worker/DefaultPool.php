@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
+use function Amp\asyncCall;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -224,6 +225,9 @@ final class DefaultPool implements Pool
                 } else {
                     // Max worker count has not been reached, so create another worker.
                     $worker = $this->factory->create();
+                    if (!$worker->isRunning()) {
+                        throw new WorkerException('Worker factory did not create a viable worker');
+                    }
                     $this->workers->attach($worker, 0);
                     break;
                 }
@@ -232,9 +236,25 @@ final class DefaultPool implements Pool
                 $worker = $this->idleWorkers->shift();
             }
 
+            \assert($worker instanceof Worker);
+
             if ($worker->isRunning()) {
                 break;
             }
+
+            // Worker crashed; trigger error and remove it from the pool.
+
+            asyncCall(function () use ($worker): \Generator {
+                try {
+                    $code = yield $worker->shutdown();
+                    \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);
+                } catch (\Throwable $exception) {
+                    \trigger_error(
+                        'Worker in pool crashed with exception on shutdown: ' . $exception->getMessage(),
+                        \E_USER_WARNING
+                    );
+                }
+            });
 
             $this->workers->detach($worker);
         } while (true);
