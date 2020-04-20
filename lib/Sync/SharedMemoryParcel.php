@@ -2,10 +2,8 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Failure;
 use Amp\Promise;
 use Amp\Serialization\NativeSerializer;
-use Amp\Success;
 use Amp\Serialization\Serializer;
 use Amp\Sync\Lock;
 use Amp\Sync\PosixSemaphore;
@@ -60,6 +58,7 @@ final class SharedMemoryParcel implements Parcel
     /** @var int */
     private $initializer = 0;
 
+    /** @var Serializer */
     private $serializer;
 
     /**
@@ -177,24 +176,40 @@ final class SharedMemoryParcel implements Parcel
      */
     public function unwrap(): Promise
     {
-        try {
-            if ($this->isFreed()) {
-                throw new SharedMemoryException('The object has already been freed');
+        return call(function () {
+            $lock = yield $this->semaphore->acquire();
+            \assert($lock instanceof Lock);
+
+            try {
+                return $this->getValue();
+            } finally {
+                $lock->release();
             }
+        });
+    }
 
-            $header = $this->getHeader();
-
-            // Make sure the header is in a valid state and format.
-            if ($header['state'] !== self::STATE_ALLOCATED || $header['size'] <= 0) {
-                throw new SharedMemoryException('Shared object memory is corrupt');
-            }
-
-            // Read the actual value data from memory and unserialize it.
-            $data = $this->memGet(self::MEM_DATA_OFFSET, $header['size']);
-            return new Success($this->serializer->unserialize($data));
-        } catch (\Exception $exception) {
-            return new Failure($exception);
+    /**
+     * @return mixed
+     *
+     * @throws SharedMemoryException
+     * @throws SerializationException
+     */
+    private function getValue()
+    {
+        if ($this->isFreed()) {
+            throw new SharedMemoryException('The object has already been freed');
         }
+
+        $header = $this->getHeader();
+
+        // Make sure the header is in a valid state and format.
+        if ($header['state'] !== self::STATE_ALLOCATED || $header['size'] <= 0) {
+            throw new SharedMemoryException('Shared object memory is corrupt');
+        }
+
+        // Read the actual value data from memory and unserialize it.
+        $data = $this->memGet(self::MEM_DATA_OFFSET, $header['size']);
+        return $this->serializer->unserialize($data);
     }
 
     /**
@@ -243,11 +258,11 @@ final class SharedMemoryParcel implements Parcel
     public function synchronized(callable $callback): Promise
     {
         return call(function () use ($callback): \Generator {
-            /** @var Lock $lock */
             $lock = yield $this->semaphore->acquire();
+            \assert($lock instanceof Lock);
 
             try {
-                $result = yield call($callback, yield $this->unwrap());
+                $result = yield call($callback, $this->getValue());
 
                 if ($result !== null) {
                     $this->wrap($result);
