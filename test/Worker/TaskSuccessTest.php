@@ -19,6 +19,6 @@ class TaskSuccessTest extends AsyncTestCase
     {
         $value = 1;
         $result = new TaskSuccess('a', $value);
-        $this->assertSame($value, Promise\wait($result->promise()));
+        $this->assertSame($value, yield $result->promise());
     }
 }
