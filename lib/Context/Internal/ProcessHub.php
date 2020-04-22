@@ -46,7 +46,11 @@ class ProcessHub
             $this->toUnlink = $path;
         }
 
-        $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN);
+        $context = \stream_context_create([
+            'socket' => ['backlog' => 128]
+        ]);
+
+        $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN, $context);
 
         if (!$this->server) {
             throw new \RuntimeException(\sprintf("Could not create IPC server: (Errno: %d) %s", $errno, $errstr));

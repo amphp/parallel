@@ -61,9 +61,14 @@ if (\function_exists("cli_set_process_title")) {
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
 
-    if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        \trigger_error("Could not connect to IPC socket", E_USER_ERROR);
-        exit(1);
+    $attempt = 0;
+    while (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
+        if (++$attempt > 10) {
+            \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
+            exit(1);
+        }
+
+        \usleep($attempt * 50 * 1000);
     }
 
     $channel = new Sync\ChannelledSocket($socket, $socket);
