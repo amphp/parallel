@@ -95,4 +95,3 @@ function flattenArgument($value): string
 
     return (string) $value;
 }
-

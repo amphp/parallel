@@ -44,6 +44,7 @@ abstract class TaskWorker implements Worker
 
         $context = &$this->context;
         $pending = &$this->pending;
+
         \register_shutdown_function(static function () use (&$context, &$pending): void {
             if ($context === null || !$context->isRunning()) {
                 return;

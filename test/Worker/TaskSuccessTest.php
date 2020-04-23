@@ -4,7 +4,6 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\Internal\TaskSuccess;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
 
 class TaskSuccessTest extends AsyncTestCase
 {

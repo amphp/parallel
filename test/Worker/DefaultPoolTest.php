@@ -26,11 +26,14 @@ class DefaultPoolTest extends AsyncTestCase
         $pool = new DefaultPool(32, $factory);
 
         $this->expectException(WorkerException::class);
-        $this->expectWarningMessage('Worker factory did not create a viable worker');
+        $this->expectExceptionMessage('Worker factory did not create a viable worker');
 
         yield $pool->enqueue($this->createMock(Task::class));
     }
 
+    /**
+     * @requires PHPUnit >= 8.4
+     */
     public function testCrashedWorker(): \Generator
     {
         $worker = $this->createMock(Worker::class);
