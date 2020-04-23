@@ -8,6 +8,7 @@ use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Promise;
 use Amp\TimeoutException;
+use function Amp\asyncCall;
 use function Amp\call;
 
 class ProcessHub
@@ -47,10 +48,16 @@ class ProcessHub
         }
 
         $context = \stream_context_create([
-            'socket' => ['backlog' => 128]
+            'socket' => ['backlog' => 128],
         ]);
 
-        $this->server = \stream_socket_server($this->uri, $errno, $errstr, \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN, $context);
+        $this->server = \stream_socket_server(
+            $this->uri,
+            $errno,
+            $errstr,
+            \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN,
+            $context
+        );
 
         if (!$this->server) {
             throw new \RuntimeException(\sprintf("Could not create IPC server: (Errno: %d) %s", $errno, $errstr));
@@ -64,32 +71,35 @@ class ProcessHub
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->watcher = Loop::onReadable($this->server, static function (string $watcher, $server) use (&$keys, &$acceptor): \Generator {
-            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-            if (!$client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
-                return; // Accepting client failed.
+        $this->watcher = Loop::onReadable(
+            $this->server,
+            static function (string $watcher, $server) use (&$keys, &$acceptor): void {
+                // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
+                while ($client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
+                    asyncCall(static function () use ($client, &$keys, &$acceptor) {
+                        $channel = new ChannelledSocket($client, $client);
+
+                        try {
+                            $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
+                        } catch (\Throwable $exception) {
+                            $channel->close();
+                            return; // Ignore possible foreign connection attempt.
+                        }
+
+                        if (!\is_string($received) || !isset($keys[$received])) {
+                            $channel->close();
+                            return; // Ignore possible foreign connection attempt.
+                        }
+
+                        $pid = $keys[$received];
+
+                        $deferred = $acceptor[$pid];
+                        unset($acceptor[$pid], $keys[$received]);
+                        $deferred->resolve($channel);
+                    });
+                }
             }
-
-            $channel = new ChannelledSocket($client, $client);
-
-            try {
-                $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
-            } catch (\Throwable $exception) {
-                $channel->close();
-                return; // Ignore possible foreign connection attempt.
-            }
-
-            if (!\is_string($received) || !isset($keys[$received])) {
-                $channel->close();
-                return; // Ignore possible foreign connection attempt.
-            }
-
-            $pid = $keys[$received];
-
-            $deferred = $acceptor[$pid];
-            unset($acceptor[$pid], $keys[$received]);
-            $deferred->resolve($channel);
-        });
+        );
 
         Loop::disable($this->watcher);
     }

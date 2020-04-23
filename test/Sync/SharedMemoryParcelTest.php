@@ -104,6 +104,6 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage('Failed to create shared memory block');
 
-        SharedMemoryParcel::create(self::ID, 42, 1 << 30);
+        SharedMemoryParcel::create(self::ID, 42, 1 << 50);
     }
 }
