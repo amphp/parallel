@@ -31,7 +31,7 @@ final class Process implements Context
     /** @var Internal\ProcessHub */
     private $hub;
 
-    /** @var Process */
+    /** @var BaseProcess */
     private $process;
 
     /** @var ChannelledSocket */
