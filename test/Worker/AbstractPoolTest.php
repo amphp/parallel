@@ -59,7 +59,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
         yield $pool->shutdown();
 
-        $pool->getWorker();
+        yield $pool->getWorker();
     }
 
     public function testGetMaxSize()
@@ -117,7 +117,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
     {
         $pool = $this->createPool();
 
-        $worker = $pool->getWorker();
+        $worker = yield $pool->getWorker();
         $this->assertInstanceOf(Worker::class, $worker);
 
         $this->assertTrue($worker->isRunning());
@@ -185,10 +185,10 @@ abstract class AbstractPoolTest extends AsyncTestCase
     {
         // See https://github.com/amphp/parallel/issues/66
         $pool = $this->createPool(1);
-        $worker = $pool->getWorker();
+        $worker = yield $pool->getWorker();
         $worker->kill();
-        $worker2 = $pool->getWorker();
         unset($worker); // Invoke destructor.
+        $worker2 = yield $pool->getWorker();
         $this->assertTrue($worker2->isRunning());
     }
 }

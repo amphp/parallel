@@ -2,9 +2,11 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Deferred;
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
 use function Amp\asyncCall;
+use function Amp\call;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -30,8 +32,8 @@ final class DefaultPool implements Pool
     /** @var \SplQueue A collection of idle workers. */
     private $idleWorkers;
 
-    /** @var \SplQueue A queue of workers that have been assigned to tasks. */
-    private $busyQueue;
+    /** @var Deferred|null */
+    private $waiting;
 
     /** @var \Closure */
     private $push;
@@ -58,30 +60,27 @@ final class DefaultPool implements Pool
         $this->maxSize = $maxSize;
 
         // Use the global factory if none is given.
-        $this->factory = $factory ?: factory();
+        $this->factory = $factory ?? factory();
 
         $this->workers = new \SplObjectStorage;
         $this->idleWorkers = new \SplQueue;
-        $this->busyQueue = new \SplQueue;
 
         $workers = $this->workers;
         $idleWorkers = $this->idleWorkers;
-        $busyQueue = $this->busyQueue;
+        $waiting = &$this->waiting;
 
-        $this->push = static function (Worker $worker) use ($workers, $idleWorkers, $busyQueue): void {
-            if (!$workers->contains($worker) || ($workers[$worker] -= 1) > 0) {
+        $this->push = static function (Worker $worker) use (&$waiting, $workers, $idleWorkers): void {
+            if (!$workers->contains($worker)) {
                 return;
             }
 
-            // Worker is completely idle, remove from busy queue and add to idle queue.
-            foreach ($busyQueue as $key => $busy) {
-                if ($busy === $worker) {
-                    unset($busyQueue[$key]);
-                    break;
-                }
-            }
-
             $idleWorkers->push($worker);
+
+            if ($waiting !== null) {
+                $deferred = $waiting;
+                $waiting = null;
+                $deferred->resolve($worker);
+            }
         };
     }
 
@@ -148,13 +147,17 @@ final class DefaultPool implements Pool
      */
     public function enqueue(Task $task): Promise
     {
-        $worker = $this->pull();
+        return call(function () use ($task): \Generator {
+            $worker = yield from $this->pull();
 
-        $promise = $worker->enqueue($task);
-        $promise->onResolve(function () use ($worker): void {
-            ($this->push)($worker);
+            try {
+                $result = yield $worker->enqueue($task);
+            } finally {
+                ($this->push)($worker);
+            }
+
+            return $result;
         });
-        return $promise;
     }
 
     /**
@@ -179,6 +182,12 @@ final class DefaultPool implements Pool
             }
         }
 
+        if ($this->waiting !== null) {
+            $deferred = $this->waiting;
+            $this->waiting = null;
+            $deferred->fail(new WorkerException('The pool shutdown before the task could be executed'));
+        }
+
         return $this->exitStatus = Promise\all($shutdowns);
     }
 
@@ -195,23 +204,32 @@ final class DefaultPool implements Pool
                 $worker->kill();
             }
         }
+
+        if ($this->waiting !== null) {
+            $deferred = $this->waiting;
+            $this->waiting = null;
+            $deferred->fail(new WorkerException('The pool was killed before the task could be executed'));
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getWorker(): Worker
+    public function getWorker(): Promise
     {
-        return new Internal\PooledWorker($this->pull(), $this->push);
+        return call(function (): \Generator {
+            return new Internal\PooledWorker(yield from $this->pull(), $this->push);
+        });
     }
 
     /**
      * Pulls a worker from the pool.
      *
-     * @return Worker
+     * @return \Generator
+     *
      * @throws StatusError
      */
-    private function pull(): Worker
+    private function pull(): \Generator
     {
         if (!$this->isRunning()) {
             throw new StatusError("The pool was shutdown");
@@ -219,18 +237,23 @@ final class DefaultPool implements Pool
 
         do {
             if ($this->idleWorkers->isEmpty()) {
-                if ($this->getWorkerCount() >= $this->maxSize) {
-                    // All possible workers busy, so shift from head (will be pushed back onto tail below).
-                    $worker = $this->busyQueue->shift();
-                } else {
+                if ($this->getWorkerCount() < $this->maxSize) {
                     // Max worker count has not been reached, so create another worker.
                     $worker = $this->factory->create();
                     if (!$worker->isRunning()) {
                         throw new WorkerException('Worker factory did not create a viable worker');
                     }
                     $this->workers->attach($worker, 0);
-                    break;
+                    return $worker;
                 }
+
+                if ($this->waiting === null) {
+                    $this->waiting = new Deferred;
+                }
+
+                do {
+                    $worker = yield $this->waiting->promise();
+                } while ($this->waiting !== null);
             } else {
                 // Shift a worker off the idle queue.
                 $worker = $this->idleWorkers->shift();
@@ -239,7 +262,7 @@ final class DefaultPool implements Pool
             \assert($worker instanceof Worker);
 
             if ($worker->isRunning()) {
-                break;
+                return $worker;
             }
 
             // Worker crashed; trigger error and remove it from the pool.
@@ -258,10 +281,5 @@ final class DefaultPool implements Pool
 
             $this->workers->detach($worker);
         } while (true);
-
-        $this->busyQueue->push($worker);
-        $this->workers[$worker] += 1;
-
-        return $worker;
     }
 }

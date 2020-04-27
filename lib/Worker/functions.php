@@ -56,11 +56,11 @@ function enqueueCallable(callable $callable, ...$args)
 }
 
 /**
- * Gets a worker from the global worker pool.
+ * Gets an available worker from the global worker pool.
  *
- * @return \Amp\Parallel\Worker\Worker
+ * @return Promise<Worker>
  */
-function worker(): Worker
+function worker(): Promise
 {
     return pool()->getWorker();
 }
@@ -68,7 +68,7 @@ function worker(): Worker
 /**
  * Creates a worker using the global worker factory.
  *
- * @return \Amp\Parallel\Worker\Worker
+ * @return Worker
  */
 function create(): Worker
 {

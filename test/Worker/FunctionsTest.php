@@ -97,11 +97,13 @@ class FunctionsTest extends AsyncTestCase
         $pool = $this->createMock(Pool::class);
         $pool->expects($this->once())
             ->method('getWorker')
-            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
+            ->will($this->returnValue(new Success($this->createMock(Worker\Worker::class))));
 
         Worker\pool($pool);
 
-        $worker = Worker\worker();
+        $worker = yield Worker\worker();
+
+        $this->assertInstanceOf(Worker\Worker::class, $worker);
     }
 
     public function testFactory()
