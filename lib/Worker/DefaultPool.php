@@ -55,8 +55,6 @@ final class DefaultPool implements Pool
             throw new \Error("Maximum size must be a non-negative integer");
         }
 
-        $this->increaseOpenFileLimit($maxSize);
-
         $this->maxSize = $maxSize;
 
         // Use the global factory if none is given.
@@ -265,29 +263,5 @@ final class DefaultPool implements Pool
         $this->workers[$worker] += 1;
 
         return $worker;
-    }
-
-    /** @noinspection PhpComposerExtensionStubsInspection */
-    private function increaseOpenFileLimit(int $maxSize): void
-    {
-        // TODO Find a better way to determine the limit
-        $count = 1024 + $maxSize * 10; // stdin, stdout, stderr, extra process pipe, and RPC socket
-
-        if (!\function_exists('posix_getrlimit') || !\function_exists('posix_setrlimit')) {
-            return;
-        }
-
-        $softLimit = \posix_getrlimit()['soft openfiles'];
-        $hardLimit = \posix_getrlimit()['hard openfiles'];
-
-        if ($softLimit >= $count) {
-            return;
-        }
-
-        \posix_setrlimit(
-            POSIX_RLIMIT_NOFILE,
-            $count,
-            'unlimited' === $hardLimit ? \POSIX_RLIMIT_INFINITY : $hardLimit
-        );
     }
 }
