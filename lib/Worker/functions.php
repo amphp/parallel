@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\CancellationToken;
 use Amp\Loop;
 use Amp\Promise;
 
@@ -33,20 +34,21 @@ function pool(Pool $pool = null): Pool
 /**
  * Enqueues a task to be executed by the global worker pool.
  *
- * @param Task $task The task to enqueue.
+ * @param Task                   $task The task to enqueue.
+ * @param CancellationToken|null $token
  *
  * @return Promise<mixed>
  */
-function enqueue(Task $task): Promise
+function enqueue(Task $task, ?CancellationToken $token = null): Promise
 {
-    return pool()->enqueue($task);
+    return pool()->enqueue($task, $token);
 }
 
 /**
  * Enqueues a callable to be executed by the global worker pool.
  *
  * @param callable $callable Callable needs to be serializable.
- * @param mixed    ...$args Arguments have to be serializable.
+ * @param mixed    ...$args  Arguments have to be serializable.
  *
  * @return Promise<mixed>
  */

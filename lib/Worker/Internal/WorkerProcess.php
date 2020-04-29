@@ -8,6 +8,7 @@ use Amp\Parallel\Context\Process;
 use Amp\Promise;
 use function Amp\call;
 
+/** @internal  */
 class WorkerProcess implements Context
 {
     /** @var Process */

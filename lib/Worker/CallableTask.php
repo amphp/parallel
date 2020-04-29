@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\CancellationToken;
+
 /**
  * Task implementation dispatching a simple callable.
  */
@@ -23,7 +25,7 @@ final class CallableTask implements Task
         $this->args = $args;
     }
 
-    public function run(Environment $environment)
+    public function run(Environment $environment, CancellationToken $token)
     {
         if ($this->callable instanceof \__PHP_Incomplete_Class) {
             throw new \Error('When using a class instance as a callable, the class must be autoloadable');

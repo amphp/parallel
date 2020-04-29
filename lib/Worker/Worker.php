@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\CancellationToken;
 use Amp\Promise;
 
 /**
@@ -27,15 +28,17 @@ interface Worker
      * Enqueues a {@see Task} to be executed by the worker.
      *
      * @param Task $task The task to enqueue.
+     * @param CancellationToken|null $token Token to request cancellation. The task must support cancellation for this
+     *                                      to have any effect.
      *
      * @return Promise<mixed> Resolves with the return value of {@see Task::run()}.
      *
      * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */
-    public function enqueue(Task $task): Promise;
+    public function enqueue(Task $task, ?CancellationToken $token = null): Promise;
 
     /**
-     * @return Promise<int> Resolves with the worker exit code.
+     * @return Promise<void> Resolves when the worker successfully shuts down.
      */
     public function shutdown(): Promise;
 

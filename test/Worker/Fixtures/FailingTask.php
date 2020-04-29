@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker\Fixtures;
 
+use Amp\CancellationToken;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 
@@ -23,11 +24,12 @@ class FailingTask implements Task
      * Runs the task inside the caller's context.
      * Does not have to be a coroutine, can also be a regular function returning a value.
      *
-     * @param \Amp\Parallel\Worker\Environment
+     * @param Environment $environment
+     * @param CancellationToken $token
      *
      * @return mixed|\Amp\Promise|\Generator
      */
-    public function run(Environment $environment)
+    public function run(Environment $environment, CancellationToken $token)
     {
         $previous = $this->previousExceptionType ? new $this->previousExceptionType : null;
         throw new $this->exceptionType('Test', 0, $previous);

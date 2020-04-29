@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker\Fixtures;
 
+use Amp\CancellationToken;
 use Amp\Delayed;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
@@ -17,7 +18,7 @@ class TestTask implements Task
         $this->delay = $delay;
     }
 
-    public function run(Environment $environment)
+    public function run(Environment $environment, CancellationToken $token)
     {
         if ($this->delay) {
             return new Delayed($this->delay, $this->returnValue);

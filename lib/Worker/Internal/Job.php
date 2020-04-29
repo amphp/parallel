@@ -8,6 +8,9 @@ use Amp\Parallel\Worker\Task;
 final class Job
 {
     /** @var string */
+    private static $nextId = 'a';
+
+    /** @var string */
     private $id;
 
     /** @var Task */
@@ -15,10 +18,8 @@ final class Job
 
     public function __construct(Task $task)
     {
-        static $id = 'a';
-
         $this->task = $task;
-        $this->id = $id++;
+        $this->id = self::$nextId++;
     }
 
     public function getId(): string

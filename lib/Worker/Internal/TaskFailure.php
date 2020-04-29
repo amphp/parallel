@@ -10,7 +10,7 @@ use Amp\Parallel\Worker\TaskFailureThrowable;
 use Amp\Promise;
 
 /** @internal */
-final class TaskFailure extends TaskResult
+class TaskFailure extends TaskResult
 {
     const PARENT_EXCEPTION = 0;
     const PARENT_ERROR = 1;
@@ -52,7 +52,7 @@ final class TaskFailure extends TaskResult
         return new Failure($this->createException());
     }
 
-    private function createException(): TaskFailureThrowable
+    final protected function createException(): TaskFailureThrowable
     {
         $previous = $this->previous ? $this->previous->createException() : null;
 

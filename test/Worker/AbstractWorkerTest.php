@@ -2,20 +2,23 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\CancellationToken;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\TaskCancelledException;
 use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\TimeoutCancellationToken;
 
 class NonAutoloadableTask implements Task
 {
-    public function run(Environment $environment)
+    public function run(Environment $environment, CancellationToken $token)
     {
         return 1;
     }
@@ -229,7 +232,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             yield $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-                public function run(Environment $environment)
+                public function run(Environment $environment, CancellationToken $token)
                 {
                 }
             });
@@ -274,7 +277,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $promise1 = $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-            public function run(Environment $environment)
+            public function run(Environment $environment, CancellationToken $token)
             {
             }
         });
@@ -301,7 +304,43 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');
 
-        $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
+        yield $worker->enqueue(new Fixtures\AutoloadTestTask);
+
+        yield $worker->shutdown();
+    }
+
+    public function testCancellableTask()
+    {
+        $this->expectException(TaskCancelledException::class);
+
+        $worker = $this->createWorker();
+
+        yield $worker->enqueue(new Fixtures\CancellingTask, new TimeoutCancellationToken(100));
+
+        yield $worker->shutdown();
+    }
+
+    public function testEnqueueAfterCancelledTask()
+    {
+        $worker = $this->createWorker();
+
+        try {
+            yield $worker->enqueue(new Fixtures\CancellingTask, new TimeoutCancellationToken(100));
+            $this->fail(TaskCancelledException::class . ' did not fail enqueue promise');
+        } catch (TaskCancelledException $exception) {
+            // Task should be cancelled, ignore this exception.
+        }
+
+        $this->assertTrue(yield $worker->enqueue(new Fixtures\ConstantTask));
+
+        yield $worker->shutdown();
+    }
+
+    public function testCancellingCompletedTask()
+    {
+        $worker = $this->createWorker();
+
+        $this->assertTrue(yield $worker->enqueue(new Fixtures\ConstantTask(), new TimeoutCancellationToken(100)));
 
         yield $worker->shutdown();
     }

@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\CancellationToken;
 use Amp\Deferred;
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
@@ -139,19 +140,20 @@ final class DefaultPool implements Pool
      * Enqueues a {@see Task} to be executed by the worker pool.
      *
      * @param Task $task The task to enqueue.
+     * @param CancellationToken|null $token
      *
-     * @return Promise<mixed> The return value of Task::run().
+     * @return Promise<mixed> The return (or resolution) value of {@see Task::run()}.
      *
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
      */
-    public function enqueue(Task $task): Promise
+    public function enqueue(Task $task, ?CancellationToken $token = null): Promise
     {
-        return call(function () use ($task): \Generator {
+        return call(function () use ($task, $token): \Generator {
             $worker = yield from $this->pull();
 
             try {
-                $result = yield $worker->enqueue($task);
+                $result = yield $worker->enqueue($task, $token);
             } finally {
                 ($this->push)($worker);
             }
@@ -163,7 +165,7 @@ final class DefaultPool implements Pool
     /**
      * Shuts down the pool and all workers in it.
      *
-     * @return Promise<int[]> Array of exit status from all workers.
+     * @return Promise<void> Array of exit status from all workers.
      *
      * @throws StatusError If the pool has not been started.
      */
@@ -177,6 +179,7 @@ final class DefaultPool implements Pool
 
         $shutdowns = [];
         foreach ($this->workers as $worker) {
+            \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
                 $shutdowns[] = $worker->shutdown();
             }
