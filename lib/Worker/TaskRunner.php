@@ -45,28 +45,29 @@ final class TaskRunner
     {
         while ($job = yield $this->channel->receive()) {
             if ($job instanceof Internal\Job) {
-                $this->cancellationSources[$job->getId()] = $source = new CancellationTokenSource;
-                asyncCall(function () use ($job, $source): \Generator {
+                asyncCall(function () use ($job): \Generator {
+                    $id = $job->getId();
+                    $this->cancellationSources[$id] = $source = new CancellationTokenSource;
                     try {
                         $result = new Internal\TaskSuccess(
                             $job->getId(),
-                            yield call([$job->getTask(), "run"], $this->environment, $source->getToken())
+                            yield call([$job->getTask(), 'run'], $this->environment, $source->getToken())
                         );
                     } catch (\Throwable $exception) {
                         if ($exception instanceof CancelledException && $source->getToken()->isRequested()) {
-                            $result = new Internal\TaskCancelled($job->getId(), $exception);
+                            $result = new Internal\TaskCancelled($id, $exception);
                         } else {
-                            $result = new Internal\TaskFailure($job->getId(), $exception);
+                            $result = new Internal\TaskFailure($id, $exception);
                         }
                     } finally {
-                        unset($this->cancellationSources[$job->getId()]);
+                        unset($this->cancellationSources[$id]);
                     }
 
                     try {
                         yield $this->channel->send($result);
                     } catch (SerializationException $exception) {
                         // Could not serialize task result.
-                        yield $this->channel->send(new Internal\TaskFailure($result->getId(), $exception));
+                        yield $this->channel->send(new Internal\TaskFailure($id, $exception));
                     }
                 });
                 continue;
@@ -78,11 +79,6 @@ final class TaskRunner
                     $this->cancellationSources[$job]->cancel();
                 }
                 continue;
-            }
-
-            // Shutdown signal.
-            if ($job === null) {
-                return;
             }
 
             // Should not happen, but just in case...
