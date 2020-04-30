@@ -194,12 +194,12 @@ abstract class TaskWorker implements Worker
             return $this->exitStatus;
         }
 
-        if ($this->context === null || !$this->context->isRunning()) {
-            return $this->exitStatus = new Failure(new WorkerException("The worker had crashed prior to being shutdown"));
-        }
-
         return $this->exitStatus = call(function (): \Generator {
             yield $this->startPromise; // Ensure the context has fully started before sending shutdown signal.
+
+            if (!$this->context->isRunning()) {
+                throw new WorkerException("The worker had crashed prior to being shutdown");
+            }
 
             // Wait for pending tasks to finish.
             yield Promise\any(\array_map(function (Deferred $deferred): Promise {
