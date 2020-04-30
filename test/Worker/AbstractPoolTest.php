@@ -180,6 +180,9 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }
     }
 
+    /**
+     * @requires PHPUnit >= 8.4
+     */
     public function testPooledKill(): \Generator
     {
         // See https://github.com/amphp/parallel/issues/66
