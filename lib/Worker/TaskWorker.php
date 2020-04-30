@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
+use Amp\Deferred;
 use Amp\Failure;
 use Amp\NullCancellationToken;
 use Amp\Parallel\Context\Context;
@@ -14,7 +15,7 @@ use Amp\TimeoutException;
 use function Amp\call;
 
 /**
- * Base class for most common types of task workers.
+ * Base class for workers executing {@see Task}s.
  */
 abstract class TaskWorker implements Worker
 {
@@ -24,17 +25,23 @@ abstract class TaskWorker implements Worker
     /** @var Context */
     private $context;
 
-    /** @var bool */
-    private $started = false;
+    /** @var Promise */
+    private $startPromise;
 
     /** @var Promise|null */
-    private $pending;
+    private $receivePromise;
+
+    /** @var Deferred[] */
+    private $jobQueue = [];
+
+    /** @var \Closure */
+    private $onResolve;
 
     /** @var Promise|null */
     private $exitStatus;
 
     /**
-     * @param Context $context A context running an instance of TaskRunner.
+     * @param Context $context A context running an instance of {@see TaskRunner}.
      */
     public function __construct(Context $context)
     {
@@ -43,20 +50,55 @@ abstract class TaskWorker implements Worker
         }
 
         $this->context = $context;
+        $this->startPromise = $this->context->start();
+
+        $jobQueue = &$this->jobQueue;
+        $receive = &$this->receivePromise;
+        $this->onResolve = $onResolve = static function (?\Throwable $exception, $data) use (
+            $context, &$jobQueue, &$receive, &$onResolve
+        ): void {
+            $receive = null;
+
+            if ($exception || !$data instanceof Internal\TaskResult) {
+                $exception = new WorkerException("Invalid data from worker", 0, $exception);
+                foreach ($jobQueue as $deferred) {
+                    $deferred->fail($exception);
+                }
+                $context->kill();
+                return;
+            }
+
+            $id = $data->getId();
+
+            try {
+                if (!isset($jobQueue[$id])) {
+                    return;
+                }
+
+                $deferred = $jobQueue[$id];
+                unset($jobQueue[$id]);
+
+                $deferred->resolve($data->promise());
+            } finally {
+                if ($receive === null && !empty($jobQueue)) {
+                    $receive = $context->receive();
+                    $receive->onResolve($onResolve);
+                }
+            }
+        };
 
         $context = &$this->context;
-        $pending = &$this->pending;
-
-        \register_shutdown_function(static function () use (&$context, &$pending): void {
+        \register_shutdown_function(static function () use (&$context, &$jobQueue): void {
             if ($context === null || !$context->isRunning()) {
                 return;
             }
 
             try {
-                Promise\wait(Promise\timeout(call(function () use ($context, $pending): \Generator {
-                    if ($pending) {
-                        yield $pending;
-                    }
+                Promise\wait(Promise\timeout(call(function () use ($context, $jobQueue): \Generator {
+                    // Wait for pending tasks to finish.
+                    yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+                        return $deferred->promise();
+                    }, $jobQueue));
 
                     yield $context->send(null);
                     return yield $context->join();
@@ -75,7 +117,7 @@ abstract class TaskWorker implements Worker
     public function isRunning(): bool
     {
         // Report as running unless shutdown or crashed.
-        return !$this->started || ($this->exitStatus === null && $this->context !== null && $this->context->isRunning());
+        return $this->exitStatus === null && $this->context !== null && $this->context->isRunning();
     }
 
     /**
@@ -83,7 +125,7 @@ abstract class TaskWorker implements Worker
      */
     public function isIdle(): bool
     {
-        return $this->pending === null;
+        return empty($this->jobQueue);
     }
 
     /**
@@ -91,49 +133,24 @@ abstract class TaskWorker implements Worker
      */
     public function enqueue(Task $task, ?CancellationToken $token = null): Promise
     {
-        if ($this->exitStatus) {
+        if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
         }
 
         $token = $token ?? new NullCancellationToken;
 
-        $promise = $this->pending = call(function () use ($task, $token): \Generator {
-            if ($this->pending) {
-                try {
-                    yield $this->pending;
-                } catch (\Throwable $exception) {
-                    // Ignore error from prior job.
-                }
-            }
-
-            if ($this->exitStatus !== null || $this->context === null) {
-                throw new WorkerException("The worker was shutdown");
-            }
-
-            if (!$this->context->isRunning()) {
-                if ($this->started) {
-                    throw new WorkerException("The worker crashed");
-                }
-
-                $this->started = true;
-                yield $this->context->start();
-            }
-
+        return call(function () use ($task, $token): \Generator {
             $job = new Internal\Job($task);
+            $jobId = $job->getId();
+            $this->jobQueue[$jobId] = $deferred = new Deferred;
+
+            yield $this->startPromise;
 
             try {
                 yield $this->context->send($job);
-
-                $id = $token->subscribe(function () use ($job) {
-                    $this->context->send($job->getId());
-                });
-
-                try {
-                    $result = yield $this->context->receive();
-                } finally {
-                    $token->unsubscribe($id);
-                }
             } catch (ChannelException $exception) {
+                unset($this->jobQueue[$jobId]);
+
                 try {
                     yield Promise\timeout($this->context->join(), self::ERROR_TIMEOUT);
                 } catch (TimeoutException $timeout) {
@@ -142,28 +159,30 @@ abstract class TaskWorker implements Worker
                 }
 
                 throw new WorkerException("The worker exited unexpectedly", 0, $exception);
+            } catch (\Throwable $exception) {
+                unset($this->jobQueue[$jobId]);
+                throw $exception;
             }
 
-            if (!$result instanceof Internal\TaskResult) {
-                $this->kill();
-                throw new WorkerException("Context did not return a task result");
+            $promise = $deferred->promise();
+
+            if ($this->context !== null) {
+                $context = $this->context;
+                $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
+                    $context->send($jobId);
+                });
+                $promise->onResolve(static function () use ($token, $cancellationId): void {
+                    $token->unsubscribe($cancellationId);
+                });
             }
 
-            if ($result->getId() !== $job->getId()) {
-                $this->kill();
-                throw new WorkerException("Task results returned out of order");
+            if ($this->receivePromise === null) {
+                $this->receivePromise = $this->context->receive();
+                $this->receivePromise->onResolve($this->onResolve);
             }
 
-            return $result->promise();
+            return $promise;
         });
-
-        $promise->onResolve(function () use ($promise): void {
-            if ($this->pending === $promise) {
-                $this->pending = null;
-            }
-        });
-
-        return $promise;
     }
 
     /**
@@ -176,14 +195,16 @@ abstract class TaskWorker implements Worker
         }
 
         if ($this->context === null || !$this->context->isRunning()) {
-            return $this->exitStatus = new Success(-1); // Context crashed?
+            return $this->exitStatus = new Failure(new WorkerException("The worker had crashed prior to being shutdown"));
         }
 
         return $this->exitStatus = call(function (): \Generator {
-            if ($this->pending) {
-                // If a task is currently running, wait for it to finish.
-                yield Promise\any([$this->pending]);
-            }
+            yield $this->startPromise; // Ensure the context has fully started before sending shutdown signal.
+
+            // Wait for pending tasks to finish.
+            yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+                return $deferred->promise();
+            }, $this->jobQueue));
 
             yield $this->context->send(null);
 
@@ -195,7 +216,6 @@ abstract class TaskWorker implements Worker
             } finally {
                 // Null properties to free memory because the shutdown function has references to these.
                 $this->context = null;
-                $this->pending = null;
             }
         });
     }
@@ -215,10 +235,9 @@ abstract class TaskWorker implements Worker
             return;
         }
 
-        $this->exitStatus = new Success(0);
+        $this->exitStatus = new Success;
 
         // Null properties to free memory because the shutdown function has references to these.
         $this->context = null;
-        $this->pending = null;
     }
 }

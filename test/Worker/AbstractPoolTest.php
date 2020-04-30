@@ -12,14 +12,13 @@ use Amp\Promise;
 abstract class AbstractPoolTest extends AsyncTestCase
 {
     /**
-     * @param int $min
      * @param int $max
      *
-     * @return \Amp\Parallel\Worker\Pool
+     * @return Pool
      */
     abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
 
-    public function testIsRunning()
+    public function testIsRunning(): \Generator
     {
         $pool = $this->createPool();
 
@@ -29,7 +28,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $this->assertFalse($pool->isRunning());
     }
 
-    public function testIsIdleOnStart()
+    public function testIsIdleOnStart(): \Generator
     {
         $pool = $this->createPool();
 
@@ -38,7 +37,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->shutdown();
     }
 
-    public function testShutdownShouldReturnSameResult()
+    public function testShutdownShouldReturnSameResult(): \Generator
     {
         $pool = $this->createPool();
 
@@ -48,7 +47,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $this->assertSame($result, yield $pool->shutdown());
     }
 
-    public function testPullShouldThrowStatusError()
+    public function testPullShouldThrowStatusError(): \Generator
     {
         $this->expectException(StatusError::class);
         $this->expectExceptionMessage('The pool was shutdown');
@@ -62,13 +61,13 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->getWorker();
     }
 
-    public function testGetMaxSize()
+    public function testGetMaxSize(): void
     {
         $pool = $this->createPool(17);
         $this->assertEquals(17, $pool->getMaxSize());
     }
 
-    public function testWorkersIdleOnStart()
+    public function testWorkersIdleOnStart(): \Generator
     {
         $pool = $this->createPool();
 
@@ -77,7 +76,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->shutdown();
     }
 
-    public function testEnqueue()
+    public function testEnqueue(): \Generator
     {
         $pool = $this->createPool();
 
@@ -87,7 +86,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->shutdown();
     }
 
-    public function testEnqueueMultiple()
+    public function testEnqueueMultiple(): \Generator
     {
         $pool = $this->createPool();
 
@@ -102,7 +101,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->shutdown();
     }
 
-    public function testKill()
+    public function testKill(): void
     {
         $this->setTimeout(1000);
 
@@ -113,7 +112,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $this->assertFalse($pool->isRunning());
     }
 
-    public function testGet()
+    public function testGet(): \Generator
     {
         $pool = $this->createPool();
 
@@ -130,7 +129,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $worker->kill();
     }
 
-    public function testBusyPool()
+    public function testBusyPool(): \Generator
     {
         $pool = $this->createPool(2);
 
@@ -154,7 +153,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         yield $pool->shutdown();
     }
 
-    public function testCreatePoolShouldThrowError()
+    public function testCreatePoolShouldThrowError(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Maximum size must be a non-negative integer');
@@ -162,7 +161,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $this->createPool(-1);
     }
 
-    public function testCleanGarbageCollection()
+    public function testCleanGarbageCollection(): \Generator
     {
         // See https://github.com/amphp/parallel-functions/issues/5
         for ($i = 0; $i < 3; $i++) {
@@ -181,14 +180,18 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }
     }
 
-    public function testPooledKill()
+    public function testPooledKill(): \Generator
     {
         // See https://github.com/amphp/parallel/issues/66
         $pool = $this->createPool(1);
         $worker = yield $pool->getWorker();
         $worker->kill();
-        unset($worker); // Invoke destructor.
-        $worker2 = yield $pool->getWorker();
-        $this->assertTrue($worker2->isRunning());
+
+        $this->expectWarning();
+        $this->expectWarningMessage('Worker in pool crashed');
+
+        $worker->__destruct();
+
+        $worker = yield $pool->getWorker();
     }
 }

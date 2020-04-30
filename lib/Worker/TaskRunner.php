@@ -19,6 +19,9 @@ final class TaskRunner
     /** @var Environment */
     private $environment;
 
+    /** @var CancellationTokenSource[] */
+    private $cancellationSources = [];
+
     public function __construct(Channel $channel, Environment $environment)
     {
         $this->channel = $channel;
@@ -40,12 +43,10 @@ final class TaskRunner
      */
     private function execute(): \Generator
     {
-        $cancellationSources = [];
-
         while ($job = yield $this->channel->receive()) {
             if ($job instanceof Internal\Job) {
-                $cancellationSources[$job->getId()] = $source = new CancellationTokenSource;
-                asyncCall(function () use ($job, $source, &$cancellationSources): \Generator {
+                $this->cancellationSources[$job->getId()] = $source = new CancellationTokenSource;
+                asyncCall(function () use ($job, $source): \Generator {
                     try {
                         $result = new Internal\TaskSuccess(
                             $job->getId(),
@@ -58,7 +59,7 @@ final class TaskRunner
                             $result = new Internal\TaskFailure($job->getId(), $exception);
                         }
                     } finally {
-                        unset($cancellationSources[$job->getId()]);
+                        unset($this->cancellationSources[$job->getId()]);
                     }
 
                     try {
@@ -71,13 +72,20 @@ final class TaskRunner
                 continue;
             }
 
+            // Cancellation signal.
             if (\is_string($job)) {
-                if (isset($cancellationSources[$job])) {
-                    $cancellationSources[$job]->cancel();
+                if (isset($this->cancellationSources[$job])) {
+                    $this->cancellationSources[$job]->cancel();
                 }
                 continue;
             }
 
+            // Shutdown signal.
+            if ($job === null) {
+                return;
+            }
+
+            // Should not happen, but just in case...
             throw new \Error('Invalid value received in ' . self::class);
         }
     }

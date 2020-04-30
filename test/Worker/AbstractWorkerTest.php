@@ -12,7 +12,6 @@ use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
 use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
-use Amp\Parallel\Worker\WorkerException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellationToken;
 
@@ -34,14 +33,14 @@ abstract class AbstractWorkerTest extends AsyncTestCase
      */
     abstract protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null);
 
-    public function testWorkerConstantDefined()
+    public function testWorkerConstantDefined(): \Generator
     {
         $worker = $this->createWorker();
         $this->assertTrue(yield $worker->enqueue(new Fixtures\ConstantTask));
         yield $worker->shutdown();
     }
 
-    public function testIsRunning()
+    public function testIsRunning(): \Generator
     {
         $worker = $this->createWorker();
         $this->assertTrue($worker->isRunning());
@@ -54,7 +53,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $this->assertFalse($worker->isRunning());
     }
 
-    public function testIsIdleOnStart()
+    public function testIsIdleOnStart(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -63,7 +62,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testEnqueueShouldThrowStatusError()
+    public function testEnqueueShouldThrowStatusError(): \Generator
     {
         $this->expectException(StatusError::class);
         $this->expectExceptionMessage('The worker has been shut down');
@@ -76,7 +75,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->enqueue(new Fixtures\TestTask(42));
     }
 
-    public function testEnqueue()
+    public function testEnqueue(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -86,7 +85,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testEnqueueMultipleSynchronous()
+    public function testEnqueueMultipleSynchronous(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -101,17 +100,17 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testEnqueueMultipleAsynchronous()
+    public function testEnqueueMultipleAsynchronous(): \Generator
     {
         $worker = $this->createWorker();
 
         $promises = [
-                $worker->enqueue(new Fixtures\TestTask(42, 200)),
-                $worker->enqueue(new Fixtures\TestTask(56, 300)),
-                $worker->enqueue(new Fixtures\TestTask(72, 100))
-            ];
+            $worker->enqueue(new Fixtures\TestTask(42, 200)),
+            $worker->enqueue(new Fixtures\TestTask(56, 300)),
+            $worker->enqueue(new Fixtures\TestTask(72, 100))
+        ];
 
-        $expected = [42, 56, 72];
+        $expected = [72, 42, 56];
         foreach ($promises as $promise) {
             $promise->onResolve(function ($e, $v) use (&$expected) {
                 $this->assertSame(\array_shift($expected), $v);
@@ -123,28 +122,29 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testEnqueueMultipleThenShutdown()
+    public function testEnqueueMultipleThenShutdown(): \Generator
     {
         $worker = $this->createWorker();
 
         $promises = [
-                $worker->enqueue(new Fixtures\TestTask(42, 200)),
-                $worker->enqueue(new Fixtures\TestTask(56, 300)),
-                $worker->enqueue(new Fixtures\TestTask(72, 100))
-            ];
+            $worker->enqueue(new Fixtures\TestTask(42, 200)),
+            $worker->enqueue(new Fixtures\TestTask(56, 300)),
+            $worker->enqueue(new Fixtures\TestTask(72, 100))
+        ];
 
-        yield $worker->shutdown();
+        $promise = $worker->shutdown(); // Send shutdown signal, but don't await until tasks have finished.
 
-        \array_shift($promises); // First task will succeed.
-
+        $expected = [72, 42, 56];
         foreach ($promises as $promise) {
-            $promise->onResolve(function ($e, $v) {
-                $this->assertInstanceOf(WorkerException::class, $e);
+            $promise->onResolve(function ($e, $v) use (&$expected) {
+                $this->assertSame(\array_shift($expected), $v);
             });
         }
+
+        yield $promise; // Await shutdown before ending test.
     }
 
-    public function testNotIdleOnEnqueue()
+    public function testNotIdleOnEnqueue(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -155,7 +155,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testKill()
+    public function testKill(): void
     {
         $this->setTimeout(500);
 
@@ -169,7 +169,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $this->assertFalse($worker->isRunning());
     }
 
-    public function testFailingTaskWithException()
+    public function testFailingTaskWithException(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -182,7 +182,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testFailingTaskWithError()
+    public function testFailingTaskWithError(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -195,7 +195,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testFailingTaskWithPreviousException()
+    public function testFailingTaskWithPreviousException(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -211,7 +211,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testNonAutoloadableTask()
+    public function testNonAutoloadableTask(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -226,7 +226,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testUnserializableTask()
+    public function testUnserializableTask(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -244,7 +244,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testUnserializableResult()
+    public function testUnserializableResult(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -258,7 +258,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testNonAutoloadableResult()
+    public function testNonAutoloadableResult(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -272,7 +272,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testUnserializableTaskFollowedByValidTask()
+    public function testUnserializableTaskFollowedByValidTask(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -288,7 +288,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testCustomAutoloader()
+    public function testCustomAutoloader(): \Generator
     {
         $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-bootstrap.php');
 
@@ -297,7 +297,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testInvalidCustomAutoloader()
+    public function testInvalidCustomAutoloader(): \Generator
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('No file found at bootstrap file path given');
@@ -309,7 +309,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testCancellableTask()
+    public function testCancellableTask(): \Generator
     {
         $this->expectException(TaskCancelledException::class);
 
@@ -320,7 +320,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testEnqueueAfterCancelledTask()
+    public function testEnqueueAfterCancelledTask(): \Generator
     {
         $worker = $this->createWorker();
 
@@ -336,7 +336,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         yield $worker->shutdown();
     }
 
-    public function testCancellingCompletedTask()
+    public function testCancellingCompletedTask(): \Generator
     {
         $worker = $this->createWorker();
 
