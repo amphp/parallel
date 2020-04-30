@@ -9,6 +9,7 @@ use Amp\NullCancellationToken;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
+use Amp\Parallel\Sync\SerializationException;
 use Amp\Promise;
 use Amp\Success;
 use Amp\TimeoutException;
@@ -116,8 +117,8 @@ abstract class TaskWorker implements Worker
      */
     public function isRunning(): bool
     {
-        // Report as running unless shutdown or crashed.
-        return $this->exitStatus === null && $this->context !== null && $this->context->isRunning();
+        // Report as running unless shutdown or killed.
+        return $this->exitStatus === null;
     }
 
     /**
@@ -148,19 +149,26 @@ abstract class TaskWorker implements Worker
 
             try {
                 yield $this->context->send($job);
+            } catch (SerializationException $exception) {
+                // Could not serialize Task object.
+                unset($this->jobQueue[$jobId]);
+                throw $exception;
             } catch (ChannelException $exception) {
                 unset($this->jobQueue[$jobId]);
 
                 try {
+                    $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
                     yield Promise\timeout($this->context->join(), self::ERROR_TIMEOUT);
                 } catch (TimeoutException $timeout) {
                     $this->kill();
-                    throw new WorkerException("The worker failed unexpectedly", 0, $exception);
+                } catch (\Throwable $exception) {
+                    $exception = new WorkerException("The worker crashed", 0, $exception);
                 }
 
-                throw new WorkerException("The worker exited unexpectedly", 0, $exception);
-            } catch (\Throwable $exception) {
-                unset($this->jobQueue[$jobId]);
+                if ($this->exitStatus === null) {
+                    $this->exitStatus = new Failure($exception);
+                }
+
                 throw $exception;
             }
 
