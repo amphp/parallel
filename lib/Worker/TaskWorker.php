@@ -61,7 +61,7 @@ abstract class TaskWorker implements Worker
             $receive = null;
 
             if ($exception || !$data instanceof Internal\TaskResult) {
-                $exception = new WorkerException("Invalid data from worker", 0, $exception);
+                $exception = $exception ?? new WorkerException("Invalid data from worker");
                 foreach ($jobQueue as $deferred) {
                     $deferred->fail($exception);
                 }
