@@ -9,16 +9,14 @@ use parallel\Future;
 
 class ParallelHub extends ProcessHub
 {
-    const EXIT_CHECK_FREQUENCY = 250;
+    private const EXIT_CHECK_FREQUENCY = 250;
 
     /** @var ChannelledSocket[] */
-    private $channels;
+    private array $channels;
 
-    /** @var string */
-    private $watcher;
+    private string $watcher;
 
-    /** @var Events */
-    private $events;
+    private Events $events;
 
     public function __construct()
     {

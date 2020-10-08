@@ -31,16 +31,16 @@ interface Worker
      * @param CancellationToken|null $token Token to request cancellation. The task must support cancellation for this
      *                                      to have any effect.
      *
-     * @return Promise<mixed> Resolves with the return value of {@see Task::run()}.
+     * @return mixed The return value of {@see Task::run()}.
      *
      * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): Promise;
+    public function enqueue(Task $task, ?CancellationToken $token = null): mixed;
 
     /**
-     * @return Promise<void> Resolves when the worker successfully shuts down.
+     * @return int Returns the exit code when the worker successfully shuts down.
      */
-    public function shutdown(): Promise;
+    public function shutdown(): int;
 
     /**
      * Immediately kills the context.

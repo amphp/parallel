@@ -6,8 +6,7 @@ use Amp\CancelledException;
 
 final class TaskCancelledException extends CancelledException implements TaskFailureThrowable
 {
-    /** @var TaskFailureThrowable */
-    private $failure;
+    private TaskFailureThrowable $failure;
 
     /**
      * @param TaskFailureThrowable $exception
@@ -28,7 +27,7 @@ final class TaskCancelledException extends CancelledException implements TaskFai
         return $this->failure->getOriginalMessage();
     }
 
-    public function getOriginalCode()
+    public function getOriginalCode(): string|int
     {
         return $this->failure->getOriginalCode();
     }

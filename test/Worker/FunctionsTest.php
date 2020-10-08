@@ -9,8 +9,6 @@ use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
-use Amp\Success;
 
 function nonAutoloadableFunction(): void
 {
@@ -35,8 +33,8 @@ class FunctionsTest extends AsyncTestCase
     {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task): Promise {
-                return new Success($task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class)));
+            ->will($this->returnCallback(function (Task $task): mixed {
+                return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
             }));
 
         Worker\pool($pool);
@@ -45,7 +43,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        $this->assertSame($value, yield Worker\enqueue($task));
+        $this->assertSame($value, Worker\enqueue($task));
     }
 
     /**
@@ -55,15 +53,15 @@ class FunctionsTest extends AsyncTestCase
     {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task): Promise {
-                return new Success($task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class)));
+            ->will($this->returnCallback(function (Task $task): string {
+                return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
             }));
 
         Worker\pool($pool);
 
         $value = 42;
 
-        $this->assertSame('42', yield Worker\enqueueCallable('strval', $value));
+        $this->assertSame('42', Worker\enqueueCallable('strval', $value));
     }
 
     /**
@@ -71,11 +69,13 @@ class FunctionsTest extends AsyncTestCase
      */
     public function testEnqueueCallableIntegration()
     {
-        Worker\pool(new Worker\DefaultPool);
+        Worker\pool($pool = new Worker\DefaultPool);
 
         $value = 42;
 
-        $this->assertSame('42', yield Worker\enqueueCallable('strval', $value));
+        $this->assertSame('42', Worker\enqueueCallable('strval', $value));
+
+        $pool->shutdown();
     }
 
     /**
@@ -86,9 +86,13 @@ class FunctionsTest extends AsyncTestCase
         $this->expectException(Worker\TaskError::class);
         $this->expectExceptionMessage('User-defined functions must be autoloadable');
 
-        Worker\pool(new Worker\DefaultPool);
+        Worker\pool($pool = new Worker\DefaultPool);
 
-        yield Worker\enqueueCallable(__NAMESPACE__ . '\\nonAutoloadableFunction');
+        try {
+            Worker\enqueueCallable(__NAMESPACE__ . '\\nonAutoloadableFunction');
+        } finally {
+            $pool->shutdown();
+        }
     }
     /**
      * @depends testPool
@@ -98,11 +102,11 @@ class FunctionsTest extends AsyncTestCase
         $pool = $this->createMock(Pool::class);
         $pool->expects($this->once())
             ->method('getWorker')
-            ->will($this->returnValue(new Success($this->createMock(Worker\Worker::class))));
+            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\pool($pool);
 
-        $worker = yield Worker\worker();
+        $worker = Worker\worker();
 
         $this->assertInstanceOf(Worker\Worker::class, $worker);
     }

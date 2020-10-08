@@ -12,26 +12,26 @@ use Amp\Promise;
 /** @internal */
 class TaskFailure extends TaskResult
 {
-    const PARENT_EXCEPTION = 0;
-    const PARENT_ERROR = 1;
+    private const PARENT_EXCEPTION = 0;
+    private const PARENT_ERROR = 1;
 
     /** @var string */
-    private $type;
+    private string $type;
 
     /** @var int */
-    private $parent;
+    private int $parent;
 
     /** @var string */
-    private $message;
+    private string $message;
 
     /** @var int|string */
-    private $code;
+    private string|int $code;
 
     /** @var string[] */
-    private $trace;
+    private array $trace;
 
     /** @var self|null */
-    private $previous;
+    private ?self $previous = null;
 
     public function __construct(string $id, \Throwable $exception)
     {

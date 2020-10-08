@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\Parallel;
-use Amp\Parallel\Context\Thread;
 
 /**
  * Worker factory that includes a custom bootstrap file after initializing the worker.
@@ -11,10 +10,10 @@ use Amp\Parallel\Context\Thread;
 final class BootstrapWorkerFactory implements WorkerFactory
 {
     /** @var string */
-    private $bootstrapPath;
+    private string $bootstrapPath;
 
     /** @var string */
-    private $className;
+    private string $className;
 
     /**
      * @param string $bootstrapFilePath Path to custom bootstrap file.
@@ -55,10 +54,6 @@ final class BootstrapWorkerFactory implements WorkerFactory
     {
         if (Parallel::isSupported()) {
             return new WorkerParallel($this->className, $this->bootstrapPath);
-        }
-
-        if (Thread::isSupported()) {
-            return new WorkerThread($this->className, $this->bootstrapPath);
         }
 
         return new WorkerProcess(

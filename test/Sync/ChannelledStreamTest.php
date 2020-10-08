@@ -9,33 +9,30 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
-use Amp\Success;
 
 class ChannelledStreamTest extends AsyncTestCase
 {
     /**
-     * @return \Amp\ByteStream\InputStream|\Amp\ByteStream\OutputStream
+     * @return InputStream|OutputStream
      */
     protected function createMockStream()
     {
         return new class implements InputStream, OutputStream {
-            private $buffer = "";
+            private string $buffer = "";
 
-            public function read(): Promise
+            public function read(): ?string
             {
                 $data = $this->buffer;
                 $this->buffer = "";
-                return new Success($data);
+                return $data;
             }
 
-            public function write(string $data): Promise
+            public function write(string $data): void
             {
                 $this->buffer .= $data;
-                return new Success(\strlen($data));
             }
 
-            public function end(string $finalData = ""): Promise
+            public function end(string $finalData = ""): void
             {
                 throw new \BadMethodCallException;
             }
@@ -55,8 +52,8 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $message = 'hello';
 
-        yield $a->send($message);
-        $data = yield $b->receive();
+        $a->send($message);
+        $data = $b->receive();
         $this->assertSame($message, $data);
     }
 
@@ -75,8 +72,8 @@ class ChannelledStreamTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        yield $a->send($message);
-        $data = yield $b->receive();
+        $a->send($message);
+        $data = $b->receive();
         $this->assertSame($message, $data);
     }
 
@@ -92,8 +89,8 @@ class ChannelledStreamTest extends AsyncTestCase
         $b = new ChannelledStream($mock, $mock);
 
         // Close $a. $b should close on next read...
-        yield $mock->write(\pack('L', 10) . '1234567890');
-        $data = yield $b->receive();
+        $mock->write(\pack('L', 10) . '1234567890');
+        $data = $b->receive();
     }
 
     /**
@@ -108,8 +105,8 @@ class ChannelledStreamTest extends AsyncTestCase
         $b = new ChannelledStream($mock, $mock);
 
         // Close $a. $b should close on next read...
-        yield $a->send(function () {});
-        $data = yield $b->receive();
+        $a->send(function () {});
+        $data = $b->receive();
     }
 
     /**
@@ -130,7 +127,7 @@ class ChannelledStreamTest extends AsyncTestCase
             $this->createMock(OutputStream::class)
         );
 
-        yield $a->send('hello');
+        $a->send('hello');
     }
 
     /**
@@ -143,10 +140,10 @@ class ChannelledStreamTest extends AsyncTestCase
         $mock = $this->createMock(InputStream::class);
         $mock->expects($this->once())
                 ->method('read')
-                ->willReturn(new Success(null));
+                ->willReturn(null);
 
         $a = new ChannelledStream($mock, $this->createMock(OutputStream::class));
 
-        $data = yield $a->receive();
+        $data = $a->receive();
     }
 }

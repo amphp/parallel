@@ -9,5 +9,5 @@ interface ExitResult
      *
      * @throws \Amp\Parallel\Sync\PanicError If the context exited with an uncaught exception.
      */
-    public function getResult();
+    public function getResult(): mixed;
 }

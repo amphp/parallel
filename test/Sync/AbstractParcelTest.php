@@ -8,34 +8,29 @@ use Amp\Promise;
 
 abstract class AbstractParcelTest extends AsyncTestCase
 {
-    /**
-     * @param mixed $value
-     *
-     * @return Promise<Parcel>
-     */
-    abstract protected function createParcel($value): Promise;
+    abstract protected function createParcel($value): Parcel;
 
-    public function testUnwrapIsOfCorrectType(): \Generator
+    public function testUnwrapIsOfCorrectType()
     {
-        $parcel = yield $this->createParcel(new \stdClass);
+        $parcel = $this->createParcel(new \stdClass);
         \assert($parcel instanceof Parcel);
-        $this->assertInstanceOf('stdClass', yield $parcel->unwrap());
+        $this->assertInstanceOf('stdClass', $parcel->unwrap());
     }
 
-    public function testUnwrapIsEqual(): \Generator
+    public function testUnwrapIsEqual()
     {
         $object = new \stdClass;
-        $parcel = yield $this->createParcel($object);
+        $parcel = $this->createParcel($object);
         \assert($parcel instanceof Parcel);
-        $this->assertEquals($object, yield $parcel->unwrap());
+        $this->assertEquals($object, $parcel->unwrap());
     }
 
-    public function testSynchronized(): \Generator
+    public function testSynchronized()
     {
-        $parcel = yield $this->createParcel(0);
+        $parcel = $this->createParcel(0);
         \assert($parcel instanceof Parcel);
 
-        $value = yield $parcel->synchronized(function ($value) {
+        $value = $parcel->synchronized(function ($value) {
             $this->assertSame(0, $value);
             \usleep(10000);
             return 1;
@@ -43,7 +38,7 @@ abstract class AbstractParcelTest extends AsyncTestCase
 
         $this->assertSame(1, $value);
 
-        $value = yield $parcel->synchronized(function ($value) {
+        $value = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
             \usleep(10000);
             return 2;

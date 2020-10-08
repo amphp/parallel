@@ -4,7 +4,8 @@
 require \dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Parallel\Worker;
-use Amp\Promise;
+use function Amp\async;
+use function Amp\await;
 
 $urls = [
     'https://secure.php.net',
@@ -14,10 +15,10 @@ $urls = [
 
 $promises = [];
 foreach ($urls as $url) {
-    $promises[$url] = Worker\enqueueCallable('file_get_contents', $url);
+    $promises[$url] = async(fn () => Worker\enqueueCallable('file_get_contents', $url));
 }
 
-$responses = Promise\wait(Promise\all($promises));
+$responses = await($promises);
 
 foreach ($responses as $url => $response) {
     \printf("Read %d bytes from %s\n", \strlen($response), $url);

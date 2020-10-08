@@ -9,10 +9,9 @@ use function Amp\Serialization\encodeUnprintableChars;
 
 final class ChannelParser extends Parser
 {
-    const HEADER_LENGTH = 5;
+    private const HEADER_LENGTH = 5;
 
-    /** @var Serializer */
-    private $serializer;
+    private Serializer $serializer;
 
     /**
      * @param callable(mixed $data) Callback invoked when data is parsed.
@@ -31,7 +30,7 @@ final class ChannelParser extends Parser
      *
      * @throws SerializationException
      */
-    public function encode($data): string
+    public function encode(mixed $data): string
     {
         $data = $this->serializer->serialize($data);
         return \pack("CL", 0, \strlen($data)) . $data;

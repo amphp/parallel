@@ -7,7 +7,7 @@ use Amp\Parallel\Context\Process;
 
 class ProcessTest extends AbstractContextTest
 {
-    public function createContext($script): Context
+    public function createContext(string|array $script): Context
     {
         return new Process($script);
     }

@@ -6,8 +6,9 @@ use Amp\CancellationToken;
 use Amp\Deferred;
 use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
-use function Amp\asyncCall;
-use function Amp\call;
+use function Amp\async;
+use function Amp\await;
+use function Amp\defer;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -19,28 +20,25 @@ use function Amp\call;
 final class DefaultPool implements Pool
 {
     /** @var bool Indicates if the pool is currently running. */
-    private $running = true;
+    private bool $running = true;
 
     /** @var int The maximum number of workers the pool should spawn. */
-    private $maxSize;
+    private int $maxSize;
 
     /** @var WorkerFactory A worker factory to be used to create new workers. */
-    private $factory;
+    private WorkerFactory $factory;
 
     /** @var \SplObjectStorage A collection of all workers in the pool. */
-    private $workers;
+    private \SplObjectStorage $workers;
 
     /** @var \SplQueue A collection of idle workers. */
-    private $idleWorkers;
+    private \SplQueue $idleWorkers;
 
-    /** @var Deferred|null */
-    private $waiting;
+    private ?Deferred $waiting = null;
 
-    /** @var \Closure */
-    private $push;
+    private \Closure $push;
 
-    /** @var Promise|null */
-    private $exitStatus;
+    private ?Promise $exitStatus = null;
 
     /**
      * Creates a new worker pool.
@@ -147,32 +145,30 @@ final class DefaultPool implements Pool
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): Promise
+    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
     {
-        return call(function () use ($task, $token): \Generator {
-            $worker = yield from $this->pull();
+        $worker = $this->pull();
 
-            try {
-                $result = yield $worker->enqueue($task, $token);
-            } finally {
-                ($this->push)($worker);
-            }
+        try {
+            $result = $worker->enqueue($task, $token);
+        } finally {
+            ($this->push)($worker);
+        }
 
-            return $result;
-        });
+        return $result;
     }
 
     /**
      * Shuts down the pool and all workers in it.
      *
-     * @return Promise<void> Array of exit status from all workers.
+     * @return int
      *
      * @throws StatusError If the pool has not been started.
      */
-    public function shutdown(): Promise
+    public function shutdown(): int
     {
         if ($this->exitStatus) {
-            return $this->exitStatus;
+            return await($this->exitStatus);
         }
 
         $this->running = false;
@@ -181,7 +177,7 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = $worker->shutdown();
+                $shutdowns[] = async(fn() => $worker->shutdown());
             }
         }
 
@@ -191,7 +187,13 @@ final class DefaultPool implements Pool
             $deferred->fail(new WorkerException('The pool shutdown before the task could be executed'));
         }
 
-        return $this->exitStatus = Promise\all($shutdowns);
+        return await($this->exitStatus = async(function () use ($shutdowns): int {
+            $shutdowns = await($shutdowns);
+            if (\array_sum($shutdowns)) {
+                return 1;
+            }
+            return 0;
+        }));
     }
 
     /**
@@ -218,21 +220,17 @@ final class DefaultPool implements Pool
     /**
      * {@inheritdoc}
      */
-    public function getWorker(): Promise
+    public function getWorker(): Worker
     {
-        return call(function (): \Generator {
-            return new Internal\PooledWorker(yield from $this->pull(), $this->push);
-        });
+        return new Internal\PooledWorker($this->pull(), $this->push);
     }
 
     /**
      * Pulls a worker from the pool.
      *
-     * @return \Generator
-     *
      * @throws StatusError
      */
-    private function pull(): \Generator
+    private function pull(): Worker
     {
         if (!$this->isRunning()) {
             throw new StatusError("The pool was shutdown");
@@ -255,7 +253,7 @@ final class DefaultPool implements Pool
                 }
 
                 do {
-                    $worker = yield $this->waiting->promise();
+                    $worker = await($this->waiting->promise());
                 } while ($this->waiting !== null);
             } else {
                 // Shift a worker off the idle queue.
@@ -270,9 +268,9 @@ final class DefaultPool implements Pool
 
             // Worker crashed; trigger error and remove it from the pool.
 
-            asyncCall(function () use ($worker): \Generator {
+            defer(function () use ($worker): void {
                 try {
-                    $code = yield $worker->shutdown();
+                    $code = $worker->shutdown();
                     \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);
                 } catch (\Throwable $exception) {
                     \trigger_error(

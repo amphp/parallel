@@ -5,9 +5,9 @@ namespace Amp\Parallel\Sync;
 final class ExitSuccess implements ExitResult
 {
     /** @var mixed */
-    private $result;
+    private mixed $result;
 
-    public function __construct($result)
+    public function __construct(mixed $result)
     {
         $this->result = $result;
     }
@@ -15,7 +15,7 @@ final class ExitSuccess implements ExitResult
     /**
      * {@inheritdoc}
      */
-    public function getResult()
+    public function getResult(): mixed
     {
         return $this->result;
     }

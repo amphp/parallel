@@ -34,7 +34,7 @@ final class ExitFailure implements ExitResult
     /**
      * {@inheritdoc}
      */
-    public function getResult()
+    public function getResult(): mixed
     {
         throw $this->createException();
     }

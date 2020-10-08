@@ -4,19 +4,15 @@ namespace Amp\Parallel\Sync;
 
 use Amp\ByteStream\ResourceInputStream;
 use Amp\ByteStream\ResourceOutputStream;
-use Amp\Promise;
 use Amp\Serialization\Serializer;
 
 final class ChannelledSocket implements Channel
 {
-    /** @var ChannelledStream */
-    private $channel;
+    private ChannelledStream $channel;
 
-    /** @var ResourceInputStream */
-    private $read;
+    private ResourceInputStream $read;
 
-    /** @var ResourceOutputStream */
-    private $write;
+    private ResourceOutputStream $write;
 
     /**
      * @param resource $read Readable stream resource.
@@ -37,7 +33,7 @@ final class ChannelledSocket implements Channel
     /**
      * {@inheritdoc}
      */
-    public function receive(): Promise
+    public function receive(): mixed
     {
         return $this->channel->receive();
     }
@@ -45,9 +41,9 @@ final class ChannelledSocket implements Channel
     /**
      * {@inheritdoc}
      */
-    public function send($data): Promise
+    public function send($data): void
     {
-        return $this->channel->send($data);
+        $this->channel->send($data);
     }
 
     public function unreference(): void

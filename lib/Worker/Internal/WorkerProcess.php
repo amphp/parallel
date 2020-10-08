@@ -5,28 +5,26 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\ByteStream;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\Process;
-use Amp\Promise;
-use function Amp\call;
 
 /** @internal  */
 class WorkerProcess implements Context
 {
     /** @var Process */
-    private $process;
+    private Process $process;
 
     public function __construct($script, array $env = [], string $binary = null)
     {
         $this->process = new Process($script, null, $env, $binary);
     }
 
-    public function receive(): Promise
+    public function receive(): mixed
     {
         return $this->process->receive();
     }
 
-    public function send($data): Promise
+    public function send($data): void
     {
-        return $this->process->send($data);
+        $this->process->send($data);
     }
 
     public function isRunning(): bool
@@ -34,22 +32,18 @@ class WorkerProcess implements Context
         return $this->process->isRunning();
     }
 
-    public function start(): Promise
+    public function start(): void
     {
-        return call(function () {
-            $result = yield $this->process->start();
+        $this->process->start();
 
-            $stdout = $this->process->getStdout();
-            $stdout->unreference();
+        $stdout = $this->process->getStdout();
+        $stdout->unreference();
 
-            $stderr = $this->process->getStderr();
-            $stderr->unreference();
+        $stderr = $this->process->getStderr();
+        $stderr->unreference();
 
-            ByteStream\pipe($stdout, ByteStream\getStdout());
-            ByteStream\pipe($stderr, ByteStream\getStderr());
-
-            return $result;
-        });
+        ByteStream\pipe($stdout, ByteStream\getStdout());
+        ByteStream\pipe($stderr, ByteStream\getStderr());
     }
 
     public function kill(): void
@@ -59,7 +53,7 @@ class WorkerProcess implements Context
         }
     }
 
-    public function join(): Promise
+    public function join(): int
     {
         return $this->process->join();
     }

@@ -4,8 +4,9 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
-use Amp\Promise;
+use function Amp\await;
 use function Amp\call;
+use function Amp\delay;
 use function Amp\getCurrentTime;
 
 \define("AMP_CONTEXT", "process");
@@ -31,7 +32,6 @@ if (\function_exists("cli_set_process_title")) {
 
     if (!isset($autoloadPath)) {
         \trigger_error("Could not locate autoload.php in any of the following files: " . \implode(", ", $paths), E_USER_ERROR);
-        exit(1);
     }
 
     require $autoloadPath;
@@ -44,7 +44,6 @@ if (\function_exists("cli_set_process_title")) {
 
     if (!isset($argv[0])) {
         \trigger_error("No socket path provided", E_USER_ERROR);
-        exit(1);
     }
 
     // Remove socket path from process arguments.
@@ -57,7 +56,6 @@ if (\function_exists("cli_set_process_title")) {
     do {
         if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false || \feof(\STDIN)) {
             \trigger_error("Could not read key from parent", E_USER_ERROR);
-            exit(1);
         }
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
@@ -67,19 +65,17 @@ if (\function_exists("cli_set_process_title")) {
     while (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
         if (getCurrentTime() < $connectStart + 5000) { // try for 5 seconds, after that the parent times out anyway
             \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
-            exit(1);
         }
 
-        \usleep(50 * 1000);
+        delay(10);
     }
 
     $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
-        Promise\wait($channel->send($key));
+        $channel->send($key);
     } catch (\Throwable $exception) {
         \trigger_error("Could not send key to parent", E_USER_ERROR);
-        exit(1);
     }
 
     try {
@@ -102,22 +98,19 @@ if (\function_exists("cli_set_process_title")) {
             throw new \Error(\sprintf("Script '%s' contains a parse error: " . $exception->getMessage(), $argv[0]), 0, $exception);
         }
 
-        $result = new Sync\ExitSuccess(Promise\wait(call($callable, $channel)));
+        $result = new Sync\ExitSuccess(await(call($callable, $channel)));
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }
 
     try {
-        Promise\wait(call(function () use ($channel, $result): \Generator {
-            try {
-                yield $channel->send($result);
-            } catch (Sync\SerializationException $exception) {
-                // Serializing the result failed. Send the reason why.
-                yield $channel->send(new Sync\ExitFailure($exception));
-            }
-        }));
+        try {
+            $channel->send($result);
+        } catch (Sync\SerializationException $exception) {
+            // Serializing the result failed. Send the reason why.
+            $channel->send(new Sync\ExitFailure($exception));
+        }
     } catch (\Throwable $exception) {
         \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
-        exit(1);
     }
 })();

@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\Parallel;
-use Amp\Parallel\Context\Thread;
 
 /**
  * The built-in worker factory type.
@@ -11,7 +10,7 @@ use Amp\Parallel\Context\Thread;
 final class DefaultWorkerFactory implements WorkerFactory
 {
     /** @var string */
-    private $className;
+    private string $className;
 
     /**
      * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
@@ -46,10 +45,6 @@ final class DefaultWorkerFactory implements WorkerFactory
     {
         if (Parallel::isSupported()) {
             return new WorkerParallel($this->className);
-        }
-
-        if (Thread::isSupported()) {
-            return new WorkerThread($this->className);
         }
 
         return new WorkerProcess(

@@ -12,30 +12,28 @@ use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
 use Amp\TimeoutException;
-use function Amp\call;
+use function Amp\async;
+use function Amp\await;
 
 final class Process implements Context
 {
-    const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
-    const KEY_LENGTH = 32;
+    private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
+    public const KEY_LENGTH = 32;
 
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
-    private static $pharScriptPath;
+    private static ?string $pharScriptPath = null;
 
     /** @var string|null PHAR path with a '.phar' extension. */
-    private static $pharCopy;
+    private static ?string $pharCopy = null;
 
     /** @var string|null Cached path to located PHP binary. */
-    private static $binaryPath;
+    private static ?string $binaryPath = null;
 
-    /** @var Internal\ProcessHub */
-    private $hub;
+    private Internal\ProcessHub $hub;
 
-    /** @var BaseProcess */
-    private $process;
+    private BaseProcess $process;
 
-    /** @var ChannelledSocket */
-    private $channel;
+    private ?ChannelledSocket $channel = null;
 
     /**
      * Creates and starts the process at the given path using the optional PHP binary path.
@@ -46,15 +44,13 @@ final class Process implements Context
      * @param mixed[]      $env Array of environment variables.
      * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
-     * @return Promise<Process>
+     * @return self
      */
-    public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise
+    public static function run(string|array $script, string $cwd = null, array $env = [], string $binary = null): self
     {
         $process = new self($script, $cwd, $env, $binary);
-        return call(function () use ($process): \Generator {
-            yield $process->start();
-            return $process;
-        });
+        $process->start();
+        return $process;
     }
 
     /**
@@ -66,13 +62,15 @@ final class Process implements Context
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct(string|array $script, string $cwd = null, array $env = [], string $binary = null)
     {
-        $this->hub = Loop::getState(self::class);
-        if (!$this->hub instanceof Internal\ProcessHub) {
-            $this->hub = new Internal\ProcessHub;
-            Loop::setState(self::class, $this->hub);
+        $hub = Loop::getState(self::class);
+        if (!$hub instanceof Internal\ProcessHub) {
+            $hub = new Internal\ProcessHub;
+            Loop::setState(self::class, $hub);
         }
+
+        $this->hub = $hub;
 
         $options = [
             "html_errors" => "0",
@@ -184,24 +182,20 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function start(): Promise
+    public function start(): void
     {
-        return call(function (): \Generator {
-            try {
-                $pid = yield $this->process->start();
+        try {
+            $pid = $this->process->start();
 
-                yield $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
+            $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
 
-                $this->channel = yield $this->hub->accept($pid);
-
-                return $pid;
-            } catch (\Throwable $exception) {
-                if ($this->isRunning()) {
-                    $this->kill();
-                }
-                throw new ContextException("Starting the process failed", 0, $exception);
+            $this->channel = $this->hub->accept($pid);
+        } catch (\Throwable $exception) {
+            if ($this->isRunning()) {
+                $this->kill();
             }
-        });
+            throw new ContextException("Starting the process failed", 0, $exception);
+        }
     }
 
     /**
@@ -215,35 +209,33 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function receive(): Promise
+    public function receive(): mixed
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
 
-        return call(function (): \Generator {
-            try {
-                $data = yield $this->channel->receive();
-            } catch (ChannelException $e) {
-                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-            }
+        try {
+            $data = $this->channel->receive();
+        } catch (ChannelException $e) {
+            throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+        }
 
-            if ($data instanceof ExitResult) {
-                $data = $data->getResult();
-                throw new SynchronizationError(\sprintf(
-                    'Process unexpectedly exited with result of type: %s',
-                    \is_object($data) ? \get_class($data) : \gettype($data)
-                ));
-            }
+        if ($data instanceof ExitResult) {
+            $data = $data->getResult();
+            throw new SynchronizationError(\sprintf(
+                'Process unexpectedly exited with result of type: %s',
+                \is_object($data) ? \get_class($data) : \gettype($data)
+            ));
+        }
 
-            return $data;
-        });
+        return $data;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data): Promise
+    public function send(mixed $data): void
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
@@ -253,67 +245,63 @@ final class Process implements Context
             throw new \Error("Cannot send exit result objects");
         }
 
-        return call(function () use ($data): \Generator {
-            try {
-                return yield $this->channel->send($data);
-            } catch (ChannelException $e) {
-                if ($this->channel === null) {
-                    throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-                }
-
-                try {
-                    $data = yield Promise\timeout($this->join(), 100);
-                } catch (ContextException | ChannelException | TimeoutException $ex) {
-                    if ($this->isRunning()) {
-                        $this->kill();
-                    }
-                    throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-                }
-
-                throw new SynchronizationError(\sprintf(
-                    'Process unexpectedly exited with result of type: %s',
-                    \is_object($data) ? \get_class($data) : \gettype($data)
-                ), 0, $e);
+        try {
+            $this->channel->send($data);
+        } catch (ChannelException $e) {
+            if ($this->channel === null) {
+                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
-        });
+
+            try {
+                $data = await(Promise\timeout(async(fn() => $this->join()), 100));
+            } catch (ContextException | ChannelException | TimeoutException $ex) {
+                if ($this->isRunning()) {
+                    $this->kill();
+                }
+                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            }
+
+            throw new SynchronizationError(\sprintf(
+                'Process unexpectedly exited with result of type: %s',
+                \is_object($data) ? \get_class($data) : \gettype($data)
+            ), 0, $e);
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function join(): Promise
+    public function join(): mixed
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
 
-        return call(function (): \Generator {
-            try {
-                $data = yield $this->channel->receive();
-            } catch (\Throwable $exception) {
-                if ($this->isRunning()) {
-                    $this->kill();
-                }
-                throw new ContextException("Failed to receive result from process", 0, $exception);
+        try {
+            $data = $this->channel->receive();
+        } catch (\Throwable $exception) {
+            if ($this->isRunning()) {
+                $this->kill();
             }
+            throw new ContextException("Failed to receive result from process", 0, $exception);
+        }
 
-            if (!$data instanceof ExitResult) {
-                if ($this->isRunning()) {
-                    $this->kill();
-                }
-                throw new SynchronizationError("Did not receive an exit result from process");
+        if (!$data instanceof ExitResult) {
+            if ($this->isRunning()) {
+                $this->kill();
             }
+            throw new SynchronizationError("Did not receive an exit result from process");
+        }
 
-            $this->channel->close();
+        $this->channel->close();
 
-            $code = yield $this->process->join();
-            if ($code !== 0) {
-                throw new ContextException(\sprintf("Process exited with code %d", $code));
-            }
+        $code = $this->process->join();
+        if ($code !== 0) {
+            throw new ContextException(\sprintf("Process exited with code %d", $code));
+        }
 
 
-            return $data->getResult();
-        });
+        return $data->getResult();
     }
 
     /**

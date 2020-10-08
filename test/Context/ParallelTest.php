@@ -10,7 +10,7 @@ use Amp\Parallel\Context\Parallel;
  */
 class ParallelTest extends AbstractContextTest
 {
-    public function createContext($script): Context
+    public function createContext(string|array $script): Context
     {
         return new Parallel($script);
     }
@@ -22,9 +22,9 @@ class ParallelTest extends AbstractContextTest
                 "Test"
             ]);
 
-        yield $context->start();
+        $context->start();
         $this->assertIsInt($context->getId());
-        yield $context->join();
+        $context->join();
 
         $context = $this->createContext([
                 __DIR__ . "/Fixtures/test-process.php",
@@ -39,7 +39,7 @@ class ParallelTest extends AbstractContextTest
 
     public function testRunStartsThread()
     {
-        $thread = yield Parallel::run([
+        $thread = Parallel::run([
                 __DIR__ . "/Fixtures/test-process.php",
                 "Test"
             ]);
@@ -48,6 +48,6 @@ class ParallelTest extends AbstractContextTest
         $this->assertTrue($thread->isRunning());
         $this->assertIsInt($thread->getId());
 
-        return yield $thread->join();
+        $thread->join();
     }
 }

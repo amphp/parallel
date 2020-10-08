@@ -7,14 +7,11 @@ use Amp\Parallel\Worker\Task;
 /** @internal */
 final class Job
 {
-    /** @var string */
-    private static $nextId = 'a';
+    private static string $nextId = 'a';
 
-    /** @var string */
-    private $id;
+    private string $id;
 
-    /** @var Task */
-    private $task;
+    private Task|\__PHP_Incomplete_Class $task;
 
     public function __construct(Task $task)
     {

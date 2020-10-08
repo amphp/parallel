@@ -4,23 +4,20 @@ namespace Amp\Parallel\Worker;
 
 use Amp\CancellationTokenSource;
 use Amp\CancelledException;
-use Amp\Coroutine;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
-use Amp\Promise;
-use function Amp\asyncCall;
+use function Amp\await;
 use function Amp\call;
+use function Amp\defer;
 
 final class TaskRunner
 {
-    /** @var Channel */
-    private $channel;
+    private Channel $channel;
 
-    /** @var Environment */
-    private $environment;
+    private Environment $environment;
 
     /** @var CancellationTokenSource[] */
-    private $cancellationSources = [];
+    private array $cancellationSources = [];
 
     public function __construct(Channel $channel, Environment $environment)
     {
@@ -30,28 +27,19 @@ final class TaskRunner
 
     /**
      * Runs the task runner, receiving tasks from the parent and sending the result of those tasks.
-     *
-     * @return Promise<void>
      */
-    public function run(): Promise
+    public function run(): int
     {
-        return new Coroutine($this->execute());
-    }
-
-    /**
-     * @return \Generator
-     */
-    private function execute(): \Generator
-    {
-        while ($job = yield $this->channel->receive()) {
+        while ($job = $this->channel->receive()) {
             if ($job instanceof Internal\Job) {
-                asyncCall(function () use ($job): \Generator {
-                    $id = $job->getId();
-                    $this->cancellationSources[$id] = $source = new CancellationTokenSource;
+                $id = $job->getId();
+                $this->cancellationSources[$id] = $source = new CancellationTokenSource;
+
+                defer(function () use ($job, $id, $source): void {
                     try {
                         $result = new Internal\TaskSuccess(
                             $job->getId(),
-                            yield call([$job->getTask(), 'run'], $this->environment, $source->getToken())
+                            await(call([$job->getTask(), 'run'], $this->environment, $source->getToken()))
                         );
                     } catch (\Throwable $exception) {
                         if ($exception instanceof CancelledException && $source->getToken()->isRequested()) {
@@ -64,10 +52,10 @@ final class TaskRunner
                     }
 
                     try {
-                        yield $this->channel->send($result);
+                        $this->channel->send($result);
                     } catch (SerializationException $exception) {
                         // Could not serialize task result.
-                        yield $this->channel->send(new Internal\TaskFailure($id, $exception));
+                        $this->channel->send(new Internal\TaskFailure($id, $exception));
                     }
                 });
                 continue;
@@ -84,5 +72,7 @@ final class TaskRunner
             // Should not happen, but just in case...
             throw new \Error('Invalid value received in ' . self::class);
         }
+
+        return 0;
     }
 }

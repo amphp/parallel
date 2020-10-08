@@ -2,13 +2,10 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Promise;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
-use Amp\Sync\Lock;
 use Amp\Sync\PosixSemaphore;
 use Amp\Sync\SyncException;
-use function Amp\call;
 
 /**
  * A container object for sharing a value across contexts.
@@ -35,31 +32,31 @@ use function Amp\call;
 final class SharedMemoryParcel implements Parcel
 {
     /** @var int The byte offset to the start of the object data in memory. */
-    const MEM_DATA_OFFSET = 7;
+    private const MEM_DATA_OFFSET = 7;
 
     // A list of valid states the object can be in.
-    const STATE_UNALLOCATED = 0;
-    const STATE_ALLOCATED = 1;
-    const STATE_MOVED = 2;
-    const STATE_FREED = 3;
+    private const STATE_UNALLOCATED = 0;
+    private const STATE_ALLOCATED = 1;
+    private const STATE_MOVED = 2;
+    private const STATE_FREED = 3;
 
     /** @var string */
-    private $id;
+    private string $id;
 
     /** @var int The shared memory segment key. */
-    private $key;
+    private int $key;
 
     /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
-    private $semaphore;
+    private PosixSemaphore $semaphore;
 
     /** @var resource|null An open handle to the shared memory segment. */
     private $handle;
 
     /** @var int */
-    private $initializer = 0;
+    private int $initializer = 0;
 
     /** @var Serializer */
-    private $serializer;
+    private Serializer $serializer;
 
     /**
      * @param string $id
@@ -174,18 +171,15 @@ final class SharedMemoryParcel implements Parcel
     /**
      * {@inheritdoc}
      */
-    public function unwrap(): Promise
+    public function unwrap(): mixed
     {
-        return call(function () {
-            $lock = yield $this->semaphore->acquire();
-            \assert($lock instanceof Lock);
+        $lock = $this->semaphore->acquire();
 
-            try {
-                return $this->getValue();
-            } finally {
-                $lock->release();
-            }
-        });
+        try {
+            return $this->getValue();
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
@@ -194,7 +188,7 @@ final class SharedMemoryParcel implements Parcel
      * @throws SharedMemoryException
      * @throws SerializationException
      */
-    private function getValue()
+    private function getValue(): mixed
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed');
@@ -220,7 +214,7 @@ final class SharedMemoryParcel implements Parcel
      * memory segment on the next read attempt. Once all running processes and
      * threads disconnect from the old segment, it will be freed by the OS.
      */
-    private function wrap($value): void
+    private function wrap(mixed $value): void
     {
         if ($this->isFreed()) {
             throw new SharedMemoryException('The object has already been freed');
@@ -242,7 +236,6 @@ final class SharedMemoryParcel implements Parcel
             $this->setHeader(self::STATE_MOVED, $this->key, 0);
 
             $this->memDelete();
-            \shmop_close($this->handle);
 
             $this->memOpen($this->key, 'n', $header['permissions'], $size * 2);
         }
@@ -255,24 +248,21 @@ final class SharedMemoryParcel implements Parcel
     /**
      * {@inheritdoc}
      */
-    public function synchronized(callable $callback): Promise
+    public function synchronized(callable $callback): mixed
     {
-        return call(function () use ($callback): \Generator {
-            $lock = yield $this->semaphore->acquire();
-            \assert($lock instanceof Lock);
+        $lock = $this->semaphore->acquire();
 
-            try {
-                $result = yield call($callback, $this->getValue());
+        try {
+            $result = $callback($this->getValue());
 
-                if ($result !== null) {
-                    $this->wrap($result);
-                }
-            } finally {
-                $lock->release();
+            if ($result !== null) {
+                $this->wrap($result);
             }
+        } finally {
+            $lock->release();
+        }
 
-            return $result;
-        });
+        return $result;
     }
 
 
@@ -298,7 +288,6 @@ final class SharedMemoryParcel implements Parcel
 
         // Request the block to be deleted, then close our local handle.
         $this->memDelete();
-        \shmop_close($this->handle);
         $this->handle = null;
 
         $this->semaphore = null;
@@ -312,10 +301,11 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * Private method to prevent serialization.
+     * Throws to prevent serialization.
      */
-    private function __sleep()
+    public function __sleep()
     {
+        throw new \Error("Cannot serialize " . self::class);
     }
 
     /**
@@ -337,7 +327,6 @@ final class SharedMemoryParcel implements Parcel
                 break;
             }
 
-            \shmop_close($this->handle);
             $this->key = $header['size'];
             $this->memOpen($this->key, 'w', 0, 0);
         }

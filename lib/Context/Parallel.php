@@ -13,6 +13,8 @@ use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
 use Amp\TimeoutException;
 use parallel\Runtime;
+use function Amp\async;
+use function Amp\await;
 use function Amp\call;
 
 /**
@@ -20,38 +22,38 @@ use function Amp\call;
  */
 final class Parallel implements Context
 {
-    const EXIT_CHECK_FREQUENCY = 250;
-    const KEY_LENGTH = 32;
+    private const EXIT_CHECK_FREQUENCY = 250;
+    private const KEY_LENGTH = 32;
 
     /** @var string|null */
-    private static $autoloadPath;
+    private static ?string $autoloadPath = null;
 
     /** @var int Next thread ID. */
-    private static $nextId = 1;
+    private static int $nextId = 1;
 
     /** @var Internal\ProcessHub */
-    private $hub;
+    private Internal\ProcessHub $hub;
 
     /** @var int|null */
-    private $id;
+    private ?int $id = null;
 
     /** @var Runtime|null */
-    private $runtime;
+    private ?Runtime $runtime = null;
 
     /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
-    private $channel;
+    private ?ChannelledSocket $channel = null;
 
     /** @var string Script path. */
-    private $script;
+    private string $script;
 
     /** @var string[] */
-    private $args = [];
+    private array $args = [];
 
     /** @var int */
-    private $oid = 0;
+    private int $oid = 0;
 
     /** @var bool */
-    private $killed = false;
+    private bool $killed = false;
 
     /**
      * Checks if threading is enabled.
@@ -69,15 +71,13 @@ final class Parallel implements Context
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      *
-     * @return Promise<Thread> The thread object that was spawned.
+     * @return self The thread object that was spawned.
      */
-    public static function run($script): Promise
+    public static function run(string|array $script): self
     {
         $thread = new self($script);
-        return call(function () use ($thread): \Generator {
-            yield $thread->start();
-            return $thread;
-        });
+        $thread->start();
+        return $thread;
     }
 
     /**
@@ -86,17 +86,19 @@ final class Parallel implements Context
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */
-    public function __construct($script)
+    public function __construct(string|array $script)
     {
         if (!self::isSupported()) {
             throw new \Error("The parallel extension is required to create parallel threads.");
         }
 
-        $this->hub = Loop::getState(self::class);
-        if (!$this->hub instanceof Internal\ParallelHub) {
-            $this->hub = new Internal\ParallelHub;
-            Loop::setState(self::class, $this->hub);
+        $hub = Loop::getState(self::class);
+        if (!$hub instanceof Internal\ParallelHub) {
+            $hub = new Internal\ParallelHub;
+            Loop::setState(self::class, $hub);
         }
+
+        $this->hub = $hub;
 
         if (\is_array($script)) {
             $this->script = (string) \array_shift($script);
@@ -162,12 +164,10 @@ final class Parallel implements Context
     /**
      * Spawns the thread and begins the thread's execution.
      *
-     * @return Promise<int> Resolved once the thread has started.
-     *
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
      */
-    public function start(): Promise
+    public function start(): void
     {
         if ($this->oid !== 0) {
             throw new StatusError('The thread has already been started.');
@@ -193,7 +193,7 @@ final class Parallel implements Context
             $channel = new ChannelledSocket($socket, $socket);
 
             try {
-                Promise\wait($channel->send($key));
+                $channel->send($key);
             } catch (\Throwable $exception) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
                 return 1;
@@ -223,19 +223,17 @@ final class Parallel implements Context
                         throw new \Error(\sprintf("Script '%s' contains a parse error", $path), 0, $exception);
                     }
 
-                    $result = new ExitSuccess(Promise\wait(call($callable, $channel)));
+                    $result = new ExitSuccess(await(call($callable, $channel)));
                 } catch (\Throwable $exception) {
                     $result = new ExitFailure($exception);
                 }
 
-                Promise\wait(call(function () use ($channel, $result): \Generator {
-                    try {
-                        yield $channel->send($result);
-                    } catch (SerializationException $exception) {
-                        // Serializing the result failed. Send the reason why.
-                        yield $channel->send(new ExitFailure($exception));
-                    }
-                }));
+                try {
+                    $channel->send($result);
+                } catch (SerializationException $exception) {
+                    // Serializing the result failed. Send the reason why.
+                    $channel->send(new ExitFailure($exception));
+                }
             } catch (\Throwable $exception) {
                 \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
                 return 1;
@@ -253,21 +251,17 @@ final class Parallel implements Context
             $this->args
         ]);
 
-        return call(function () use ($future): \Generator {
-            try {
-                $this->channel = yield $this->hub->accept($this->id);
-                $this->hub->add($this->id, $this->channel, $future);
-            } catch (\Throwable $exception) {
-                $this->kill();
-                throw new ContextException("Starting the parallel runtime failed", 0, $exception);
-            }
+        try {
+            $this->channel = $this->hub->accept($this->id);
+            $this->hub->add($this->id, $this->channel, $future);
+        } catch (\Throwable $exception) {
+            $this->kill();
+            throw new ContextException("Starting the parallel runtime failed", 0, $exception);
+        }
 
-            if ($this->killed) {
-                $this->kill();
-            }
-
-            return $this->id;
-        });
+        if ($this->killed) {
+            $this->kill();
+        }
     }
 
     /**
@@ -306,68 +300,64 @@ final class Parallel implements Context
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return \Amp\Promise<mixed>
+     * @return mixed
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.
      * @throws ContextException If the context stops responding.
      */
-    public function join(): Promise
+    public function join(): mixed
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        return call(function (): \Generator {
-            try {
-                $response = yield $this->channel->receive();
-                $this->close();
-            } catch (\Throwable $exception) {
-                $this->kill();
-                throw new ContextException("Failed to receive result from thread", 0, $exception);
-            }
+        try {
+            $response = $this->channel->receive();
+            $this->close();
+        } catch (\Throwable $exception) {
+            $this->kill();
+            throw new ContextException("Failed to receive result from thread", 0, $exception);
+        }
 
-            if (!$response instanceof ExitResult) {
-                $this->kill();
-                throw new SynchronizationError('Did not receive an exit result from thread.');
-            }
+        if (!$response instanceof ExitResult) {
+            $this->kill();
+            throw new SynchronizationError('Did not receive an exit result from thread.');
+        }
 
-            return $response->getResult();
-        });
+        return $response->getResult();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receive(): Promise
+    public function receive(): mixed
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started.');
         }
 
-        return call(function (): \Generator {
-            try {
-                $data = yield $this->channel->receive();
-            } catch (ChannelException $e) {
-                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-            }
+        try {
+            $data = $this->channel->receive();
+        } catch (ChannelException $e) {
+            throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+        }
 
-            if ($data instanceof ExitResult) {
-                $data = $data->getResult();
-                throw new SynchronizationError(\sprintf(
-                    'Thread unexpectedly exited with result of type: %s',
-                    \is_object($data) ? \get_class($data) : \gettype($data)
-                ));
-            }
+        if ($data instanceof ExitResult) {
+            $data = $data->getResult();
+            throw new SynchronizationError(\sprintf(
+                'Thread unexpectedly exited with result of type: %s',
+                \is_object($data) ? \get_class($data) : \gettype($data)
+            ));
+        }
 
-            return $data;
-        });
+        return $data;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function send($data): Promise
+    public function send(mixed $data): void
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
@@ -377,27 +367,25 @@ final class Parallel implements Context
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return call(function () use ($data): \Generator {
-            try {
-                return yield $this->channel->send($data);
-            } catch (ChannelException $e) {
-                if ($this->channel === null) {
-                    throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-                }
-
-                try {
-                    $data = yield Promise\timeout($this->join(), 100);
-                } catch (ContextException | ChannelException | TimeoutException $ex) {
-                    $this->kill();
-                    throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-                }
-
-                throw new SynchronizationError(\sprintf(
-                    'Thread unexpectedly exited with result of type: %s',
-                    \is_object($data) ? \get_class($data) : \gettype($data)
-                ), 0, $e);
+        try {
+            $this->channel->send($data);
+        } catch (ChannelException $e) {
+            if ($this->channel === null) {
+                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
-        });
+
+            try {
+                $data = await(Promise\timeout(async(fn() => $this->join()), 100));
+            } catch (ContextException | ChannelException | TimeoutException $ex) {
+                $this->kill();
+                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            }
+
+            throw new SynchronizationError(\sprintf(
+                'Thread unexpectedly exited with result of type: %s',
+                \is_object($data) ? \get_class($data) : \gettype($data)
+            ), 0, $e);
+        }
     }
 
     /**

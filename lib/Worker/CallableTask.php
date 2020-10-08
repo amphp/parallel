@@ -25,7 +25,7 @@ final class CallableTask implements Task
         $this->args = $args;
     }
 
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): mixed
     {
         if ($this->callable instanceof \__PHP_Incomplete_Class) {
             throw new \Error('When using a class instance as a callable, the class must be autoloadable');

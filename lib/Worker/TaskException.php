@@ -8,10 +8,10 @@ namespace Amp\Parallel\Worker;
 class TaskException extends \Exception
 {
     /** @var string Class name of exception thrown from task. */
-    private $name;
+    private string $name;
 
     /** @var string Stack trace of the exception thrown from task. */
-    private $trace;
+    private string $trace;
 
     /**
      * @param string          $name     The exception class name.

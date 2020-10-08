@@ -20,7 +20,7 @@ interface TaskFailureThrowable extends \Throwable
     /**
      * @return int|string Original exception code.
      */
-    public function getOriginalCode();
+    public function getOriginalCode(): string|int;
 
     /**
      * Returns the original exception stack trace.

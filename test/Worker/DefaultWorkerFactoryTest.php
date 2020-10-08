@@ -28,6 +28,8 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
     {
         $factory = new DefaultWorkerFactory;
 
-        $this->assertInstanceOf(Worker::class, $factory->create());
+        $this->assertInstanceOf(Worker::class, $worker = $factory->create());
+
+        $worker->shutdown();
     }
 }

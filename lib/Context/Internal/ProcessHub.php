@@ -8,31 +8,30 @@ use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Promise;
 use Amp\TimeoutException;
-use function Amp\asyncCall;
-use function Amp\call;
+use function Amp\async;
+use function Amp\await;
+use function Amp\defer;
 
 class ProcessHub
 {
-    const PROCESS_START_TIMEOUT = 5000;
-    const KEY_RECEIVE_TIMEOUT = 1000;
+    private const PROCESS_START_TIMEOUT = 5000;
+    private const KEY_RECEIVE_TIMEOUT = 1000;
 
     /** @var resource|null */
     private $server;
 
-    /** @var string|null */
-    private $uri;
+    private string $uri;
 
     /** @var int[] */
-    private $keys;
+    private array $keys = [];
 
     /** @var string|null */
-    private $watcher;
+    private ?string $watcher;
 
     /** @var Deferred[] */
-    private $acceptor = [];
+    private array $acceptor = [];
 
-    /** @var string|null */
-    private $toUnlink;
+    private ?string $toUnlink = null;
 
     public function __construct()
     {
@@ -76,11 +75,11 @@ class ProcessHub
             static function (string $watcher, $server) use (&$keys, &$acceptor): void {
                 // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
                 while ($client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
-                    asyncCall(static function () use ($client, &$keys, &$acceptor) {
+                    defer(static function () use ($client, &$keys, &$acceptor): void {
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = yield Promise\timeout($channel->receive(), self::KEY_RECEIVE_TIMEOUT);
+                            $received = await(Promise\timeout(async(fn() => $channel->receive()), self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.
@@ -125,27 +124,25 @@ class ProcessHub
         return $key;
     }
 
-    public function accept(int $pid): Promise
+    public function accept(int $pid): ChannelledSocket
     {
-        return call(function () use ($pid): \Generator {
-            $this->acceptor[$pid] = new Deferred;
+        $this->acceptor[$pid] = new Deferred;
 
-            Loop::enable($this->watcher);
+        Loop::enable($this->watcher);
 
-            try {
-                $channel = yield Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT);
-            } catch (TimeoutException $exception) {
-                $key = \array_search($pid, $this->keys, true);
-                \assert(\is_string($key), "Key for {$pid} not found");
-                unset($this->acceptor[$pid], $this->keys[$key]);
-                throw new ContextException("Starting the process timed out", 0, $exception);
-            } finally {
-                if (empty($this->acceptor)) {
-                    Loop::disable($this->watcher);
-                }
+        try {
+            $channel = await(Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT));
+        } catch (TimeoutException $exception) {
+            $key = \array_search($pid, $this->keys, true);
+            \assert(\is_string($key), "Key for {$pid} not found");
+            unset($this->acceptor[$pid], $this->keys[$key]);
+            throw new ContextException("Starting the process timed out", 0, $exception);
+        } finally {
+            if (empty($this->acceptor)) {
+                Loop::disable($this->watcher);
             }
+        }
 
-            return $channel;
-        });
+        return $channel;
     }
 }

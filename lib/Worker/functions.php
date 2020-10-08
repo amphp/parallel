@@ -37,9 +37,9 @@ function pool(Pool $pool = null): Pool
  * @param Task                   $task The task to enqueue.
  * @param CancellationToken|null $token
  *
- * @return Promise<mixed>
+ * @return mixed
  */
-function enqueue(Task $task, ?CancellationToken $token = null): Promise
+function enqueue(Task $task, ?CancellationToken $token = null): mixed
 {
     return pool()->enqueue($task, $token);
 }
@@ -50,9 +50,9 @@ function enqueue(Task $task, ?CancellationToken $token = null): Promise
  * @param callable $callable Callable needs to be serializable.
  * @param mixed    ...$args  Arguments have to be serializable.
  *
- * @return Promise<mixed>
+ * @return mixed
  */
-function enqueueCallable(callable $callable, ...$args)
+function enqueueCallable(callable $callable, ...$args): mixed
 {
     return enqueue(new CallableTask($callable, $args));
 }
@@ -60,9 +60,9 @@ function enqueueCallable(callable $callable, ...$args)
 /**
  * Gets an available worker from the global worker pool.
  *
- * @return Promise<Worker>
+ * @return Worker
  */
-function worker(): Promise
+function worker(): Worker
 {
     return pool()->getWorker();
 }

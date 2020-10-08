@@ -7,7 +7,7 @@ namespace Amp\Parallel\Worker;
  */
 final class WorkerProcess extends TaskWorker
 {
-    const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
+    private const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
 
     /**
      * @param string      $envClassName  Name of class implementing \Amp\Parallel\Worker\Environment to instigate.
@@ -22,8 +22,8 @@ final class WorkerProcess extends TaskWorker
     public function __construct(
         string $envClassName = BasicEnvironment::class,
         array $env = [],
-        string $binary = null,
-        string $bootstrapPath = null
+        ?string $binary = null,
+        ?string $bootstrapPath = null
     ) {
         $script = [
             self::SCRIPT_PATH,

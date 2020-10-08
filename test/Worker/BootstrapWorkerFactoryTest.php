@@ -13,9 +13,9 @@ class BootstrapWorkerFactoryTest extends AsyncTestCase
 
         $worker = $factory->create();
 
-        $this->assertTrue(yield $worker->enqueue(new Fixtures\AutoloadTestTask));
+        $this->assertTrue($worker->enqueue(new Fixtures\AutoloadTestTask));
 
-        yield $worker->shutdown();
+        $worker->shutdown();
     }
 
     public function testInvalidAutoloaderPath()

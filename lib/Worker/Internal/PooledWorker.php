@@ -5,7 +5,6 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\CancellationToken;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
-use Amp\Promise;
 
 /** @internal */
 final class PooledWorker implements Worker
@@ -14,7 +13,7 @@ final class PooledWorker implements Worker
     private $push;
 
     /** @var Worker */
-    private $worker;
+    private Worker $worker;
 
     /**
      * @param Worker $worker
@@ -53,7 +52,7 @@ final class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): Promise
+    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
     {
         return $this->worker->enqueue($task, $token);
     }
@@ -61,7 +60,7 @@ final class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): Promise
+    public function shutdown(): int
     {
         return $this->worker->shutdown();
     }

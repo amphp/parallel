@@ -1,8 +1,8 @@
 <?php
 
-use Amp\Delayed;
 use Amp\Parallel\Sync\Channel;
+use function Amp\delay;
 
 return function (Channel $channel) use ($argv) {
-    yield new Delayed((int) ($argv[1] ?? 1) * 1000);
+    delay((int) ($argv[1] ?? 1) * 1000);
 };

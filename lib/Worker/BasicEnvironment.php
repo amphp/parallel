@@ -7,14 +7,11 @@ use Amp\Struct;
 
 final class BasicEnvironment implements Environment
 {
-    /** @var array */
-    private $data = [];
+    private array $data = [];
 
-    /** @var \SplPriorityQueue */
-    private $queue;
+    private \SplPriorityQueue $queue;
 
-    /** @var string */
-    private $timer;
+    private string $timer;
 
     public function __construct()
     {
@@ -78,9 +75,9 @@ final class BasicEnvironment implements Environment
     /**
      * @param string $key
      *
-     * @return mixed|null Returns null if the key does not exist.
+     * @return mixed Returns null if the key does not exist.
      */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         if (!isset($this->data[$key])) {
             return null;
@@ -119,9 +116,9 @@ final class BasicEnvironment implements Environment
 
         $struct = new class {
             use Struct;
-            public $data;
-            public $expire = 0;
-            public $ttl;
+            public mixed $data;
+            public int $expire = 0;
+            public ?int $ttl = null;
         };
 
         $struct->data = $value;

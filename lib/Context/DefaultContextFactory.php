@@ -2,11 +2,9 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\Promise;
-
 class DefaultContextFactory implements ContextFactory
 {
-    public function create($script): Context
+    public function create(string|array $script): Context
     {
         /**
          * Creates a thread if ext-parallel is installed, otherwise creates a child process.
@@ -18,19 +16,5 @@ class DefaultContextFactory implements ContextFactory
         }
 
         return new Process($script);
-    }
-
-    /**
-     * Creates and starts a thread if ext-parallel is installed, otherwise creates a child process.
-     *
-     * @inheritdoc
-     */
-    public function run($script): Promise
-    {
-        if (Parallel::isSupported()) {
-            return Parallel::run($script);
-        }
-
-        return Process::run($script);
     }
 }

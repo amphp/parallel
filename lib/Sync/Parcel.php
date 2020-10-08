@@ -26,13 +26,12 @@ interface Parcel
      * @param callable $callback The synchronized callback to invoke. The parcel value is given as the single argument
      *     to the callback function. The callback may be a regular function or a coroutine.
      *
-     * @return \Amp\Promise<mixed> Resolves with the return value of $callback or fails if $callback
-     *     throws an exception.
+     * @return mixed Return value of $callback.
      */
-    public function synchronized(callable $callback): Promise;
+    public function synchronized(callable $callback): mixed;
 
     /**
-     * @return \Amp\Promise<mixed> A promise for the value inside the parcel.
+     * @return mixed The value inside the parcel.
      */
-    public function unwrap(): Promise;
+    public function unwrap(): mixed;
 }

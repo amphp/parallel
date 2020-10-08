@@ -2,15 +2,17 @@
 
 namespace Amp\Parallel\Test\Context;
 
-use Amp\Delayed;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
+use function Amp\async;
+use function Amp\await;
+use function Amp\delay;
 
 abstract class AbstractContextTest extends AsyncTestCase
 {
-    abstract public function createContext($script): Context;
+    abstract public function createContext(string|array $script): Context;
 
     public function testBasicProcess()
     {
@@ -18,8 +20,8 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/test-process.php",
                 "Test"
             ]);
-        yield $context->start();
-        $this->assertSame("Test", yield $context->join());
+        $context->start();
+        $this->assertSame("Test", $context->join());
     }
 
     public function testFailingProcess()
@@ -28,8 +30,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('No string provided');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/test-process.php");
-        yield $context->start();
-        yield $context->join();
+        $context->start();
+        $context->join();
     }
 
     public function testThrowingProcessOnReceive()
@@ -38,8 +40,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        yield $context->start();
-        yield $context->receive();
+        $context->start();
+        $context->receive();
     }
 
     public function testThrowingProcessOnSend()
@@ -48,9 +50,9 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        yield $context->start();
-        yield new Delayed(100);
-        yield $context->send(1);
+        $context->start();
+        delay(100);
+        $context->send(1);
     }
 
     public function testInvalidScriptPath()
@@ -59,8 +61,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage("No script found at '../test-process.php'");
 
         $context = $this->createContext("../test-process.php");
-        yield $context->start();
-        yield $context->join();
+        $context->start();
+        $context->join();
     }
 
     public function testInvalidResult()
@@ -69,8 +71,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('The given data could not be serialized');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
-        yield $context->start();
-        \var_dump(yield $context->join());
+        $context->start();
+        \var_dump($context->join());
     }
 
     public function testNoCallbackReturned()
@@ -79,8 +81,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('did not return a callable function');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
-        yield $context->start();
-        \var_dump(yield $context->join());
+        $context->start();
+        \var_dump($context->join());
     }
 
     public function testParseError()
@@ -89,8 +91,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('contains a parse error');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/parse-error-process.inc");
-        yield $context->start();
-        yield $context->join();
+        $context->start();
+        $context->join();
     }
 
     public function testKillWhenJoining()
@@ -102,12 +104,12 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/delayed-process.php",
                 5,
             ]);
-        yield $context->start();
-        yield new Delayed(100);
-        $promise = $context->join();
+        $context->start();
+        delay(100);
+        $promise = async(fn() => $context->join());
         $context->kill();
         $this->assertFalse($context->isRunning());
-        yield $promise;
+        await($promise);
     }
 
     public function testKillBusyContext()
@@ -119,12 +121,12 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/sleep-process.php",
                 5,
             ]);
-        yield $context->start();
-        yield new Delayed(100);
-        $promise = $context->join();
+        $context->start();
+        delay(100);
+        $promise = async(fn() => $context->join());
         $context->kill();
         $this->assertFalse($context->isRunning());
-        yield $promise;
+        await($promise);
     }
 
     public function testExitingProcess()
@@ -136,8 +138,8 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/exiting-process.php",
                 5,
             ]);
-        yield $context->start();
-        yield $context->join();
+        $context->start();
+        $context->join();
     }
 
     public function testExitingProcessOnReceive()
@@ -146,8 +148,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('stopped responding');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
-        yield $context->start();
-        yield $context->receive();
+        $context->start();
+        $context->receive();
     }
 
     public function testExitingProcessOnSend()
@@ -156,8 +158,8 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('stopped responding');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
-        yield $context->start();
-        yield new Delayed(500);
-        yield $context->send(1);
+        $context->start();
+        delay(500);
+        $context->send(1);
     }
 }

@@ -7,13 +7,13 @@ use function Amp\Parallel\Sync\formatFlattenedBacktrace;
 final class TaskFailureError extends TaskError implements TaskFailureThrowable
 {
     /** @var string */
-    private $originalMessage;
+    private string $originalMessage;
 
     /** @var int|string */
-    private $originalCode;
+    private string|int $originalCode;
 
     /** @var string[] */
-    private $originalTrace;
+    private array $originalTrace;
 
     /**
      * @param string                    $className Original exception class name.
@@ -23,7 +23,7 @@ final class TaskFailureError extends TaskError implements TaskFailureThrowable
      *                                             {@see \Amp\Parallel\Sync\flattenThrowableBacktrace()}.
      * @param TaskFailureThrowable|null $previous  Instance representing any previous exception thrown in the Task.
      */
-    public function __construct(string $className, string $message, $code, array $trace, ?TaskFailureThrowable $previous = null)
+    public function __construct(string $className, string $message, string|int $code, array $trace, ?TaskFailureThrowable $previous = null)
     {
         $format = 'Uncaught %s in worker with message "%s" and code "%s"; use %s::getOriginalTrace() '
             . 'for the stack trace in the worker';
@@ -59,7 +59,7 @@ final class TaskFailureError extends TaskError implements TaskFailureThrowable
     /**
      * @return int|string Original exception code.
      */
-    public function getOriginalCode()
+    public function getOriginalCode(): string|int
     {
         return $this->originalCode;
     }

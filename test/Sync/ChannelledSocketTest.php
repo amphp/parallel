@@ -6,6 +6,7 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
+use function Amp\async;
 
 class ChannelledSocketTest extends AsyncTestCase
 {
@@ -32,8 +33,8 @@ class ChannelledSocketTest extends AsyncTestCase
 
         $message = 'hello';
 
-        yield $a->send($message);
-        $data = yield $b->receive();
+        async(fn() => $a->send($message));
+        $data = $b->receive();
         $this->assertSame($message, $data);
     }
 
@@ -52,8 +53,8 @@ class ChannelledSocketTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        $a->send($message);
-        $data = yield $b->receive();
+        async(fn() => $a->send($message));
+        $data = $b->receive();
         $this->assertSame($message, $data);
     }
 
@@ -69,7 +70,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $b = new ChannelledSocket($right, $right);
 
         \fwrite($left, \pack('L', 10) . '1234567890');
-        $data = yield $b->receive();
+        $data = $b->receive();
     }
 
     /**
@@ -84,8 +85,8 @@ class ChannelledSocketTest extends AsyncTestCase
         $b = new ChannelledSocket($right, $right);
 
         // Close $a. $b should close on next read...
-        yield $a->send(function () {});
-        $data = yield $b->receive();
+        $a->send(function () {});
+        $data = $b->receive();
     }
 
     /**
@@ -99,7 +100,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
-        yield $a->send('hello');
+        $a->send('hello');
     }
 
     /**
@@ -113,6 +114,6 @@ class ChannelledSocketTest extends AsyncTestCase
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
-        $data = yield $a->receive();
+        $data = $a->receive();
     }
 }

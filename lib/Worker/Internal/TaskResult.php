@@ -8,7 +8,7 @@ use Amp\Promise;
 abstract class TaskResult
 {
     /** @var string Task identifier. */
-    private $id;
+    private string $id;
 
     /**
      * @param string $id Task identifier.

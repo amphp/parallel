@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Parallel\Context\StatusError;
-use Amp\Promise;
 
 /**
  * An interface for worker pools.
@@ -17,11 +16,11 @@ interface Pool extends Worker
      * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of
      * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
      *
-     * @return Promise<Worker>
+     * @return Worker
      *
      * @throws StatusError If the pool is not running.
      */
-    public function getWorker(): Promise;
+    public function getWorker(): Worker;
 
     /**
      * Gets the number of workers currently running in the pool.

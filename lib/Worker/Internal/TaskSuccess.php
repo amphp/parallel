@@ -11,9 +11,9 @@ use Amp\Success;
 final class TaskSuccess extends TaskResult
 {
     /** @var mixed Result of task. */
-    private $result;
+    private mixed $result;
 
-    public function __construct(string $id, $result)
+    public function __construct(string $id, mixed $result)
     {
         parent::__construct($id);
         $this->result = $result;

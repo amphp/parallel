@@ -13,33 +13,30 @@ use Amp\Promise;
 use Amp\Serialization\SerializationException;
 use Amp\Success;
 use Amp\TimeoutException;
-use function Amp\call;
+use function Amp\async;
+use function Amp\asyncCallable;
+use function Amp\await;
 
 /**
  * Base class for workers executing {@see Task}s.
  */
 abstract class TaskWorker implements Worker
 {
-    const SHUTDOWN_TIMEOUT = 1000;
-    const ERROR_TIMEOUT = 250;
+    private const SHUTDOWN_TIMEOUT = 1000;
+    private const ERROR_TIMEOUT = 250;
 
-    /** @var Context */
-    private $context;
+    private ?Context $context;
 
-    /** @var Promise */
-    private $startPromise;
+    private Promise $startPromise;
 
-    /** @var Promise|null */
-    private $receivePromise;
+    private ?Promise $receivePromise;
 
     /** @var Deferred[] */
-    private $jobQueue = [];
+    private array $jobQueue = [];
 
-    /** @var \Closure */
-    private $onResolve;
+    private \Closure $onResolve;
 
-    /** @var Promise|null */
-    private $exitStatus;
+    private ?Promise $exitStatus = null;
 
     /**
      * @param Context $context A context running an instance of {@see TaskRunner}.
@@ -51,11 +48,11 @@ abstract class TaskWorker implements Worker
         }
 
         $this->context = $context;
-        $this->startPromise = $this->context->start();
+        $this->startPromise = async(fn () => $this->context->start());
 
         $jobQueue = &$this->jobQueue;
         $receive = &$this->receivePromise;
-        $this->onResolve = $onResolve = static function (?\Throwable $exception, $data) use (
+        $this->onResolve = $onResolve = static function (?\Throwable $exception, mixed $data) use (
             $context, &$jobQueue, &$receive, &$onResolve
         ): void {
             $receive = null;
@@ -82,7 +79,7 @@ abstract class TaskWorker implements Worker
                 $deferred->resolve($data->promise());
             } finally {
                 if ($receive === null && !empty($jobQueue)) {
-                    $receive = $context->receive();
+                    $receive = async(fn() => $context->receive());
                     $receive->onResolve($onResolve);
                 }
             }
@@ -95,15 +92,17 @@ abstract class TaskWorker implements Worker
             }
 
             try {
-                Promise\wait(Promise\timeout(call(function () use ($context, $jobQueue): \Generator {
+                $promise = async(function () use ($context, $jobQueue): void {
                     // Wait for pending tasks to finish.
-                    yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+                    await(Promise\any(\array_map(function (Deferred $deferred): Promise {
                         return $deferred->promise();
-                    }, $jobQueue));
+                    }, $jobQueue)));
 
-                    yield $context->send(null);
-                    return yield $context->join();
-                }), self::SHUTDOWN_TIMEOUT));
+                    $context->send(null);
+                    $context->join();
+                });
+
+                await(Promise\timeout($promise, self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 if ($context !== null) {
                     $context->kill();
@@ -132,7 +131,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): Promise
+    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
@@ -140,84 +139,84 @@ abstract class TaskWorker implements Worker
 
         $token = $token ?? new NullCancellationToken;
 
-        return call(function () use ($task, $token): \Generator {
-            $job = new Internal\Job($task);
-            $jobId = $job->getId();
-            $this->jobQueue[$jobId] = $deferred = new Deferred;
+        $job = new Internal\Job($task);
+        $jobId = $job->getId();
+        $this->jobQueue[$jobId] = $deferred = new Deferred;
 
-            yield $this->startPromise;
+        await($this->startPromise);
+
+        try {
+            $this->context->send($job);
+        } catch (SerializationException $exception) {
+            // Could not serialize Task object.
+            unset($this->jobQueue[$jobId]);
+            throw $exception;
+        } catch (ChannelException $exception) {
+            unset($this->jobQueue[$jobId]);
 
             try {
-                yield $this->context->send($job);
-            } catch (SerializationException $exception) {
-                // Could not serialize Task object.
-                unset($this->jobQueue[$jobId]);
-                throw $exception;
-            } catch (ChannelException $exception) {
-                unset($this->jobQueue[$jobId]);
+                $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
+                await(Promise\timeout(async(fn() => $this->context->join()), self::ERROR_TIMEOUT));
+            } catch (TimeoutException $timeout) {
+                $this->kill();
+            } catch (\Throwable $exception) {
+                $exception = new WorkerException("The worker crashed", 0, $exception);
+            }
 
+            if ($this->exitStatus === null) {
+                $this->exitStatus = new Failure($exception);
+            }
+
+            throw $exception;
+        }
+
+        $promise = $deferred->promise();
+
+        if ($this->context !== null) {
+            $context = $this->context;
+            $cancellationId = $token->subscribe(asyncCallable(static function () use ($jobId, $context): void {
                 try {
-                    $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                    yield Promise\timeout($this->context->join(), self::ERROR_TIMEOUT);
-                } catch (TimeoutException $timeout) {
-                    $this->kill();
-                } catch (\Throwable $exception) {
-                    $exception = new WorkerException("The worker crashed", 0, $exception);
-                }
-
-                if ($this->exitStatus === null) {
-                    $this->exitStatus = new Failure($exception);
-                }
-
-                throw $exception;
-            }
-
-            $promise = $deferred->promise();
-
-            if ($this->context !== null) {
-                $context = $this->context;
-                $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
                     $context->send($jobId);
-                });
-                $promise->onResolve(static function () use ($token, $cancellationId): void {
-                    $token->unsubscribe($cancellationId);
-                });
-            }
+                } catch (\Throwable $exception) {
+                    return;
+                }
+            }));
+            $promise->onResolve(static fn() => $token->unsubscribe($cancellationId));
+        }
 
-            if ($this->receivePromise === null) {
-                $this->receivePromise = $this->context->receive();
-                $this->receivePromise->onResolve($this->onResolve);
-            }
+        if ($this->receivePromise === null) {
+            $this->receivePromise = async(fn () => $this->context->receive());
+            $this->receivePromise->onResolve($this->onResolve);
+        }
 
-            return $promise;
-        });
+        return await($promise);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): Promise
+    public function shutdown(): int
     {
         if ($this->exitStatus !== null) {
-            return $this->exitStatus;
+            return await($this->exitStatus);
         }
 
-        return $this->exitStatus = call(function (): \Generator {
-            yield $this->startPromise; // Ensure the context has fully started before sending shutdown signal.
+        return await($this->exitStatus = async(function (): int {
+            await($this->startPromise); // Ensure the context has fully started before sending shutdown signal.
 
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
 
             // Wait for pending tasks to finish.
-            yield Promise\any(\array_map(function (Deferred $deferred): Promise {
+            await(Promise\any(\array_map(function (Deferred $deferred): Promise {
                 return $deferred->promise();
-            }, $this->jobQueue));
+            }, $this->jobQueue)));
 
-            yield $this->context->send(null);
+            $this->context->send(null);
 
             try {
-                return yield Promise\timeout($this->context->join(), self::SHUTDOWN_TIMEOUT);
+                return await(Promise\timeout(async(fn() => $this->context->join()), self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
@@ -225,7 +224,7 @@ abstract class TaskWorker implements Worker
                 // Null properties to free memory because the shutdown function has references to these.
                 $this->context = null;
             }
-        });
+        }));
     }
 
     /**

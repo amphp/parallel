@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Promise;
+use Amp\Parallel\Context\StatusError;
 
 /**
  * Interface for sending messages between execution contexts.
@@ -10,27 +10,25 @@ use Amp\Promise;
 interface Channel
 {
     /**
-     * @return \Amp\Promise<mixed>
+     * @return mixed Data received.
      *
-     * @throws \Amp\Parallel\Context\StatusError Thrown if the context has not been started.
-     * @throws \Amp\Parallel\Sync\SynchronizationError If the context has not been started or the context
+     * @throws StatusError Thrown if the context has not been started.
+     * @throws SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
-     * @throws \Amp\Parallel\Sync\ChannelException If receiving from the channel fails.
-     * @throws \Amp\Parallel\Sync\SerializationException If unserializing the data fails.
+     * @throws ChannelException If receiving from the channel fails.
+     * @throws SerializationException If unserializing the data fails.
      */
-    public function receive(): Promise;
+    public function receive(): mixed;
 
     /**
      * @param mixed $data
      *
-     * @return \Amp\Promise<int> Resolves with the number of bytes sent on the channel.
-     *
-     * @throws \Amp\Parallel\Context\StatusError Thrown if the context has not been started.
-     * @throws \Amp\Parallel\Sync\SynchronizationError If the context has not been started or the context
+     * @throws StatusError Thrown if the context has not been started.
+     * @throws SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
-     * @throws \Amp\Parallel\Sync\ChannelException If sending on the channel fails.
+     * @throws ChannelException If sending on the channel fails.
      * @throws \Error If an ExitResult object is given.
-     * @throws \Amp\Parallel\Sync\SerializationException If serializing the data fails.
+     * @throws SerializationException If serializing the data fails.
      */
-    public function send($data): Promise;
+    public function send(mixed $data): void;
 }
