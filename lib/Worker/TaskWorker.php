@@ -84,31 +84,6 @@ abstract class TaskWorker implements Worker
                 }
             }
         };
-
-        $context = &$this->context;
-        \register_shutdown_function(static function () use (&$context, &$jobQueue): void {
-            if ($context === null || !$context->isRunning()) {
-                return;
-            }
-
-            try {
-                $promise = async(function () use ($context, $jobQueue): void {
-                    // Wait for pending tasks to finish.
-                    await(Promise\any(\array_map(function (Deferred $deferred): Promise {
-                        return $deferred->promise();
-                    }, $jobQueue)));
-
-                    $context->send(null);
-                    $context->join();
-                });
-
-                await(Promise\timeout($promise, self::SHUTDOWN_TIMEOUT));
-            } catch (\Throwable $exception) {
-                if ($context !== null) {
-                    $context->kill();
-                }
-            }
-        });
     }
 
     /**
