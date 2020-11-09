@@ -6,6 +6,7 @@ use Amp\Parallel\Worker\Internal\TaskFailure;
 use Amp\Parallel\Worker\TaskError;
 use Amp\Parallel\Worker\TaskException;
 use Amp\PHPUnit\AsyncTestCase;
+use function Amp\await;
 
 class TaskFailureTest extends AsyncTestCase
 {
@@ -16,7 +17,7 @@ class TaskFailureTest extends AsyncTestCase
 
         $exception = new \Exception("Message", 1);
         $result = new TaskFailure('a', $exception);
-        yield $result->promise();
+        await($result->promise());
     }
 
     public function testWithError()
@@ -26,6 +27,6 @@ class TaskFailureTest extends AsyncTestCase
 
         $exception = new \Error("Message", 1);
         $result = new TaskFailure('a', $exception);
-        yield $result->promise();
+        await($result->promise());
     }
 }

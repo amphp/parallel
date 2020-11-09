@@ -144,13 +144,13 @@ abstract class AbstractPoolTest extends AsyncTestCase
             return async(fn() => $pool->enqueue($task));
         }, $tasks);
 
-        $this->assertSame($values, yield $promises);
+        $this->assertSame($values, await($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Promise {
             return async(fn() => $pool->enqueue($task));
         }, $tasks);
 
-        $this->assertSame($values, yield $promises);
+        $this->assertSame($values, await($promises));
 
         $pool->shutdown();
     }
