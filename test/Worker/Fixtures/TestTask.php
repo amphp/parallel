@@ -9,16 +9,16 @@ use Amp\Parallel\Worker\Task;
 
 class TestTask implements Task
 {
-    private $returnValue;
-    private $delay = 0;
+    private mixed $returnValue;
+    private int $delay;
 
-    public function __construct($returnValue, int $delay = 0)
+    public function __construct(mixed $returnValue, int $delay = 0)
     {
         $this->returnValue = $returnValue;
         $this->delay = $delay;
     }
 
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): mixed
     {
         if ($this->delay) {
             return new Delayed($this->delay, $this->returnValue);

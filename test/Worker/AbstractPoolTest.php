@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Loop;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
@@ -184,17 +185,19 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
     public function testPooledKill()
     {
-        $this->setTimeout(10);
+        Loop::setErrorHandler(function (\Throwable $exception): void {
+            $this->assertStringContainsString("Worker in pool crashed", $exception->getMessage());
+        });
+
+        $this->setTimeout(100);
 
         // See https://github.com/amphp/parallel/issues/66
         $pool = $this->createPool(1);
         $worker1 = $pool->getWorker();
         $worker1->kill();
 
-        $worker1->__destruct();
+        unset($worker1);
 
         $worker2 = $pool->getWorker();
-
-        $this->assertNotSame($worker1, $worker2);
     }
 }

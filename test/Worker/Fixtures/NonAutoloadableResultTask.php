@@ -8,7 +8,7 @@ use Amp\Parallel\Worker\Task;
 
 class NonAutoloadableResultTask implements Task
 {
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): mixed
     {
         require __DIR__ . "/non-autoloadable-class.php";
         return new NonAutoloadableClass;

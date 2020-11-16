@@ -9,12 +9,12 @@ use Amp\Parallel\Worker\Task;
 class FailingTask implements Task
 {
     /** @var string */
-    private $exceptionType;
+    private string $exceptionType;
 
     /** @var string|null */
-    private $previousExceptionType;
+    private ?string $previousExceptionType;
 
-    public function __construct(string $exceptionType, string $previousExceptionType = null)
+    public function __construct(string $exceptionType, ?string $previousExceptionType = null)
     {
         $this->exceptionType = $exceptionType;
         $this->previousExceptionType = $previousExceptionType;
@@ -27,9 +27,9 @@ class FailingTask implements Task
      * @param Environment $environment
      * @param CancellationToken $token
      *
-     * @return mixed|\Amp\Promise|\Generator
+     * @return mixed
      */
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): mixed
     {
         $previous = $this->previousExceptionType ? new $this->previousExceptionType : null;
         throw new $this->exceptionType('Test', 0, $previous);

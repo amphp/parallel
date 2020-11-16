@@ -14,7 +14,7 @@ class JobTest extends AsyncTestCase
         $this->assertSame($task, $job->getTask());
     }
 
-    public function testUnserialiableClass()
+    public function testUnserializableClass()
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Classes implementing Amp\\Parallel\\Worker\\Task must be autoloadable by the Composer autoloader');

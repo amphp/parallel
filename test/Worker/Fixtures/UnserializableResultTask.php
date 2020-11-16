@@ -8,7 +8,7 @@ use Amp\Parallel\Worker\Task;
 
 class UnserializableResultTask implements Task
 {
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): mixed
     {
         return function () {}; // Anonymous functions are not serializable.
     }

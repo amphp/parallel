@@ -21,7 +21,7 @@ use function Amp\delay;
 
 class NonAutoloadableTask implements Task
 {
-    public function run(Environment $environment, CancellationToken $token)
+    public function run(Environment $environment, CancellationToken $token): int
     {
         return 1;
     }
@@ -238,7 +238,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-                public function run(Environment $environment, CancellationToken $token)
+                public function run(Environment $environment, CancellationToken $token): mixed
                 {
                 }
             });
@@ -283,7 +283,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $promise1 = async(fn() => $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
-            public function run(Environment $environment, CancellationToken $token)
+            public function run(Environment $environment, CancellationToken $token): mixed
             {
             }
         }));

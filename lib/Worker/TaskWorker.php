@@ -14,7 +14,6 @@ use Amp\Serialization\SerializationException;
 use Amp\Success;
 use Amp\TimeoutException;
 use function Amp\async;
-use function Amp\asyncCallable;
 use function Amp\await;
 
 /**
@@ -26,8 +25,6 @@ abstract class TaskWorker implements Worker
     private const ERROR_TIMEOUT = 250;
 
     private ?Context $context;
-
-    private Promise $startPromise;
 
     private ?Promise $receivePromise;
 
@@ -48,7 +45,7 @@ abstract class TaskWorker implements Worker
         }
 
         $this->context = $context;
-        $this->startPromise = async(fn () => $this->context->start());
+        $this->context->start();
 
         $jobQueue = &$this->jobQueue;
         $receive = &$this->receivePromise;
@@ -118,8 +115,6 @@ abstract class TaskWorker implements Worker
         $jobId = $job->getId();
         $this->jobQueue[$jobId] = $deferred = new Deferred;
 
-        await($this->startPromise);
-
         try {
             $this->context->send($job);
         } catch (SerializationException $exception) {
@@ -149,13 +144,13 @@ abstract class TaskWorker implements Worker
 
         if ($this->context !== null) {
             $context = $this->context;
-            $cancellationId = $token->subscribe(asyncCallable(static function () use ($jobId, $context): void {
+            $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
                 try {
                     $context->send($jobId);
                 } catch (\Throwable $exception) {
                     return;
                 }
-            }));
+            });
             $promise->onResolve(static fn() => $token->unsubscribe($cancellationId));
         }
 
@@ -177,8 +172,6 @@ abstract class TaskWorker implements Worker
         }
 
         return await($this->exitStatus = async(function (): int {
-            await($this->startPromise); // Ensure the context has fully started before sending shutdown signal.
-
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }

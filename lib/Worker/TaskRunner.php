@@ -6,8 +6,8 @@ use Amp\CancellationTokenSource;
 use Amp\CancelledException;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
+use Amp\Promise;
 use function Amp\await;
-use function Amp\call;
 use function Amp\defer;
 
 final class TaskRunner
@@ -37,10 +37,13 @@ final class TaskRunner
 
                 defer(function () use ($job, $id, $source): void {
                     try {
-                        $result = new Internal\TaskSuccess(
-                            $job->getId(),
-                            await(call([$job->getTask(), 'run'], $this->environment, $source->getToken()))
-                        );
+                        $result = $job->getTask()->run($this->environment, $source->getToken());
+
+                        if ($result instanceof Promise) {
+                            $result = await($result);
+                        }
+
+                        $result = new Internal\TaskSuccess($job->getId(), $result);
                     } catch (\Throwable $exception) {
                         if ($exception instanceof CancelledException && $source->getToken()->isRequested()) {
                             $result = new Internal\TaskCancelled($id, $exception);
