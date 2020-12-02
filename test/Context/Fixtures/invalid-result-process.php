@@ -4,8 +4,9 @@ use Amp\Parallel\Sync\Channel;
 
 return function (Channel $channel) {
     return new class {
-        private function __sleep()
+        public function __sleep()
         {
+            throw new Exception("Cannot serialize");
         }
     };
 };

@@ -12,7 +12,7 @@ class ParallelHub extends ProcessHub
     private const EXIT_CHECK_FREQUENCY = 250;
 
     /** @var ChannelledSocket[] */
-    private array $channels;
+    private array $channels = [];
 
     private string $watcher;
 
