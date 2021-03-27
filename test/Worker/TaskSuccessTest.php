@@ -8,17 +8,17 @@ use function Amp\await;
 
 class TaskSuccessTest extends AsyncTestCase
 {
-    public function testGetId()
+    public function testGetId(): void
     {
         $id = 'a';
         $result = new TaskSuccess($id, 1);
-        $this->assertSame($id, $result->getId());
+        self::assertSame($id, $result->getId());
     }
 
-    public function testPromise()
+    public function testPromise(): void
     {
         $value = 1;
         $result = new TaskSuccess('a', $value);
-        $this->assertSame($value, await($result->promise()));
+        self::assertSame($value, await($result->promise()));
     }
 }

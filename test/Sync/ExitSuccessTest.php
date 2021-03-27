@@ -7,10 +7,10 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class ExitSuccessTest extends AsyncTestCase
 {
-    public function testGetResult()
+    public function testGetResult(): void
     {
         $value = 1;
         $result = new ExitSuccess($value);
-        $this->assertSame($value, $result->getResult());
+        self::assertSame($value, $result->getResult());
     }
 }

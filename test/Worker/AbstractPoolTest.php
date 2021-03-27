@@ -2,40 +2,33 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Loop;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
+use Revolt\EventLoop\Loop;
 use function Amp\async;
 use function Amp\await;
 
 abstract class AbstractPoolTest extends AsyncTestCase
 {
-    /**
-     * @param int $max
-     *
-     * @return Pool
-     */
-    abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
-
     public function testIsRunning()
     {
         $pool = $this->createPool();
 
-        $this->assertTrue($pool->isRunning());
+        self::assertTrue($pool->isRunning());
 
         $pool->shutdown();
-        $this->assertFalse($pool->isRunning());
+        self::assertFalse($pool->isRunning());
     }
 
     public function testIsIdleOnStart()
     {
         $pool = $this->createPool();
 
-        $this->assertTrue($pool->isIdle());
+        self::assertTrue($pool->isIdle());
 
         $pool->shutdown();
     }
@@ -44,10 +37,10 @@ abstract class AbstractPoolTest extends AsyncTestCase
     {
         $pool = $this->createPool();
 
-        $this->assertTrue($pool->isIdle());
+        self::assertTrue($pool->isIdle());
 
         $result = $pool->shutdown();
-        $this->assertSame($result, $pool->shutdown());
+        self::assertSame($result, $pool->shutdown());
     }
 
     public function testPullShouldThrowStatusError()
@@ -57,7 +50,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
         $pool = $this->createPool();
 
-        $this->assertTrue($pool->isIdle());
+        self::assertTrue($pool->isIdle());
 
         $pool->shutdown();
 
@@ -67,14 +60,14 @@ abstract class AbstractPoolTest extends AsyncTestCase
     public function testGetMaxSize(): void
     {
         $pool = $this->createPool(17);
-        $this->assertEquals(17, $pool->getMaxSize());
+        self::assertEquals(17, $pool->getMaxSize());
     }
 
     public function testWorkersIdleOnStart()
     {
         $pool = $this->createPool();
 
-        $this->assertEquals(0, $pool->getIdleWorkerCount());
+        self::assertEquals(0, $pool->getIdleWorkerCount());
 
         $pool->shutdown();
     }
@@ -84,7 +77,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $returnValue = $pool->enqueue(new Fixtures\TestTask(42));
-        $this->assertEquals(42, $returnValue);
+        self::assertEquals(42, $returnValue);
 
         $pool->shutdown();
     }
@@ -94,12 +87,12 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $values = await([
-                async(fn() => $pool->enqueue(new Fixtures\TestTask(42))),
-                async(fn() => $pool->enqueue(new Fixtures\TestTask(56))),
-                async(fn() => $pool->enqueue(new Fixtures\TestTask(72))),
-            ]);
+            async(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
+            async(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
+            async(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
+        ]);
 
-        $this->assertEquals([42, 56, 72], $values);
+        self::assertEquals([42, 56, 72], $values);
 
         $pool->shutdown();
     }
@@ -112,7 +105,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
         $pool->kill();
 
-        $this->assertFalse($pool->isRunning());
+        self::assertFalse($pool->isRunning());
     }
 
     public function testGet()
@@ -120,12 +113,12 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $worker = $pool->getWorker();
-        $this->assertInstanceOf(Worker::class, $worker);
+        self::assertInstanceOf(Worker::class, $worker);
 
-        $this->assertTrue($worker->isRunning());
-        $this->assertTrue($worker->isIdle());
+        self::assertTrue($worker->isRunning());
+        self::assertTrue($worker->isIdle());
 
-        $this->assertSame(42, $worker->enqueue(new Fixtures\TestTask(42)));
+        self::assertSame(42, $worker->enqueue(new Fixtures\TestTask(42)));
 
         $worker->shutdown();
 
@@ -142,16 +135,16 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Promise {
-            return async(fn() => $pool->enqueue($task));
+            return async(fn () => $pool->enqueue($task));
         }, $tasks);
 
-        $this->assertSame($values, await($promises));
+        self::assertSame($values, await($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Promise {
-            return async(fn() => $pool->enqueue($task));
+            return async(fn () => $pool->enqueue($task));
         }, $tasks);
 
-        $this->assertSame($values, await($promises));
+        self::assertSame($values, await($promises));
 
         $pool->shutdown();
     }
@@ -176,10 +169,10 @@ abstract class AbstractPoolTest extends AsyncTestCase
             }, $values);
 
             $promises = \array_map(function (Task $task) use ($pool): Promise {
-                return async(fn() => $pool->enqueue($task));
+                return async(fn () => $pool->enqueue($task));
             }, $tasks);
 
-            $this->assertSame($values, await($promises));
+            self::assertSame($values, await($promises));
         }
     }
 
@@ -200,4 +193,11 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
         $worker2 = $pool->getWorker();
     }
+
+    /**
+     * @param int $max
+     *
+     * @return Pool
+     */
+    abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
 }

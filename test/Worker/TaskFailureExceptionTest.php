@@ -15,14 +15,14 @@ class TaskFailureExceptionTest extends AsyncTestCase
                 'file' => 'file-name.php',
                 'line' => 1,
                 'args' => [],
-            ]
+            ],
         ];
 
         $exception = new TaskFailureException('name', 'error_message', 0, $trace);
 
-        $this->assertSame('name', $exception->getOriginalClassName());
-        $this->assertSame('error_message', $exception->getOriginalMessage());
-        $this->assertSame(0, $exception->getOriginalCode());
-        $this->assertSame($trace, $exception->getOriginalTrace());
+        self::assertSame('name', $exception->getOriginalClassName());
+        self::assertSame('error_message', $exception->getOriginalMessage());
+        self::assertSame(0, $exception->getOriginalCode());
+        self::assertSame($trace, $exception->getOriginalTrace());
     }
 }

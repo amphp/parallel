@@ -40,30 +40,13 @@ final class SharedMemoryParcel implements Parcel
     private const STATE_MOVED = 2;
     private const STATE_FREED = 3;
 
-    /** @var string */
-    private string $id;
-
-    /** @var int The shared memory segment key. */
-    private int $key;
-
-    /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
-    private PosixSemaphore $semaphore;
-
-    /** @var resource|null An open handle to the shared memory segment. */
-    private $handle;
-
-    /** @var int */
-    private int $initializer = 0;
-
-    /** @var Serializer */
-    private Serializer $serializer;
-
     /**
-     * @param string $id
-     * @param mixed $value
-     * @param int $size The initial size in bytes of the shared memory segment. It will automatically be expanded as
-     *     necessary.
-     * @param int $permissions Permissions to access the semaphore. Use file permission format specified as 0xxx.
+     * @param string          $id
+     * @param mixed           $value
+     * @param int             $size The initial size in bytes of the shared memory segment. It will automatically be
+     *     expanded as necessary.
+     * @param int             $permissions Permissions to access the semaphore. Use file permission format specified as
+     *     0xxx.
      * @param Serializer|null $serializer
      *
      * @return self
@@ -85,7 +68,7 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * @param string $id
+     * @param string          $id
      * @param Serializer|null $serializer
      *
      * @return self
@@ -99,8 +82,25 @@ final class SharedMemoryParcel implements Parcel
         return $parcel;
     }
 
+    private static function makeKey(string $id): int
+    {
+        return \abs(\unpack("l", \md5($id, true))[1]);
+    }
+    /** @var string */
+    private string $id;
+    /** @var int The shared memory segment key. */
+    private int $key;
+    /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
+    private PosixSemaphore $semaphore;
+    /** @var resource|null An open handle to the shared memory segment. */
+    private $handle;
+    /** @var int */
+    private int $initializer = 0;
+    /** @var Serializer */
+    private Serializer $serializer;
+
     /**
-     * @param string $id
+     * @param string          $id
      * @param Serializer|null $serializer
      */
     private function __construct(string $id, ?Serializer $serializer = null)
@@ -112,6 +112,75 @@ final class SharedMemoryParcel implements Parcel
         $this->id = $id;
         $this->key = self::makeKey($this->id);
         $this->serializer = $serializer ?? new NativeSerializer;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function unwrap(): mixed
+    {
+        $lock = $this->semaphore->acquire();
+
+        try {
+            return $this->getValue();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function synchronized(callable $callback): mixed
+    {
+        $lock = $this->semaphore->acquire();
+
+        try {
+            $result = $callback($this->getValue());
+
+            if ($result !== null) {
+                $this->wrap($result);
+            }
+        } finally {
+            $lock->release();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Frees the shared object from memory.
+     *
+     * The memory containing the shared value will be invalidated. When all
+     * process disconnect from the object, the shared memory block will be
+     * destroyed by the OS.
+     */
+    public function __destruct()
+    {
+        if ($this->initializer === 0 || $this->initializer !== \getmypid()) {
+            return;
+        }
+
+        if ($this->isFreed()) {
+            return;
+        }
+
+        // Invalidate the memory block by setting its state to FREED.
+        $this->setHeader(static::STATE_FREED, 0, 0);
+
+        // Request the block to be deleted, then close our local handle.
+        $this->memDelete();
+        $this->handle = null;
+
+        unset($this->semaphore);
+    }
+
+    /**
+     * Throws to prevent serialization.
+     */
+    public function __sleep()
+    {
+        throw new \Error("Cannot serialize " . self::class);
     }
 
     /**
@@ -166,20 +235,6 @@ final class SharedMemoryParcel implements Parcel
         }
 
         return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unwrap(): mixed
-    {
-        $lock = $this->semaphore->acquire();
-
-        try {
-            return $this->getValue();
-        } finally {
-            $lock->release();
-        }
     }
 
     /**
@@ -246,66 +301,10 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function synchronized(callable $callback): mixed
-    {
-        $lock = $this->semaphore->acquire();
-
-        try {
-            $result = $callback($this->getValue());
-
-            if ($result !== null) {
-                $this->wrap($result);
-            }
-        } finally {
-            $lock->release();
-        }
-
-        return $result;
-    }
-
-
-    /**
-     * Frees the shared object from memory.
-     *
-     * The memory containing the shared value will be invalidated. When all
-     * process disconnect from the object, the shared memory block will be
-     * destroyed by the OS.
-     */
-    public function __destruct()
-    {
-        if ($this->initializer === 0 || $this->initializer !== \getmypid()) {
-            return;
-        }
-
-        if ($this->isFreed()) {
-            return;
-        }
-
-        // Invalidate the memory block by setting its state to FREED.
-        $this->setHeader(static::STATE_FREED, 0, 0);
-
-        // Request the block to be deleted, then close our local handle.
-        $this->memDelete();
-        $this->handle = null;
-
-        $this->semaphore = null;
-    }
-
-    /**
      * Private method to prevent cloning.
      */
     private function __clone()
     {
-    }
-
-    /**
-     * Throws to prevent serialization.
-     */
-    public function __sleep()
-    {
-        throw new \Error("Cannot serialize " . self::class);
     }
 
     /**
@@ -348,8 +347,8 @@ final class SharedMemoryParcel implements Parcel
     /**
      * Sets the header data for the current memory segment.
      *
-     * @param int $state       An object state.
-     * @param int $size        The size of the stored data, or other value.
+     * @param int $state An object state.
+     * @param int $size The size of the stored data, or other value.
      * @param int $permissions The permissions mask on the memory segment.
      *
      * @throws SharedMemoryException
@@ -363,10 +362,10 @@ final class SharedMemoryParcel implements Parcel
     /**
      * Opens a shared memory handle.
      *
-     * @param int    $key         The shared memory key.
-     * @param string $mode        The mode to open the shared memory in.
+     * @param int    $key The shared memory key.
+     * @param string $mode The mode to open the shared memory in.
      * @param int    $permissions Process permissions on the shared memory.
-     * @param int    $size        The size to crate the shared memory in bytes.
+     * @param int    $size The size to crate the shared memory in bytes.
      *
      * @throws SharedMemoryException
      */
@@ -386,7 +385,7 @@ final class SharedMemoryParcel implements Parcel
      * Reads binary data from shared memory.
      *
      * @param int $offset The offset to read from.
-     * @param int $size   The number of bytes to read.
+     * @param int $size The number of bytes to read.
      *
      * @return string The binary data at the given offset.
      *
@@ -408,7 +407,7 @@ final class SharedMemoryParcel implements Parcel
      * Writes binary data to shared memory.
      *
      * @param int    $offset The offset to write to.
-     * @param string $data   The binary data to write.
+     * @param string $data The binary data to write.
      *
      * @throws SharedMemoryException
      */
@@ -435,10 +434,5 @@ final class SharedMemoryParcel implements Parcel
                 'Failed to discard shared memory block' . ($error['message'] ?? 'unknown error')
             );
         }
-    }
-
-    private static function makeKey(string $id): int
-    {
-        return \abs(\unpack("l", \md5($id, true))[1]);
     }
 }

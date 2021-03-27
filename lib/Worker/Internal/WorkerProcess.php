@@ -6,7 +6,7 @@ use Amp\ByteStream;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\Process;
 
-/** @internal  */
+/** @internal */
 class WorkerProcess implements Context
 {
     /** @var Process */

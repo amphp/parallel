@@ -4,10 +4,10 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
+use Amp\Promise;
 use function Amp\await;
-use function Amp\call;
-use function Amp\delay;
-use function Amp\getCurrentTime;
+use function Revolt\EventLoop\delay;
+use function Revolt\EventLoop\getCurrentTime;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -98,7 +98,8 @@ if (\function_exists("cli_set_process_title")) {
             throw new \Error(\sprintf("Script '%s' contains a parse error: " . $exception->getMessage(), $argv[0]), 0, $exception);
         }
 
-        $result = new Sync\ExitSuccess(await(call($callable, $channel)));
+        $returnValue = $callable($channel);
+        $result = new Sync\ExitSuccess($returnValue instanceof Promise ? await($returnValue) : $returnValue);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }

@@ -50,7 +50,10 @@ abstract class TaskWorker implements Worker
         $jobQueue = &$this->jobQueue;
         $receive = &$this->receivePromise;
         $this->onResolve = $onResolve = static function (?\Throwable $exception, mixed $data) use (
-            $context, &$jobQueue, &$receive, &$onResolve
+            $context,
+            &$jobQueue,
+            &$receive,
+            &$onResolve
         ): void {
             $receive = null;
 
@@ -76,7 +79,7 @@ abstract class TaskWorker implements Worker
                 $deferred->resolve($data->promise());
             } finally {
                 if ($receive === null && !empty($jobQueue)) {
-                    $receive = async(fn() => $context->receive());
+                    $receive = async(fn () => $context->receive());
                     $receive->onResolve($onResolve);
                 }
             }
@@ -126,7 +129,7 @@ abstract class TaskWorker implements Worker
 
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                await(Promise\timeout(async(fn() => $this->context->join()), self::ERROR_TIMEOUT));
+                await(Promise\timeout(async(fn () => $this->context->join()), self::ERROR_TIMEOUT));
             } catch (TimeoutException $timeout) {
                 $this->kill();
             } catch (\Throwable $exception) {
@@ -151,7 +154,7 @@ abstract class TaskWorker implements Worker
                     return;
                 }
             });
-            $promise->onResolve(static fn() => $token->unsubscribe($cancellationId));
+            $promise->onResolve(static fn () => $token->unsubscribe($cancellationId));
         }
 
         if ($this->receivePromise === null) {
@@ -184,7 +187,7 @@ abstract class TaskWorker implements Worker
             $this->context->send(null);
 
             try {
-                return await(Promise\timeout(async(fn() => $this->context->join()), self::SHUTDOWN_TIMEOUT));
+                return await(Promise\timeout(async(fn () => $this->context->join()), self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);

@@ -10,6 +10,8 @@ class UnserializableResultTask implements Task
 {
     public function run(Environment $environment, CancellationToken $token): mixed
     {
-        return function () {}; // Anonymous functions are not serializable.
+        return function () {
+            // Anonymous functions are not serializable.
+        };
     }
 }

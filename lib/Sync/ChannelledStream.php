@@ -25,8 +25,8 @@ final class ChannelledStream implements Channel
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
      *
-     * @param InputStream $read
-     * @param OutputStream $write
+     * @param InputStream     $read
+     * @param OutputStream    $write
      * @param Serializer|null $serializer
      */
     public function __construct(InputStream $read, OutputStream $write, ?Serializer $serializer = null)

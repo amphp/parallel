@@ -3,14 +3,14 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Deferred;
-use Amp\Loop;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Promise;
 use Amp\TimeoutException;
+use Revolt\EventLoop\Loop;
 use function Amp\async;
 use function Amp\await;
-use function Amp\defer;
+use function Revolt\EventLoop\defer;
 
 class ProcessHub
 {
@@ -79,7 +79,7 @@ class ProcessHub
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = await(Promise\timeout(async(fn() => $channel->receive()), self::KEY_RECEIVE_TIMEOUT));
+                            $received = await(Promise\timeout(async(fn () => $channel->receive()), self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.

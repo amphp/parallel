@@ -10,40 +10,25 @@ use function Amp\async;
 
 class ChannelledSocketTest extends AsyncTestCase
 {
-    /**
-     * @return resource[]
-     */
-    protected function createSockets()
+    public function testSendReceive(): void
     {
-        if (($sockets = @\stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP)) === false) {
-            $message = "Failed to create socket pair";
-            if ($error = \error_get_last()) {
-                $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
-            }
-            $this->fail($message);
-        }
-        return $sockets;
-    }
-
-    public function testSendReceive()
-    {
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $b = new ChannelledSocket($right, $right);
 
         $message = 'hello';
 
-        async(fn() => $a->send($message));
+        async(fn () => $a->send($message));
         $data = $b->receive();
-        $this->assertSame($message, $data);
+        self::assertSame($message, $data);
     }
 
     /**
      * @depends testSendReceive
      */
-    public function testSendReceiveLongData()
+    public function testSendReceiveLongData(): void
     {
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $b = new ChannelledSocket($right, $right);
 
@@ -53,19 +38,19 @@ class ChannelledSocketTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        async(fn() => $a->send($message));
+        async(fn () => $a->send($message));
         $data = $b->receive();
-        $this->assertSame($message, $data);
+        self::assertSame($message, $data);
     }
 
     /**
      * @depends testSendReceive
      */
-    public function testInvalidDataReceived()
+    public function testInvalidDataReceived(): void
     {
         $this->expectException(ChannelException::class);
 
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $b = new ChannelledSocket($right, $right);
 
@@ -76,27 +61,28 @@ class ChannelledSocketTest extends AsyncTestCase
     /**
      * @depends testSendReceive
      */
-    public function testSendUnserializableData()
+    public function testSendUnserializableData(): void
     {
         $this->expectException(SerializationException::class);
 
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $b = new ChannelledSocket($right, $right);
 
         // Close $a. $b should close on next read...
-        $a->send(function () {});
+        $a->send(function () {
+        });
         $data = $b->receive();
     }
 
     /**
      * @depends testSendReceive
      */
-    public function testSendAfterClose()
+    public function testSendAfterClose(): void
     {
         $this->expectException(ChannelException::class);
 
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
@@ -106,14 +92,33 @@ class ChannelledSocketTest extends AsyncTestCase
     /**
      * @depends testSendReceive
      */
-    public function testReceiveAfterClose()
+    public function testReceiveAfterClose(): void
     {
         $this->expectException(ChannelException::class);
 
-        list($left, $right) = $this->createSockets();
+        [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
         $data = $a->receive();
+    }
+
+    /**
+     * @return resource[]
+     */
+    protected function createSockets(): array
+    {
+        if (($sockets = @\stream_socket_pair(
+            \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+            STREAM_SOCK_STREAM,
+            STREAM_IPPROTO_IP
+        )) === false) {
+            $message = "Failed to create socket pair";
+            if ($error = \error_get_last()) {
+                $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);
+            }
+            self::fail($message);
+        }
+        return $sockets;
     }
 }

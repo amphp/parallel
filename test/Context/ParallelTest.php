@@ -18,18 +18,18 @@ class ParallelTest extends AbstractContextTest
     public function testGetId()
     {
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/test-process.php",
-                "Test"
-            ]);
+            __DIR__ . "/Fixtures/test-process.php",
+            "Test",
+        ]);
 
         $context->start();
-        $this->assertIsInt($context->getId());
+        self::assertIsInt($context->getId());
         $context->join();
 
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/test-process.php",
-                "Test"
-            ]);
+            __DIR__ . "/Fixtures/test-process.php",
+            "Test",
+        ]);
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('The thread has not been started');
@@ -40,13 +40,13 @@ class ParallelTest extends AbstractContextTest
     public function testRunStartsThread()
     {
         $thread = Parallel::run([
-                __DIR__ . "/Fixtures/test-process.php",
-                "Test"
-            ]);
+            __DIR__ . "/Fixtures/test-process.php",
+            "Test",
+        ]);
 
-        $this->assertInstanceOf(Parallel::class, $thread);
-        $this->assertTrue($thread->isRunning());
-        $this->assertIsInt($thread->getId());
+        self::assertInstanceOf(Parallel::class, $thread);
+        self::assertTrue($thread->isRunning());
+        self::assertIsInt($thread->getId());
 
         $thread->join();
     }

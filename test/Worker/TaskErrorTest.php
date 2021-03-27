@@ -7,10 +7,10 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class TaskErrorTest extends AsyncTestCase
 {
-    public function testGetWorkerTrace()
+    public function testGetWorkerTrace(): void
     {
         $taskError = new TaskError('name', 'error_message', 'error_message_trace');
 
-        $this->assertSame('error_message_trace', $taskError->getWorkerTrace());
+        self::assertSame('error_message_trace', $taskError->getWorkerTrace());
     }
 }

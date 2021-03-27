@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Loop;
-use Amp\Struct;
+use Revolt\EventLoop\Internal\Struct;
+use Revolt\EventLoop\Loop;
 
 final class BasicEnvironment implements Environment
 {
@@ -21,7 +21,7 @@ final class BasicEnvironment implements Environment
         $this->timer = Loop::repeat(1000, static function (string $watcherId) use ($queue, &$data): void {
             $time = \time();
             while (!$queue->isEmpty()) {
-                list($key, $expiration) = $queue->top();
+                [$key, $expiration] = $queue->top();
 
                 if (!isset($data[$key])) {
                     // Item removed.
@@ -98,8 +98,8 @@ final class BasicEnvironment implements Environment
 
     /**
      * @param string $key
-     * @param mixed $value Using null for the value deletes the key.
-     * @param int $ttl Number of seconds until data is automatically deleted. Use null for unlimited TTL.
+     * @param mixed  $value Using null for the value deletes the key.
+     * @param int    $ttl Number of seconds until data is automatically deleted. Use null for unlimited TTL.
      *
      * @throws \Error If the time-to-live is not a positive integer.
      */
@@ -116,6 +116,7 @@ final class BasicEnvironment implements Environment
 
         $struct = new class {
             use Struct;
+
             public mixed $data;
             public int $expire = 0;
             public ?int $ttl = null;
@@ -170,7 +171,7 @@ final class BasicEnvironment implements Environment
      * Alias of set() with $ttl = null.
      *
      * @param string $key
-     * @param mixed $value
+     * @param mixed  $value
      */
     public function offsetSet($key, $value): void
     {

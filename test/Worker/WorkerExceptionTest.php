@@ -7,10 +7,10 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class WorkerExceptionTest extends AsyncTestCase
 {
-    public function testConstructorShouldBeInstance()
+    public function testConstructorShouldBeInstance(): void
     {
         $workerException = new WorkerException('work_exception_message');
 
-        $this->assertInstanceOf(WorkerException::class, $workerException);
+        self::assertInstanceOf(WorkerException::class, $workerException);
     }
 }

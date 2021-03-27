@@ -28,7 +28,10 @@ final class Job
     {
         // Classes that cannot be autoloaded will be unserialized as an instance of __PHP_Incomplete_Class.
         if ($this->task instanceof \__PHP_Incomplete_Class) {
-            throw new \Error(\sprintf("Classes implementing %s must be autoloadable by the Composer autoloader", Task::class));
+            throw new \Error(\sprintf(
+                "Classes implementing %s must be autoloadable by the Composer autoloader",
+                Task::class
+            ));
         }
 
         return $this->task;

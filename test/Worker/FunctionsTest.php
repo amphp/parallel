@@ -17,25 +17,25 @@ function nonAutoloadableFunction(): void
 
 class FunctionsTest extends AsyncTestCase
 {
-    public function testPool()
+    public function testPool(): void
     {
         $pool = $this->createMock(Pool::class);
 
         Worker\pool($pool);
 
-        $this->assertSame(Worker\pool(), $pool);
+        self::assertSame(Worker\pool(), $pool);
     }
 
     /**
      * @depends testPool
      */
-    public function testEnqueue()
+    public function testEnqueue(): void
     {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task): mixed {
+            ->willReturnCallback(function (Task $task): mixed {
                 return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
-            }));
+            });
 
         Worker\pool($pool);
 
@@ -43,17 +43,17 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        $this->assertSame($value, Worker\enqueue($task));
+        self::assertSame($value, Worker\enqueue($task));
     }
 
     /**
      * @depends testPool
      */
-    public function testEnqueueCallable()
+    public function testEnqueueCallable(): void
     {
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
-            ->will($this->returnCallback(function (Task $task): string {
+            ->will(self::returnCallback(function (Task $task): string {
                 return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
             }));
 
@@ -61,19 +61,19 @@ class FunctionsTest extends AsyncTestCase
 
         $value = 42;
 
-        $this->assertSame('42', Worker\enqueueCallable('strval', $value));
+        self::assertSame('42', Worker\enqueueCallable('strval', $value));
     }
 
     /**
      * @depends testEnqueueCallable
      */
-    public function testEnqueueCallableIntegration()
+    public function testEnqueueCallableIntegration(): void
     {
         Worker\pool($pool = new Worker\DefaultPool);
 
         $value = 42;
 
-        $this->assertSame('42', Worker\enqueueCallable('strval', $value));
+        self::assertSame('42', Worker\enqueueCallable('strval', $value));
 
         $pool->shutdown();
     }
@@ -81,7 +81,7 @@ class FunctionsTest extends AsyncTestCase
     /**
      * @depends testEnqueueCallable
      */
-    public function testEnqueueNonAutoloadableCallable()
+    public function testEnqueueNonAutoloadableCallable(): void
     {
         $this->expectException(Worker\TaskError::class);
         $this->expectExceptionMessage('User-defined functions must be autoloadable');
@@ -94,41 +94,42 @@ class FunctionsTest extends AsyncTestCase
             $pool->shutdown();
         }
     }
+
     /**
      * @depends testPool
      */
-    public function testWorker()
+    public function testWorker(): void
     {
         $pool = $this->createMock(Pool::class);
-        $pool->expects($this->once())
+        $pool->expects(self::once())
             ->method('getWorker')
-            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
+            ->will(self::returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\pool($pool);
 
         $worker = Worker\worker();
 
-        $this->assertInstanceOf(Worker\Worker::class, $worker);
+        self::assertInstanceOf(Worker\Worker::class, $worker);
     }
 
-    public function testFactory()
+    public function testFactory(): void
     {
         $factory = $this->createMock(WorkerFactory::class);
 
         Worker\factory($factory);
 
-        $this->assertSame(Worker\factory(), $factory);
+        self::assertSame(Worker\factory(), $factory);
     }
 
     /**
      * @depends testFactory
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $factory = $this->createMock(WorkerFactory::class);
-        $factory->expects($this->once())
+        $factory->expects(self::once())
             ->method('create')
-            ->will($this->returnValue($this->createMock(Worker\Worker::class)));
+            ->will(self::returnValue($this->createMock(Worker\Worker::class)));
 
         Worker\factory($factory);
         Worker\create(); // shouldn't throw

@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -12,6 +11,7 @@ use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\Promise;
 use Amp\TimeoutException;
+use Revolt\EventLoop\Loop;
 use function Amp\async;
 use function Amp\await;
 
@@ -253,7 +253,7 @@ final class Process implements Context
             }
 
             try {
-                $data = await(Promise\timeout(async(fn() => $this->join()), 100));
+                $data = await(Promise\timeout(async(fn () => $this->join()), 100));
             } catch (ContextException | ChannelException | TimeoutException $ex) {
                 if ($this->isRunning()) {
                     $this->kill();

@@ -13,7 +13,7 @@ class BootstrapWorkerFactoryTest extends AsyncTestCase
 
         $worker = $factory->create();
 
-        $this->assertTrue($worker->enqueue(new Fixtures\AutoloadTestTask));
+        self::assertTrue($worker->enqueue(new Fixtures\AutoloadTestTask));
 
         $worker->shutdown();
     }

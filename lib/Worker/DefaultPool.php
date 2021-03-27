@@ -8,7 +8,7 @@ use Amp\Parallel\Context\StatusError;
 use Amp\Promise;
 use function Amp\async;
 use function Amp\await;
-use function Amp\defer;
+use function Revolt\EventLoop\defer;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -177,7 +177,7 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = async(fn() => $worker->shutdown());
+                $shutdowns[] = async(fn () => $worker->shutdown());
             }
         }
 

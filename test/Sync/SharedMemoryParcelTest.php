@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Delayed;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\SharedMemoryException;
@@ -10,6 +9,7 @@ use Amp\Parallel\Sync\SharedMemoryParcel;
 use Amp\Sync\SyncException;
 use function Amp\async;
 use function Amp\await;
+use function Revolt\EventLoop\delay;
 
 /**
  * @requires extension shmop
@@ -20,12 +20,6 @@ class SharedMemoryParcelTest extends AbstractParcelTest
     const ID = __CLASS__;
 
     private ?SharedMemoryParcel $parcel;
-
-    protected function createParcel($value): Parcel
-    {
-        $this->parcel = SharedMemoryParcel::create(self::ID, $value);
-        return $this->parcel;
-    }
 
     public function tearDown(): void
     {
@@ -39,31 +33,31 @@ class SharedMemoryParcelTest extends AbstractParcelTest
             return 'hello world';
         });
 
-        $this->assertEquals('hello world', yield $object->unwrap());
+        self::assertEquals('hello world', yield $object->unwrap());
     }
 
     /**
      * @group posix
      * @requires extension pcntl
      */
-    public function testSetInSeparateProcess(): \Generator
+    public function testSetInSeparateProcess(): void
     {
         $object = SharedMemoryParcel::create(self::ID, 42);
 
         $process = new Process([__DIR__ . '/Fixture/parcel.php', self::ID]);
 
-        $promise = async(fn() => $object->synchronized(function (int $value): \Generator {
+        $promise = async(fn () => $object->synchronized(function (int $value): int {
             $this->assertSame(42, $value);
-            yield new Delayed(500); // Child must wait until parent finishes with parcel.
+            delay(500); // Child must wait until parent finishes with parcel.
             return $value + 1;
         }));
 
         $process->start();
 
-        $this->assertSame(43, await($promise));
+        self::assertSame(43, await($promise));
 
-        $this->assertSame(44, $process->join()); // Wait for child process to finish.
-        $this->assertEquals(44, $object->unwrap());
+        self::assertSame(44, $process->join()); // Wait for child process to finish.
+        self::assertEquals(44, $object->unwrap());
     }
 
     public function testInvalidSize(): void
@@ -81,7 +75,6 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
         SharedMemoryParcel::create(self::ID, 42, 8192, 0);
     }
-
 
     public function testNotFound(): void
     {
@@ -106,5 +99,11 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         $this->expectExceptionMessage('Failed to create shared memory block');
 
         SharedMemoryParcel::create(self::ID, 42, 1 << 50);
+    }
+
+    protected function createParcel($value): Parcel
+    {
+        $this->parcel = SharedMemoryParcel::create(self::ID, $value);
+        return $this->parcel;
     }
 }

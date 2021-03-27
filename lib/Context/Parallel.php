@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\Loop;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitFailure;
@@ -13,9 +12,9 @@ use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Promise;
 use Amp\TimeoutException;
 use parallel\Runtime;
+use Revolt\EventLoop\Loop;
 use function Amp\async;
 use function Amp\await;
-use function Amp\call;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
@@ -30,30 +29,6 @@ final class Parallel implements Context
 
     /** @var int Next thread ID. */
     private static int $nextId = 1;
-
-    /** @var Internal\ProcessHub */
-    private Internal\ProcessHub $hub;
-
-    /** @var int|null */
-    private ?int $id = null;
-
-    /** @var Runtime|null */
-    private ?Runtime $runtime = null;
-
-    /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
-    private ?ChannelledSocket $channel = null;
-
-    /** @var string Script path. */
-    private string $script;
-
-    /** @var string[] */
-    private array $args = [];
-
-    /** @var int */
-    private int $oid = 0;
-
-    /** @var bool */
-    private bool $killed = false;
 
     /**
      * Checks if threading is enabled.
@@ -79,6 +54,22 @@ final class Parallel implements Context
         $thread->start();
         return $thread;
     }
+    /** @var Internal\ProcessHub */
+    private Internal\ProcessHub $hub;
+    /** @var int|null */
+    private ?int $id = null;
+    /** @var Runtime|null */
+    private ?Runtime $runtime = null;
+    /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
+    private ?ChannelledSocket $channel = null;
+    /** @var string Script path. */
+    private string $script;
+    /** @var string[] */
+    private array $args = [];
+    /** @var int */
+    private int $oid = 0;
+    /** @var bool */
+    private bool $killed = false;
 
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
@@ -179,7 +170,13 @@ final class Parallel implements Context
 
         $this->id = self::$nextId++;
 
-        $future = $this->runtime->run(static function (int $id, string $uri, string $key, string $path, array $argv): int {
+        $future = $this->runtime->run(static function (
+            int $id,
+            string $uri,
+            string $key,
+            string $path,
+            array $argv
+        ): int {
             // @codeCoverageIgnoreStart
             // Only executed in thread.
             \define("AMP_CONTEXT", "parallel");
@@ -207,23 +204,35 @@ final class Parallel implements Context
 
                 try {
                     if (!\is_file($path)) {
-                        throw new \Error(\sprintf("No script found at '%s' (be sure to provide the full path to the script)", $path));
+                        throw new \Error(\sprintf(
+                            "No script found at '%s' (be sure to provide the full path to the script)",
+                            $path
+                        ));
                     }
 
                     $argc = \array_unshift($argv, $path);
 
                     try {
                         // Protect current scope by requiring script within another function.
-                        $callable = (function () use ($argc, $argv): callable { // Using $argc so it is available to the required script.
+                        $callable = (function () use (
+                            $argc,
+                            $argv
+                        ): callable { // Using $argc so it is available to the required script.
                             return require $argv[0];
                         })->bindTo(null, null)();
                     } catch (\TypeError $exception) {
-                        throw new \Error(\sprintf("Script '%s' did not return a callable function", $path), 0, $exception);
+                        throw new \Error(
+                            \sprintf("Script '%s' did not return a callable function", $path),
+                            0,
+                            $exception
+                        );
                     } catch (\ParseError $exception) {
                         throw new \Error(\sprintf("Script '%s' contains a parse error", $path), 0, $exception);
                     }
 
-                    $result = new ExitSuccess(await(call($callable, $channel)));
+                    $returnValue = $callable($channel);
+
+                    $result = new ExitSuccess($returnValue instanceof Promise ? await($returnValue) : $returnValue);
                 } catch (\Throwable $exception) {
                     $result = new ExitFailure($exception);
                 }
@@ -235,7 +244,10 @@ final class Parallel implements Context
                     $channel->send(new ExitFailure($exception));
                 }
             } catch (\Throwable $exception) {
-                \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
+                \trigger_error(
+                    "Could not send result to parent; be sure to shutdown the child before ending the parent",
+                    E_USER_ERROR
+                );
                 return 1;
             } finally {
                 $channel->close();
@@ -248,7 +260,7 @@ final class Parallel implements Context
             $this->hub->getUri(),
             $this->hub->generateKey($this->id, self::KEY_LENGTH),
             $this->script,
-            $this->args
+            $this->args,
         ]);
 
         try {
@@ -278,22 +290,6 @@ final class Parallel implements Context
                 $this->close();
             }
         }
-    }
-
-    /**
-     * Closes channel and socket if still open.
-     */
-    private function close(): void
-    {
-        $this->runtime = null;
-
-        if ($this->channel !== null) {
-            $this->channel->close();
-        }
-
-        $this->channel = null;
-
-        $this->hub->remove($this->id);
     }
 
     /**
@@ -340,7 +336,11 @@ final class Parallel implements Context
         try {
             $data = $this->channel->receive();
         } catch (ChannelException $e) {
-            throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+            throw new ContextException(
+                "The thread stopped responding, potentially due to a fatal error or calling exit",
+                0,
+                $e
+            );
         }
 
         if ($data instanceof ExitResult) {
@@ -371,14 +371,22 @@ final class Parallel implements Context
             $this->channel->send($data);
         } catch (ChannelException $e) {
             if ($this->channel === null) {
-                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                throw new ContextException(
+                    "The thread stopped responding, potentially due to a fatal error or calling exit",
+                    0,
+                    $e
+                );
             }
 
             try {
-                $data = await(Promise\timeout(async(fn() => $this->join()), 100));
+                $data = await(Promise\timeout(async(fn () => $this->join()), 100));
             } catch (ContextException | ChannelException | TimeoutException $ex) {
                 $this->kill();
-                throw new ContextException("The thread stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                throw new ContextException(
+                    "The thread stopped responding, potentially due to a fatal error or calling exit",
+                    0,
+                    $e
+                );
             }
 
             throw new SynchronizationError(\sprintf(
@@ -402,5 +410,21 @@ final class Parallel implements Context
         }
 
         return $this->id;
+    }
+
+    /**
+     * Closes channel and socket if still open.
+     */
+    private function close(): void
+    {
+        $this->runtime = null;
+
+        if ($this->channel !== null) {
+            $this->channel->close();
+        }
+
+        $this->channel = null;
+
+        $this->hub->remove($this->id);
     }
 }

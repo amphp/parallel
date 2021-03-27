@@ -12,6 +12,6 @@ class DefaultContextFactoryTest extends AsyncTestCase
     {
         $factory = new DefaultContextFactory;
         $context = $factory->create(__DIR__ . '/Fixtures/test-process.php');
-        $this->assertInstanceOf(Context::class, $context);
+        self::assertInstanceOf(Context::class, $context);
     }
 }

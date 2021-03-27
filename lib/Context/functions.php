@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\Loop;
+use Revolt\EventLoop\Loop;
 
 const LOOP_FACTORY_IDENTIFIER = ContextFactory::class;
 

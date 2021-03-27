@@ -12,38 +12,6 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class ChannelledStreamTest extends AsyncTestCase
 {
-    /**
-     * @return InputStream|OutputStream
-     */
-    protected function createMockStream()
-    {
-        return new class implements InputStream, OutputStream {
-            private string $buffer = "";
-
-            public function read(): ?string
-            {
-                $data = $this->buffer;
-                $this->buffer = "";
-                return $data;
-            }
-
-            public function write(string $data): void
-            {
-                $this->buffer .= $data;
-            }
-
-            public function end(string $finalData = ""): void
-            {
-                throw new \BadMethodCallException;
-            }
-
-            public function close()
-            {
-                throw new \BadMethodCallException;
-            }
-        };
-    }
-
     public function testSendReceive()
     {
         $mock = $this->createMockStream();
@@ -105,7 +73,8 @@ class ChannelledStreamTest extends AsyncTestCase
         $b = new ChannelledStream($mock, $mock);
 
         // Close $a. $b should close on next read...
-        $a->send(function () {});
+        $a->send(function () {
+        });
         $data = $b->receive();
     }
 
@@ -118,8 +87,8 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $mock = $this->createMock(OutputStream::class);
         $mock->expects($this->once())
-                ->method('write')
-                ->will($this->throwException(new StreamException));
+            ->method('write')
+            ->will($this->throwException(new StreamException));
 
         $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
         $b = new ChannelledStream(
@@ -139,11 +108,43 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $mock = $this->createMock(InputStream::class);
         $mock->expects($this->once())
-                ->method('read')
-                ->willReturn(null);
+            ->method('read')
+            ->willReturn(null);
 
         $a = new ChannelledStream($mock, $this->createMock(OutputStream::class));
 
         $data = $a->receive();
+    }
+
+    /**
+     * @return InputStream|OutputStream
+     */
+    protected function createMockStream(): InputStream|OutputStream
+    {
+        return new class implements InputStream, OutputStream {
+            private string $buffer = "";
+
+            public function read(): ?string
+            {
+                $data = $this->buffer;
+                $this->buffer = "";
+                return $data;
+            }
+
+            public function write(string $data): void
+            {
+                $this->buffer .= $data;
+            }
+
+            public function end(string $finalData = ""): void
+            {
+                throw new \BadMethodCallException;
+            }
+
+            public function close()
+            {
+                throw new \BadMethodCallException;
+            }
+        };
     }
 }

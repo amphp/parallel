@@ -10,11 +10,11 @@ final class WorkerProcess extends TaskWorker
     private const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
 
     /**
-     * @param string      $envClassName  Name of class implementing \Amp\Parallel\Worker\Environment to instigate.
+     * @param string      $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate.
      *     Defaults to \Amp\Parallel\Worker\BasicEnvironment.
-     * @param mixed[]     $env           Array of environment variables to pass to the worker. Empty array inherits from the current
-     *     PHP process. See the $env parameter of \Amp\Process\Process::__construct().
-     * @param string|null $binary        Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param mixed[]     $env Array of environment variables to pass to the worker. Empty array inherits from the
+     *     current PHP process. See the $env parameter of \Amp\Process\Process::__construct().
+     * @param string|null $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param string|null $bootstrapPath Path to custom bootstrap file.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.

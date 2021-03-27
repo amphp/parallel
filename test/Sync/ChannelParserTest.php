@@ -9,7 +9,7 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class ChannelParserTest extends AsyncTestCase
 {
-    public function testCorruptedData()
+    public function testCorruptedData(): void
     {
         $this->expectException(SerializationException::class);
         $this->expectExceptionMessage('Exception thrown when unserializing data');
@@ -20,7 +20,7 @@ class ChannelParserTest extends AsyncTestCase
         $parser->push($data);
     }
 
-    public function testInvalidHeaderData()
+    public function testInvalidHeaderData(): void
     {
         $this->expectException(ChannelException::class);
         $this->expectExceptionMessage('Invalid packet received: Invalid packet');
@@ -30,7 +30,7 @@ class ChannelParserTest extends AsyncTestCase
         $parser->push($data);
     }
 
-    public function testInvalidHeaderBinaryData()
+    public function testInvalidHeaderBinaryData(): void
     {
         $this->expectException(ChannelException::class);
         $this->expectExceptionMessage('Invalid packet received: B \xf3\xf2\x0\x1');

@@ -4,28 +4,25 @@ namespace Amp\Parallel\Test\Sync;
 
 use Amp\Parallel\Sync\Parcel;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
 
 abstract class AbstractParcelTest extends AsyncTestCase
 {
-    abstract protected function createParcel($value): Parcel;
-
-    public function testUnwrapIsOfCorrectType()
+    public function testUnwrapIsOfCorrectType(): void
     {
         $parcel = $this->createParcel(new \stdClass);
         \assert($parcel instanceof Parcel);
-        $this->assertInstanceOf('stdClass', $parcel->unwrap());
+        self::assertInstanceOf('stdClass', $parcel->unwrap());
     }
 
-    public function testUnwrapIsEqual()
+    public function testUnwrapIsEqual(): void
     {
         $object = new \stdClass;
         $parcel = $this->createParcel($object);
         \assert($parcel instanceof Parcel);
-        $this->assertEquals($object, $parcel->unwrap());
+        self::assertEquals($object, $parcel->unwrap());
     }
 
-    public function testSynchronized()
+    public function testSynchronized(): void
     {
         $parcel = $this->createParcel(0);
         \assert($parcel instanceof Parcel);
@@ -36,7 +33,7 @@ abstract class AbstractParcelTest extends AsyncTestCase
             return 1;
         });
 
-        $this->assertSame(1, $value);
+        self::assertSame(1, $value);
 
         $value = $parcel->synchronized(function ($value) {
             $this->assertSame(1, $value);
@@ -44,6 +41,8 @@ abstract class AbstractParcelTest extends AsyncTestCase
             return 2;
         });
 
-        $this->assertSame(2, $value);
+        self::assertSame(2, $value);
     }
+
+    abstract protected function createParcel($value): Parcel;
 }

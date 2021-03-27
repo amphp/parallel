@@ -14,9 +14,9 @@ class TaskError extends \Error
     private string $trace;
 
     /**
-     * @param string          $name     The exception class name.
-     * @param string          $message  The panic message.
-     * @param string          $trace    The panic stack trace.
+     * @param string          $name The exception class name.
+     * @param string          $message The panic message.
+     * @param string          $trace The panic stack trace.
      * @param \Throwable|null $previous Previous exception.
      */
     public function __construct(string $name, string $message = '', string $trace = '', ?\Throwable $previous = null)
@@ -28,11 +28,11 @@ class TaskError extends \Error
     }
 
     /**
+     * @return string
      * @deprecated Use TaskFailureThrowable::getOriginalClassName() instead.
      *
      * Returns the class name of the error thrown from the task.
      *
-     * @return string
      */
     public function getName(): string
     {
@@ -40,11 +40,11 @@ class TaskError extends \Error
     }
 
     /**
+     * @return string
      * @deprecated Use TaskFailureThrowable::getOriginalTraceAsString() instead.
      *
      * Gets the stack trace at the point the error was thrown in the task.
      *
-     * @return string
      */
     public function getWorkerTrace(): string
     {

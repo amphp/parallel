@@ -10,7 +10,7 @@ use function Amp\await;
 
 class TaskFailureTest extends AsyncTestCase
 {
-    public function testWithException()
+    public function testWithException(): void
     {
         $this->expectException(TaskException::class);
         $this->expectExceptionMessage('Uncaught Exception in worker');
@@ -20,7 +20,7 @@ class TaskFailureTest extends AsyncTestCase
         await($result->promise());
     }
 
-    public function testWithError()
+    public function testWithError(): void
     {
         $this->expectException(TaskError::class);
         $this->expectExceptionMessage('Uncaught Error in worker');

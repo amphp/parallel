@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
-use Amp\Promise;
 
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
@@ -27,7 +26,7 @@ interface Worker
     /**
      * Enqueues a {@see Task} to be executed by the worker.
      *
-     * @param Task $task The task to enqueue.
+     * @param Task                   $task The task to enqueue.
      * @param CancellationToken|null $token Token to request cancellation. The task must support cancellation for this
      *                                      to have any effect.
      *

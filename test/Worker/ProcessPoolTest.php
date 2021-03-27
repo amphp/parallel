@@ -15,9 +15,9 @@ class ProcessPoolTest extends AbstractPoolTest
     protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool
     {
         $factory = $this->createMock(WorkerFactory::class);
-        $factory->method('create')->will($this->returnCallback(function () {
+        $factory->method('create')->willReturnCallback(function () {
             return new WorkerProcess;
-        }));
+        });
 
         return new DefaultPool($max, $factory);
     }

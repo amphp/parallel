@@ -11,7 +11,7 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class DefaultPoolTest extends AsyncTestCase
 {
-    public function testFactoryCreatesStoppedWorker()
+    public function testFactoryCreatesStoppedWorker(): void
     {
         $worker = $this->createMock(Worker::class);
         $worker->method('isRunning')
@@ -29,10 +29,10 @@ class DefaultPoolTest extends AsyncTestCase
         $pool->enqueue($this->createMock(Task::class));
     }
 
-    public function testCrashedWorker()
+    public function testCrashedWorker(): void
     {
         $factory = $this->createMock(WorkerFactory::class);
-        $factory->expects($this->exactly(2))
+        $factory->expects(self::exactly(2))
             ->method('create')
             ->willReturnCallback(function (): Worker {
                 $worker = $this->createMock(Worker::class);

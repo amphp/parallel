@@ -8,23 +8,23 @@ use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
 use function Amp\async;
 use function Amp\await;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 abstract class AbstractContextTest extends AsyncTestCase
 {
     abstract public function createContext(string|array $script): Context;
 
-    public function testBasicProcess()
+    public function testBasicProcess(): void
     {
         $context = $this->createContext([
                 __DIR__ . "/Fixtures/test-process.php",
                 "Test"
             ]);
         $context->start();
-        $this->assertSame("Test", $context->join());
+        self::assertSame("Test", $context->join());
     }
 
-    public function testFailingProcess()
+    public function testFailingProcess(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('No string provided');
@@ -34,7 +34,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->join();
     }
 
-    public function testThrowingProcessOnReceive()
+    public function testThrowingProcessOnReceive(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('Test message');
@@ -44,7 +44,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->receive();
     }
 
-    public function testThrowingProcessOnSend()
+    public function testThrowingProcessOnSend(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('Test message');
@@ -55,7 +55,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->send(1);
     }
 
-    public function testInvalidScriptPath()
+    public function testInvalidScriptPath(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage("No script found at '../test-process.php'");
@@ -65,27 +65,27 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->join();
     }
 
-    public function testInvalidResult()
+    public function testInvalidResult(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('The given data could not be serialized');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
         $context->start();
-        \var_dump($context->join());
+        $context->join();
     }
 
-    public function testNoCallbackReturned()
+    public function testNoCallbackReturned(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('did not return a callable function');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
         $context->start();
-        \var_dump($context->join());
+        $context->join();
     }
 
-    public function testParseError()
+    public function testParseError(): void
     {
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('contains a parse error');
@@ -95,7 +95,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->join();
     }
 
-    public function testKillWhenJoining()
+    public function testKillWhenJoining(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Failed to receive result');
@@ -106,13 +106,13 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(100);
-        $promise = async(fn() => $context->join());
+        $promise = async(fn () => $context->join());
         $context->kill();
-        $this->assertFalse($context->isRunning());
+        self::assertFalse($context->isRunning());
         await($promise);
     }
 
-    public function testKillBusyContext()
+    public function testKillBusyContext(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Failed to receive result');
@@ -123,13 +123,13 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(100);
-        $promise = async(fn() => $context->join());
+        $promise = async(fn () => $context->join());
         $context->kill();
-        $this->assertFalse($context->isRunning());
+        self::assertFalse($context->isRunning());
         await($promise);
     }
 
-    public function testExitingProcess()
+    public function testExitingProcess(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Failed to receive result');
@@ -142,7 +142,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->join();
     }
 
-    public function testExitingProcessOnReceive()
+    public function testExitingProcessOnReceive(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('stopped responding');
@@ -152,7 +152,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->receive();
     }
 
-    public function testExitingProcessOnSend()
+    public function testExitingProcessOnSend(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('stopped responding');

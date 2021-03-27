@@ -11,6 +11,32 @@ final class ChannelParser extends Parser
 {
     private const HEADER_LENGTH = 5;
 
+    /**
+     * @param callable   $push
+     * @param Serializer $serializer
+     *
+     * @return \Generator
+     *
+     * @throws ChannelException
+     * @throws SerializationException
+     */
+    private static function parser(callable $push, Serializer $serializer): \Generator
+    {
+        while (true) {
+            $header = yield self::HEADER_LENGTH;
+            $data = \unpack("Cprefix/Llength", $header);
+
+            if ($data["prefix"] !== 0) {
+                $data = $header . yield;
+                throw new ChannelException("Invalid packet received: " . encodeUnprintableChars($data));
+            }
+
+            $data = yield $data["length"];
+
+            $push($serializer->unserialize($data));
+        }
+    }
+
     private Serializer $serializer;
 
     /**
@@ -34,31 +60,5 @@ final class ChannelParser extends Parser
     {
         $data = $this->serializer->serialize($data);
         return \pack("CL", 0, \strlen($data)) . $data;
-    }
-
-    /**
-     * @param callable $push
-     * @param Serializer $serializer
-     *
-     * @return \Generator
-     *
-     * @throws ChannelException
-     * @throws SerializationException
-     */
-    private static function parser(callable $push, Serializer $serializer): \Generator
-    {
-        while (true) {
-            $header = yield self::HEADER_LENGTH;
-            $data = \unpack("Cprefix/Llength", $header);
-
-            if ($data["prefix"] !== 0) {
-                $data = $header . yield;
-                throw new ChannelException("Invalid packet received: " . encodeUnprintableChars($data));
-            }
-
-            $data = yield $data["length"];
-
-            $push($serializer->unserialize($data));
-        }
     }
 }

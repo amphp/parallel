@@ -17,9 +17,9 @@ class PanicError extends \Error
     /**
      * Creates a new panic error.
      *
-     * @param string          $name     The uncaught exception class.
-     * @param string          $message  The panic message.
-     * @param string          $trace    The panic stack trace.
+     * @param string          $name The uncaught exception class.
+     * @param string          $message The panic message.
+     * @param string          $trace The panic stack trace.
      * @param \Throwable|null $previous Previous exception.
      */
     public function __construct(string $name, string $message = '', string $trace = '', ?\Throwable $previous = null)
@@ -31,11 +31,11 @@ class PanicError extends \Error
     }
 
     /**
+     * @return string
      * @deprecated Use ContextPanicError::getOriginalClassName() instead.
      *
      * Returns the class name of the uncaught exception.
      *
-     * @return string
      */
     public function getName(): string
     {
@@ -43,11 +43,11 @@ class PanicError extends \Error
     }
 
     /**
+     * @return string
      * @deprecated Use ContextPanicError::getOriginalTraceAsString() instead.
      *
      * Gets the stack trace at the point the panic occurred.
      *
-     * @return string
      */
     public function getPanicTrace(): string
     {

@@ -16,10 +16,10 @@ class ExitFailureTest extends AsyncTestCase
         try {
             $result->getResult();
         } catch (PanicError $caught) {
-            $this->assertGreaterThan(0, \stripos($caught->getMessage(), $message));
+            self::assertGreaterThan(0, \stripos($caught->getMessage(), $message));
             return;
         }
 
-        $this->fail(\sprintf("Exception should be thrown from %s::getResult()", ExitFailure::class));
+        self::fail(\sprintf("Exception should be thrown from %s::getResult()", ExitFailure::class));
     }
 }

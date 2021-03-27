@@ -8,7 +8,7 @@ use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Promise;
 use function Amp\await;
-use function Amp\defer;
+use function Revolt\EventLoop\defer;
 
 final class TaskRunner
 {

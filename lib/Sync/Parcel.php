@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\Promise;
-
 /**
  * A parcel object for sharing data across execution contexts.
  *

@@ -3,8 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
-use Amp\Loop;
-use Amp\Promise;
+use Revolt\EventLoop\Loop;
 
 const LOOP_POOL_IDENTIFIER = Pool::class;
 const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
@@ -48,7 +47,7 @@ function enqueue(Task $task, ?CancellationToken $token = null): mixed
  * Enqueues a callable to be executed by the global worker pool.
  *
  * @param callable $callable Callable needs to be serializable.
- * @param mixed    ...$args  Arguments have to be serializable.
+ * @param mixed    ...$args Arguments have to be serializable.
  *
  * @return mixed
  */

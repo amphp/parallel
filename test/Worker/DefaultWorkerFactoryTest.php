@@ -8,7 +8,7 @@ use Amp\PHPUnit\AsyncTestCase;
 
 class DefaultWorkerFactoryTest extends AsyncTestCase
 {
-    public function testInvalidClassName()
+    public function testInvalidClassName(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("Invalid environment class name 'Invalid'");
@@ -16,7 +16,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $factory = new DefaultWorkerFactory("Invalid");
     }
 
-    public function testNonEnvironmentClassName()
+    public function testNonEnvironmentClassName(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("does not implement 'Amp\\Parallel\\Worker\\Environment'");
@@ -24,11 +24,11 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $factory = new DefaultWorkerFactory(DefaultWorkerFactory::class);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $factory = new DefaultWorkerFactory;
 
-        $this->assertInstanceOf(Worker::class, $worker = $factory->create());
+        self::assertInstanceOf(Worker::class, $worker = $factory->create());
 
         $worker->shutdown();
     }
