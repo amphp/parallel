@@ -312,10 +312,11 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * Private method to prevent serialization.
+     * Prevent serialization.
      */
-    private function __sleep()
+    public function __sleep()
     {
+        throw new SharedMemoryException('A shared memory parcel cannot be serialized!');
     }
 
     /**
