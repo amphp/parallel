@@ -316,7 +316,7 @@ final class SharedMemoryParcel implements Parcel
      */
     public function __sleep()
     {
-        throw new SharedMemoryException('A shared memory parcel cannot be serialized!');
+        throw new \Error('A shared memory parcel cannot be serialized!');
     }
 
     /**
