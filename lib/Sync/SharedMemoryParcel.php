@@ -308,6 +308,14 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
+     * Prevent serialization.
+     */
+    public function __sleep()
+    {
+        throw new \Error('A shared memory parcel cannot be serialized!');
+    }
+
+    /**
      * Updates the current memory segment handle, handling any moves made on the
      * data.
      *
