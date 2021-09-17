@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\CancelledException;
+use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -9,16 +11,15 @@ use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
 use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
-use Amp\Promise;
-use Amp\TimeoutException;
+use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop\Loop;
-use function Amp\async;
-use function Amp\await;
 
 final class Process implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     public const KEY_LENGTH = 32;
+
+    private static ?\WeakMap $hubs = null;
 
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static ?string $pharScriptPath = null;
@@ -64,13 +65,8 @@ final class Process implements Context
      */
     public function __construct(string|array $script, string $cwd = null, array $env = [], string $binary = null)
     {
-        $hub = Loop::getState(self::class);
-        if (!$hub instanceof Internal\ProcessHub) {
-            $hub = new Internal\ProcessHub;
-            Loop::setState(self::class, $hub);
-        }
-
-        $this->hub = $hub;
+        self::$hubs ??= new \WeakMap();
+        $this->hub = (self::$hubs[Loop::getDriver()] ??= new Internal\ProcessHub());
 
         $options = [
             "html_errors" => "0",
@@ -253,8 +249,8 @@ final class Process implements Context
             }
 
             try {
-                $data = await(Promise\timeout(async(fn () => $this->join()), 100));
-            } catch (ContextException | ChannelException | TimeoutException $ex) {
+                $data = Future\spawn(fn () => $this->join())->join(new TimeoutCancellationToken(0.1));
+            } catch (ContextException | ChannelException | CancelledException $ignored) {
                 if ($this->isRunning()) {
                     $this->kill();
                 }

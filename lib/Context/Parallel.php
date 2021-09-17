@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\CancelledException;
+use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitFailure;
@@ -9,20 +11,19 @@ use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
-use Amp\Promise;
-use Amp\TimeoutException;
+use Amp\TimeoutCancellationToken;
 use parallel\Runtime;
 use Revolt\EventLoop\Loop;
-use function Amp\async;
-use function Amp\await;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
  */
 final class Parallel implements Context
 {
-    private const EXIT_CHECK_FREQUENCY = 250;
+    private const EXIT_CHECK_FREQUENCY = 0.25;
     private const KEY_LENGTH = 32;
+
+    private static ?\WeakMap $hubs = null;
 
     /** @var string|null */
     private static ?string $autoloadPath = null;
@@ -83,13 +84,8 @@ final class Parallel implements Context
             throw new \Error("The parallel extension is required to create parallel threads.");
         }
 
-        $hub = Loop::getState(self::class);
-        if (!$hub instanceof Internal\ParallelHub) {
-            $hub = new Internal\ParallelHub;
-            Loop::setState(self::class, $hub);
-        }
-
-        $this->hub = $hub;
+        self::$hubs ??= new \WeakMap();
+        $this->hub = (self::$hubs[Loop::getDriver()] ??= new Internal\ParallelHub());
 
         if (\is_array($script)) {
             $this->script = (string) \array_shift($script);
@@ -232,7 +228,7 @@ final class Parallel implements Context
 
                     $returnValue = $callable($channel);
 
-                    $result = new ExitSuccess($returnValue instanceof Promise ? await($returnValue) : $returnValue);
+                    $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->join() : $returnValue);
                 } catch (\Throwable $exception) {
                     $result = new ExitFailure($exception);
                 }
@@ -379,8 +375,8 @@ final class Parallel implements Context
             }
 
             try {
-                $data = await(Promise\timeout(async(fn () => $this->join()), 100));
-            } catch (ContextException | ChannelException | TimeoutException $ex) {
+                $data = Future\spawn(fn () => $this->join())->join(new TimeoutCancellationToken(0.1));
+            } catch (ContextException | ChannelException | CancelledException) {
                 $this->kill();
                 throw new ContextException(
                     "The thread stopped responding, potentially due to a fatal error or calling exit",

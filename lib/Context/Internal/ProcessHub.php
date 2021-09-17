@@ -2,20 +2,19 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\CancelledException;
+use Amp\Future;
 use Amp\Deferred;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\Promise;
-use Amp\TimeoutException;
+use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop\Loop;
-use function Amp\async;
-use function Amp\await;
 use function Revolt\EventLoop\defer;
 
 class ProcessHub
 {
-    private const PROCESS_START_TIMEOUT = 5000;
-    private const KEY_RECEIVE_TIMEOUT = 1000;
+    private const PROCESS_START_TIMEOUT = 5;
+    private const KEY_RECEIVE_TIMEOUT = 1;
 
     /** @var resource|null */
     private $server;
@@ -79,7 +78,8 @@ class ProcessHub
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = await(Promise\timeout(async(fn () => $channel->receive()), self::KEY_RECEIVE_TIMEOUT));
+                            $received = Future\spawn(fn () => $channel->receive())
+                                ->join(new TimeoutCancellationToken(self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.
@@ -94,7 +94,7 @@ class ProcessHub
 
                         $deferred = $acceptor[$pid];
                         unset($acceptor[$pid], $keys[$received]);
-                        $deferred->resolve($channel);
+                        $deferred->complete($channel);
                     });
                 }
             }
@@ -131,8 +131,10 @@ class ProcessHub
         Loop::enable($this->watcher);
 
         try {
-            $channel = await(Promise\timeout($this->acceptor[$pid]->promise(), self::PROCESS_START_TIMEOUT));
-        } catch (TimeoutException $exception) {
+            $channel = $this->acceptor[$pid]
+                ->getFuture()
+                ->join(new TimeoutCancellationToken(self::PROCESS_START_TIMEOUT));
+        } catch (CancelledException $exception) {
             $key = \array_search($pid, $this->keys, true);
             \assert(\is_string($key), "Key for {$pid} not found");
             unset($this->acceptor[$pid], $this->keys[$key]);

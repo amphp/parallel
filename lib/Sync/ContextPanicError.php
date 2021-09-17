@@ -4,14 +4,12 @@ namespace Amp\Parallel\Sync;
 
 final class ContextPanicError extends PanicError
 {
-    /** @var string */
-    private $originalMessage;
+    private string $originalMessage;
 
-    /** @var int|string */
-    private $originalCode;
+    private int|string $originalCode;
 
     /** @var string[] */
-    private $originalTrace;
+    private array $originalTrace;
 
     /**
      * @param string     $className Original exception class name.
@@ -56,7 +54,7 @@ final class ContextPanicError extends PanicError
     /**
      * @return int|string Original exception code.
      */
-    public function getOriginalCode()
+    public function getOriginalCode(): int|string
     {
         return $this->originalCode;
     }

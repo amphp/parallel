@@ -4,10 +4,9 @@ namespace Amp\Parallel\Worker;
 
 use Amp\CancellationTokenSource;
 use Amp\CancelledException;
+use Amp\Future;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
-use Amp\Promise;
-use function Amp\await;
 use function Revolt\EventLoop\defer;
 
 final class TaskRunner
@@ -39,8 +38,8 @@ final class TaskRunner
                     try {
                         $result = $job->getTask()->run($this->environment, $source->getToken());
 
-                        if ($result instanceof Promise) {
-                            $result = await($result);
+                        if ($result instanceof Future) {
+                            $result = $result->join($source->getToken());
                         }
 
                         $result = new Internal\TaskSuccess($job->getId(), $result);
@@ -66,9 +65,7 @@ final class TaskRunner
 
             // Cancellation signal.
             if (\is_string($job)) {
-                if (isset($this->cancellationSources[$job])) {
-                    $this->cancellationSources[$job]->cancel();
-                }
+                ($this->cancellationSources[$job] ?? null)?->cancel();
                 continue;
             }
 

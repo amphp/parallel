@@ -4,20 +4,16 @@ namespace Amp\Parallel\Sync;
 
 final class ExitFailure implements ExitResult
 {
-    /** @var string */
-    private $type;
+    private string $type;
 
-    /** @var string */
-    private $message;
+    private string $message;
 
-    /** @var int|string */
-    private $code;
+    private int|string $code;
 
     /** @var string[] */
-    private $trace;
+    private array $trace;
 
-    /** @var self|null */
-    private $previous;
+    private ?self $previous = null;
 
     public function __construct(\Throwable $exception)
     {
@@ -41,7 +37,7 @@ final class ExitFailure implements ExitResult
 
     private function createException(): ContextPanicError
     {
-        $previous = $this->previous ? $this->previous->createException() : null;
+        $previous = $this->previous?->createException();
 
         return new ContextPanicError($this->type, $this->message, $this->code, $this->trace, $previous);
     }

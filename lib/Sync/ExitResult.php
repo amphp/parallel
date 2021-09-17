@@ -2,10 +2,13 @@
 
 namespace Amp\Parallel\Sync;
 
+/**
+ * @template TValue
+ */
 interface ExitResult
 {
     /**
-     * @return mixed Return value of the callable given to the execution context.
+     * @return TValue Return value of the callable given to the execution context.
      *
      * @throws PanicError If the context exited with an uncaught exception.
      */

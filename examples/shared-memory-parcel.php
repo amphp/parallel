@@ -5,7 +5,7 @@ require \dirname(__DIR__).'/vendor/autoload.php';
 use Amp\ByteStream;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\SharedMemoryParcel;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 // Create a parcel that then can be accessed in any number of child processes.
 $parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);
@@ -18,9 +18,9 @@ $context = Process::run([
 \assert($context instanceof Process);
 
 // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
-Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
+ByteStream\pipe($context->getStdout(), ByteStream\getStdout());
 
-delay(100); // Give the process time to start and access the parcel.
+delay(0.1); // Give the process time to start and access the parcel.
 
 $parcel->synchronized(function (int $value): int {
     return $value + 1;

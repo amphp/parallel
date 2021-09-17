@@ -4,10 +4,8 @@ namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
 use Amp\Deferred;
+use Amp\Future;
 use Amp\Parallel\Context\StatusError;
-use Amp\Promise;
-use function Amp\async;
-use function Amp\await;
 use function Revolt\EventLoop\defer;
 
 /**
@@ -38,7 +36,7 @@ final class DefaultPool implements Pool
 
     private \Closure $push;
 
-    private ?Promise $exitStatus = null;
+    private ?Future $exitStatus = null;
 
     /**
      * Creates a new worker pool.
@@ -78,7 +76,7 @@ final class DefaultPool implements Pool
             if ($waiting !== null) {
                 $deferred = $waiting;
                 $waiting = null;
-                $deferred->resolve($worker);
+                $deferred->complete($worker);
             }
         };
     }
@@ -140,7 +138,7 @@ final class DefaultPool implements Pool
      * @param Task $task The task to enqueue.
      * @param CancellationToken|null $token
      *
-     * @return Promise<mixed> The return (or resolution) value of {@see Task::run()}.
+     * @return mixed The return (or resolution) value of {@see Task::run()}.
      *
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
@@ -168,7 +166,7 @@ final class DefaultPool implements Pool
     public function shutdown(): int
     {
         if ($this->exitStatus) {
-            return await($this->exitStatus);
+            return $this->exitStatus->join();
         }
 
         $this->running = false;
@@ -177,23 +175,23 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = async(fn () => $worker->shutdown());
+                $shutdowns[] = Future\spawn(fn () => $worker->shutdown());
             }
         }
 
         if ($this->waiting !== null) {
             $deferred = $this->waiting;
             $this->waiting = null;
-            $deferred->fail(new WorkerException('The pool shutdown before the task could be executed'));
+            $deferred->error(new WorkerException('The pool shutdown before the task could be executed'));
         }
 
-        return await($this->exitStatus = async(function () use ($shutdowns): int {
-            $shutdowns = await($shutdowns);
+        return ($this->exitStatus = Future\spawn(function () use ($shutdowns): int {
+            $shutdowns = Future\all($shutdowns);
             if (\array_sum($shutdowns)) {
                 return 1;
             }
             return 0;
-        }));
+        }))->join();
     }
 
     /**
@@ -213,7 +211,7 @@ final class DefaultPool implements Pool
         if ($this->waiting !== null) {
             $deferred = $this->waiting;
             $this->waiting = null;
-            $deferred->fail(new WorkerException('The pool was killed before the task could be executed'));
+            $deferred->error(new WorkerException('The pool was killed before the task could be executed'));
         }
     }
 
@@ -253,7 +251,7 @@ final class DefaultPool implements Pool
                 }
 
                 do {
-                    $worker = await($this->waiting->promise());
+                    $worker = $this->waiting->getFuture()->join();
                 } while ($this->waiting !== null);
             } else {
                 // Shift a worker off the idle queue.

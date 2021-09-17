@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Worker;
 
-use Revolt\EventLoop\Internal\Struct;
 use Revolt\EventLoop\Loop;
 
 final class BasicEnvironment implements Environment
@@ -18,7 +17,7 @@ final class BasicEnvironment implements Environment
         $this->queue = $queue = new \SplPriorityQueue;
         $data = &$this->data;
 
-        $this->timer = Loop::repeat(1000, static function (string $watcherId) use ($queue, &$data): void {
+        $this->timer = Loop::repeat(1, static function (string $watcherId) use ($queue, &$data): void {
             $time = \time();
             while (!$queue->isEmpty()) {
                 [$key, $expiration] = $queue->top();
@@ -115,8 +114,6 @@ final class BasicEnvironment implements Environment
         }
 
         $struct = new class {
-            use Struct;
-
             public mixed $data;
             public int $expire = 0;
             public ?int $ttl = null;

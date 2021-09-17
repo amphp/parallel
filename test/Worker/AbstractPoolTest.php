@@ -2,15 +2,14 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
 use Revolt\EventLoop\Loop;
-use function Amp\async;
-use function Amp\await;
+use function Amp\Future\spawn;
 
 abstract class AbstractPoolTest extends AsyncTestCase
 {
@@ -86,10 +85,10 @@ abstract class AbstractPoolTest extends AsyncTestCase
     {
         $pool = $this->createPool();
 
-        $values = await([
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
+        $values = Future\all([
+            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
+            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
+            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
         ]);
 
         self::assertEquals([42, 56, 72], $values);
@@ -99,7 +98,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
     public function testKill(): void
     {
-        $this->setTimeout(1000);
+        $this->setTimeout(1);
 
         $pool = $this->createPool();
 
@@ -134,17 +133,17 @@ abstract class AbstractPoolTest extends AsyncTestCase
             return new Fixtures\TestTask($value);
         }, $values);
 
-        $promises = \array_map(function (Task $task) use ($pool): Promise {
-            return async(fn () => $pool->enqueue($task));
+        $promises = \array_map(function (Task $task) use ($pool): Future {
+            return spawn(fn () => $pool->enqueue($task));
         }, $tasks);
 
-        self::assertSame($values, await($promises));
+        self::assertSame($values, Future\all($promises));
 
-        $promises = \array_map(function (Task $task) use ($pool): Promise {
-            return async(fn () => $pool->enqueue($task));
+        $promises = \array_map(function (Task $task) use ($pool): Future {
+            return spawn(fn () => $pool->enqueue($task));
         }, $tasks);
 
-        self::assertSame($values, await($promises));
+        self::assertSame($values, Future\all($promises));
 
         $pool->shutdown();
     }
@@ -168,11 +167,11 @@ abstract class AbstractPoolTest extends AsyncTestCase
                 return new Fixtures\TestTask($value);
             }, $values);
 
-            $promises = \array_map(function (Task $task) use ($pool): Promise {
-                return async(fn () => $pool->enqueue($task));
+            $promises = \array_map(function (Task $task) use ($pool): Future {
+                return spawn(fn () => $pool->enqueue($task));
             }, $tasks);
 
-            self::assertSame($values, await($promises));
+            self::assertSame($values, Future\all($promises));
         }
     }
 
@@ -182,7 +181,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
             $this->assertStringContainsString("Worker in pool crashed", $exception->getMessage());
         });
 
-        $this->setTimeout(100);
+        $this->setTimeout(1);
 
         // See https://github.com/amphp/parallel/issues/66
         $pool = $this->createPool(1);
@@ -199,5 +198,5 @@ abstract class AbstractPoolTest extends AsyncTestCase
      *
      * @return Pool
      */
-    abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
+    abstract protected function createPool(int $max = Pool::DEFAULT_MAX_SIZE): Pool;
 }

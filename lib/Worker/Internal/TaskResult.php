@@ -2,9 +2,11 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Promise;
-
-/** @internal */
+/**
+ * @internal
+ *
+ * @template T
+ */
 abstract class TaskResult
 {
     /** @var string Task identifier. */
@@ -27,7 +29,7 @@ abstract class TaskResult
     }
 
     /**
-     * @return Promise<mixed> Resolved with the task result or failure reason.
+     * @return T Resolved with the task result or failure reason.
      */
-    abstract public function promise(): Promise;
+    abstract public function getResult(): mixed;
 }

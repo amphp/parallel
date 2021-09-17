@@ -87,7 +87,7 @@ class BasicEnvironmentTest extends AsyncTestCase
 
         $environment->set($key, 1, 2);
 
-        delay(3000);
+        delay(3);
 
         self::assertFalse($environment->exists($key));
     }
@@ -104,7 +104,7 @@ class BasicEnvironmentTest extends AsyncTestCase
 
         $environment->set($key, 2);
 
-        delay(2000);
+        delay(2);
 
         self::assertTrue($environment->exists($key));
         self::assertSame(2, $environment->get($key));
@@ -118,7 +118,7 @@ class BasicEnvironmentTest extends AsyncTestCase
         $environment->set($key, 1, 10);
         $environment->set($key, 1, 1);
 
-        delay(2000);
+        delay(2);
 
         self::assertFalse($environment->exists($key));
     }
@@ -131,11 +131,11 @@ class BasicEnvironmentTest extends AsyncTestCase
         $environment->set($key, 1, 1);
         $environment->set($key, 1, 3);
 
-        delay(2000);
+        delay(2);
 
         self::assertTrue($environment->exists($key));
 
-        delay(1100);
+        delay(1.1);
 
         self::assertFalse($environment->exists($key));
     }
@@ -149,17 +149,17 @@ class BasicEnvironmentTest extends AsyncTestCase
         $environment->set($key1, 1, 2);
         $environment->set($key2, 2, 2);
 
-        delay(1000);
+        delay(1);
 
         self::assertSame(1, $environment->get($key1));
         self::assertTrue($environment->exists($key2));
 
-        delay(1500);
+        delay(1.5);
 
         self::assertTrue($environment->exists($key1));
         self::assertFalse($environment->exists($key2));
 
         $environment->delete($key1);
-        delay(1000); // Let TTL watcher deactivate itself
+        delay(1); // Let TTL watcher deactivate itself
     }
 }

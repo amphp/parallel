@@ -4,7 +4,6 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\Internal\TaskSuccess;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\await;
 
 class TaskSuccessTest extends AsyncTestCase
 {
@@ -19,6 +18,6 @@ class TaskSuccessTest extends AsyncTestCase
     {
         $value = 1;
         $result = new TaskSuccess('a', $value);
-        self::assertSame($value, await($result->promise()));
+        self::assertSame($value, $result->getResult());
     }
 }

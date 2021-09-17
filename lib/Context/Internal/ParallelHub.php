@@ -9,7 +9,7 @@ use Revolt\EventLoop\Loop;
 
 class ParallelHub extends ProcessHub
 {
-    private const EXIT_CHECK_FREQUENCY = 250;
+    private const EXIT_CHECK_FREQUENCY = 0.25;
 
     /** @var ChannelledSocket[] */
     private array $channels = [];

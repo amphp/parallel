@@ -6,6 +6,9 @@ use Amp\CancellationToken;
 
 /**
  * Task implementation dispatching a simple callable.
+ *
+ * @template TResult
+ * @template-implements Task<TResult>
  */
 final class CallableTask implements Task
 {
@@ -16,8 +19,8 @@ final class CallableTask implements Task
     private $args;
 
     /**
-     * @param callable $callable Callable will be serialized.
-     * @param mixed    $args Arguments to pass to the function. Must be serializable.
+     * @param callable(mixed ...$args):TResult $callable Callable will be serialized.
+     * @param array $args Arguments to pass to the function. Must be serializable.
      */
     public function __construct(callable $callable, array $args)
     {

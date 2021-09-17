@@ -3,37 +3,34 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
+use Amp\CancelledException;
 use Amp\Deferred;
-use Amp\Failure;
-use Amp\NullCancellationToken;
+use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Promise;
 use Amp\Serialization\SerializationException;
-use Amp\Success;
-use Amp\TimeoutException;
-use function Amp\async;
-use function Amp\await;
+use Amp\TimeoutCancellationToken;
+use function Revolt\EventLoop\defer;
 
 /**
  * Base class for workers executing {@see Task}s.
  */
 abstract class TaskWorker implements Worker
 {
-    private const SHUTDOWN_TIMEOUT = 1000;
-    private const ERROR_TIMEOUT = 250;
+    private const SHUTDOWN_TIMEOUT = 1;
+    private const ERROR_TIMEOUT = 0.25;
 
     private ?Context $context;
 
-    private ?Promise $receivePromise;
+    private ?Future $receiveFuture;
 
     /** @var Deferred[] */
     private array $jobQueue = [];
 
-    private \Closure $onResolve;
+    private \Closure $onReceive;
 
-    private ?Promise $exitStatus = null;
+    private ?Future $exitStatus = null;
 
     /**
      * @param Context $context A context running an instance of {@see TaskRunner}.
@@ -48,19 +45,19 @@ abstract class TaskWorker implements Worker
         $this->context->start();
 
         $jobQueue = &$this->jobQueue;
-        $receive = &$this->receivePromise;
-        $this->onResolve = $onResolve = static function (?\Throwable $exception, mixed $data) use (
+        $receive = &$this->receiveFuture;
+        $this->onReceive = $onReceive = static function (?\Throwable $exception, mixed $data) use (
             $context,
             &$jobQueue,
             &$receive,
-            &$onResolve
+            &$onReceive
         ): void {
             $receive = null;
 
             if ($exception || !$data instanceof Internal\TaskResult) {
                 $exception = $exception ?? new WorkerException("Invalid data from worker");
                 foreach ($jobQueue as $deferred) {
-                    $deferred->fail($exception);
+                    $deferred->error($exception);
                 }
                 $context->kill();
                 return;
@@ -76,14 +73,28 @@ abstract class TaskWorker implements Worker
                 $deferred = $jobQueue[$id];
                 unset($jobQueue[$id]);
 
-                $deferred->resolve($data->promise());
+                try {
+                    $deferred->complete($data->getResult());
+                } catch (\Throwable $exception) {
+                    $deferred->error($exception);
+                }
             } finally {
                 if ($receive === null && !empty($jobQueue)) {
-                    $receive = async(fn () => $context->receive());
-                    $receive->onResolve($onResolve);
+                    $receive = self::receive($context, $onReceive);
                 }
             }
         };
+    }
+
+    private static function receive(Context $context, callable $onReceive): Future
+    {
+        return Future\spawn(static function () use ($context, $onReceive): void {
+            try {
+                $onReceive(null, $context->receive());
+            } catch (\Throwable $exception) {
+                $onReceive($exception, null);
+            }
+        });
     }
 
     /**
@@ -112,14 +123,35 @@ abstract class TaskWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
-        $token = $token ?? new NullCancellationToken;
-
         $job = new Internal\Job($task);
         $jobId = $job->getId();
         $this->jobQueue[$jobId] = $deferred = new Deferred;
+        $future = $deferred->getFuture();
 
         try {
             $this->context->send($job);
+
+            if ($token) {
+                $context = $this->context;
+                $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
+                    try {
+                        $context->send($jobId);
+                    } catch (\Throwable) {
+                        return;
+                    }
+                });
+
+                defer(static function () use ($future, $token, $cancellationId): void {
+                    try {
+                        $future->join();
+                    } catch (\Throwable) {
+                        // Ignored.
+                    } finally {
+                        $token->unsubscribe($cancellationId);
+                    }
+                });
+            }
+
         } catch (SerializationException $exception) {
             // Could not serialize Task object.
             unset($this->jobQueue[$jobId]);
@@ -129,40 +161,26 @@ abstract class TaskWorker implements Worker
 
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                await(Promise\timeout(async(fn () => $this->context->join()), self::ERROR_TIMEOUT));
-            } catch (TimeoutException $timeout) {
+                Future\spawn(fn () => $this->context->join())
+                    ->join(new TimeoutCancellationToken(self::ERROR_TIMEOUT));
+            } catch (CancelledException) {
                 $this->kill();
             } catch (\Throwable $exception) {
                 $exception = new WorkerException("The worker crashed", 0, $exception);
             }
 
             if ($this->exitStatus === null) {
-                $this->exitStatus = new Failure($exception);
+                $this->exitStatus = Future::error($exception);
             }
 
             throw $exception;
         }
 
-        $promise = $deferred->promise();
-
-        if ($this->context !== null) {
-            $context = $this->context;
-            $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
-                try {
-                    $context->send($jobId);
-                } catch (\Throwable $exception) {
-                    return;
-                }
-            });
-            $promise->onResolve(static fn () => $token->unsubscribe($cancellationId));
+        if ($this->receiveFuture === null) {
+            $this->receiveFuture = self::receive($this->context, $this->onReceive);
         }
 
-        if ($this->receivePromise === null) {
-            $this->receivePromise = async(fn () => $this->context->receive());
-            $this->receivePromise->onResolve($this->onResolve);
-        }
-
-        return await($promise);
+        return $future->join();
     }
 
     /**
@@ -171,23 +189,22 @@ abstract class TaskWorker implements Worker
     public function shutdown(): int
     {
         if ($this->exitStatus !== null) {
-            return await($this->exitStatus);
+            return $this->exitStatus->join();
         }
 
-        return await($this->exitStatus = async(function (): int {
+        return ($this->exitStatus = Future\spawn(function (): int {
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
 
             // Wait for pending tasks to finish.
-            await(Promise\any(\array_map(function (Deferred $deferred): Promise {
-                return $deferred->promise();
-            }, $this->jobQueue)));
+            Future\settle(\array_map(fn (Deferred $deferred) => $deferred->getFuture(), $this->jobQueue));
 
             $this->context->send(null);
 
             try {
-                return await(Promise\timeout(async(fn () => $this->context->join()), self::SHUTDOWN_TIMEOUT));
+                return Future\spawn(fn () => $this->context->join())
+                    ->join(new TimeoutCancellationToken(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
@@ -195,7 +212,7 @@ abstract class TaskWorker implements Worker
                 // Null properties to free memory because the shutdown function has references to these.
                 $this->context = null;
             }
-        }));
+        }))->join();
     }
 
     /**
@@ -209,11 +226,11 @@ abstract class TaskWorker implements Worker
 
         if ($this->context->isRunning()) {
             $this->context->kill();
-            $this->exitStatus = new Failure(new WorkerException("The worker was killed"));
+            $this->exitStatus = Future::error(new WorkerException("The worker was killed"));
             return;
         }
 
-        $this->exitStatus = new Success;
+        $this->exitStatus = Future::complete(null);
 
         // Null properties to free memory because the shutdown function has references to these.
         $this->context = null;

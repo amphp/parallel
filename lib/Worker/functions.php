@@ -5,9 +5,6 @@ namespace Amp\Parallel\Worker;
 use Amp\CancellationToken;
 use Revolt\EventLoop\Loop;
 
-const LOOP_POOL_IDENTIFIER = Pool::class;
-const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
-
 /**
  * Gets or sets the global worker pool.
  *
@@ -17,17 +14,15 @@ const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
  */
 function pool(Pool $pool = null): Pool
 {
-    if ($pool === null) {
-        $pool = Loop::getState(LOOP_POOL_IDENTIFIER);
-        if ($pool) {
-            return $pool;
-        }
+    static $map;
+    $map ??= new \WeakMap();
+    $driver = Loop::getDriver();
 
-        $pool = new DefaultPool;
+    if ($pool) {
+        return $map[$driver] = $pool;
     }
 
-    Loop::setState(LOOP_POOL_IDENTIFIER, $pool);
-    return $pool;
+    return $map[$driver] ??= new DefaultPool();
 }
 
 /**
@@ -85,14 +80,13 @@ function create(): Worker
  */
 function factory(WorkerFactory $factory = null): WorkerFactory
 {
-    if ($factory === null) {
-        $factory = Loop::getState(LOOP_FACTORY_IDENTIFIER);
-        if ($factory) {
-            return $factory;
-        }
+    static $map;
+    $map ??= new \WeakMap();
+    $driver = Loop::getDriver();
 
-        $factory = new DefaultWorkerFactory;
+    if ($factory) {
+        return $map[$driver] = $factory;
     }
-    Loop::setState(LOOP_FACTORY_IDENTIFIER, $factory);
-    return $factory;
+
+    return $map[$driver] ??= new DefaultWorkerFactory();
 }

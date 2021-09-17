@@ -2,11 +2,11 @@
 <?php
 require \dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Loop;
 use Amp\Parallel\Context\Parallel;
-use function Amp\delay;
+use Revolt\EventLoop\Loop;
+use function Revolt\EventLoop\delay;
 
-$timer = Loop::repeat(1000, function () {
+$timer = Loop::repeat(1, function () {
     static $i;
     $i = $i ? ++$i : 1;
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -19,7 +19,7 @@ try {
     \assert($context instanceof Parallel);
 
     print "Waiting 2 seconds to send start data...\n";
-    delay(2000);
+    delay(2);
 
     $context->send("Start data"); // Data sent to child process, received on line 9 of blocking-process.php
 

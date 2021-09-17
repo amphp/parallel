@@ -2,10 +2,9 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\Future;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
-use Amp\Promise;
-use function Amp\await;
 use function Revolt\EventLoop\delay;
 use function Revolt\EventLoop\getCurrentTime;
 
@@ -67,7 +66,7 @@ if (\function_exists("cli_set_process_title")) {
             \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
         }
 
-        delay(10);
+        delay(0.01);
     }
 
     $channel = new Sync\ChannelledSocket($socket, $socket);
@@ -99,7 +98,7 @@ if (\function_exists("cli_set_process_title")) {
         }
 
         $returnValue = $callable($channel);
-        $result = new Sync\ExitSuccess($returnValue instanceof Promise ? await($returnValue) : $returnValue);
+        $result = new Sync\ExitSuccess($returnValue instanceof Future ? $returnValue->join() : $returnValue);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }

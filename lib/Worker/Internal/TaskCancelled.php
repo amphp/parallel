@@ -3,9 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\CancelledException;
-use Amp\Failure;
 use Amp\Parallel\Worker\TaskCancelledException;
-use Amp\Promise;
 
 /** @internal */
 final class TaskCancelled extends TaskFailure
@@ -15,8 +13,8 @@ final class TaskCancelled extends TaskFailure
         parent::__construct($id, $exception);
     }
 
-    public function promise(): Promise
+    public function getResult(): mixed
     {
-        return new Failure(new TaskCancelledException($this->createException()));
+        throw new TaskCancelledException($this->createException());
     }
 }

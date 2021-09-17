@@ -3,11 +3,10 @@
 
 require \dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\Loop;
+use Amp\Future;
 use Amp\Parallel\Worker\CallableTask;
 use Amp\Parallel\Worker\DefaultPool;
-use function Amp\async;
-use function Amp\await;
+use Revolt\EventLoop\Loop;
 
 // A variable to store our fetched results
 $results = [];
@@ -20,23 +19,23 @@ $tasks = [
 ];
 
 // Event loop for parallel tasks
-$timer = Loop::repeat(200, function () {
+$timer = Loop::repeat(0.2, function () {
     \printf(".");
 });
 Loop::unreference($timer);
 
 $pool = new DefaultPool;
 
-$promises = [];
+$futures = [];
 
 foreach ($tasks as $index => $task) {
-    $promises[] = async(function () use ($pool, $index, $task): string {
+    $futures[] = Future\spawn(function () use ($pool, $index, $task): string {
         $result = $pool->enqueue($task);
         \printf("\nRead from task %d: %d bytes\n", $index, \strlen($result));
         return $result;
     });
 }
 
-$results = await($promises);
+$results = Future\all($futures);
 
 $pool->shutdown();

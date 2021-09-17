@@ -6,8 +6,7 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\async;
-use function Amp\await;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
 
 abstract class AbstractContextTest extends AsyncTestCase
@@ -51,7 +50,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
         $context->start();
-        delay(100);
+        delay(0.1);
         $context->send(1);
     }
 
@@ -105,11 +104,11 @@ abstract class AbstractContextTest extends AsyncTestCase
                 5,
             ]);
         $context->start();
-        delay(100);
-        $promise = async(fn () => $context->join());
+        delay(0.1);
+        $promise = spawn(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
-        await($promise);
+        $promise->join();
     }
 
     public function testKillBusyContext(): void
@@ -122,11 +121,11 @@ abstract class AbstractContextTest extends AsyncTestCase
                 5,
             ]);
         $context->start();
-        delay(100);
-        $promise = async(fn () => $context->join());
+        delay(0.1);
+        $promise = spawn(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
-        await($promise);
+        $promise->join();
     }
 
     public function testExitingProcess(): void
@@ -159,7 +158,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
         $context->start();
-        delay(500);
+        delay(0.5);
         $context->send(1);
     }
 }

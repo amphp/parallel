@@ -2,12 +2,10 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Failure;
 use Amp\Parallel\Sync;
 use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\TaskFailureThrowable;
-use Amp\Promise;
 
 /** @internal */
 class TaskFailure extends TaskResult
@@ -47,14 +45,14 @@ class TaskFailure extends TaskResult
         }
     }
 
-    public function promise(): Promise
+    public function getResult(): mixed
     {
-        return new Failure($this->createException());
+        throw $this->createException();
     }
 
     final protected function createException(): TaskFailureThrowable
     {
-        $previous = $this->previous ? $this->previous->createException() : null;
+        $previous = $this->previous?->createException();
 
         if ($this->parent === self::PARENT_ERROR) {
             return new TaskFailureError($this->type, $this->message, $this->code, $this->trace, $previous);

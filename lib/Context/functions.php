@@ -4,8 +4,6 @@ namespace Amp\Parallel\Context;
 
 use Revolt\EventLoop\Loop;
 
-const LOOP_FACTORY_IDENTIFIER = ContextFactory::class;
-
 /**
  * @param string|string[] $script Path to PHP script or array with first element as path and following elements options
  *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
@@ -26,14 +24,13 @@ function create(string|array $script): Context
  */
 function factory(?ContextFactory $factory = null): ContextFactory
 {
-    if ($factory === null) {
-        $factory = Loop::getState(LOOP_FACTORY_IDENTIFIER);
-        if ($factory) {
-            return $factory;
-        }
+    static $map;
+    $map ??= new \WeakMap();
+    $driver = Loop::getDriver();
 
-        $factory = new DefaultContextFactory;
+    if ($factory) {
+        return $map[$driver] = $factory;
     }
-    Loop::setState(LOOP_FACTORY_IDENTIFIER, $factory);
-    return $factory;
+
+    return $map[$driver] ??= new DefaultContextFactory();
 }

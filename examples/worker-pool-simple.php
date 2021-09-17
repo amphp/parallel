@@ -3,9 +3,8 @@
 
 require \dirname(__DIR__) . '/vendor/autoload.php';
 
+use Amp\Future;
 use Amp\Parallel\Worker;
-use function Amp\async;
-use function Amp\await;
 
 $urls = [
     'https://secure.php.net',
@@ -13,12 +12,12 @@ $urls = [
     'https://github.com',
 ];
 
-$promises = [];
+$futures = [];
 foreach ($urls as $url) {
-    $promises[$url] = async(fn () => Worker\enqueueCallable('file_get_contents', $url));
+    $futures[$url] = Future\spawn(fn () => Worker\enqueueCallable('file_get_contents', $url));
 }
 
-$responses = await($promises);
+$responses = Future\all($futures);
 
 foreach ($responses as $url => $response) {
     \printf("Read %d bytes from %s\n", \strlen($response), $url);
