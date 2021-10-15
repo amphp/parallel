@@ -7,8 +7,8 @@ use Amp\Parallel\Sync\Parcel;
 use Amp\Parallel\Sync\SharedMemoryException;
 use Amp\Parallel\Sync\SharedMemoryParcel;
 use Amp\Sync\SyncException;
-use function Amp\Future\spawn;
-use function Revolt\EventLoop\delay;
+use function Amp\coroutine;
+use function Amp\delay;
 
 /**
  * @requires extension shmop
@@ -45,7 +45,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
         $process = new Process([__DIR__ . '/Fixture/parcel.php', self::ID]);
 
-        $promise = spawn(fn () => $object->synchronized(function (int $value): int {
+        $promise = coroutine(fn () => $object->synchronized(function (int $value): int {
             $this->assertSame(42, $value);
             delay(0.5); // Child must wait until parent finishes with parcel.
             return $value + 1;
@@ -53,7 +53,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
         $process->start();
 
-        self::assertSame(43, $promise->join());
+        self::assertSame(43, $promise->await());
 
         self::assertSame(44, $process->join()); // Wait for child process to finish.
         self::assertEquals(44, $object->unwrap());

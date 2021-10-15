@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Context;
 
 use Amp\CancelledException;
-use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -12,7 +11,8 @@ use Amp\Process\Process as BaseProcess;
 use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\TimeoutCancellationToken;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
+use function Amp\coroutine;
 
 final class Process implements Context
 {
@@ -66,7 +66,7 @@ final class Process implements Context
     public function __construct(string|array $script, string $cwd = null, array $env = [], string $binary = null)
     {
         self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[Loop::getDriver()] ??= new Internal\ProcessHub());
+        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ProcessHub());
 
         $options = [
             "html_errors" => "0",
@@ -249,7 +249,7 @@ final class Process implements Context
             }
 
             try {
-                $data = Future\spawn(fn () => $this->join())->join(new TimeoutCancellationToken(0.1));
+                $data = coroutine(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
             } catch (ContextException | ChannelException | CancelledException $ignored) {
                 if ($this->isRunning()) {
                     $this->kill();

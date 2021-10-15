@@ -5,7 +5,7 @@ namespace Amp\Parallel\Test\Worker\Fixtures;
 use Amp\CancellationToken;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
-use function Revolt\EventLoop\delay;
+use function Amp\delay;
 
 class TestTask implements Task
 {

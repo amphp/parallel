@@ -13,7 +13,8 @@ use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\TimeoutCancellationToken;
 use parallel\Runtime;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
+use function Amp\coroutine;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
@@ -85,7 +86,7 @@ final class Parallel implements Context
         }
 
         self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[Loop::getDriver()] ??= new Internal\ParallelHub());
+        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub());
 
         if (\is_array($script)) {
             $this->script = (string) \array_shift($script);
@@ -193,7 +194,7 @@ final class Parallel implements Context
             }
 
             try {
-                Loop::unreference(Loop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
+                EventLoop::unreference(EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
                     // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
                     // select() will not be interrupted.
                 }));
@@ -228,7 +229,7 @@ final class Parallel implements Context
 
                     $returnValue = $callable($channel);
 
-                    $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->join() : $returnValue);
+                    $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
                 } catch (\Throwable $exception) {
                     $result = new ExitFailure($exception);
                 }
@@ -375,7 +376,7 @@ final class Parallel implements Context
             }
 
             try {
-                $data = Future\spawn(fn () => $this->join())->join(new TimeoutCancellationToken(0.1));
+                $data = coroutine(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
             } catch (ContextException | ChannelException | CancelledException) {
                 $this->kill();
                 throw new ContextException(

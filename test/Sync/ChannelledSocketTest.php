@@ -6,8 +6,7 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\Future\spawn;
-use function Revolt\EventLoop\defer;
+use function Revolt\launch;
 
 class ChannelledSocketTest extends AsyncTestCase
 {
@@ -19,7 +18,7 @@ class ChannelledSocketTest extends AsyncTestCase
 
         $message = 'hello';
 
-        defer(fn () => $a->send($message));
+        launch(fn () => $a->send($message));
         $data = $b->receive();
         self::assertSame($message, $data);
     }
@@ -39,7 +38,7 @@ class ChannelledSocketTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        defer(fn () => $a->send($message));
+        launch(fn () => $a->send($message));
         $data = $b->receive();
         self::assertSame($message, $data);
     }

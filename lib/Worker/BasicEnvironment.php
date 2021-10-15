@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 final class BasicEnvironment implements Environment
 {
@@ -17,7 +17,7 @@ final class BasicEnvironment implements Environment
         $this->queue = $queue = new \SplPriorityQueue;
         $data = &$this->data;
 
-        $this->timer = Loop::repeat(1, static function (string $watcherId) use ($queue, &$data): void {
+        $this->timer = EventLoop::repeat(1, static function (string $watcherId) use ($queue, &$data): void {
             $time = \time();
             while (!$queue->isEmpty()) {
                 [$key, $expiration] = $queue->top();
@@ -53,12 +53,12 @@ final class BasicEnvironment implements Environment
             }
 
             if ($queue->isEmpty()) {
-                Loop::disable($watcherId);
+                EventLoop::disable($watcherId);
             }
         });
 
-        Loop::disable($this->timer);
-        Loop::unreference($this->timer);
+        EventLoop::disable($this->timer);
+        EventLoop::unreference($this->timer);
     }
 
     /**
@@ -126,7 +126,7 @@ final class BasicEnvironment implements Environment
             $struct->expire = \time() + $ttl;
             $this->queue->insert([$key, $struct->expire], -$struct->expire);
 
-            Loop::enable($this->timer);
+            EventLoop::enable($this->timer);
         }
 
         $this->data[$key] = $struct;
@@ -143,46 +143,46 @@ final class BasicEnvironment implements Environment
     /**
      * Alias of exists().
      *
-     * @param $key
+     * @param $offset
      *
      * @return bool
      */
-    public function offsetExists($key): bool
+    public function offsetExists($offset): bool
     {
-        return $this->exists($key);
+        return $this->exists($offset);
     }
 
     /**
      * Alias of get().
      *
-     * @param string $key
+     * @param string $offset
      *
      * @return mixed
      */
-    public function offsetGet($key)
+    public function offsetGet($offset): mixed
     {
-        return $this->get($key);
+        return $this->get($offset);
     }
 
     /**
      * Alias of set() with $ttl = null.
      *
-     * @param string $key
+     * @param string $offset
      * @param mixed  $value
      */
-    public function offsetSet($key, $value): void
+    public function offsetSet($offset, $value): void
     {
-        $this->set($key, $value);
+        $this->set($offset, $value);
     }
 
     /**
      * Alias of delete().
      *
-     * @param string $key
+     * @param string $offset
      */
-    public function offsetUnset($key): void
+    public function offsetUnset($offset): void
     {
-        $this->delete($key);
+        $this->delete($offset);
     }
 
     /**
@@ -192,7 +192,7 @@ final class BasicEnvironment implements Environment
     {
         $this->data = [];
 
-        Loop::disable($this->timer);
+        EventLoop::disable($this->timer);
         $this->queue = new \SplPriorityQueue;
     }
 }

@@ -43,7 +43,7 @@ final class ChannelledStream implements Channel
     public function send($data): void
     {
         try {
-            $this->write->write($this->parser->encode($data));
+            $this->write->write($this->parser->encode($data))->await();
         } catch (StreamException $exception) {
             throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
         }

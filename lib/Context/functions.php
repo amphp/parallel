@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 /**
  * @param string|string[] $script Path to PHP script or array with first element as path and following elements options
@@ -26,7 +26,7 @@ function factory(?ContextFactory $factory = null): ContextFactory
 {
     static $map;
     $map ??= new \WeakMap();
-    $driver = Loop::getDriver();
+    $driver = EventLoop::getDriver();
 
     if ($factory) {
         return $map[$driver] = $factory;

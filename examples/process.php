@@ -4,10 +4,11 @@ require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Parallel\Context\Process;
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\delay;
+use Revolt\EventLoop;
+use function Amp\coroutine;
+use function Amp\delay;
 
-$timer = Loop::repeat(1, function () {
+$timer = EventLoop::repeat(1, function () {
     static $i;
     $i = $i ? ++$i : 1;
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -20,7 +21,7 @@ try {
     \assert($context instanceof Process);
 
     // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
-    $future = ByteStream\pipe($context->getStdout(), ByteStream\getStdout());
+    $future = coroutine(fn () => ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
 
     print "Waiting 2 seconds to send start data...\n";
     delay(2);
@@ -30,5 +31,5 @@ try {
     \printf("Received the following from child: %s\n", $context->receive()); // Sent on line 14 of blocking-process.php
     \printf("Process ended with value %d!\n", $context->join());
 } finally {
-    Loop::cancel($timer);
+    EventLoop::cancel($timer);
 }

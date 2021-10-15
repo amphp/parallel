@@ -5,7 +5,7 @@ require \dirname(__DIR__).'/vendor/autoload.php';
 use Amp\ByteStream;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync\SharedMemoryParcel;
-use function Revolt\EventLoop\delay;
+use function Amp\delay;
 
 // Create a parcel that then can be accessed in any number of child processes.
 $parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);

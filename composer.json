@@ -22,26 +22,20 @@
     ],
     "require": {
         "php": ">=8",
-        "amphp/amp": "dev-v3-revolt",
-        "amphp/byte-stream": "dev-v2-revolt",
+        "amphp/amp": "v3.x-dev",
+        "amphp/byte-stream": "v2.x-dev",
         "amphp/parser": "^1",
-        "amphp/process": "dev-v2-revolt",
+        "amphp/process": "v2.x-dev",
         "amphp/serialization": "^1",
-        "amphp/sync": "dev-v2-revolt"
+        "amphp/sync": "v2.x-dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^9",
-        "amphp/phpunit-util": "dev-v2-revolt",
+        "amphp/phpunit-util": "v2.x-dev",
         "amphp/php-cs-fixer-config": "dev-master"
     },
     "prefer-stable": true,
     "minimum-stability": "dev",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:revolt-php/event-loop.git"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Amp\\Parallel\\": "lib"

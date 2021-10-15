@@ -6,8 +6,8 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\Future\spawn;
-use function Revolt\EventLoop\delay;
+use function Amp\coroutine;
+use function Amp\delay;
 
 abstract class AbstractContextTest extends AsyncTestCase
 {
@@ -105,10 +105,10 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(0.1);
-        $promise = spawn(fn () => $context->join());
+        $promise = coroutine(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
-        $promise->join();
+        $promise->await();
     }
 
     public function testKillBusyContext(): void
@@ -122,10 +122,10 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(0.1);
-        $promise = spawn(fn () => $context->join());
+        $promise = coroutine(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
-        $promise->join();
+        $promise->await();
     }
 
     public function testExitingProcess(): void

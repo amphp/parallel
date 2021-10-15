@@ -5,8 +5,8 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Future;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
-use function Revolt\EventLoop\delay;
-use function Revolt\EventLoop\getCurrentTime;
+use function Amp\delay;
+use function Revolt\now;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -59,10 +59,10 @@ if (\function_exists("cli_set_process_title")) {
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
 
-    $connectStart = getCurrentTime();
+    $connectStart = now();
 
     while (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        if (getCurrentTime() < $connectStart + 5000) { // try for 5 seconds, after that the parent times out anyway
+        if (now() > $connectStart + 5) { // try for 5 seconds, after that the parent times out anyway
             \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
         }
 
@@ -98,7 +98,7 @@ if (\function_exists("cli_set_process_title")) {
         }
 
         $returnValue = $callable($channel);
-        $result = new Sync\ExitSuccess($returnValue instanceof Future ? $returnValue->join() : $returnValue);
+        $result = new Sync\ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
     }

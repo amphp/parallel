@@ -3,10 +3,10 @@
 require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\Parallel\Context\Parallel;
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\delay;
+use Revolt\EventLoop;
+use function Amp\delay;
 
-$timer = Loop::repeat(1, function () {
+$timer = EventLoop::repeat(1, function () {
     static $i;
     $i = $i ? ++$i : 1;
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
@@ -26,5 +26,5 @@ try {
     \printf("Received the following from child: %s\n", $context->receive()); // Sent on line 14 of blocking-process.php
     \printf("Process ended with value %d!\n", $context->join());
 } finally {
-    Loop::cancel($timer);
+    EventLoop::cancel($timer);
 }

@@ -5,7 +5,7 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Parallel\Sync\ChannelledSocket;
 use parallel\Events;
 use parallel\Future;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 class ParallelHub extends ProcessHub
 {
@@ -26,7 +26,7 @@ class ParallelHub extends ProcessHub
         $this->events->setBlocking(false);
 
         $channels = &$this->channels;
-        $this->watcher = Loop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (&$channels, $events): void {
+        $this->watcher = EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (&$channels, $events): void {
             while ($event = $events->poll()) {
                 $id = (int) $event->source;
                 \assert(isset($channels[$id]), 'Channel for context ID not found');
@@ -35,8 +35,8 @@ class ParallelHub extends ProcessHub
                 $channel->close();
             }
         });
-        Loop::disable($this->watcher);
-        Loop::unreference($this->watcher);
+        EventLoop::disable($this->watcher);
+        EventLoop::unreference($this->watcher);
     }
 
     public function add(int $id, ChannelledSocket $channel, Future $future): void
@@ -44,7 +44,7 @@ class ParallelHub extends ProcessHub
         $this->channels[$id] = $channel;
         $this->events->addFuture((string) $id, $future);
 
-        Loop::enable($this->watcher);
+        EventLoop::enable($this->watcher);
     }
 
     public function remove(int $id): void
@@ -57,7 +57,7 @@ class ParallelHub extends ProcessHub
         $this->events->remove((string) $id);
 
         if (empty($this->channels)) {
-            Loop::disable($this->watcher);
+            EventLoop::disable($this->watcher);
         }
     }
 }

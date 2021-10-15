@@ -6,7 +6,8 @@ require \dirname(__DIR__) . '/vendor/autoload.php';
 use Amp\Future;
 use Amp\Parallel\Worker\CallableTask;
 use Amp\Parallel\Worker\DefaultPool;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
+use function Amp\coroutine;
 
 // A variable to store our fetched results
 $results = [];
@@ -19,17 +20,17 @@ $tasks = [
 ];
 
 // Event loop for parallel tasks
-$timer = Loop::repeat(0.2, function () {
+$timer = EventLoop::repeat(0.2, function () {
     \printf(".");
 });
-Loop::unreference($timer);
+EventLoop::unreference($timer);
 
 $pool = new DefaultPool;
 
 $futures = [];
 
 foreach ($tasks as $index => $task) {
-    $futures[] = Future\spawn(function () use ($pool, $index, $task): string {
+    $futures[] = coroutine(function () use ($pool, $index, $task): string {
         $result = $pool->enqueue($task);
         \printf("\nRead from task %d: %d bytes\n", $index, \strlen($result));
         return $result;

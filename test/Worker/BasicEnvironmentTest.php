@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\BasicEnvironment;
 use Amp\PHPUnit\AsyncTestCase;
-use function Revolt\EventLoop\delay;
+use function Amp\delay;
 
 class BasicEnvironmentTest extends AsyncTestCase
 {

@@ -3,13 +3,13 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\CancelledException;
-use Amp\Future;
 use Amp\Deferred;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\TimeoutCancellationToken;
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\defer;
+use Revolt\EventLoop;
+use function Amp\coroutine;
+use function Revolt\launch;
 
 class ProcessHub
 {
@@ -69,17 +69,17 @@ class ProcessHub
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->watcher = Loop::onReadable(
+        $this->watcher = EventLoop::onReadable(
             $this->server,
             static function (string $watcher, $server) use (&$keys, &$acceptor): void {
                 // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
                 while ($client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
-                    defer(static function () use ($client, &$keys, &$acceptor): void {
+                    launch(static function () use ($client, &$keys, &$acceptor): void {
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = Future\spawn(fn () => $channel->receive())
-                                ->join(new TimeoutCancellationToken(self::KEY_RECEIVE_TIMEOUT));
+                            $received = coroutine(fn () => $channel->receive())
+                                ->await(new TimeoutCancellationToken(self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.
@@ -100,12 +100,12 @@ class ProcessHub
             }
         );
 
-        Loop::disable($this->watcher);
+        EventLoop::disable($this->watcher);
     }
 
     public function __destruct()
     {
-        Loop::cancel($this->watcher);
+        EventLoop::cancel($this->watcher);
         \fclose($this->server);
         if ($this->toUnlink !== null) {
             @\unlink($this->toUnlink);
@@ -128,12 +128,12 @@ class ProcessHub
     {
         $this->acceptor[$pid] = new Deferred;
 
-        Loop::enable($this->watcher);
+        EventLoop::enable($this->watcher);
 
         try {
             $channel = $this->acceptor[$pid]
                 ->getFuture()
-                ->join(new TimeoutCancellationToken(self::PROCESS_START_TIMEOUT));
+                ->await(new TimeoutCancellationToken(self::PROCESS_START_TIMEOUT));
         } catch (CancelledException $exception) {
             $key = \array_search($pid, $this->keys, true);
             \assert(\is_string($key), "Key for {$pid} not found");
@@ -141,7 +141,7 @@ class ProcessHub
             throw new ContextException("Starting the process timed out", 0, $exception);
         } finally {
             if (empty($this->acceptor)) {
-                Loop::disable($this->watcher);
+                EventLoop::disable($this->watcher);
             }
         }
 

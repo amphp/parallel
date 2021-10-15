@@ -8,6 +8,7 @@ use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\PHPUnit\LoopCaughtException;
 
 class DefaultPoolTest extends AsyncTestCase
 {
@@ -51,5 +52,8 @@ class DefaultPoolTest extends AsyncTestCase
         $pool->enqueue($this->createMock(Task::class));
 
         $pool->enqueue($this->createMock(Task::class));
+
+        // Warning is forwarded as an exception to loop.
+        $this->expectException(LoopCaughtException::class);
     }
 }

@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\CancellationToken;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 /**
  * Gets or sets the global worker pool.
@@ -16,7 +16,7 @@ function pool(Pool $pool = null): Pool
 {
     static $map;
     $map ??= new \WeakMap();
-    $driver = Loop::getDriver();
+    $driver = EventLoop::getDriver();
 
     if ($pool) {
         return $map[$driver] = $pool;
@@ -82,7 +82,7 @@ function factory(WorkerFactory $factory = null): WorkerFactory
 {
     static $map;
     $map ??= new \WeakMap();
-    $driver = Loop::getDriver();
+    $driver = EventLoop::getDriver();
 
     if ($factory) {
         return $map[$driver] = $factory;

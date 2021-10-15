@@ -7,7 +7,7 @@ use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
-use function Revolt\EventLoop\defer;
+use function Revolt\launch;
 
 final class TaskRunner
 {
@@ -34,12 +34,12 @@ final class TaskRunner
                 $id = $job->getId();
                 $this->cancellationSources[$id] = $source = new CancellationTokenSource;
 
-                defer(function () use ($job, $id, $source): void {
+                launch(function () use ($job, $id, $source): void {
                     try {
                         $result = $job->getTask()->run($this->environment, $source->getToken());
 
                         if ($result instanceof Future) {
-                            $result = $result->join($source->getToken());
+                            $result = $result->await($source->getToken());
                         }
 
                         $result = new Internal\TaskSuccess($job->getId(), $result);

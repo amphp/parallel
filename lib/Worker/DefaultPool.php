@@ -6,7 +6,8 @@ use Amp\CancellationToken;
 use Amp\Deferred;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
-use function Revolt\EventLoop\defer;
+use function Amp\coroutine;
+use function Revolt\launch;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -166,7 +167,7 @@ final class DefaultPool implements Pool
     public function shutdown(): int
     {
         if ($this->exitStatus) {
-            return $this->exitStatus->join();
+            return $this->exitStatus->await();
         }
 
         $this->running = false;
@@ -175,7 +176,7 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = Future\spawn(fn () => $worker->shutdown());
+                $shutdowns[] = coroutine(fn () => $worker->shutdown());
             }
         }
 
@@ -185,13 +186,13 @@ final class DefaultPool implements Pool
             $deferred->error(new WorkerException('The pool shutdown before the task could be executed'));
         }
 
-        return ($this->exitStatus = Future\spawn(function () use ($shutdowns): int {
+        return ($this->exitStatus = coroutine(function () use ($shutdowns): int {
             $shutdowns = Future\all($shutdowns);
             if (\array_sum($shutdowns)) {
                 return 1;
             }
             return 0;
-        }))->join();
+        }))->await();
     }
 
     /**
@@ -251,7 +252,7 @@ final class DefaultPool implements Pool
                 }
 
                 do {
-                    $worker = $this->waiting->getFuture()->join();
+                    $worker = $this->waiting->getFuture()->await();
                 } while ($this->waiting !== null);
             } else {
                 // Shift a worker off the idle queue.
@@ -266,7 +267,7 @@ final class DefaultPool implements Pool
 
             // Worker crashed; trigger error and remove it from the pool.
 
-            defer(function () use ($worker): void {
+            launch(function () use ($worker): void {
                 try {
                     $code = $worker->shutdown();
                     \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);

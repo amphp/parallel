@@ -5,6 +5,7 @@ namespace Amp\Parallel\Test\Sync;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
+use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\SerializationException;
@@ -131,12 +132,13 @@ class ChannelledStreamTest extends AsyncTestCase
                 return $data;
             }
 
-            public function write(string $data): void
+            public function write(string $data): Future
             {
                 $this->buffer .= $data;
+                return Future::complete(null);
             }
 
-            public function end(string $finalData = ""): void
+            public function end(string $finalData = ""): Future
             {
                 throw new \BadMethodCallException;
             }

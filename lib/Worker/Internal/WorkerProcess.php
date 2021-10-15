@@ -5,6 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\ByteStream;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\Process;
+use function Revolt\launch;
 
 /** @internal */
 class WorkerProcess implements Context
@@ -34,16 +35,30 @@ class WorkerProcess implements Context
 
     public function start(): void
     {
-        $this->process->start();
+        $process = $this->process;
+        $process->start();
 
-        $stdout = $this->process->getStdout();
-        $stdout->unreference();
+        launch(function () use ($process): void {
+            $stdout = $process->getStdout();
+            $stdout->unreference();
 
-        $stderr = $this->process->getStderr();
-        $stderr->unreference();
+            try {
+                ByteStream\pipe($stdout, ByteStream\getStdout());
+            } catch (\Throwable) {
+                $process->kill();
+            }
+        });
 
-        ByteStream\pipe($stdout, ByteStream\getStdout());
-        ByteStream\pipe($stderr, ByteStream\getStderr());
+        launch(function () use ($process): void {
+            $stderr = $process->getStderr();
+            $stderr->unreference();
+
+            try {
+                ByteStream\pipe($stderr, ByteStream\getStderr());
+            } catch (\Throwable) {
+                $process->kill();
+            }
+        });
     }
 
     public function kill(): void
