@@ -11,8 +11,8 @@ use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellationToken;
+use Revolt\EventLoop;
 use function Amp\coroutine;
-use function Revolt\launch;
 
 /**
  * Base class for workers executing {@see Task}s.
@@ -145,7 +145,7 @@ abstract class TaskWorker implements Worker
                     }
                 });
 
-                launch(static function () use ($future, $token, $cancellationId): void {
+                EventLoop::queue(static function () use ($future, $token, $cancellationId): void {
                     try {
                         $future->await();
                     } catch (\Throwable) {

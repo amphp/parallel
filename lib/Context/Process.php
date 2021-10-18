@@ -377,9 +377,6 @@ final class Process implements Context
     public function kill(): void
     {
         $this->process->kill();
-
-        if ($this->channel !== null) {
-            $this->channel->close();
-        }
+        $this?->channel->close();
     }
 }

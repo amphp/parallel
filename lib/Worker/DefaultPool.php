@@ -6,8 +6,8 @@ use Amp\CancellationToken;
 use Amp\Deferred;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
+use Revolt\EventLoop;
 use function Amp\coroutine;
-use function Revolt\launch;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -267,7 +267,7 @@ final class DefaultPool implements Pool
 
             // Worker crashed; trigger error and remove it from the pool.
 
-            launch(function () use ($worker): void {
+            EventLoop::queue(function () use ($worker): void {
                 try {
                     $code = $worker->shutdown();
                     \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);

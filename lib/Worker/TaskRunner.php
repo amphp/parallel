@@ -7,7 +7,7 @@ use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
-use function Revolt\launch;
+use Revolt\EventLoop;
 
 final class TaskRunner
 {
@@ -34,7 +34,7 @@ final class TaskRunner
                 $id = $job->getId();
                 $this->cancellationSources[$id] = $source = new CancellationTokenSource;
 
-                launch(function () use ($job, $id, $source): void {
+                EventLoop::queue(function () use ($job, $id, $source): void {
                     try {
                         $result = $job->getTask()->run($this->environment, $source->getToken());
 

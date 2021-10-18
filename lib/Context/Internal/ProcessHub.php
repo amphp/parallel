@@ -9,7 +9,6 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
 use function Amp\coroutine;
-use function Revolt\launch;
 
 class ProcessHub
 {
@@ -74,7 +73,7 @@ class ProcessHub
             static function (string $watcher, $server) use (&$keys, &$acceptor): void {
                 // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
                 while ($client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
-                    launch(static function () use ($client, &$keys, &$acceptor): void {
+                    EventLoop::queue(static function () use ($client, &$keys, &$acceptor): void {
                         $channel = new ChannelledSocket($client, $client);
 
                         try {

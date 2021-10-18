@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\ByteStream;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\Process;
-use function Revolt\launch;
+use Revolt\EventLoop;
 
 /** @internal */
 class WorkerProcess implements Context
@@ -38,7 +38,7 @@ class WorkerProcess implements Context
         $process = $this->process;
         $process->start();
 
-        launch(function () use ($process): void {
+        EventLoop::queue(function () use ($process): void {
             $stdout = $process->getStdout();
             $stdout->unreference();
 
@@ -49,7 +49,7 @@ class WorkerProcess implements Context
             }
         });
 
-        launch(function () use ($process): void {
+        EventLoop::queue(function () use ($process): void {
             $stderr = $process->getStderr();
             $stderr->unreference();
 
