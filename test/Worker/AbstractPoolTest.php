@@ -163,13 +163,10 @@ abstract class AbstractPoolTest extends AsyncTestCase
             $pool = $this->createPool(32);
 
             $values = \range(1, 50);
-            $tasks = \array_map(function (int $value): Task {
-                return new Fixtures\TestTask($value);
-            }, $values);
 
-            $promises = \array_map(function (Task $task) use ($pool): Future {
-                return coroutine(fn () => $pool->enqueue($task));
-            }, $tasks);
+            $promises = \array_map(static function (int $value) use ($pool): Future {
+                return coroutine(fn () => $pool->enqueue(new Fixtures\TestTask($value)));
+            }, $values);
 
             self::assertEquals($values, Future\all($promises));
         }
