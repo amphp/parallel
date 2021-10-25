@@ -164,6 +164,7 @@ final class BasicEnvironment implements Environment
      *
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($key)
     {
         return $this->get($key);
