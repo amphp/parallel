@@ -6,7 +6,6 @@ use Amp\Future;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
 use function Amp\delay;
-use function Revolt\now;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -59,10 +58,10 @@ if (\function_exists("cli_set_process_title")) {
         $key .= $chunk;
     } while (\strlen($key) < Process::KEY_LENGTH);
 
-    $connectStart = now();
+    $connectStart = microtime(true);
 
     while (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        if (now() > $connectStart + 5) { // try for 5 seconds, after that the parent times out anyway
+        if (microtime(true) > $connectStart + 5) { // try for 5 seconds, after that the parent times out anyway
             \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
         }
 

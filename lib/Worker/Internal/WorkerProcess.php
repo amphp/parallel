@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\ByteStream;
 use Amp\Parallel\Context\Context;
+use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Process;
 use Revolt\EventLoop;
 
@@ -36,7 +37,14 @@ class WorkerProcess implements Context
     public function start(): void
     {
         $process = $this->process;
-        $process->start();
+        try {
+            $process->start();
+        } catch (ContextException $e) {
+            (function () use ($process) {
+                $this->message .= "\nProcess stdout:\n" . ByteStream\buffer($process->getStdout()) . "\nProcess stderr:\n" . ByteStream\buffer($process->getStderr());
+            })->call($e);
+            throw $e;
+        }
 
         EventLoop::queue(function () use ($process): void {
             $stdout = $process->getStdout();
