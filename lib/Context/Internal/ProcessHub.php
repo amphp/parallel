@@ -8,7 +8,7 @@ use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 class ProcessHub
 {
@@ -77,7 +77,7 @@ class ProcessHub
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = coroutine(fn () => $channel->receive())
+                            $received = launch(fn () => $channel->receive())
                                 ->await(new TimeoutCancellationToken(self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();

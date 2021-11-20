@@ -16,9 +16,8 @@ use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellationToken;
-use function Amp\coroutine;
 use function Amp\delay;
-use function Revolt\launch;
+use function Amp\launch;
 
 class NonAutoloadableTask implements Task
 {
@@ -87,9 +86,9 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $futures = [
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(56))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(72))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(42))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(56))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(72))),
         ];
 
         self::assertEquals([42, 56, 72], Future\all($futures));
@@ -104,9 +103,9 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $futures = [
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
         ];
 
         self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\all($futures));
@@ -121,13 +120,13 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $futures = [
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
-            coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
+            launch(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
         ];
 
         // Send shutdown signal, but don't await until tasks have finished.
-        $shutdown = coroutine(fn () => $worker->shutdown());
+        $shutdown = launch(fn () => $worker->shutdown());
 
         self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\all($futures));
 
@@ -138,7 +137,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker();
 
-        $future = coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
+        $future = launch(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
         delay(0); // Tick event loop to call Worker::enqueue()
         self::assertFalse($worker->isIdle());
         $future->await();
@@ -152,7 +151,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         $worker = $this->createWorker();
 
-        coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42)))->ignore();
+        launch(fn () => $worker->enqueue(new Fixtures\TestTask(42)))->ignore();
 
         $worker->kill();
 
@@ -275,14 +274,14 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker();
 
-        coroutine(fn () => $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
+        launch(fn () => $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
             public function run(Environment $environment, CancellationToken $token): mixed
             {
                 return null;
             }
         }))->ignore();
 
-        $future = coroutine(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
+        $future = launch(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
 
         self::assertSame(42, $future->await());
 

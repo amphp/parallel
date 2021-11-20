@@ -5,7 +5,7 @@ require \dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Future;
 use Amp\Parallel\Worker;
-use function Amp\coroutine;
+use function Amp\launch;
 
 $urls = [
     'https://secure.php.net',
@@ -15,7 +15,7 @@ $urls = [
 
 $futures = [];
 foreach ($urls as $url) {
-    $futures[$url] = coroutine(fn () => Worker\enqueueCallable('file_get_contents', $url));
+    $futures[$url] = launch(fn () => Worker\enqueueCallable('file_get_contents', $url));
 }
 
 $responses = Future\all($futures);

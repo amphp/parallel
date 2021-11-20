@@ -5,6 +5,7 @@ namespace Amp\Parallel\Test\Sync;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
+use Amp\CancellationToken;
 use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
@@ -125,7 +126,7 @@ class ChannelledStreamTest extends AsyncTestCase
         return new class implements InputStream, OutputStream {
             private string $buffer = "";
 
-            public function read(): ?string
+            public function read(?CancellationToken $token = null): ?string
             {
                 $data = $this->buffer;
                 $this->buffer = "";

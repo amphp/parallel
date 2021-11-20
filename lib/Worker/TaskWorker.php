@@ -12,7 +12,7 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 /**
  * Base class for workers executing {@see Task}s.
@@ -89,7 +89,7 @@ abstract class TaskWorker implements Worker
 
     private static function receive(Context $context, callable $onReceive): Future
     {
-        return coroutine(static function () use ($context, $onReceive): void {
+        return launch(static function () use ($context, $onReceive): void {
             try {
                 $received = $context->receive();
             } catch (\Throwable $exception) {
@@ -164,7 +164,7 @@ abstract class TaskWorker implements Worker
 
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                coroutine(fn () => $this->context->join())
+                launch(fn () => $this->context->join())
                     ->await(new TimeoutCancellationToken(self::ERROR_TIMEOUT));
             } catch (CancelledException) {
                 $this->kill();
@@ -195,7 +195,7 @@ abstract class TaskWorker implements Worker
             return $this->exitStatus->await();
         }
 
-        return ($this->exitStatus = coroutine(function (): int {
+        return ($this->exitStatus = launch(function (): int {
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
@@ -206,7 +206,7 @@ abstract class TaskWorker implements Worker
             $this->context->send(null);
 
             try {
-                return coroutine(fn () => $this->context->join())
+                return launch(fn () => $this->context->join())
                     ->await(new TimeoutCancellationToken(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();

@@ -9,7 +9,7 @@ use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 abstract class AbstractPoolTest extends AsyncTestCase
 {
@@ -86,9 +86,9 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $values = Future\all([
-            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
-            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
-            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
+            launch(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
+            launch(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
+            launch(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
         ]);
 
         self::assertEquals([42, 56, 72], $values);
@@ -134,13 +134,13 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return coroutine(fn () => $pool->enqueue($task));
+            return launch(fn () => $pool->enqueue($task));
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return coroutine(fn () => $pool->enqueue($task));
+            return launch(fn () => $pool->enqueue($task));
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
@@ -165,7 +165,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
             $values = \range(1, 50);
 
             $promises = \array_map(static function (int $value) use ($pool): Future {
-                return coroutine(fn () => $pool->enqueue(new Fixtures\TestTask($value)));
+                return launch(fn () => $pool->enqueue(new Fixtures\TestTask($value)));
             }, $values);
 
             self::assertEquals($values, Future\all($promises));

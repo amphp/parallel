@@ -14,7 +14,7 @@ use Amp\Parallel\Sync\SynchronizationError;
 use Amp\TimeoutCancellationToken;
 use parallel\Runtime;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
@@ -376,7 +376,7 @@ final class Parallel implements Context
             }
 
             try {
-                $data = coroutine(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
+                $data = launch(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
             } catch (ContextException | ChannelException | CancelledException) {
                 $this->kill();
                 throw new ContextException(

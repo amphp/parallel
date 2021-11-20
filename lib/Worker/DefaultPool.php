@@ -7,7 +7,7 @@ use Amp\Deferred;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -176,7 +176,7 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = coroutine(fn () => $worker->shutdown());
+                $shutdowns[] = launch(fn () => $worker->shutdown());
             }
         }
 
@@ -186,7 +186,7 @@ final class DefaultPool implements Pool
             $deferred->error(new WorkerException('The pool shutdown before the task could be executed'));
         }
 
-        return ($this->exitStatus = coroutine(function () use ($shutdowns): int {
+        return ($this->exitStatus = launch(function () use ($shutdowns): int {
             $shutdowns = Future\all($shutdowns);
             if (\array_sum($shutdowns)) {
                 return 1;

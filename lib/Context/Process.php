@@ -12,7 +12,7 @@ use Amp\Process\ProcessInputStream;
 use Amp\Process\ProcessOutputStream;
 use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 final class Process implements Context
 {
@@ -249,7 +249,7 @@ final class Process implements Context
             }
 
             try {
-                $data = coroutine(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
+                $data = launch(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
             } catch (ContextException | ChannelException | CancelledException $ignored) {
                 if ($this->isRunning()) {
                     $this->kill();

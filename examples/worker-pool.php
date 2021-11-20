@@ -7,7 +7,7 @@ use Amp\Future;
 use Amp\Parallel\Worker\CallableTask;
 use Amp\Parallel\Worker\DefaultPool;
 use Revolt\EventLoop;
-use function Amp\coroutine;
+use function Amp\launch;
 
 // A variable to store our fetched results
 $results = [];
@@ -30,7 +30,7 @@ $pool = new DefaultPool;
 $futures = [];
 
 foreach ($tasks as $index => $task) {
-    $futures[] = coroutine(function () use ($pool, $index, $task): string {
+    $futures[] = launch(function () use ($pool, $index, $task): string {
         $result = $pool->enqueue($task);
         \printf("\nRead from task %d: %d bytes\n", $index, \strlen($result));
         return $result;
