@@ -5,6 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
+use Amp\CancellationToken;
 use Amp\Serialization\Serializer;
 
 /**
@@ -40,7 +41,7 @@ final class ChannelledStream implements Channel
     /**
      * {@inheritdoc}
      */
-    public function send($data): void
+    public function send(mixed $data): void
     {
         try {
             $this->write->write($this->parser->encode($data))->await();
@@ -52,11 +53,11 @@ final class ChannelledStream implements Channel
     /**
      * {@inheritdoc}
      */
-    public function receive(): mixed
+    public function receive(?CancellationToken $token = null): mixed
     {
         while ($this->received->isEmpty()) {
             try {
-                $chunk = $this->read->read();
+                $chunk = $this->read->read($token);
             } catch (StreamException $exception) {
                 throw new ChannelException("Reading from the channel failed. Did the context die?", 0, $exception);
             }

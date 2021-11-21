@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\ByteStream;
+use Amp\CancellationToken;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Process;
@@ -19,9 +20,9 @@ class WorkerProcess implements Context
         $this->process = new Process($script, null, $env, $binary);
     }
 
-    public function receive(): mixed
+    public function receive(?CancellationToken $token = null): mixed
     {
-        return $this->process->receive();
+        return $this->process->receive($token);
     }
 
     public function send($data): void
@@ -41,7 +42,8 @@ class WorkerProcess implements Context
             $process->start();
         } catch (ContextException $e) {
             (function () use ($process) {
-                $this->message .= "\nProcess stdout:\n" . ByteStream\buffer($process->getStdout()) . "\nProcess stderr:\n" . ByteStream\buffer($process->getStderr());
+                $this->message .= "\nProcess stdout:\n" . ByteStream\buffer($process->getStdout())
+                    . "\nProcess stderr:\n" . ByteStream\buffer($process->getStderr());
             })->call($e);
             throw $e;
         }

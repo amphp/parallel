@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\CancellationToken;
 use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
@@ -205,14 +206,14 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function receive(): mixed
+    public function receive(?CancellationToken $token = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
 
         try {
-            $data = $this->channel->receive();
+            $data = $this->channel->receive($token);
         } catch (ChannelException $e) {
             throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }

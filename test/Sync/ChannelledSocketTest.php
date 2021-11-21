@@ -2,10 +2,12 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
 
 class ChannelledSocketTest extends AsyncTestCase
@@ -101,6 +103,23 @@ class ChannelledSocketTest extends AsyncTestCase
         $a->close();
 
         $data = $a->receive();
+    }
+
+    public function testCancelThenReceive()
+    {
+        [$left, $right] = $this->createSockets();
+        $a = new ChannelledSocket($left, $left);
+        $b = new ChannelledSocket($right, $right);
+
+        try {
+            $a->receive(new TimeoutCancellationToken(0.001));
+            $this->fail('Receive should have been cancelled');
+        } catch (CancelledException) {
+        }
+
+        $data = 'test';
+        $b->send($data);
+        self::assertSame($data, $a->receive());
     }
 
     /**

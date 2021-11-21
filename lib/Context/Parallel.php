@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\CancellationToken;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
@@ -324,14 +325,14 @@ final class Parallel implements Context
     /**
      * {@inheritdoc}
      */
-    public function receive(): mixed
+    public function receive(?CancellationToken $token = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started.');
         }
 
         try {
-            $data = $this->channel->receive();
+            $data = $this->channel->receive($token);
         } catch (ChannelException $e) {
             throw new ContextException(
                 "The thread stopped responding, potentially due to a fatal error or calling exit",
