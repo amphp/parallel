@@ -20,7 +20,7 @@ class ChannelledSocketTest extends AsyncTestCase
 
         $message = 'hello';
 
-        EventLoop::queue(fn () => $a->send($message));
+        $a->send($message);
         $data = $b->receive();
         self::assertSame($message, $data);
     }
@@ -40,7 +40,7 @@ class ChannelledSocketTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        EventLoop::queue(fn () => $a->send($message));
+        $a->send($message);
         $data = $b->receive();
         self::assertSame($message, $data);
     }
@@ -72,8 +72,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $b = new ChannelledSocket($right, $right);
 
         // Close $a. $b should close on next read...
-        $a->send(function () {
-        });
+        $a->send(fn () => null)->await();
         $data = $b->receive();
     }
 
@@ -88,7 +87,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
-        $a->send('hello');
+        $a->send('hello')->await();
     }
 
     /**
@@ -118,7 +117,7 @@ class ChannelledSocketTest extends AsyncTestCase
         }
 
         $data = 'test';
-        $b->send($data);
+        $b->send($data)->await();
         self::assertSame($data, $a->receive());
     }
 
@@ -128,10 +127,10 @@ class ChannelledSocketTest extends AsyncTestCase
     protected function createSockets(): array
     {
         if (($sockets = @\stream_socket_pair(
-            \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-            STREAM_SOCK_STREAM,
-            STREAM_IPPROTO_IP
-        )) === false) {
+                \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                STREAM_SOCK_STREAM,
+                STREAM_IPPROTO_IP
+            )) === false) {
             $message = "Failed to create socket pair";
             if ($error = \error_get_last()) {
                 $message .= \sprintf(" Errno: %d; %s", $error["type"], $error["message"]);

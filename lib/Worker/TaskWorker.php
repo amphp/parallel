@@ -11,7 +11,6 @@ use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellationToken;
-use Revolt\EventLoop;
 use function Amp\launch;
 
 /**
@@ -133,27 +132,12 @@ abstract class TaskWorker implements Worker
         $future = $deferred->getFuture();
 
         try {
-            $this->context->send($job);
+            $this->context->send($job)->await();
 
             if ($token) {
                 $context = $this->context;
-                $cancellationId = $token->subscribe(static function () use ($jobId, $context): void {
-                    try {
-                        $context->send($jobId);
-                    } catch (\Throwable) {
-                        return;
-                    }
-                });
-
-                EventLoop::queue(static function () use ($future, $token, $cancellationId): void {
-                    try {
-                        $future->await();
-                    } catch (\Throwable) {
-                        // Ignored.
-                    } finally {
-                        $token->unsubscribe($cancellationId);
-                    }
-                });
+                $cancellationId = $token->subscribe(static fn () => $context->send($jobId)->ignore());
+                $future->finally(fn () => $token->unsubscribe($cancellationId))->ignore();
             }
         } catch (SerializationException $exception) {
             // Could not serialize Task object.
@@ -203,7 +187,7 @@ abstract class TaskWorker implements Worker
             // Wait for pending tasks to finish.
             Future\settle(\array_map(fn (Deferred $deferred) => $deferred->getFuture(), $this->jobQueue));
 
-            $this->context->send(null);
+            $this->context->send(null)->await();
 
             try {
                 return launch(fn () => $this->context->join())

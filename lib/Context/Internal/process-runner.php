@@ -71,8 +71,8 @@ if (\function_exists("cli_set_process_title")) {
     $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
-        $channel->send($key);
-    } catch (\Throwable $exception) {
+        $channel->send($key)->await();
+    } catch (\Throwable) {
         \trigger_error("Could not send key to parent", E_USER_ERROR);
     }
 
@@ -104,12 +104,15 @@ if (\function_exists("cli_set_process_title")) {
 
     try {
         try {
-            $channel->send($result);
+            $channel->send($result)->await();
         } catch (Sync\SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $channel->send(new Sync\ExitFailure($exception));
+            $channel->send(new Sync\ExitFailure($exception))->await();
         }
     } catch (\Throwable $exception) {
-        \trigger_error("Could not send result to parent; be sure to shutdown the child before ending the parent", E_USER_ERROR);
+        \trigger_error(sprintf(
+            "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
+            $exception->getMessage(),
+        ), E_USER_ERROR);
     }
 })();

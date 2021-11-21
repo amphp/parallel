@@ -5,6 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\ResourceInputStream;
 use Amp\ByteStream\ResourceOutputStream;
 use Amp\CancellationToken;
+use Amp\Future;
 use Amp\Serialization\Serializer;
 
 final class ChannelledSocket implements Channel
@@ -42,9 +43,9 @@ final class ChannelledSocket implements Channel
     /**
      * {@inheritdoc}
      */
-    public function send(mixed $data): void
+    public function send(mixed $data): Future
     {
-        $this->channel->send($data);
+        return $this->channel->send($data);
     }
 
     public function unreference(): void

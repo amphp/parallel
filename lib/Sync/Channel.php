@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\CancellationToken;
+use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 
 /**
@@ -27,6 +28,8 @@ interface Channel
     /**
      * @param mixed $data
      *
+     * @return Future Resolved with the data has been successfully written to the channel.
+     *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError If the context has not been started or the context
      *     unexpectedly ends.
@@ -34,5 +37,5 @@ interface Channel
      * @throws \Error If an ExitResult object is given.
      * @throws SerializationException If serializing the data fails.
      */
-    public function send(mixed $data): void;
+    public function send(mixed $data): Future;
 }

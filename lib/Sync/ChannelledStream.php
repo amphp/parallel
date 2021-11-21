@@ -6,6 +6,7 @@ use Amp\ByteStream\InputStream;
 use Amp\ByteStream\OutputStream;
 use Amp\ByteStream\StreamException;
 use Amp\CancellationToken;
+use Amp\Future;
 use Amp\Serialization\Serializer;
 
 /**
@@ -26,8 +27,8 @@ final class ChannelledStream implements Channel
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
      *
-     * @param InputStream     $read
-     * @param OutputStream    $write
+     * @param InputStream $read
+     * @param OutputStream $write
      * @param Serializer|null $serializer
      */
     public function __construct(InputStream $read, OutputStream $write, ?Serializer $serializer = null)
@@ -41,13 +42,12 @@ final class ChannelledStream implements Channel
     /**
      * {@inheritdoc}
      */
-    public function send(mixed $data): void
+    public function send(mixed $data): Future
     {
-        try {
-            $this->write->write($this->parser->encode($data))->await();
-        } catch (StreamException $exception) {
-            throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
-        }
+        return $this->write->write($this->parser->encode($data))
+            ->catch(static function (\Throwable $exception): mixed {
+                throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
+            });
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Amp\Parallel\Context;
 
 use Amp\CancellationToken;
 use Amp\CancelledException;
+use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -232,7 +233,7 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function send(mixed $data): void
+    public function send(mixed $data): Future
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
@@ -242,16 +243,14 @@ final class Process implements Context
             throw new \Error("Cannot send exit result objects");
         }
 
-        try {
-            $this->channel->send($data);
-        } catch (ChannelException $e) {
+        return $this->channel->send($data)->catch(function (\Throwable $e): mixed {
             if ($this->channel === null) {
                 throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
 
             try {
                 $data = launch(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
-            } catch (ContextException | ChannelException | CancelledException $ignored) {
+            } catch (ContextException | ChannelException | CancelledException) {
                 if ($this->isRunning()) {
                     $this->kill();
                 }
@@ -262,7 +261,7 @@ final class Process implements Context
                 'Process unexpectedly exited with result of type: %s',
                 \is_object($data) ? \get_class($data) : \gettype($data)
             ), 0, $e);
-        }
+        });
     }
 
     /**

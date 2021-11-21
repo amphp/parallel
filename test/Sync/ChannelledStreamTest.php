@@ -22,7 +22,7 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $message = 'hello';
 
-        $a->send($message);
+        $a->send($message)->await();
         $data = $b->receive();
         $this->assertSame($message, $data);
     }
@@ -42,7 +42,7 @@ class ChannelledStreamTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        $a->send($message);
+        $a->send($message)->await();
         $data = $b->receive();
         $this->assertSame($message, $data);
     }
@@ -75,8 +75,7 @@ class ChannelledStreamTest extends AsyncTestCase
         $b = new ChannelledStream($mock, $mock);
 
         // Close $a. $b should close on next read...
-        $a->send(function () {
-        });
+        $a->send(fn () => null)->await();
         $data = $b->receive();
     }
 
@@ -90,7 +89,7 @@ class ChannelledStreamTest extends AsyncTestCase
         $mock = $this->createMock(OutputStream::class);
         $mock->expects($this->once())
             ->method('write')
-            ->will($this->throwException(new StreamException));
+            ->willReturn(Future::error(new StreamException));
 
         $a = new ChannelledStream($this->createMock(InputStream::class), $mock);
         $b = new ChannelledStream(
@@ -98,7 +97,7 @@ class ChannelledStreamTest extends AsyncTestCase
             $this->createMock(OutputStream::class)
         );
 
-        $a->send('hello');
+        $a->send('hello')->await();
     }
 
     /**

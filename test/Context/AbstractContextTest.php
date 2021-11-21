@@ -51,7 +51,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
         $context->start();
         delay(0.1);
-        $context->send(1);
+        $context->send(1)->await();
     }
 
     public function testInvalidScriptPath(): void
@@ -159,6 +159,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
         $context->start();
         delay(0.5);
-        $context->send(1);
+        $context->send(1)->await();
     }
 }

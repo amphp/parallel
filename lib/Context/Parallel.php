@@ -188,8 +188,8 @@ final class Parallel implements Context
             $channel = new ChannelledSocket($socket, $socket);
 
             try {
-                $channel->send($key);
-            } catch (\Throwable $exception) {
+                $channel->send($key)->await();
+            } catch (\Throwable) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
                 return 1;
             }
@@ -236,16 +236,16 @@ final class Parallel implements Context
                 }
 
                 try {
-                    $channel->send($result);
+                    $channel->send($result)->await();
                 } catch (SerializationException $exception) {
                     // Serializing the result failed. Send the reason why.
-                    $channel->send(new ExitFailure($exception));
+                    $channel->send(new ExitFailure($exception))->await();
                 }
             } catch (\Throwable $exception) {
-                \trigger_error(
-                    "Could not send result to parent; be sure to shutdown the child before ending the parent",
-                    E_USER_ERROR
-                );
+                \trigger_error(sprintf(
+                    "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
+                    $exception->getMessage(),
+                ), E_USER_ERROR);
                 return 1;
             } finally {
                 $channel->close();
@@ -355,7 +355,7 @@ final class Parallel implements Context
     /**
      * {@inheritdoc}
      */
-    public function send(mixed $data): void
+    public function send(mixed $data): Future
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
@@ -365,9 +365,7 @@ final class Parallel implements Context
             throw new \Error('Cannot send exit result objects.');
         }
 
-        try {
-            $this->channel->send($data);
-        } catch (ChannelException $e) {
+        return $this->channel->send($data)->catch(function (\Throwable $e): mixed {
             if ($this->channel === null) {
                 throw new ContextException(
                     "The thread stopped responding, potentially due to a fatal error or calling exit",
@@ -391,7 +389,7 @@ final class Parallel implements Context
                 'Thread unexpectedly exited with result of type: %s',
                 \is_object($data) ? \get_class($data) : \gettype($data)
             ), 0, $e);
-        }
+        });
     }
 
     /**
