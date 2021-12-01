@@ -30,8 +30,9 @@ The basic usage of this library is to submit blocking tasks to be executed by a 
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Amp\Future;
 use Amp\Parallel\Worker;
-use Amp\Promise;
+use function Amp\launch;
 
 $urls = [
     'https://secure.php.net',
@@ -39,12 +40,12 @@ $urls = [
     'https://github.com',
 ];
 
-$promises = [];
+$futures = [];
 foreach ($urls as $url) {
-    $promises[$url] = Worker\enqueueCallable('file_get_contents', $url);
+    $futures[$url] = launch(fn () => Worker\enqueueCallable('file_get_contents', $url));
 }
 
-$responses = Promise\wait(Promise\all($promises));
+$responses = Future\all($futures);
 
 foreach ($responses as $url => $response) {
     \printf("Read %d bytes from %s\n", \strlen($response), $url);
