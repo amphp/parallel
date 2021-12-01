@@ -33,7 +33,7 @@ class ProcessHub
 
     public function __construct()
     {
-        $isWindows = 'Windows' === \PHP_OS_FAMILY;
+        $isWindows = \PHP_OS_FAMILY === 'Windows';
 
         if ($isWindows) {
             $this->uri = "tcp://127.0.0.1:0";
