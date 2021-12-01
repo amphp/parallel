@@ -143,7 +143,7 @@ final class Process implements Context
 
     private static function locateBinary(): string
     {
-        $executable = \strncasecmp(\PHP_OS, "WIN", 3) === 0 ? "php.exe" : "php";
+        $executable = 'Windows' === \PHP_OS_FAMILY ? "php.exe" : "php";
 
         $paths = \array_filter(\explode(\PATH_SEPARATOR, \getenv("PATH")));
         $paths[] = \PHP_BINDIR;
