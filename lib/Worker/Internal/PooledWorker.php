@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 
@@ -52,7 +52,7 @@ final class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $token = null): mixed
     {
         return $this->worker->enqueue($task, $token);
     }

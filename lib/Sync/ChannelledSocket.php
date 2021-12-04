@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\ByteStream\ResourceInputStream;
-use Amp\ByteStream\ResourceOutputStream;
-use Amp\CancellationToken;
+use Amp\ByteStream\ReadableResourceStream;
+use Amp\ByteStream\WritableResourceStream;
+use Amp\Cancellation;
 use Amp\Future;
 use Amp\Serialization\Serializer;
 
@@ -12,9 +12,9 @@ final class ChannelledSocket implements Channel
 {
     private ChannelledStream $channel;
 
-    private ResourceInputStream $read;
+    private ReadableResourceStream $read;
 
-    private ResourceOutputStream $write;
+    private WritableResourceStream $write;
 
     /**
      * @param resource        $read Readable stream resource.
@@ -26,8 +26,8 @@ final class ChannelledSocket implements Channel
     public function __construct($read, $write, ?Serializer $serializer = null)
     {
         $this->channel = new ChannelledStream(
-            $this->read = new ResourceInputStream($read),
-            $this->write = new ResourceOutputStream($write),
+            $this->read = new ReadableResourceStream($read),
+            $this->write = new WritableResourceStream($write),
             $serializer
         );
     }
@@ -35,7 +35,7 @@ final class ChannelledSocket implements Channel
     /**
      * {@inheritdoc}
      */
-    public function receive(?CancellationToken $token = null): mixed
+    public function receive(?Cancellation $token = null): mixed
     {
         return $this->channel->receive($token);
     }

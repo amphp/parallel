@@ -8,7 +8,7 @@ use Amp\Parallel\Sync\SharedMemoryException;
 use Amp\Parallel\Sync\SharedMemoryParcel;
 use Amp\Sync\SyncException;
 use function Amp\delay;
-use function Amp\launch;
+use function Amp\async;
 
 /**
  * @requires extension shmop
@@ -45,7 +45,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
 
         $process = new Process([__DIR__ . '/Fixture/parcel.php', self::ID]);
 
-        $promise = launch(fn () => $object->synchronized(function (int $value): int {
+        $promise = async(fn () => $object->synchronized(function (int $value): int {
             $this->assertSame(42, $value);
             delay(0.5); // Child must wait until parent finishes with parcel.
             return $value + 1;

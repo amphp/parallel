@@ -7,7 +7,7 @@ use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
 use function Amp\delay;
-use function Amp\launch;
+use function Amp\async;
 
 abstract class AbstractContextTest extends AsyncTestCase
 {
@@ -105,7 +105,7 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(0.1);
-        $promise = launch(fn () => $context->join());
+        $promise = async(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
         $promise->await();
@@ -122,7 +122,7 @@ abstract class AbstractContextTest extends AsyncTestCase
             ]);
         $context->start();
         delay(0.1);
-        $promise = launch(fn () => $context->join());
+        $promise = async(fn () => $context->join());
         $context->kill();
         self::assertFalse($context->isRunning());
         $promise->await();

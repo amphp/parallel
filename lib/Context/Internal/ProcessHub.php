@@ -3,12 +3,12 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\CancelledException;
-use Amp\Deferred;
+use Amp\DeferredFuture;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Sync\ChannelledSocket;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
-use function Amp\launch;
+use function Amp\async;
 
 class ProcessHub
 {
@@ -26,7 +26,7 @@ class ProcessHub
     /** @var string|null */
     private ?string $watcher;
 
-    /** @var Deferred[] */
+    /** @var DeferredFuture[] */
     private array $acceptor = [];
 
     private ?string $toUnlink = null;
@@ -77,8 +77,8 @@ class ProcessHub
                         $channel = new ChannelledSocket($client, $client);
 
                         try {
-                            $received = launch(fn () => $channel->receive())
-                                ->await(new TimeoutCancellationToken(self::KEY_RECEIVE_TIMEOUT));
+                            $received = async(fn () => $channel->receive())
+                                ->await(new TimeoutCancellation(self::KEY_RECEIVE_TIMEOUT));
                         } catch (\Throwable $exception) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.
@@ -125,14 +125,14 @@ class ProcessHub
 
     public function accept(int $pid): ChannelledSocket
     {
-        $this->acceptor[$pid] = new Deferred;
+        $this->acceptor[$pid] = new DeferredFuture;
 
         EventLoop::enable($this->watcher);
 
         try {
             $channel = $this->acceptor[$pid]
                 ->getFuture()
-                ->await(new TimeoutCancellationToken(self::PROCESS_START_TIMEOUT));
+                ->await(new TimeoutCancellation(self::PROCESS_START_TIMEOUT));
         } catch (CancelledException $exception) {
             $key = \array_search($pid, $this->keys, true);
             \assert(\is_string($key), "Key for {$pid} not found");

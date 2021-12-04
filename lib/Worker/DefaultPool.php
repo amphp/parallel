@@ -2,12 +2,12 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CancellationToken;
-use Amp\Deferred;
+use Amp\Cancellation;
+use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Revolt\EventLoop;
-use function Amp\launch;
+use function Amp\async;
 
 /**
  * Provides a pool of workers that can be used to execute multiple tasks asynchronously.
@@ -33,7 +33,7 @@ final class DefaultPool implements Pool
     /** @var \SplQueue A collection of idle workers. */
     private \SplQueue $idleWorkers;
 
-    private ?Deferred $waiting = null;
+    private ?DeferredFuture $waiting = null;
 
     private \Closure $push;
 
@@ -137,14 +137,14 @@ final class DefaultPool implements Pool
      * Enqueues a {@see Task} to be executed by the worker pool.
      *
      * @param Task $task The task to enqueue.
-     * @param CancellationToken|null $token
+     * @param Cancellation|null $token
      *
      * @return mixed The return (or resolution) value of {@see Task::run()}.
      *
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $token = null): mixed
     {
         $worker = $this->pull();
 
@@ -176,7 +176,7 @@ final class DefaultPool implements Pool
         foreach ($this->workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
-                $shutdowns[] = launch(fn () => $worker->shutdown());
+                $shutdowns[] = async(fn () => $worker->shutdown());
             }
         }
 
@@ -186,7 +186,7 @@ final class DefaultPool implements Pool
             $deferred->error(new WorkerException('The pool shutdown before the task could be executed'));
         }
 
-        return ($this->exitStatus = launch(function () use ($shutdowns): int {
+        return ($this->exitStatus = async(function () use ($shutdowns): int {
             $shutdowns = Future\all($shutdowns);
             if (\array_sum($shutdowns)) {
                 return 1;
@@ -248,7 +248,7 @@ final class DefaultPool implements Pool
                 }
 
                 if ($this->waiting === null) {
-                    $this->waiting = new Deferred;
+                    $this->waiting = new DeferredFuture;
                 }
 
                 do {

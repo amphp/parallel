@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
@@ -12,10 +12,10 @@ use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use parallel\Runtime;
 use Revolt\EventLoop;
-use function Amp\launch;
+use function Amp\async;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
@@ -325,7 +325,7 @@ final class Parallel implements Context
     /**
      * {@inheritdoc}
      */
-    public function receive(?CancellationToken $token = null): mixed
+    public function receive(?Cancellation $token = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started.');
@@ -375,7 +375,7 @@ final class Parallel implements Context
             }
 
             try {
-                $data = launch(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
+                $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
             } catch (ContextException | ChannelException | CancelledException) {
                 $this->kill();
                 throw new ContextException(

@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\ByteStream;
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
@@ -21,7 +21,7 @@ class WorkerProcess implements Context
         $this->process = new Process($script, null, $env, $binary);
     }
 
-    public function receive(?CancellationToken $token = null): mixed
+    public function receive(?Cancellation $token = null): mixed
     {
         return $this->process->receive($token);
     }

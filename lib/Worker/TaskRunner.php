@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CancellationTokenSource;
+use Amp\DeferredCancellation;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\Channel;
@@ -15,7 +15,7 @@ final class TaskRunner
 
     private Environment $environment;
 
-    /** @var CancellationTokenSource[] */
+    /** @var DeferredCancellation[] */
     private array $cancellationSources = [];
 
     public function __construct(Channel $channel, Environment $environment)
@@ -32,19 +32,19 @@ final class TaskRunner
         while ($job = $this->channel->receive()) {
             if ($job instanceof Internal\Job) {
                 $id = $job->getId();
-                $this->cancellationSources[$id] = $source = new CancellationTokenSource;
+                $this->cancellationSources[$id] = $source = new DeferredCancellation;
 
                 EventLoop::queue(function () use ($job, $id, $source): void {
                     try {
-                        $result = $job->getTask()->run($this->environment, $source->getToken());
+                        $result = $job->getTask()->run($this->environment, $source->getCancellation());
 
                         if ($result instanceof Future) {
-                            $result = $result->await($source->getToken());
+                            $result = $result->await($source->getCancellation());
                         }
 
                         $result = new Internal\TaskSuccess($job->getId(), $result);
                     } catch (\Throwable $exception) {
-                        if ($exception instanceof CancelledException && $source->getToken()->isRequested()) {
+                        if ($exception instanceof CancelledException && $source->getCancellation()->isRequested()) {
                             $result = new Internal\TaskCancelled($id, $exception);
                         } else {
                             $result = new Internal\TaskFailure($id, $exception);

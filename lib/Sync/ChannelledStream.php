@@ -2,10 +2,10 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\ByteStream\InputStream;
-use Amp\ByteStream\OutputStream;
+use Amp\ByteStream\ReadableStream;
+use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Future;
 use Amp\Serialization\Serializer;
 
@@ -16,9 +16,9 @@ use Amp\Serialization\Serializer;
  */
 final class ChannelledStream implements Channel
 {
-    private InputStream $read;
+    private ReadableStream $read;
 
-    private OutputStream $write;
+    private WritableStream $write;
 
     private \SplQueue $received;
 
@@ -27,11 +27,11 @@ final class ChannelledStream implements Channel
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
      *
-     * @param InputStream $read
-     * @param OutputStream $write
+     * @param ReadableStream $read
+     * @param WritableStream $write
      * @param Serializer|null $serializer
      */
-    public function __construct(InputStream $read, OutputStream $write, ?Serializer $serializer = null)
+    public function __construct(ReadableStream $read, WritableStream $write, ?Serializer $serializer = null)
     {
         $this->read = $read;
         $this->write = $write;
@@ -53,7 +53,7 @@ final class ChannelledStream implements Channel
     /**
      * {@inheritdoc}
      */
-    public function receive(?CancellationToken $token = null): mixed
+    public function receive(?Cancellation $token = null): mixed
     {
         while ($this->received->isEmpty()) {
             try {

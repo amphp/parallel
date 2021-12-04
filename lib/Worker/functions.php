@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Revolt\EventLoop;
 
 /**
@@ -29,11 +29,11 @@ function pool(Pool $pool = null): Pool
  * Enqueues a task to be executed by the global worker pool.
  *
  * @param Task                   $task The task to enqueue.
- * @param CancellationToken|null $token
+ * @param Cancellation|null $token
  *
  * @return mixed
  */
-function enqueue(Task $task, ?CancellationToken $token = null): mixed
+function enqueue(Task $task, ?Cancellation $token = null): mixed
 {
     return pool()->enqueue($task, $token);
 }

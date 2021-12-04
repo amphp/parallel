@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 
@@ -12,7 +12,7 @@ use Amp\Parallel\Context\StatusError;
 interface Channel
 {
     /**
-     * @param CancellationToken|null $token Cancels waiting for the next value. Note the next value is not discarded
+     * @param Cancellation|null $token Cancels waiting for the next value. Note the next value is not discarded
      * if the operation is cancelled, rather it will be returned from the next call to this method.
      *
      * @return mixed Data received.
@@ -23,7 +23,7 @@ interface Channel
      * @throws ChannelException If receiving from the channel fails.
      * @throws SerializationException If unserializing the data fails.
      */
-    public function receive(?CancellationToken $token = null): mixed;
+    public function receive(?Cancellation $token = null): mixed;
 
     /**
      * @param mixed $data

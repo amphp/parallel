@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 
 /**
  * A runnable unit of execution.
@@ -15,9 +15,9 @@ interface Task
      * Runs the task inside the caller's context.
      *
      * @param Environment       $environment Environment instance shared between all Tasks executed on the Worker.
-     * @param CancellationToken $token Tasks may safely ignore this parameter if they are not cancellable.
+     * @param Cancellation $token Tasks may safely ignore this parameter if they are not cancellable.
      *
      * @return TResult A more specific type can (and should) be declared in implementing classes.
      */
-    public function run(Environment $environment, CancellationToken $token): mixed;
+    public function run(Environment $environment, Cancellation $token): mixed;
 }

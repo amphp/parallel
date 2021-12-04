@@ -7,7 +7,7 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 
 class ChannelledSocketTest extends AsyncTestCase
@@ -111,7 +111,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $b = new ChannelledSocket($right, $right);
 
         try {
-            $a->receive(new TimeoutCancellationToken(0.001));
+            $a->receive(new TimeoutCancellation(0.001));
             $this->fail('Receive should have been cancelled');
         } catch (CancelledException) {
         }

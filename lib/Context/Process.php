@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
@@ -10,11 +10,11 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
-use Amp\Process\ProcessInputStream;
-use Amp\Process\ProcessOutputStream;
-use Amp\TimeoutCancellationToken;
+use Amp\Process\ReadableProcessStream;
+use Amp\Process\WritableProcessStream;
+use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
-use function Amp\launch;
+use function Amp\async;
 
 final class Process implements Context
 {
@@ -207,7 +207,7 @@ final class Process implements Context
     /**
      * {@inheritdoc}
      */
-    public function receive(?CancellationToken $token = null): mixed
+    public function receive(?Cancellation $token = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
@@ -249,7 +249,7 @@ final class Process implements Context
             }
 
             try {
-                $data = launch(fn () => $this->join())->await(new TimeoutCancellationToken(0.1));
+                $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
             } catch (ContextException | ChannelException | CancelledException) {
                 if ($this->isRunning()) {
                     $this->kill();
@@ -334,11 +334,11 @@ final class Process implements Context
      *
      * @see \Amp\Process\Process::getStdin()
      *
-     * @return ProcessOutputStream
+     * @return WritableProcessStream
      *
      * @throws \Amp\Process\StatusError
      */
-    public function getStdin(): ProcessOutputStream
+    public function getStdin(): WritableProcessStream
     {
         return $this->process->getStdin();
     }
@@ -348,11 +348,11 @@ final class Process implements Context
      *
      * @see \Amp\Process\Process::getStdout()
      *
-     * @return ProcessInputStream
+     * @return ReadableProcessStream
      *
      * @throws \Amp\Process\StatusError
      */
-    public function getStdout(): ProcessInputStream
+    public function getStdout(): ReadableProcessStream
     {
         return $this->process->getStdout();
     }
@@ -362,11 +362,11 @@ final class Process implements Context
      *
      * @see \Amp\Process\Process::getStderr()
      *
-     * @return ProcessInputStream
+     * @return ReadableProcessStream
      *
      * @throws \Amp\Process\StatusError
      */
-    public function getStderr(): ProcessInputStream
+    public function getStderr(): ReadableProcessStream
     {
         return $this->process->getStderr();
     }

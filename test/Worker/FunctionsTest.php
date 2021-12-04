@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Pool;
@@ -34,7 +34,7 @@ class FunctionsTest extends AsyncTestCase
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
             ->willReturnCallback(function (Task $task): mixed {
-                return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
+                return $task->run($this->createMock(Environment::class), $this->createMock(Cancellation::class));
             });
 
         Worker\pool($pool);
@@ -54,7 +54,7 @@ class FunctionsTest extends AsyncTestCase
         $pool = $this->createMock(Pool::class);
         $pool->method('enqueue')
             ->will(self::returnCallback(function (Task $task): string {
-                return $task->run($this->createMock(Environment::class), $this->createMock(CancellationToken::class));
+                return $task->run($this->createMock(Environment::class), $this->createMock(Cancellation::class));
             }));
 
         Worker\pool($pool);

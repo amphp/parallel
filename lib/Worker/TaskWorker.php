@@ -2,16 +2,16 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\CancelledException;
-use Amp\Deferred;
+use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Serialization\SerializationException;
-use Amp\TimeoutCancellationToken;
-use function Amp\launch;
+use Amp\TimeoutCancellation;
+use function Amp\async;
 
 /**
  * Base class for workers executing {@see Task}s.
@@ -25,7 +25,7 @@ abstract class TaskWorker implements Worker
 
     private ?Future $receiveFuture;
 
-    /** @var Deferred[] */
+    /** @var DeferredFuture[] */
     private array $jobQueue = [];
 
     private \Closure $onReceive;
@@ -88,7 +88,7 @@ abstract class TaskWorker implements Worker
 
     private static function receive(Context $context, callable $onReceive): Future
     {
-        return launch(static function () use ($context, $onReceive): void {
+        return async(static function () use ($context, $onReceive): void {
             try {
                 $received = $context->receive();
             } catch (\Throwable $exception) {
@@ -120,7 +120,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?CancellationToken $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $token = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
@@ -128,7 +128,7 @@ abstract class TaskWorker implements Worker
 
         $job = new Internal\Job($task);
         $jobId = $job->getId();
-        $this->jobQueue[$jobId] = $deferred = new Deferred;
+        $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         try {
@@ -148,8 +148,8 @@ abstract class TaskWorker implements Worker
 
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                launch(fn () => $this->context->join())
-                    ->await(new TimeoutCancellationToken(self::ERROR_TIMEOUT));
+                async(fn () => $this->context->join())
+                    ->await(new TimeoutCancellation(self::ERROR_TIMEOUT));
             } catch (CancelledException) {
                 $this->kill();
             } catch (\Throwable $exception) {
@@ -179,19 +179,19 @@ abstract class TaskWorker implements Worker
             return $this->exitStatus->await();
         }
 
-        return ($this->exitStatus = launch(function (): int {
+        return ($this->exitStatus = async(function (): int {
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
 
             // Wait for pending tasks to finish.
-            Future\settle(\array_map(fn (Deferred $deferred) => $deferred->getFuture(), $this->jobQueue));
+            Future\settle(\array_map(fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
             $this->context->send(null)->await();
 
             try {
-                return launch(fn () => $this->context->join())
-                    ->await(new TimeoutCancellationToken(self::SHUTDOWN_TIMEOUT));
+                return async(fn () => $this->context->join())
+                    ->await(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
