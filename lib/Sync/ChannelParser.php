@@ -55,9 +55,14 @@ final class ChannelParser extends Parser
      * @return string Encoded data that can be parsed by this class.
      *
      * @throws SerializationException
+     * @throws ChannelException
      */
     public function encode(mixed $data): string
     {
+        if ($data === null) {
+            throw new ChannelException("Cannot send null on a channel");
+        }
+
         $data = $this->serializer->serialize($data);
         return \pack("CL", 0, \strlen($data)) . $data;
     }

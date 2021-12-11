@@ -25,6 +25,7 @@
         "amphp/amp": "^3",
         "amphp/byte-stream": "^2",
         "amphp/parser": "^1",
+        "amphp/pipeline": "^1",
         "amphp/process": "v2.x-dev",
         "amphp/serialization": "^1",
         "amphp/sync": "^2"

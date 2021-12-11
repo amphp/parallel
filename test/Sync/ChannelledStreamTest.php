@@ -2,28 +2,26 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\ByteStream\Pipe;
 use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
-use Amp\Cancellation;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\async;
 
 class ChannelledStreamTest extends AsyncTestCase
 {
     public function testSendReceive()
     {
-        $mock = $this->createMockStream();
-        $a = new ChannelledStream($mock, $mock);
-        $b = new ChannelledStream($mock, $mock);
+        $pipe = new Pipe(0);
+        $channel = new ChannelledStream($pipe->getSource(), $pipe->getSink());
 
         $message = 'hello';
 
-        $a->send($message);
-        $data = $b->receive();
+        $channel->send($message);
+        $data = $channel->receive();
         $this->assertSame($message, $data);
     }
 
@@ -32,9 +30,8 @@ class ChannelledStreamTest extends AsyncTestCase
      */
     public function testSendReceiveLongData()
     {
-        $mock = $this->createMockStream();
-        $a = new ChannelledStream($mock, $mock);
-        $b = new ChannelledStream($mock, $mock);
+        $pipe = new Pipe(0);
+        $channel = new ChannelledStream($pipe->getSource(), $pipe->getSink());
 
         $length = 0xffff;
         $message = '';
@@ -42,8 +39,8 @@ class ChannelledStreamTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        $a->send($message);
-        $data = $b->receive();
+        $channel->send($message);
+        $data = $channel->receive();
         $this->assertSame($message, $data);
     }
 
@@ -54,13 +51,13 @@ class ChannelledStreamTest extends AsyncTestCase
     {
         $this->expectException(ChannelException::class);
 
-        $mock = $this->createMockStream();
-        $a = new ChannelledStream($mock, $mock);
-        $b = new ChannelledStream($mock, $mock);
+        $pipe = new Pipe(0);
+        $sink = $pipe->getSink();
+        $channel = new ChannelledStream($pipe->getSource(), $sink);
 
         // Close $a. $b should close on next read...
-        $mock->write(\pack('L', 10) . '1234567890');
-        $data = $b->receive();
+        $sink->write(\pack('L', 10) . '1234567890');
+        $data = $channel->receive();
     }
 
     /**
@@ -70,14 +67,13 @@ class ChannelledStreamTest extends AsyncTestCase
     {
         $this->expectException(SerializationException::class);
 
-        $mock = $this->createMockStream();
-        $a = new ChannelledStream($mock, $mock);
-        $b = new ChannelledStream($mock, $mock);
+        $pipe = new Pipe(0);
+        $sink = $pipe->getSink();
+        $channel = new ChannelledStream($pipe->getSource(), $sink);
 
         // Close $a. $b should close on next read...
-        $a->send(function () {
-        });
-        $data = $b->receive();
+        $channel->send(fn () => null);
+        $data = $channel->receive();
     }
 
     /**
@@ -106,8 +102,6 @@ class ChannelledStreamTest extends AsyncTestCase
      */
     public function testReceiveAfterClose()
     {
-        $this->expectException(ChannelException::class);
-
         $mock = $this->createMock(ReadableStream::class);
         $mock->expects($this->once())
             ->method('read')
@@ -115,53 +109,6 @@ class ChannelledStreamTest extends AsyncTestCase
 
         $a = new ChannelledStream($mock, $this->createMock(WritableStream::class));
 
-        $data = $a->receive();
-    }
-
-    /**
-     * @return ReadableStream|WritableStream
-     */
-    protected function createMockStream(): ReadableStream|WritableStream
-    {
-        return new class implements ReadableStream, WritableStream {
-            private string $buffer = "";
-
-            public function read(?Cancellation $cancellation = null): ?string
-            {
-                $data = $this->buffer;
-                $this->buffer = "";
-                return $data;
-            }
-
-            public function write(string $bytes): void
-            {
-                $this->buffer .= $bytes;
-            }
-
-            public function end(): void
-            {
-                throw new \BadMethodCallException;
-            }
-
-            public function close(): void
-            {
-                throw new \BadMethodCallException;
-            }
-
-            public function isClosed(): bool
-            {
-                return false;
-            }
-
-            public function isReadable(): bool
-			{
-				return true;
-			}
-
-			public function isWritable(): bool
-			{
-				return true;
-			}
-		};
+        self::assertNull($a->receive());
     }
 }

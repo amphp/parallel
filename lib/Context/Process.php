@@ -217,6 +217,10 @@ final class Process implements Context
             throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }
 
+        if ($data === null) {
+            throw new ContextException("The channel closed when receiving data from the process");
+        }
+
         if ($data instanceof ExitResult) {
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
@@ -261,9 +265,6 @@ final class Process implements Context
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function join(): mixed
     {
         if ($this->channel === null) {
@@ -277,6 +278,10 @@ final class Process implements Context
                 $this->kill();
             }
             throw new ContextException("Failed to receive result from process", 0, $exception);
+        }
+
+        if ($data === null) {
+            throw new ContextException("Failed to receive result from process");
         }
 
         if (!$data instanceof ExitResult) {
@@ -368,9 +373,6 @@ final class Process implements Context
         return $this->process->getStderr();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function kill(): void
     {
         $this->process->kill();

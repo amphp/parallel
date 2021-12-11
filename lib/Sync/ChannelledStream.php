@@ -6,7 +6,9 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
+use Amp\Pipeline\Pipeline;
 use Amp\Serialization\Serializer;
+use function Amp\Pipeline\fromIterable;
 
 /**
  * An asynchronous channel for sending data between threads and processes.
@@ -22,9 +24,10 @@ final class ChannelledStream implements Channel
 
     private WritableStream $write;
 
-    private \SplQueue $received;
-
     private ChannelParser $parser;
+
+    /** @var Pipeline<TValue> */
+    private Pipeline $pipeline;
 
     /**
      * Creates a new channel from the given stream objects. Note that $read and $write can be the same object.
@@ -37,8 +40,38 @@ final class ChannelledStream implements Channel
     {
         $this->read = $read;
         $this->write = $write;
-        $this->received = new \SplQueue;
-        $this->parser = new ChannelParser([$this->received, 'push'], $serializer);
+
+        $received = new \SplQueue();
+        $this->parser = $parser = new ChannelParser(\Closure::fromCallable([$received, 'push']), $serializer);
+
+        $this->pipeline = fromIterable(static function () use ($read, $received, $parser): \Generator {
+            while (true) {
+                try {
+                    $chunk = $read->read();
+                } catch (StreamException $exception) {
+                    throw new ChannelException(
+                        "Reading from the channel failed. Did the context die?",
+                        0,
+                        $exception,
+                    );
+                }
+
+                if ($chunk === null) {
+                    return;
+                }
+
+                $parser->push($chunk);
+
+                while (!$received->isEmpty()) {
+                    yield $received->shift();
+                }
+            }
+        });
+    }
+
+    public function __destruct()
+    {
+        $this->close();
     }
 
     public function send(mixed $data): void
@@ -54,21 +87,7 @@ final class ChannelledStream implements Channel
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
-        while ($this->received->isEmpty()) {
-            try {
-                $chunk = $this->read->read($cancellation);
-            } catch (StreamException $exception) {
-                throw new ChannelException("Reading from the channel failed. Did the context die?", 0, $exception);
-            }
-
-            if ($chunk === null) {
-                throw new ChannelException("The channel closed unexpectedly. Did the context die?");
-            }
-
-            $this->parser->push($chunk);
-        }
-
-        return $this->received->shift();
+        return $this->pipeline->continue($cancellation);
     }
 
     public function isClosed(): bool

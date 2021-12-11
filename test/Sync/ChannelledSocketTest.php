@@ -97,13 +97,11 @@ class ChannelledSocketTest extends AsyncTestCase
      */
     public function testReceiveAfterClose(): void
     {
-        $this->expectException(ChannelException::class);
-
         [$left, $right] = $this->createSockets();
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
-        $data = $a->receive();
+        self::assertNull($a->receive());
     }
 
     public function testCancelThenReceive()

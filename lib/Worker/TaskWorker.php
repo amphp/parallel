@@ -188,7 +188,7 @@ abstract class TaskWorker implements Worker
             // Wait for pending tasks to finish.
             Future\settle(\array_map(fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
-            $this->context->send(null);
+            $this->context->send('');
 
             try {
                 return async(fn () => $this->context->join())

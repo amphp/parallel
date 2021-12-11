@@ -144,7 +144,7 @@ abstract class AbstractContextTest extends AsyncTestCase
     public function testExitingProcessOnReceive(): void
     {
         $this->expectException(ContextException::class);
-        $this->expectExceptionMessage('stopped responding');
+        $this->expectExceptionMessage('channel closed');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
         $context->start();

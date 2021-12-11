@@ -16,7 +16,7 @@ interface Channel
      * @param Cancellation|null $cancellation Cancels waiting for the next value. Note the next value is not discarded
      * if the operation is cancelled, rather it will be returned from the next call to this method.
      *
-     * @return TValue Data received.
+     * @return TValue|null Data received or null if the channel closed.
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError If the context has not been started or the context

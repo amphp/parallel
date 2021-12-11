@@ -311,6 +311,10 @@ final class Parallel implements Context
             throw new ContextException("Failed to receive result from thread", 0, $exception);
         }
 
+        if ($response === null) {
+            throw new ContextException("Failed to receive result from thread");
+        }
+
         if (!$response instanceof ExitResult) {
             $this->kill();
             throw new SynchronizationError('Did not receive an exit result from thread.');
@@ -333,6 +337,10 @@ final class Parallel implements Context
                 0,
                 $e
             );
+        }
+
+        if ($data === null) {
+            throw new ContextException("The channel closed when receiving data from the thread");
         }
 
         if ($data instanceof ExitResult) {
