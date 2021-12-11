@@ -18,7 +18,7 @@ use function Amp\async;
 final class Process implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
-    public const KEY_LENGTH = 32;
+    public const DEFAULT_START_TIMEOUT = 5;
 
     private static ?\WeakMap $hubs = null;
 
@@ -31,7 +31,7 @@ final class Process implements Context
     /** @var string|null Cached path to located PHP binary. */
     private static ?string $binaryPath = null;
 
-    private Internal\ProcessHub $hub;
+    private IpcHub $hub;
 
     private BaseProcess $process;
 
@@ -67,7 +67,7 @@ final class Process implements Context
     public function __construct(string|array $script, string $cwd = null, array $env = [], string $binary = null)
     {
         self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ProcessHub());
+        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new IpcHub());
 
         $options = [
             "html_errors" => "0",
@@ -177,14 +177,15 @@ final class Process implements Context
         throw new \Error(self::class . ' objects cannot be cloned');
     }
 
-    public function start(): void
+    public function start(float $timeout = self::DEFAULT_START_TIMEOUT): void
     {
         try {
             $pid = $this->process->start();
+            $key = $this->hub->generateKey();
+            $this->process->getStdin()->write($key);
 
-            $this->process->getStdin()->write($this->hub->generateKey($pid, self::KEY_LENGTH));
-
-            $this->channel = $this->hub->accept($pid);
+            $socket = $this->hub->accept($pid, $key, new TimeoutCancellation($timeout));
+            $this->channel = new ChannelledSocket($socket, $socket);
         } catch (\Throwable $exception) {
             if ($this->isRunning()) {
                 $this->kill();

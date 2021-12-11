@@ -23,7 +23,7 @@ use function Amp\async;
 final class Parallel implements Context
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
-    private const KEY_LENGTH = 32;
+    public const DEFAULT_START_TIMEOUT = 5;
 
     private static ?\WeakMap $hubs = null;
 
@@ -57,21 +57,23 @@ final class Parallel implements Context
         $thread->start();
         return $thread;
     }
-    /** @var Internal\ProcessHub */
-    private Internal\ProcessHub $hub;
-    /** @var int|null */
+
+    private Internal\ParallelHub $hub;
+
     private ?int $id = null;
-    /** @var Runtime|null */
+
     private ?Runtime $runtime = null;
+
     /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
     private ?ChannelledSocket $channel = null;
-    /** @var string Script path. */
+
     private string $script;
+
     /** @var string[] */
     private array $args = [];
-    /** @var int */
+
     private int $oid = 0;
-    /** @var bool */
+
     private bool $killed = false;
 
     /**
@@ -154,7 +156,7 @@ final class Parallel implements Context
      * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
      * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
      */
-    public function start(): void
+    public function start(float $timeout = self::DEFAULT_START_TIMEOUT): void
     {
         if ($this->oid !== 0) {
             throw new StatusError('The thread has already been started.');
@@ -179,21 +181,16 @@ final class Parallel implements Context
             \define("AMP_CONTEXT_ID", $id);
 
             try {
-                $channel = Internal\ParallelHub::connect($uri);
+                $socket = IpcHub::connect($uri, $key);
+                $channel = new ChannelledSocket($socket, $socket);
             } catch (\RuntimeException $exception) {
                 \trigger_error($exception->getMessage(), E_USER_ERROR);
             }
 
             try {
-                $channel->send($key);
-            } catch (\Throwable) {
-                \trigger_error("Could not send key to parent", E_USER_ERROR);
-            }
-
-            try {
                 EventLoop::unreference(EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
-                    // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls such as
-                    // select() will not be interrupted.
+                    // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls
+                    // such as select() will not be interrupted.
                 }));
 
                 try {
@@ -251,13 +248,14 @@ final class Parallel implements Context
         }, [
             $this->id,
             $this->hub->getUri(),
-            $this->hub->generateKey($this->id, self::KEY_LENGTH),
+            $key = $this->hub->generateKey(),
             $this->script,
             $this->args,
         ]);
 
         try {
-            $this->channel = $this->hub->accept($this->id);
+            $socket = $this->hub->accept($this->id, $key);
+            $this->channel = new ChannelledSocket($socket, $socket);
             $this->hub->add($this->id, $this->channel, $future);
         } catch (\Throwable $exception) {
             $this->kill();

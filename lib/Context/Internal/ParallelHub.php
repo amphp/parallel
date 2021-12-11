@@ -2,12 +2,14 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\Cancellation;
+use Amp\Parallel\Context\IpcHub;
 use Amp\Parallel\Sync\ChannelledSocket;
 use parallel\Events;
 use parallel\Future;
 use Revolt\EventLoop;
 
-class ParallelHub extends ProcessHub
+final class ParallelHub
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
 
@@ -18,9 +20,11 @@ class ParallelHub extends ProcessHub
 
     private Events $events;
 
+    private IpcHub $hub;
+
     public function __construct()
     {
-        parent::__construct();
+        $this->hub = new IpcHub();
 
         $events = $this->events = new Events;
         $this->events->setBlocking(false);
@@ -37,6 +41,24 @@ class ParallelHub extends ProcessHub
         });
         EventLoop::disable($this->watcher);
         EventLoop::unreference($this->watcher);
+    }
+
+    /**
+     * @return resource
+     */
+    public function accept(int $pid, string $key, ?Cancellation $cancellation = null)
+    {
+        return $this->hub->accept($pid, $key, $cancellation);
+    }
+
+    final public function generateKey(): string
+    {
+        return $this->hub->generateKey();
+    }
+
+    public function getUri(): string
+    {
+        return $this->hub->getUri();
     }
 
     public function add(int $id, ChannelledSocket $channel, Future $future): void

@@ -4,7 +4,9 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Future;
 use Amp\Parallel\Context\Process;
+use Amp\Parallel\Context\IpcHub;
 use Amp\Parallel\Sync;
+use Amp\TimeoutCancellation;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -48,17 +50,13 @@ if (\function_exists("cli_set_process_title")) {
     $uri = \array_shift($argv);
 
     try {
-        $key = ProcessHub::readKey(\STDIN, Process::KEY_LENGTH);
-        $channel = ProcessHub::connect($uri);
-    } catch (\RuntimeException $exception) {
+        $key = IpcHub::readKey(\STDIN, new TimeoutCancellation(Process::DEFAULT_START_TIMEOUT));
+        $socket = IpcHub::connect($uri, $key, Process::DEFAULT_START_TIMEOUT);
+    } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
 
-    try {
-        $channel->send($key);
-    } catch (\Throwable) {
-        \trigger_error("Could not send key to parent", E_USER_ERROR);
-    }
+    $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
         if (!isset($argv[0])) {

@@ -1,20 +1,19 @@
 <?php
 
-namespace Amp\Parallel\Context\Internal;
+namespace Amp\Parallel\Context;
 
+use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
-use Amp\Parallel\Context\ContextException;
-use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
-use function Amp\async;
 use function Amp\delay;
+use const Amp\Process\IS_WINDOWS;
 
-class ProcessHub
+final class IpcHub
 {
-    private const PROCESS_START_TIMEOUT = 5;
-    private const KEY_RECEIVE_TIMEOUT = 1;
+    public const KEY_RECEIVE_TIMEOUT = 1;
+    public const KEY_LENGTH = 64;
 
     /** @var resource|null */
     private $server;
@@ -34,9 +33,7 @@ class ProcessHub
 
     public function __construct()
     {
-        $isWindows = \PHP_OS_FAMILY === 'Windows';
-
-        if ($isWindows) {
+        if (IS_WINDOWS) {
             $this->uri = "tcp://127.0.0.1:0";
         } else {
             $suffix = \bin2hex(\random_bytes(10));
@@ -61,7 +58,7 @@ class ProcessHub
             throw new \RuntimeException(\sprintf("Could not create IPC server: (Errno: %d) %s", $errno, $errstr));
         }
 
-        if ($isWindows) {
+        if (IS_WINDOWS) {
             $name = \stream_socket_get_name($this->server, false);
             $port = \substr($name, \strrpos($name, ":") + 1);
             $this->uri = "tcp://127.0.0.1:" . $port;
@@ -75,18 +72,17 @@ class ProcessHub
                 // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
                 while ($client = @\stream_socket_accept($server, 0)) {  // Timeout of 0 to be non-blocking.
                     EventLoop::queue(static function () use ($client, &$keys, &$acceptor): void {
-                        $channel = new ChannelledSocket($client, $client);
+                        $cancellation = new TimeoutCancellation(self::KEY_RECEIVE_TIMEOUT);
 
                         try {
-                            $received = async(fn () => $channel->receive())
-                                ->await(new TimeoutCancellation(self::KEY_RECEIVE_TIMEOUT));
+                            $received = self::readKey($client, $cancellation);
                         } catch (\Throwable) {
-                            $channel->close();
+                            \fclose($client);
                             return; // Ignore possible foreign connection attempt.
                         }
 
-                        if (!\is_string($received) || !isset($keys[$received])) {
-                            $channel->close();
+                        if (!isset($keys[$received])) {
+                            \fclose($client);
                             return; // Ignore possible foreign connection attempt.
                         }
 
@@ -94,7 +90,7 @@ class ProcessHub
 
                         $deferred = $acceptor[$pid];
                         unset($acceptor[$pid], $keys[$received]);
-                        $deferred->complete($channel);
+                        $deferred->complete($client);
                     });
                 }
             }
@@ -117,26 +113,28 @@ class ProcessHub
         return $this->uri;
     }
 
-    final public function generateKey(int $pid, int $length): string
+    final public function generateKey(): string
     {
-        $key = \random_bytes($length);
-        $this->keys[$key] = $pid;
-        return $key;
+        return \random_bytes(self::KEY_LENGTH);
     }
 
-    final public function accept(int $pid, float $timeout = self::PROCESS_START_TIMEOUT): ChannelledSocket
+    /**
+     * @param int $pid
+     * @param Cancellation|null $cancellation
+     *
+     * @return resource
+     * @throws ContextException
+     */
+    final public function accept(int $pid, string $key, ?Cancellation $cancellation = null)
     {
-        $this->acceptor[$pid] = new DeferredFuture;
+        $this->keys[$key] = $pid;
+        $this->acceptor[$pid] = $deferred = new DeferredFuture;
 
         EventLoop::enable($this->watcher);
 
         try {
-            $channel = $this->acceptor[$pid]
-                ->getFuture()
-                ->await(new TimeoutCancellation($timeout));
+            $pair = $deferred->getFuture()->await($cancellation);
         } catch (CancelledException $exception) {
-            $key = \array_search($pid, $this->keys, true);
-            \assert(\is_string($key), "Key for {$pid} not found");
             unset($this->acceptor[$pid], $this->keys[$key]);
             throw new ContextException("Starting the process timed out", 0, $exception);
         } finally {
@@ -145,7 +143,7 @@ class ProcessHub
             }
         }
 
-        return $channel;
+        return $pair;
     }
 
     /**
@@ -153,30 +151,39 @@ class ProcessHub
      * hub key from the given stream resource.
      *
      * @param resource $stream
+     * @param Cancellation|null $cancellation Closes the stream if cancelled.
      */
-    public static function readKey($stream, int $keyLength): string
+    public static function readKey($stream, ?Cancellation $cancellation = null): string
     {
         $key = "";
 
-        // Read random key from $stream and send back to parent over IPC socket to authenticate.
-        do {
-            if (($chunk = \fread($stream, $keyLength - strlen($key))) === false || \feof($stream)) {
-                throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
-            }
-            $key .= $chunk;
-        } while (\strlen($key) < $keyLength);
+        $id = $cancellation?->subscribe(static fn () => \fclose($stream));
 
-        return $key;
+        try {
+            // Read random key from $stream and send back to parent over IPC socket to authenticate.
+            do {
+                if (($chunk = \fread($stream, self::KEY_LENGTH - \strlen($key))) === false || \feof($stream)) {
+                    throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
+                }
+                $key .= $chunk;
+            } while (\strlen($key) < self::KEY_LENGTH);
+
+            return $key;
+        } finally {
+            $cancellation?->unsubscribe($id);
+        }
     }
 
     /**
      * Note that this is designed to be used in the child process/thread and performs a blocking connect.
+     *
+     * @return resource
      */
-    public static function connect(string $uri, float $timeout = 5): ChannelledSocket
+    public static function connect(string $uri, string $key, float $timeout = 5)
     {
         $connectStart = microtime(true);
 
-        while (!$socket = \stream_socket_client($uri, $errno, $errstr, $timeout, \STREAM_CLIENT_CONNECT)) {
+        while (!$client = \stream_socket_client($uri, $errno, $errstr, $timeout, \STREAM_CLIENT_CONNECT)) {
             if (microtime(true) > $connectStart + $timeout) {
                 throw new \RuntimeException("Could not connect to IPC socket", \E_USER_ERROR);
             }
@@ -184,6 +191,8 @@ class ProcessHub
             delay(0.01);
         }
 
-        return new ChannelledSocket($socket, $socket);
+        \fwrite($client, $key);
+
+        return $client;
     }
 }
