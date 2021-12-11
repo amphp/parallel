@@ -8,6 +8,7 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use parallel\Events;
 use parallel\Future;
 use Revolt\EventLoop;
+use function Amp\Parallel\Context\ipcHub;
 
 final class ParallelHub
 {
@@ -22,9 +23,9 @@ final class ParallelHub
 
     private IpcHub $hub;
 
-    public function __construct()
+    public function __construct(IpcHub $hub)
     {
-        $this->hub = new IpcHub();
+        $this->hub = $hub;
 
         $events = $this->events = new Events;
         $this->events->setBlocking(false);

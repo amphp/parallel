@@ -79,17 +79,18 @@ final class Parallel implements Context
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+     * @param IpcHub|null $hub Optional IpcHub instance.
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */
-    public function __construct(string|array $script)
+    public function __construct(string|array $script, ?IpcHub $hub = null)
     {
         if (!self::isSupported()) {
             throw new \Error("The parallel extension is required to create parallel threads.");
         }
 
         self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub());
+        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($hub ?? ipcHub()));
 
         if (\is_array($script)) {
             $this->script = (string) \array_shift($script);

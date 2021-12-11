@@ -34,3 +34,15 @@ function factory(?ContextFactory $factory = null): ContextFactory
 
     return $map[$driver] ??= new DefaultContextFactory();
 }
+
+/**
+ * Gets the global shared IpcHub instance.
+ *
+ * @return IpcHub
+ */
+function ipcHub(): IpcHub
+{
+    static $hubs;
+    $hubs ??= new \WeakMap();
+    return $hubs[EventLoop::getDriver()] ??= new IpcHub();
+}

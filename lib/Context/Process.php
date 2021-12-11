@@ -12,15 +12,12 @@ use Amp\Process\Process as BaseProcess;
 use Amp\Process\ReadableProcessStream;
 use Amp\Process\WritableProcessStream;
 use Amp\TimeoutCancellation;
-use Revolt\EventLoop;
 use function Amp\async;
 
 final class Process implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     public const DEFAULT_START_TIMEOUT = 5;
-
-    private static ?\WeakMap $hubs = null;
 
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static ?string $pharScriptPath = null;
@@ -61,13 +58,18 @@ final class Process implements Context
      * @param string|null  $cwd Working directory.
      * @param mixed[]      $env Array of environment variables.
      * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param IpcHub|null  $hub Optional IpcHub instance.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string|array $script, string $cwd = null, array $env = [], string $binary = null)
-    {
-        self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new IpcHub());
+    public function __construct(
+        string|array $script,
+        string $cwd = null,
+        array $env = [],
+        string $binary = null,
+        ?IpcHub $hub = null
+    ) {
+        $this->hub = $hub ?? ipcHub();
 
         $options = [
             "html_errors" => "0",
