@@ -20,9 +20,9 @@ class WorkerProcess implements Context
         $this->process = new Process($script, null, $env, $binary);
     }
 
-    public function receive(?Cancellation $token = null): mixed
+    public function receive(?Cancellation $cancellation = null): mixed
     {
-        return $this->process->receive($token);
+        return $this->process->receive($cancellation);
     }
 
     public function send($data): void

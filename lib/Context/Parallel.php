@@ -316,14 +316,14 @@ final class Parallel implements Context
         return $response->getResult();
     }
 
-    public function receive(?Cancellation $token = null): mixed
+    public function receive(?Cancellation $cancellation = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started.');
         }
 
         try {
-            $data = $this->channel->receive($token);
+            $data = $this->channel->receive($cancellation);
         } catch (ChannelException $e) {
             throw new ContextException(
                 "The thread stopped responding, potentially due to a fatal error or calling exit",

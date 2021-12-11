@@ -201,14 +201,14 @@ final class Process implements Context
         return $this->process->isRunning();
     }
 
-    public function receive(?Cancellation $token = null): mixed
+    public function receive(?Cancellation $cancellation = null): mixed
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
         }
 
         try {
-            $data = $this->channel->receive($token);
+            $data = $this->channel->receive($cancellation);
         } catch (ChannelException $e) {
             throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }

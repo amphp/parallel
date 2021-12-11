@@ -49,11 +49,11 @@ final class ChannelledStream implements Channel
         }
     }
 
-    public function receive(?Cancellation $token = null): mixed
+    public function receive(?Cancellation $cancellation = null): mixed
     {
         while ($this->received->isEmpty()) {
             try {
-                $chunk = $this->read->read($token);
+                $chunk = $this->read->read($cancellation);
             } catch (StreamException $exception) {
                 throw new ChannelException("Reading from the channel failed. Did the context die?", 0, $exception);
             }

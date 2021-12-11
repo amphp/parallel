@@ -32,9 +32,9 @@ final class ChannelledSocket implements Channel
         );
     }
 
-    public function receive(?Cancellation $token = null): mixed
+    public function receive(?Cancellation $cancellation = null): mixed
     {
-        return $this->channel->receive($token);
+        return $this->channel->receive($cancellation);
     }
 
     public function send(mixed $data): void
