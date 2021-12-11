@@ -9,6 +9,7 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 use function Amp\async;
+use function Amp\delay;
 
 class ProcessHub
 {
@@ -111,19 +112,19 @@ class ProcessHub
         }
     }
 
-    public function getUri(): string
+    final public function getUri(): string
     {
         return $this->uri;
     }
 
-    public function generateKey(int $pid, int $length): string
+    final public function generateKey(int $pid, int $length): string
     {
         $key = \random_bytes($length);
         $this->keys[$key] = $pid;
         return $key;
     }
 
-    public function accept(int $pid): ChannelledSocket
+    final public function accept(int $pid, float $timeout = self::PROCESS_START_TIMEOUT): ChannelledSocket
     {
         $this->acceptor[$pid] = new DeferredFuture;
 
@@ -132,7 +133,7 @@ class ProcessHub
         try {
             $channel = $this->acceptor[$pid]
                 ->getFuture()
-                ->await(new TimeoutCancellation(self::PROCESS_START_TIMEOUT));
+                ->await(new TimeoutCancellationToken($timeout));
         } catch (CancelledException $exception) {
             $key = \array_search($pid, $this->keys, true);
             \assert(\is_string($key), "Key for {$pid} not found");
@@ -145,5 +146,44 @@ class ProcessHub
         }
 
         return $channel;
+    }
+
+    /**
+     * Note this is designed to be used in the child process/thread and performs a blocking read of the
+     * hub key from the given stream resource.
+     *
+     * @param resource $stream
+     */
+    public static function readKey($stream, int $keyLength): string
+    {
+        $key = "";
+
+        // Read random key from $stream and send back to parent over IPC socket to authenticate.
+        do {
+            if (($chunk = \fread($stream, $keyLength - strlen($key))) === false || \feof($stream)) {
+                throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
+            }
+            $key .= $chunk;
+        } while (\strlen($key) < $keyLength);
+
+        return $key;
+    }
+
+    /**
+     * Note that this is designed to be used in the child process/thread and performs a blocking connect.
+     */
+    public static function connect(string $uri, float $timeout = 5): ChannelledSocket
+    {
+        $connectStart = microtime(true);
+
+        while (!$socket = \stream_socket_client($uri, $errno, $errstr, $timeout, \STREAM_CLIENT_CONNECT)) {
+            if (microtime(true) > $connectStart + $timeout) {
+                throw new \RuntimeException("Could not connect to IPC socket", \E_USER_ERROR);
+            }
+
+            delay(0.01);
+        }
+
+        return new ChannelledSocket($socket, $socket);
     }
 }

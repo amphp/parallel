@@ -5,7 +5,6 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Future;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Sync;
-use function Amp\delay;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -48,27 +47,12 @@ if (\function_exists("cli_set_process_title")) {
     --$argc;
     $uri = \array_shift($argv);
 
-    $key = "";
-
-    // Read random key from STDIN and send back to parent over IPC socket to authenticate.
-    do {
-        if (($chunk = \fread(\STDIN, Process::KEY_LENGTH)) === false || \feof(\STDIN)) {
-            \trigger_error("Could not read key from parent", E_USER_ERROR);
-        }
-        $key .= $chunk;
-    } while (\strlen($key) < Process::KEY_LENGTH);
-
-    $connectStart = microtime(true);
-
-    while (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-        if (microtime(true) > $connectStart + 5) { // try for 5 seconds, after that the parent times out anyway
-            \trigger_error("Could not connect to IPC socket", \E_USER_ERROR);
-        }
-
-        delay(0.01);
+    try {
+        $key = ProcessHub::readKey(\STDIN, Process::KEY_LENGTH);
+        $channel = ProcessHub::connect($uri);
+    } catch (\RuntimeException $exception) {
+        \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
-
-    $channel = new Sync\ChannelledSocket($socket, $socket);
 
     try {
         $channel->send($key)->await();

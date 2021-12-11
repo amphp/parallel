@@ -130,8 +130,6 @@ final class Parallel implements Context
 
     /**
      * Kills the thread if it is still running.
-     *
-     * @throws \Amp\Parallel\Context\ContextException
      */
     public function __destruct()
     {
@@ -180,18 +178,16 @@ final class Parallel implements Context
             \define("AMP_CONTEXT", "parallel");
             \define("AMP_CONTEXT_ID", $id);
 
-            if (!$socket = \stream_socket_client($uri, $errno, $errstr, 5, \STREAM_CLIENT_CONNECT)) {
-                \trigger_error("Could not connect to IPC socket", E_USER_ERROR);
-                return 1;
+            try {
+                $channel = Internal\ParallelHub::connect($uri);
+            } catch (\RuntimeException $exception) {
+                \trigger_error($exception->getMessage(), E_USER_ERROR);
             }
-
-            $channel = new ChannelledSocket($socket, $socket);
 
             try {
                 $channel->send($key)->await();
             } catch (\Throwable) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
-                return 1;
             }
 
             try {
@@ -246,7 +242,6 @@ final class Parallel implements Context
                     "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
                     $exception->getMessage(),
                 ), E_USER_ERROR);
-                return 1;
             } finally {
                 $channel->close();
             }

@@ -59,6 +59,14 @@ final class ChannelledSocket implements Channel
     }
 
     /**
+     * @return resource|null
+     */
+    public function getResource()
+    {
+        return $this->read->getResource();
+    }
+
+    /**
      * Closes the read and write resource streams.
      */
     public function close(): void
