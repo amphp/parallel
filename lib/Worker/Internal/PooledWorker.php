@@ -52,9 +52,9 @@ final class PooledWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?Cancellation $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
     {
-        return $this->worker->enqueue($task, $token);
+        return $this->worker->enqueue($task, $cancellation);
     }
 
     /**

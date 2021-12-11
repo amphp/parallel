@@ -4,7 +4,6 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\ByteStream;
 use Amp\Cancellation;
-use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Process;
@@ -26,9 +25,9 @@ class WorkerProcess implements Context
         return $this->process->receive($token);
     }
 
-    public function send($data): Future
+    public function send($data): void
     {
-        return $this->process->send($data);
+        $this->process->send($data);
     }
 
     public function isRunning(): bool

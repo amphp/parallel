@@ -55,7 +55,7 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     try {
-        $channel->send($key)->await();
+        $channel->send($key);
     } catch (\Throwable) {
         \trigger_error("Could not send key to parent", E_USER_ERROR);
     }
@@ -88,10 +88,10 @@ if (\function_exists("cli_set_process_title")) {
 
     try {
         try {
-            $channel->send($result)->await();
+            $channel->send($result);
         } catch (Sync\SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $channel->send(new Sync\ExitFailure($exception))->await();
+            $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
         \trigger_error(sprintf(

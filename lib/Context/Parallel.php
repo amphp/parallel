@@ -185,7 +185,7 @@ final class Parallel implements Context
             }
 
             try {
-                $channel->send($key)->await();
+                $channel->send($key);
             } catch (\Throwable) {
                 \trigger_error("Could not send key to parent", E_USER_ERROR);
             }
@@ -232,10 +232,10 @@ final class Parallel implements Context
                 }
 
                 try {
-                    $channel->send($result)->await();
+                    $channel->send($result);
                 } catch (SerializationException $exception) {
                     // Serializing the result failed. Send the reason why.
-                    $channel->send(new ExitFailure($exception))->await();
+                    $channel->send(new ExitFailure($exception));
                 }
             } catch (\Throwable $exception) {
                 \trigger_error(sprintf(
@@ -317,9 +317,6 @@ final class Parallel implements Context
         return $response->getResult();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function receive(?Cancellation $token = null): mixed
     {
         if ($this->channel === null) {
@@ -347,10 +344,7 @@ final class Parallel implements Context
         return $data;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(mixed $data): Future
+    public function send(mixed $data): void
     {
         if ($this->channel === null) {
             throw new StatusError('The thread has not been started or has already finished.');
@@ -360,7 +354,9 @@ final class Parallel implements Context
             throw new \Error('Cannot send exit result objects.');
         }
 
-        return $this->channel->send($data)->catch(function (\Throwable $e): mixed {
+        try {
+            $this->channel->send($data);
+        } catch (ChannelException $e) {
             if ($this->channel === null) {
                 throw new ContextException(
                     "The thread stopped responding, potentially due to a fatal error or calling exit",
@@ -384,7 +380,7 @@ final class Parallel implements Context
                 'Thread unexpectedly exited with result of type: %s',
                 \is_object($data) ? \get_class($data) : \gettype($data)
             ), 0, $e);
-        });
+        }
     }
 
     /**

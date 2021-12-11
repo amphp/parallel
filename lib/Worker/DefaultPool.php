@@ -137,19 +137,19 @@ final class DefaultPool implements Pool
      * Enqueues a {@see Task} to be executed by the worker pool.
      *
      * @param Task $task The task to enqueue.
-     * @param Cancellation|null $token
+     * @param Cancellation|null $cancellation
      *
      * @return mixed The return (or resolution) value of {@see Task::run()}.
      *
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
      */
-    public function enqueue(Task $task, ?Cancellation $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
     {
         $worker = $this->pull();
 
         try {
-            $result = $worker->enqueue($task, $token);
+            $result = $worker->enqueue($task, $cancellation);
         } finally {
             ($this->push)($worker);
         }

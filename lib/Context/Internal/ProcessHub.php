@@ -80,7 +80,7 @@ class ProcessHub
                         try {
                             $received = async(fn () => $channel->receive())
                                 ->await(new TimeoutCancellation(self::KEY_RECEIVE_TIMEOUT));
-                        } catch (\Throwable $exception) {
+                        } catch (\Throwable) {
                             $channel->close();
                             return; // Ignore possible foreign connection attempt.
                         }
@@ -133,7 +133,7 @@ class ProcessHub
         try {
             $channel = $this->acceptor[$pid]
                 ->getFuture()
-                ->await(new TimeoutCancellationToken($timeout));
+                ->await(new TimeoutCancellation($timeout));
         } catch (CancelledException $exception) {
             $key = \array_search($pid, $this->keys, true);
             \assert(\is_string($key), "Key for {$pid} not found");

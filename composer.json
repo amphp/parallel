@@ -22,16 +22,16 @@
     ],
     "require": {
         "php": ">=8",
-        "amphp/amp": "v3.x-dev",
-        "amphp/byte-stream": "v2.x-dev",
+        "amphp/amp": "^3",
+        "amphp/byte-stream": "^2",
         "amphp/parser": "^1",
         "amphp/process": "v2.x-dev",
         "amphp/serialization": "^1",
-        "amphp/sync": "v2.x-dev"
+        "amphp/sync": "^2"
     },
     "require-dev": {
         "phpunit/phpunit": "^9",
-        "amphp/phpunit-util": "v2.x-dev",
+        "amphp/phpunit-util": "^3",
         "amphp/php-cs-fixer-config": "dev-master"
     },
     "prefer-stable": true,

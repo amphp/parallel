@@ -6,11 +6,11 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
-use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
+use function Amp\async;
 
 class ChannelledStreamTest extends AsyncTestCase
 {
@@ -133,23 +133,27 @@ class ChannelledStreamTest extends AsyncTestCase
                 return $data;
             }
 
-            public function write(string $data): Future
+            public function write(string $bytes): void
             {
-                $this->buffer .= $data;
-                return Future::complete(null);
+                $this->buffer .= $bytes;
             }
 
-            public function end(string $finalData = ""): Future
-            {
-                throw new \BadMethodCallException;
-            }
-
-            public function close()
+            public function end(): void
             {
                 throw new \BadMethodCallException;
             }
 
-			public function isReadable(): bool
+            public function close(): void
+            {
+                throw new \BadMethodCallException;
+            }
+
+            public function isClosed(): bool
+            {
+                return false;
+            }
+
+            public function isReadable(): bool
 			{
 				return true;
 			}

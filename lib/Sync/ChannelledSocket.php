@@ -32,20 +32,14 @@ final class ChannelledSocket implements Channel
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function receive(?Cancellation $token = null): mixed
     {
         return $this->channel->receive($token);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(mixed $data): Future
+    public function send(mixed $data): void
     {
-        return $this->channel->send($data);
+        $this->channel->send($data);
     }
 
     public function unreference(): void
@@ -64,6 +58,11 @@ final class ChannelledSocket implements Channel
     public function getResource()
     {
         return $this->read->getResource();
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->read->isClosed() || $this->write->isClosed();
     }
 
     /**

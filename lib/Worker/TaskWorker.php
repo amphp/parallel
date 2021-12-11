@@ -120,7 +120,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?Cancellation $token = null): mixed
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
@@ -132,12 +132,13 @@ abstract class TaskWorker implements Worker
         $future = $deferred->getFuture();
 
         try {
-            $this->context->send($job)->await();
+            $this->context->send($job);
 
-            if ($token) {
-                $context = $this->context;
-                $cancellationId = $token->subscribe(static fn () => $context->send($jobId)->ignore());
-                $future->finally(fn () => $token->unsubscribe($cancellationId))->ignore();
+            if ($cancellation) {
+                $cancellationId = $cancellation->subscribe(
+                    fn () => async(fn () => $this->context?->send($jobId))->ignore()
+                );
+                $future->finally(fn () => $cancellation->unsubscribe($cancellationId))->ignore();
             }
         } catch (SerializationException $exception) {
             // Could not serialize Task object.
@@ -187,7 +188,7 @@ abstract class TaskWorker implements Worker
             // Wait for pending tasks to finish.
             Future\settle(\array_map(fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
-            $this->context->send(null)->await();
+            $this->context->send(null);
 
             try {
                 return async(fn () => $this->context->join())

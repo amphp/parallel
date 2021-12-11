@@ -26,15 +26,15 @@ interface Worker
     /**
      * Enqueues a {@see Task} to be executed by the worker.
      *
-     * @param Task                   $task The task to enqueue.
-     * @param Cancellation|null $token Token to request cancellation. The task must support cancellation for this
+     * @param Task $task The task to enqueue.
+     * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for this
      *                                      to have any effect.
      *
      * @return mixed The return value of {@see Task::run()}.
      *
      * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */
-    public function enqueue(Task $task, ?Cancellation $token = null): mixed;
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed;
 
     /**
      * @return int Returns the exit code when the worker successfully shuts down.

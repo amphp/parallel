@@ -9,6 +9,7 @@ use Amp\Parallel\Sync\SerializationException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
+use function Amp\async;
 
 class ChannelledSocketTest extends AsyncTestCase
 {
@@ -40,9 +41,10 @@ class ChannelledSocketTest extends AsyncTestCase
             $message .= \chr(\mt_rand(0, 255));
         }
 
-        $a->send($message);
+        $future = async(fn () => $a->send($message));
         $data = $b->receive();
         self::assertSame($message, $data);
+        $future->await();
     }
 
     /**
@@ -72,7 +74,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $b = new ChannelledSocket($right, $right);
 
         // Close $a. $b should close on next read...
-        $a->send(fn () => null)->await();
+        $a->send(fn () => null);
         $data = $b->receive();
     }
 
@@ -87,7 +89,7 @@ class ChannelledSocketTest extends AsyncTestCase
         $a = new ChannelledSocket($left, $left);
         $a->close();
 
-        $a->send('hello')->await();
+        $a->send('hello');
     }
 
     /**
@@ -117,7 +119,7 @@ class ChannelledSocketTest extends AsyncTestCase
         }
 
         $data = 'test';
-        $b->send($data)->await();
+        $b->send($data);
         self::assertSame($data, $a->receive());
     }
 

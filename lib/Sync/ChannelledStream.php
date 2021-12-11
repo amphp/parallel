@@ -6,7 +6,6 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
-use Amp\Future;
 use Amp\Serialization\Serializer;
 
 /**
@@ -39,20 +38,17 @@ final class ChannelledStream implements Channel
         $this->parser = new ChannelParser([$this->received, 'push'], $serializer);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(mixed $data): Future
+    public function send(mixed $data): void
     {
-        return $this->write->write($this->parser->encode($data))
-            ->catch(static function (\Throwable $exception): mixed {
-                throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
-            });
+        $data = $this->parser->encode($data);
+
+        try {
+            $this->write->write($data);
+        } catch (\Throwable $exception) {
+            throw new ChannelException("Sending on the channel failed. Did the context die?", 0, $exception);
+        }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function receive(?Cancellation $token = null): mixed
     {
         while ($this->received->isEmpty()) {
@@ -70,5 +66,19 @@ final class ChannelledStream implements Channel
         }
 
         return $this->received->shift();
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->read->isClosed() || $this->write->isClosed();
+    }
+
+    /**
+     * Closes the read and write resource streams.
+     */
+    public function close(): void
+    {
+        $this->read->close();
+        $this->write->close();
     }
 }

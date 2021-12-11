@@ -4,7 +4,6 @@ namespace Amp\Parallel\Context;
 
 use Amp\Cancellation;
 use Amp\CancelledException;
-use Amp\Future;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
@@ -171,15 +170,13 @@ final class Process implements Context
     }
 
     /**
-     * Private method to prevent cloning.
+     * Always throws to prevent cloning.
      */
-    private function __clone()
+    public function __clone()
     {
+        throw new \Error(self::class . ' objects cannot be cloned');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function start(): void
     {
         try {
@@ -196,17 +193,11 @@ final class Process implements Context
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isRunning(): bool
     {
         return $this->process->isRunning();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function receive(?Cancellation $token = null): mixed
     {
         if ($this->channel === null) {
@@ -230,10 +221,7 @@ final class Process implements Context
         return $data;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(mixed $data): Future
+    public function send(mixed $data): void
     {
         if ($this->channel === null) {
             throw new StatusError("The process has not been started");
@@ -243,7 +231,9 @@ final class Process implements Context
             throw new \Error("Cannot send exit result objects");
         }
 
-        return $this->channel->send($data)->catch(function (\Throwable $e): mixed {
+        try {
+            $this->channel->send($data);
+        } catch (ChannelException $e) {
             if ($this->channel === null) {
                 throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
@@ -261,7 +251,7 @@ final class Process implements Context
                 'Process unexpectedly exited with result of type: %s',
                 \is_object($data) ? \get_class($data) : \gettype($data)
             ), 0, $e);
-        });
+        }
     }
 
     /**

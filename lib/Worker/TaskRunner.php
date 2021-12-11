@@ -54,10 +54,10 @@ final class TaskRunner
                     }
 
                     try {
-                        $this->channel->send($result)->await();
+                        $this->channel->send($result);
                     } catch (SerializationException $exception) {
                         // Could not serialize task result.
-                        $this->channel->send(new Internal\TaskFailure($id, $exception))->await();
+                        $this->channel->send(new Internal\TaskFailure($id, $exception));
                     }
                 });
                 continue;
