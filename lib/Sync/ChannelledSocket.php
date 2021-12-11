@@ -8,6 +8,12 @@ use Amp\Cancellation;
 use Amp\Future;
 use Amp\Serialization\Serializer;
 
+/**
+ * Uses stream resources to create a Channel.
+ *
+ * @template TValue
+ * @template-implements Channel<TValue>
+ */
 final class ChannelledSocket implements Channel
 {
     private ChannelledStream $channel;

@@ -5,6 +5,10 @@ namespace Amp\Parallel\Context;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\PanicError;
 
+/**
+ * @template TValue
+ * @template-extends Channel<TValue>
+ */
 interface Context extends Channel
 {
     /**

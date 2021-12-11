@@ -14,6 +14,10 @@ use Amp\Process\WritableProcessStream;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 
+/**
+ * @template TValue
+ * @template-implements Context<TValue>
+ */
 final class Process implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";

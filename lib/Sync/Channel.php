@@ -7,6 +7,8 @@ use Amp\Parallel\Context\StatusError;
 
 /**
  * Interface for sending messages between execution contexts.
+ *
+ * @template TValue
  */
 interface Channel
 {
@@ -14,7 +16,7 @@ interface Channel
      * @param Cancellation|null $cancellation Cancels waiting for the next value. Note the next value is not discarded
      * if the operation is cancelled, rather it will be returned from the next call to this method.
      *
-     * @return mixed Data received.
+     * @return TValue Data received.
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError If the context has not been started or the context
@@ -25,7 +27,7 @@ interface Channel
     public function receive(?Cancellation $cancellation = null): mixed;
 
     /**
-     * @param mixed $data
+     * @param TValue $data
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError If the context has not been started or the context

@@ -12,6 +12,9 @@ use Amp\Serialization\Serializer;
  * An asynchronous channel for sending data between threads and processes.
  *
  * Supports full duplex read and write.
+ *
+ * @template TValue
+ * @template-implements Channel<TValue>
  */
 final class ChannelledStream implements Channel
 {

@@ -4,6 +4,13 @@ namespace Amp\Parallel\Context;
 
 class DefaultContextFactory implements ContextFactory
 {
+    /**
+     * @template TValue
+     *
+     * @param string|array $script
+     *
+     * @return Context<TValue>
+     */
     public function create(string|array $script): Context
     {
         /**

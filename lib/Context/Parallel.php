@@ -19,6 +19,9 @@ use function Amp\async;
 
 /**
  * Implements an execution context using native threads provided by the parallel extension.
+ *
+ * @template TValue
+ * @template-implements Context<TValue>
  */
 final class Parallel implements Context
 {
