@@ -7,7 +7,7 @@ use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Context\Internal\ParallelHub;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\ExitSuccess;
@@ -51,8 +51,8 @@ final class Parallel implements Context
 
     private ?Runtime $runtime;
 
-    /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
-    private ?ChannelledSocket $channel;
+    /** @var ChannelledStream|null A channel for communicating with the parallel thread. */
+    private ?ChannelledStream $channel;
 
     private int $oid;
 
@@ -118,7 +118,7 @@ final class Parallel implements Context
 
             try {
                 $socket = IpcHub::connect($uri, $key);
-                $channel = new ChannelledSocket($socket, $socket);
+                $channel = new ChannelledStream($socket, $socket);
             } catch (\RuntimeException $exception) {
                 \trigger_error($exception->getMessage(), E_USER_ERROR);
             }
@@ -191,20 +191,20 @@ final class Parallel implements Context
 
         try {
             $socket = $hub->accept($key);
-            $channel = new ChannelledSocket($socket, $socket);
+            $channel = new ChannelledStream($socket, $socket);
             $hub->add($id, $channel, $future);
         } catch (\Throwable $exception) {
             $runtime->kill();
             throw new ContextException("Starting the parallel runtime failed", 0, $exception);
         }
 
-        return new self($id, $runtime, $channel);
+        return new self($id, $runtime, $channel, $hub);
     }
 
     private function __construct(
         int $id,
         Runtime $runtime,
-        ChannelledSocket $channel,
+        ChannelledStream $channel,
         private ParallelHub $hub,
     ) {
         $this->oid = \getmypid();

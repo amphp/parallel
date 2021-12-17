@@ -7,13 +7,11 @@ use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledSocket;
+use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
 use Amp\Process\ProcessException;
-use Amp\Process\ReadableProcessStream;
-use Amp\Process\WritableProcessStream;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 
@@ -35,13 +33,9 @@ final class Process implements Context
     /** @var string|null Cached path to located PHP binary. */
     private static ?string $binaryPath = null;
 
-    private BaseProcess $process;
-
-    private ?ChannelledSocket $channel;
-
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
-     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+     *     to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
      * @param string|null $workingDirectory Working directory.
      * @param mixed[] $environment Array of environment variables.
      * @param Cancellation|null $cancellation
@@ -141,7 +135,7 @@ final class Process implements Context
             $process->getStdin()->write($key);
 
             $socket = $ipcHub->accept($key, $cancellation);
-            $channel = new ChannelledSocket($socket, $socket);
+            $channel = new ChannelledStream($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {
                 $process->kill();
@@ -181,7 +175,10 @@ final class Process implements Context
         return \implode(" ", $result);
     }
 
-    private function __construct(BaseProcess $process, ChannelledSocket $channel)
+    private BaseProcess $process;
+    private ?ChannelledStream $channel;
+
+    private function __construct(BaseProcess $process, ChannelledStream $channel)
     {
         $this->process = $process;
         $this->channel = $channel;
@@ -304,7 +301,6 @@ final class Process implements Context
      *
      * @throws StatusError|ProcessException
      * @see BaseProcess::signal()
-     *
      */
     public function signal(int $signo): void
     {
@@ -318,7 +314,6 @@ final class Process implements Context
      *
      * @throws StatusError
      * @see BaseProcess::getPid()
-     *
      */
     public function getPid(): int
     {
@@ -332,7 +327,6 @@ final class Process implements Context
      *
      * @throws StatusError
      * @see BaseProcess::getStdin()
-     *
      */
     public function getStdin(): WritableResourceStream
     {
@@ -346,7 +340,6 @@ final class Process implements Context
      *
      * @throws StatusError
      * @see BaseProcess::getStdout()
-     *
      */
     public function getStdout(): ReadableResourceStream
     {
@@ -360,7 +353,6 @@ final class Process implements Context
      *
      * @throws StatusError
      * @see BaseProcess::getStderr()
-     *
      */
     public function getStderr(): ReadableResourceStream
     {

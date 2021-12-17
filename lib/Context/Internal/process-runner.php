@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\ByteStream;
 use Amp\Future;
 use Amp\Parallel\Context\Process;
 use Amp\Parallel\Context\IpcHub;
@@ -49,14 +50,16 @@ if (\function_exists("cli_set_process_title")) {
     --$argc;
     $uri = \array_shift($argv);
 
+    $cancellation = new TimeoutCancellation(Process::DEFAULT_START_TIMEOUT);
+
     try {
-        $key = IpcHub::readKey(\STDIN, new TimeoutCancellation(Process::DEFAULT_START_TIMEOUT));
-        $socket = IpcHub::connect($uri, $key, Process::DEFAULT_START_TIMEOUT);
+        $key = IpcHub::readKey(ByteStream\getStdin(), $cancellation);
+        $socket = IpcHub::connect($uri, $key, $cancellation);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
 
-    $channel = new Sync\ChannelledSocket($socket, $socket);
+    $channel = new Sync\ChannelledStream($socket, $socket);
 
     try {
         if (!isset($argv[0])) {

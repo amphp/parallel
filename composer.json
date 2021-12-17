@@ -16,6 +16,10 @@
             "email": "aaron@trowski.com"
         },
         {
+            "name": "Niklas Keller",
+            "email": "me@kelunik.com"
+        },
+        {
             "name": "Stephen Coakley",
             "email": "me@stephencoakley.com"
         }
@@ -28,6 +32,7 @@
         "amphp/pipeline": "^1",
         "amphp/process": "^2",
         "amphp/serialization": "^1",
+        "amphp/socket": "^2",
         "amphp/sync": "^2"
     },
     "require-dev": {
