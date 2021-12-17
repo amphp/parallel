@@ -16,9 +16,9 @@ abstract class AbstractContextTest extends AsyncTestCase
     public function testBasicProcess(): void
     {
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/test-process.php",
-                "Test"
-            ]);
+            __DIR__ . "/Fixtures/test-process.php",
+            "Test"
+        ]);
         self::assertSame("Test", $context->join());
     }
 
@@ -92,13 +92,11 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Failed to receive result');
 
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/delayed-process.php",
-                5,
-            ]);
-        delay(0.1);
+            __DIR__ . "/Fixtures/delayed-process.php",
+            5,
+        ]);
         $promise = async(fn () => $context->join());
         $context->kill();
-        self::assertFalse($context->isRunning());
         $promise->await();
     }
 
@@ -108,13 +106,11 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Failed to receive result');
 
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/sleep-process.php",
-                5,
-            ]);
-        delay(0.1);
+            __DIR__ . "/Fixtures/sleep-process.php",
+            5,
+        ]);
         $promise = async(fn () => $context->join());
         $context->kill();
-        self::assertFalse($context->isRunning());
         $promise->await();
     }
 
@@ -124,9 +120,9 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Failed to receive result');
 
         $context = $this->createContext([
-                __DIR__ . "/Fixtures/exiting-process.php",
-                5,
-            ]);
+            __DIR__ . "/Fixtures/exiting-process.php",
+            5,
+        ]);
         $context->join();
     }
 

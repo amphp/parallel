@@ -81,9 +81,7 @@ final class DefaultPool implements Pool
     public function __destruct()
     {
         if ($this->isRunning()) {
-            $workers = $this->workers;
-            $waiting = $this->waiting;
-            EventLoop::queue(static fn () => self::killWorkers($workers, $waiting));
+            self::killWorkers($this->workers, $this->waiting);
         }
     }
 
