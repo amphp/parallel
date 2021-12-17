@@ -37,12 +37,7 @@ abstract class TaskWorker implements Worker
      */
     public function __construct(Context $context)
     {
-        if ($context->isRunning()) {
-            throw new \Error("The context was already running");
-        }
-
         $this->context = $context;
-        $this->context->start();
 
         $jobQueue = &$this->jobQueue;
         $receive = &$this->receiveFuture;
@@ -103,7 +98,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function isRunning(): bool
+    final public function isRunning(): bool
     {
         // Report as running unless shutdown or killed.
         return $this->exitStatus === null;
@@ -112,7 +107,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function isIdle(): bool
+    final public function isIdle(): bool
     {
         return empty($this->jobQueue);
     }
@@ -120,7 +115,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
+    final public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
@@ -174,7 +169,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function shutdown(): int
+    final public function shutdown(): int
     {
         if ($this->exitStatus !== null) {
             return $this->exitStatus->await();
@@ -206,7 +201,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    public function kill(): void
+    final public function kill(): void
     {
         if ($this->exitStatus !== null || $this->context === null) {
             return;
@@ -219,7 +214,7 @@ abstract class TaskWorker implements Worker
             return;
         }
 
-        $this->exitStatus = Future::complete(null);
+        $this->exitStatus = Future::complete();
 
         // Null properties to free memory because the shutdown function has references to these.
         $this->context = null;

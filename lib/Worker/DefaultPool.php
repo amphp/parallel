@@ -73,19 +73,17 @@ final class DefaultPool implements Pool
             }
 
             $idleWorkers->push($worker);
-
-            if ($waiting !== null) {
-                $deferred = $waiting;
-                $waiting = null;
-                $deferred->complete($worker);
-            }
+            $waiting?->complete($worker);
+            $waiting = null;
         };
     }
 
     public function __destruct()
     {
         if ($this->isRunning()) {
-            $this->kill();
+            $workers = $this->workers;
+            $waiting = $this->waiting;
+            EventLoop::queue(static fn () => self::killWorkers($workers, $waiting));
         }
     }
 
@@ -201,19 +199,20 @@ final class DefaultPool implements Pool
     public function kill(): void
     {
         $this->running = false;
+        self::killWorkers($this->workers, $this->waiting);
+        $this->waiting = null;
+    }
 
-        foreach ($this->workers as $worker) {
+    private static function killWorkers(\SplObjectStorage $workers, ?DeferredFuture $waiting): void
+    {
+        foreach ($workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
                 $worker->kill();
             }
         }
 
-        if ($this->waiting !== null) {
-            $deferred = $this->waiting;
-            $this->waiting = null;
-            $deferred->error(new WorkerException('The pool was killed before the task could be executed'));
-        }
+        $waiting?->error(new WorkerException('The pool was killed before the task could be executed'));
     }
 
     /**

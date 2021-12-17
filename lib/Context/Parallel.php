@@ -5,6 +5,7 @@ namespace Amp\Parallel\Context;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
+use Amp\Parallel\Context\Internal\ParallelHub;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitFailure;
@@ -46,36 +47,14 @@ final class Parallel implements Context
         return \extension_loaded('parallel');
     }
 
-    /**
-     * Creates and starts a new thread.
-     *
-     * @param string|array $script Path to PHP script or array with first element as path and following elements options
-     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     *
-     * @return self The thread object that was spawned.
-     */
-    public static function run(string|array $script): self
-    {
-        $thread = new self($script);
-        $thread->start();
-        return $thread;
-    }
+    private ?int $id;
 
-    private Internal\ParallelHub $hub;
-
-    private ?int $id = null;
-
-    private ?Runtime $runtime = null;
+    private ?Runtime $runtime;
 
     /** @var ChannelledSocket|null A channel for communicating with the parallel thread. */
-    private ?ChannelledSocket $channel = null;
+    private ?ChannelledSocket $channel;
 
-    private string $script;
-
-    /** @var string[] */
-    private array $args = [];
-
-    private int $oid = 0;
+    private int $oid;
 
     private bool $killed = false;
 
@@ -86,21 +65,22 @@ final class Parallel implements Context
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */
-    public function __construct(string|array $script, ?IpcHub $hub = null)
+    public static function start(string|array $script, ?IpcHub $hub = null): self
     {
         if (!self::isSupported()) {
             throw new \Error("The parallel extension is required to create parallel threads.");
         }
 
         self::$hubs ??= new \WeakMap();
-        $this->hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($hub ?? ipcHub()));
+        $hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($hub ?? ipcHub()));
 
-        if (\is_array($script)) {
-            $this->script = (string) \array_shift($script);
-            $this->args = \array_values(\array_map("strval", $script));
-        } else {
-            $this->script = (string) $script;
+        if (!\is_array($script)) {
+            $script = [$script];
         }
+
+        $command = (string) \array_shift($script);
+        $args = \array_values(\array_map("strval", $script));
+
 
         if (self::$autoloadPath === null) {
             $paths = [
@@ -119,60 +99,12 @@ final class Parallel implements Context
                 throw new \Error("Could not locate autoload.php");
             }
         }
-    }
 
-    /**
-     * Returns the thread to the condition before starting. The new thread can be started and run independently of the
-     * first thread.
-     */
-    public function __clone()
-    {
-        $this->runtime = null;
-        $this->channel = null;
-        $this->id = null;
-        $this->oid = 0;
-        $this->killed = false;
-    }
+        $runtime = new Runtime(self::$autoloadPath);
 
-    /**
-     * Kills the thread if it is still running.
-     */
-    public function __destruct()
-    {
-        if (\getmypid() === $this->oid) {
-            $this->kill();
-        }
-    }
+        $id = self::$nextId++;
 
-    /**
-     * Checks if the context is running.
-     *
-     * @return bool True if the context is running, otherwise false.
-     */
-    public function isRunning(): bool
-    {
-        return $this->channel !== null;
-    }
-
-    /**
-     * Spawns the thread and begins the thread's execution.
-     *
-     * @throws \Amp\Parallel\Context\StatusError If the thread has already been started.
-     * @throws \Amp\Parallel\Context\ContextException If starting the thread was unsuccessful.
-     */
-    public function start(float $timeout = self::DEFAULT_START_TIMEOUT): void
-    {
-        if ($this->oid !== 0) {
-            throw new StatusError('The thread has already been started.');
-        }
-
-        $this->oid = \getmypid();
-
-        $this->runtime = new Runtime(self::$autoloadPath);
-
-        $this->id = self::$nextId++;
-
-        $future = $this->runtime->run(static function (
+        $future = $runtime->run(static function (
             int $id,
             string $uri,
             string $key,
@@ -248,27 +180,65 @@ final class Parallel implements Context
             }
 
             return 0;
-        // @codeCoverageIgnoreEnd
+            // @codeCoverageIgnoreEnd
         }, [
-            $this->id,
-            $this->hub->getUri(),
-            $key = $this->hub->generateKey(),
-            $this->script,
-            $this->args,
+            $id,
+            $hub->getUri(),
+            $key = $hub->generateKey(),
+            $command,
+            $args,
         ]);
 
         try {
-            $socket = $this->hub->accept($this->id, $key);
-            $this->channel = new ChannelledSocket($socket, $socket);
-            $this->hub->add($this->id, $this->channel, $future);
+            $socket = $hub->accept($key);
+            $channel = new ChannelledSocket($socket, $socket);
+            $hub->add($id, $channel, $future);
         } catch (\Throwable $exception) {
-            $this->kill();
+            $runtime->kill();
             throw new ContextException("Starting the parallel runtime failed", 0, $exception);
         }
 
-        if ($this->killed) {
+        return new self($id, $runtime, $channel);
+    }
+
+    private function __construct(
+        int $id,
+        Runtime $runtime,
+        ChannelledSocket $channel,
+        private ParallelHub $hub,
+    ) {
+        $this->oid = \getmypid();
+        $this->id = $id;
+        $this->runtime = $runtime;
+        $this->channel = $channel;
+    }
+
+    /**
+     * Always throws to prevent cloning.
+     */
+    public function __clone()
+    {
+        throw new \Error(self::class . ' objects cannot be cloned');
+    }
+
+    /**
+     * Kills the thread if it is still running.
+     */
+    public function __destruct()
+    {
+        if (\getmypid() === $this->oid) {
             $this->kill();
         }
+    }
+
+    /**
+     * Checks if the context is running.
+     *
+     * @return bool True if the context is running, otherwise false.
+     */
+    public function isRunning(): bool
+    {
+        return $this->channel !== null;
     }
 
     /**
@@ -398,7 +368,7 @@ final class Parallel implements Context
      *
      * @return int
      *
-     * @throws \Amp\Process\StatusError
+     * @throws StatusError
      */
     public function getId(): int
     {

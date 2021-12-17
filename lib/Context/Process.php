@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\ByteStream\ReadableResourceStream;
+use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
@@ -9,6 +11,7 @@ use Amp\Parallel\Sync\ChannelledSocket;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process as BaseProcess;
+use Amp\Process\ProcessException;
 use Amp\Process\ReadableProcessStream;
 use Amp\Process\WritableProcessStream;
 use Amp\TimeoutCancellation;
@@ -32,48 +35,32 @@ final class Process implements Context
     /** @var string|null Cached path to located PHP binary. */
     private static ?string $binaryPath = null;
 
-    private IpcHub $hub;
-
     private BaseProcess $process;
 
-    private ?ChannelledSocket $channel = null;
-
-    /**
-     * Creates and starts the process at the given path using the optional PHP binary path.
-     *
-     * @param string|array $script Path to PHP script or array with first element as path and following elements options
-     *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param string|null  $cwd Working directory.
-     * @param mixed[]      $env Array of environment variables.
-     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
-     *
-     * @return self
-     */
-    public static function run(string|array $script, string $cwd = null, array $env = [], string $binary = null): self
-    {
-        $process = new self($script, $cwd, $env, $binary);
-        $process->start();
-        return $process;
-    }
+    private ?ChannelledSocket $channel;
 
     /**
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
-     * @param string|null  $cwd Working directory.
-     * @param mixed[]      $env Array of environment variables.
-     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
-     * @param IpcHub|null  $hub Optional IpcHub instance.
+     * @param string|null $workingDirectory Working directory.
+     * @param mixed[] $environment Array of environment variables.
+     * @param Cancellation|null $cancellation
+     * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param IpcHub|null $ipcHub Optional IpcHub instance.
      *
-     * @throws \Error If the PHP binary path given cannot be found or is not executable.
+     * @return Process
+     * @throws ContextException
+     * @throws ProcessException
      */
-    public function __construct(
+    public static function start(
         string|array $script,
-        string $cwd = null,
-        array $env = [],
-        string $binary = null,
-        ?IpcHub $hub = null
-    ) {
-        $this->hub = $hub ?? ipcHub();
+        string $workingDirectory = null,
+        array $environment = [],
+        ?Cancellation $cancellation = null,
+        ?string $binaryPath = null,
+        ?IpcHub $ipcHub = null
+    ): self {
+        $ipcHub ??= ipcHub();
 
         $options = [
             "html_errors" => "0",
@@ -81,19 +68,19 @@ final class Process implements Context
             "log_errors" => "1",
         ];
 
-        if ($binary === null) {
+        if ($binaryPath === null) {
             if (\PHP_SAPI === "cli") {
-                $binary = \PHP_BINARY;
+                $binaryPath = \PHP_BINARY;
             } else {
-                $binary = self::$binaryPath ?? self::locateBinary();
+                $binaryPath = self::$binaryPath ?? self::locateBinary();
             }
-        } elseif (!\is_executable($binary)) {
-            throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binary));
+        } elseif (!\is_executable($binaryPath)) {
+            throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binaryPath));
         }
 
         // Write process runner to external file if inside a PHAR,
         // because PHP can't open files inside a PHAR directly except for the stub.
-        if (\strpos(self::SCRIPT_PATH, "phar://") === 0) {
+        if (\str_starts_with(self::SCRIPT_PATH, "phar://")) {
             if (self::$pharScriptPath) {
                 $scriptPath = self::$pharScriptPath;
             } else {
@@ -136,14 +123,33 @@ final class Process implements Context
         }
 
         $command = \implode(" ", [
-            \escapeshellarg($binary),
-            $this->formatOptions($options),
+            \escapeshellarg($binaryPath),
+            self::formatOptions($options),
             \escapeshellarg($scriptPath),
-            $this->hub->getUri(),
+            $ipcHub->getUri(),
             $script,
         ]);
 
-        $this->process = new BaseProcess($command, $cwd, $env);
+        try {
+            $process = BaseProcess::start($command, $workingDirectory, $environment);
+        } catch (\Throwable $exception) {
+            throw new ContextException("Starting the process failed", 0, $exception);
+        }
+
+        try {
+            $key = $ipcHub->generateKey();
+            $process->getStdin()->write($key);
+
+            $socket = $ipcHub->accept($key, $cancellation);
+            $channel = new ChannelledSocket($socket, $socket);
+        } catch (\Throwable $exception) {
+            if ($process->isRunning()) {
+                $process->kill();
+            }
+            throw new ContextException("Starting the process failed", 0, $exception);
+        }
+
+        return new self($process, $channel);
     }
 
     private static function locateBinary(): string
@@ -164,7 +170,7 @@ final class Process implements Context
         throw new \Error("Could not locate PHP executable binary");
     }
 
-    private function formatOptions(array $options): string
+    private static function formatOptions(array $options): string
     {
         $result = [];
 
@@ -175,29 +181,18 @@ final class Process implements Context
         return \implode(" ", $result);
     }
 
+    private function __construct(BaseProcess $process, ChannelledSocket $channel)
+    {
+        $this->process = $process;
+        $this->channel = $channel;
+    }
+
     /**
      * Always throws to prevent cloning.
      */
     public function __clone()
     {
         throw new \Error(self::class . ' objects cannot be cloned');
-    }
-
-    public function start(float $timeout = self::DEFAULT_START_TIMEOUT): void
-    {
-        try {
-            $pid = $this->process->start();
-            $key = $this->hub->generateKey();
-            $this->process->getStdin()->write($key);
-
-            $socket = $this->hub->accept($pid, $key, new TimeoutCancellation($timeout));
-            $this->channel = new ChannelledSocket($socket, $socket);
-        } catch (\Throwable $exception) {
-            if ($this->isRunning()) {
-                $this->kill();
-            }
-            throw new ContextException("Starting the process failed", 0, $exception);
-        }
     }
 
     public function isRunning(): bool
@@ -251,7 +246,7 @@ final class Process implements Context
 
             try {
                 $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
-            } catch (ContextException | ChannelException | CancelledException) {
+            } catch (ContextException|ChannelException|CancelledException) {
                 if ($this->isRunning()) {
                     $this->kill();
                 }
@@ -305,12 +300,11 @@ final class Process implements Context
     /**
      * Send a signal to the process.
      *
-     * @see \Amp\Process\Process::signal()
-     *
      * @param int $signo
      *
-     * @throws \Amp\Process\ProcessException
-     * @throws \Amp\Process\StatusError
+     * @throws StatusError|ProcessException
+     * @see BaseProcess::signal()
+     *
      */
     public function signal(int $signo): void
     {
@@ -320,11 +314,11 @@ final class Process implements Context
     /**
      * Returns the PID of the process.
      *
-     * @see \Amp\Process\Process::getPid()
-     *
      * @return int
      *
-     * @throws \Amp\Process\StatusError
+     * @throws StatusError
+     * @see BaseProcess::getPid()
+     *
      */
     public function getPid(): int
     {
@@ -334,13 +328,13 @@ final class Process implements Context
     /**
      * Returns the STDIN stream of the process.
      *
-     * @see \Amp\Process\Process::getStdin()
+     * @return WritableResourceStream
      *
-     * @return WritableProcessStream
+     * @throws StatusError
+     * @see BaseProcess::getStdin()
      *
-     * @throws \Amp\Process\StatusError
      */
-    public function getStdin(): WritableProcessStream
+    public function getStdin(): WritableResourceStream
     {
         return $this->process->getStdin();
     }
@@ -348,13 +342,13 @@ final class Process implements Context
     /**
      * Returns the STDOUT stream of the process.
      *
-     * @see \Amp\Process\Process::getStdout()
+     * @return ReadableResourceStream
      *
-     * @return ReadableProcessStream
+     * @throws StatusError
+     * @see BaseProcess::getStdout()
      *
-     * @throws \Amp\Process\StatusError
      */
-    public function getStdout(): ReadableProcessStream
+    public function getStdout(): ReadableResourceStream
     {
         return $this->process->getStdout();
     }
@@ -362,13 +356,13 @@ final class Process implements Context
     /**
      * Returns the STDOUT stream of the process.
      *
-     * @see \Amp\Process\Process::getStderr()
+     * @return ReadableResourceStream
      *
-     * @return ReadableProcessStream
+     * @throws StatusError
+     * @see BaseProcess::getStderr()
      *
-     * @throws \Amp\Process\StatusError
      */
-    public function getStderr(): ReadableProcessStream
+    public function getStderr(): ReadableResourceStream
     {
         return $this->process->getStderr();
     }

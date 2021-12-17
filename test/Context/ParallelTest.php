@@ -12,7 +12,7 @@ class ParallelTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
     {
-        return new Parallel($script);
+        return Parallel::start($script);
     }
 
     public function testGetId()
@@ -22,7 +22,6 @@ class ParallelTest extends AbstractContextTest
             "Test",
         ]);
 
-        $context->start();
         self::assertIsInt($context->getId());
         $context->join();
 
@@ -35,19 +34,5 @@ class ParallelTest extends AbstractContextTest
         $this->expectExceptionMessage('The thread has not been started');
 
         $context->getId();
-    }
-
-    public function testRunStartsThread()
-    {
-        $thread = Parallel::run([
-            __DIR__ . "/Fixtures/test-process.php",
-            "Test",
-        ]);
-
-        self::assertInstanceOf(Parallel::class, $thread);
-        self::assertTrue($thread->isRunning());
-        self::assertIsInt($thread->getId());
-
-        $thread->join();
     }
 }

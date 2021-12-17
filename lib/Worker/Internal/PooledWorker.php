@@ -5,6 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
+use Revolt\EventLoop;
 
 /** @internal */
 final class PooledWorker implements Worker

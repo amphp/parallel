@@ -29,6 +29,6 @@ final class WorkerParallel extends TaskWorker
             $script[] = $bootstrapPath;
         }
 
-        parent::__construct(new Parallel($script));
+        parent::__construct(Parallel::start($script));
     }
 }

@@ -17,11 +17,6 @@ interface Context extends Channel
     public function isRunning(): bool;
 
     /**
-     * Starts the execution context.
-     */
-    public function start(): void;
-
-    /**
      * Immediately kills the context.
      */
     public function kill(): void;

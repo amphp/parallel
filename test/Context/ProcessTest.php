@@ -9,6 +9,6 @@ class ProcessTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
     {
-        return new Process($script);
+        return Process::start($script);
     }
 }

@@ -19,7 +19,6 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/test-process.php",
                 "Test"
             ]);
-        $context->start();
         self::assertSame("Test", $context->join());
     }
 
@@ -29,7 +28,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('No string provided');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/test-process.php");
-        $context->start();
         $context->join();
     }
 
@@ -39,7 +37,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        $context->start();
         $context->receive();
     }
 
@@ -49,7 +46,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        $context->start();
         delay(0.1);
         $context->send(1);
     }
@@ -60,7 +56,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage("No script found at '../test-process.php'");
 
         $context = $this->createContext("../test-process.php");
-        $context->start();
         $context->join();
     }
 
@@ -70,7 +65,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('The given data could not be serialized');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
-        $context->start();
         $context->join();
     }
 
@@ -80,7 +74,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('did not return a callable function');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
-        $context->start();
         $context->join();
     }
 
@@ -90,7 +83,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('contains a parse error');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/parse-error-process.inc");
-        $context->start();
         $context->join();
     }
 
@@ -103,7 +95,6 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/delayed-process.php",
                 5,
             ]);
-        $context->start();
         delay(0.1);
         $promise = async(fn () => $context->join());
         $context->kill();
@@ -120,7 +111,6 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/sleep-process.php",
                 5,
             ]);
-        $context->start();
         delay(0.1);
         $promise = async(fn () => $context->join());
         $context->kill();
@@ -137,7 +127,6 @@ abstract class AbstractContextTest extends AsyncTestCase
                 __DIR__ . "/Fixtures/exiting-process.php",
                 5,
             ]);
-        $context->start();
         $context->join();
     }
 
@@ -147,7 +136,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('channel closed');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
-        $context->start();
         $context->receive();
     }
 
@@ -157,7 +145,6 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('stopped responding');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
-        $context->start();
         delay(0.5);
         $context->send(1);
     }

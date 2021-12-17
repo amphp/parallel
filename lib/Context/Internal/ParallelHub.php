@@ -47,9 +47,9 @@ final class ParallelHub
     /**
      * @return resource
      */
-    public function accept(int $pid, string $key, ?Cancellation $cancellation = null)
+    public function accept(string $key, ?Cancellation $cancellation = null)
     {
-        return $this->hub->accept($pid, $key, $cancellation);
+        return $this->hub->accept($key, $cancellation);
     }
 
     final public function generateKey(): string

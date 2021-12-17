@@ -15,6 +15,8 @@ final class IpcHub
     public const KEY_RECEIVE_TIMEOUT = 1;
     public const KEY_LENGTH = 64;
 
+    private int $nextId = 0;
+
     /** @var resource|null */
     private $server;
 
@@ -86,10 +88,10 @@ final class IpcHub
                             return; // Ignore possible foreign connection attempt.
                         }
 
-                        $pid = $keys[$received];
+                        $id = $keys[$received];
 
-                        $deferred = $acceptor[$pid];
-                        unset($acceptor[$pid], $keys[$received]);
+                        $deferred = $acceptor[$id];
+                        unset($acceptor[$id], $keys[$received]);
                         $deferred->complete($client);
                     });
                 }
@@ -108,34 +110,35 @@ final class IpcHub
         }
     }
 
-    final public function getUri(): string
+    public function getUri(): string
     {
         return $this->uri;
     }
 
-    final public function generateKey(): string
+    public function generateKey(): string
     {
         return \random_bytes(self::KEY_LENGTH);
     }
 
     /**
-     * @param int $pid
      * @param Cancellation|null $cancellation
      *
      * @return resource
      * @throws ContextException
      */
-    final public function accept(int $pid, string $key, ?Cancellation $cancellation = null)
+    public function accept(string $key, ?Cancellation $cancellation = null)
     {
-        $this->keys[$key] = $pid;
-        $this->acceptor[$pid] = $deferred = new DeferredFuture;
+        $id = $this->nextId++;
+
+        $this->keys[$key] = $id;
+        $this->acceptor[$id] = $deferred = new DeferredFuture;
 
         EventLoop::enable($this->watcher);
 
         try {
             $pair = $deferred->getFuture()->await($cancellation);
         } catch (CancelledException $exception) {
-            unset($this->acceptor[$pid], $this->keys[$key]);
+            unset($this->acceptor[$id], $this->keys[$key]);
             throw new ContextException("Starting the process timed out", 0, $exception);
         } finally {
             if (empty($this->acceptor)) {
