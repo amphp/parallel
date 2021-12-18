@@ -16,10 +16,10 @@ class DefaultContextFactory implements ContextFactory
         /**
          * Creates a thread if ext-parallel is installed, otherwise creates a child process.
          */
-        if (Parallel::isSupported()) {
-            return Parallel::start($script);
+        if (ParallelContext::isSupported()) {
+            return ParallelContext::start($script);
         }
 
-        return Process::start($script);
+        return ProcessContext::start($script);
     }
 }

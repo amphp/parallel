@@ -10,7 +10,7 @@ use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\SynchronizationError;
-use Amp\Process\Process as BaseProcess;
+use Amp\Process\Process;
 use Amp\Process\ProcessException;
 use Amp\TimeoutCancellation;
 use function Amp\async;
@@ -19,7 +19,7 @@ use function Amp\async;
  * @template TValue
  * @template-implements Context<TValue>
  */
-final class Process implements Context
+final class ProcessContext implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     public const DEFAULT_START_TIMEOUT = 5;
@@ -42,7 +42,7 @@ final class Process implements Context
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
      *
-     * @return Process
+     * @return ProcessContext
      *
      * @throws ContextException If starting the process fails.
      */
@@ -125,7 +125,7 @@ final class Process implements Context
         ]);
 
         try {
-            $process = BaseProcess::start($command, $workingDirectory, $environment);
+            $process = Process::start($command, $workingDirectory, $environment);
         } catch (\Throwable $exception) {
             throw new ContextException("Starting the process failed", 0, $exception);
         }
@@ -175,10 +175,10 @@ final class Process implements Context
         return \implode(" ", $result);
     }
 
-    private BaseProcess $process;
+    private Process $process;
     private ?ChannelledStream $channel;
 
-    private function __construct(BaseProcess $process, ChannelledStream $channel)
+    private function __construct(Process $process, ChannelledStream $channel)
     {
         $this->process = $process;
         $this->channel = $channel;
@@ -300,7 +300,7 @@ final class Process implements Context
      * @param int $signo
      *
      * @throws StatusError|ProcessException
-     * @see BaseProcess::signal()
+     * @see Process::signal()
      */
     public function signal(int $signo): void
     {
@@ -313,7 +313,7 @@ final class Process implements Context
      * @return int
      *
      * @throws StatusError
-     * @see BaseProcess::getPid()
+     * @see Process::getPid()
      */
     public function getPid(): int
     {
@@ -326,7 +326,7 @@ final class Process implements Context
      * @return WritableResourceStream
      *
      * @throws StatusError
-     * @see BaseProcess::getStdin()
+     * @see Process::getStdin()
      */
     public function getStdin(): WritableResourceStream
     {
@@ -339,7 +339,7 @@ final class Process implements Context
      * @return ReadableResourceStream
      *
      * @throws StatusError
-     * @see BaseProcess::getStdout()
+     * @see Process::getStdout()
      */
     public function getStdout(): ReadableResourceStream
     {
@@ -352,7 +352,7 @@ final class Process implements Context
      * @return ReadableResourceStream
      *
      * @throws StatusError
-     * @see BaseProcess::getStderr()
+     * @see Process::getStderr()
      */
     public function getStderr(): ReadableResourceStream
     {

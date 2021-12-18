@@ -3,16 +3,16 @@
 namespace Amp\Parallel\Test\Context;
 
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\Parallel;
+use Amp\Parallel\Context\ParallelContext;
 
 /**
  * @requires extension parallel
  */
-class ParallelTest extends AbstractContextTest
+class ParallelContextTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
     {
-        return Parallel::start($script);
+        return ParallelContext::start($script);
     }
 
     public function testGetId()

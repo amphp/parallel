@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
-use Amp\Parallel\Context\Parallel;
+use Amp\Parallel\Context\ParallelContext;
 
 /**
  * The built-in worker factory type.
@@ -43,7 +43,7 @@ final class DefaultWorkerFactory implements WorkerFactory
      */
     public function create(): Worker
     {
-        if (Parallel::isSupported()) {
+        if (ParallelContext::isSupported()) {
             return new WorkerParallel($this->className);
         }
 

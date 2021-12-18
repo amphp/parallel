@@ -24,7 +24,7 @@ use function Amp\async;
  * @template TValue
  * @template-implements Context<TValue>
  */
-final class Parallel implements Context
+final class ParallelContext implements Context
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
     public const DEFAULT_START_TIMEOUT = 5;

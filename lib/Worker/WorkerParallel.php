@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Cache\LocalCache;
-use Amp\Parallel\Context\Parallel;
+use Amp\Parallel\Context\ParallelContext;
 
 /**
  * A worker parallel extension thread that executes task objects.
@@ -29,6 +29,6 @@ final class WorkerParallel extends TaskWorker
             $script[] = $bootstrapPath;
         }
 
-        parent::__construct(Parallel::start($script));
+        parent::__construct(ParallelContext::start($script));
     }
 }

@@ -2,7 +2,7 @@
 <?php
 require \dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\Parallel\Context\Parallel;
+use Amp\Parallel\Context\ParallelContext;
 use Revolt\EventLoop;
 use function Amp\delay;
 
@@ -14,9 +14,9 @@ $timer = EventLoop::repeat(1, function () {
 
 try {
     // Create a new child thread that does some blocking stuff.
-    $context = Parallel::run(__DIR__ . "/blocking-process.php");
+    $context = ParallelContext::run(__DIR__ . "/blocking-process.php");
 
-    \assert($context instanceof Parallel);
+    \assert($context instanceof ParallelContext);
 
     print "Waiting 2 seconds to send start data...\n";
     delay(2);

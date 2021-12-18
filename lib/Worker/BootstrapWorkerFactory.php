@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
-use Amp\Parallel\Context\Parallel;
+use Amp\Parallel\Context\ParallelContext;
 
 /**
  * Worker factory that includes a custom bootstrap file after initializing the worker.
@@ -52,7 +52,7 @@ final class BootstrapWorkerFactory implements WorkerFactory
      */
     public function create(): Worker
     {
-        if (Parallel::isSupported()) {
+        if (ParallelContext::isSupported()) {
             return new WorkerParallel($this->className, $this->bootstrapPath);
         }
 

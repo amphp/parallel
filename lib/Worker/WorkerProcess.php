@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
 use Amp\Parallel\Context\ContextException;
-use Amp\Parallel\Context\Process;
+use Amp\Parallel\Context\ProcessContext;
 
 /**
  * A worker process that executes task objects.
@@ -39,6 +39,6 @@ final class WorkerProcess extends TaskWorker
             $script[] = $bootstrapPath;
         }
 
-        parent::__construct(Process::start($script, environment: $environment, binaryPath: $binaryPath));
+        parent::__construct(ProcessContext::start($script, environment: $environment, binaryPath: $binaryPath));
     }
 }
