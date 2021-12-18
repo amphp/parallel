@@ -24,17 +24,17 @@ interface Worker
     public function isIdle(): bool;
 
     /**
-     * Enqueues a {@see Task} to be executed by the worker.
+     * Executes a {@see Task} on the worker.
      *
-     * @param Task $task The task to enqueue.
-     * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for this
-     *                                      to have any effect.
+     * @param Task $task The task to execute.
+     * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
+     * this to have any effect.
      *
      * @return mixed The return value of {@see Task::run()}.
      *
      * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */
-    public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed;
+    public function execute(Task $task, ?Cancellation $cancellation = null): mixed;
 
     /**
      * @return int Returns the exit code when the worker successfully shuts down.

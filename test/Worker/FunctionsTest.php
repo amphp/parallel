@@ -29,10 +29,10 @@ class FunctionsTest extends AsyncTestCase
     /**
      * @depends testPool
      */
-    public function testEnqueue(): void
+    public function testExecute(): void
     {
         $pool = $this->createMock(Pool::class);
-        $pool->method('enqueue')
+        $pool->method('execute')
             ->willReturnCallback(function (Task $task): mixed {
                 return $task->run($this->createMock(Environment::class), $this->createMock(Cancellation::class));
             });
@@ -43,56 +43,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        self::assertSame($value, Worker\enqueue($task));
-    }
-
-    /**
-     * @depends testPool
-     */
-    public function testEnqueueCallable(): void
-    {
-        $pool = $this->createMock(Pool::class);
-        $pool->method('enqueue')
-            ->will(self::returnCallback(function (Task $task): string {
-                return $task->run($this->createMock(Environment::class), $this->createMock(Cancellation::class));
-            }));
-
-        Worker\pool($pool);
-
-        $value = 42;
-
-        self::assertSame('42', Worker\enqueueCallable('strval', $value));
-    }
-
-    /**
-     * @depends testEnqueueCallable
-     */
-    public function testEnqueueCallableIntegration(): void
-    {
-        Worker\pool($pool = new Worker\DefaultPool);
-
-        $value = 42;
-
-        self::assertSame('42', Worker\enqueueCallable('strval', $value));
-
-        $pool->shutdown();
-    }
-
-    /**
-     * @depends testEnqueueCallable
-     */
-    public function testEnqueueNonAutoloadableCallable(): void
-    {
-        $this->expectException(Worker\TaskError::class);
-        $this->expectExceptionMessage('User-defined functions must be autoloadable');
-
-        Worker\pool($pool = new Worker\DefaultPool);
-
-        try {
-            Worker\enqueueCallable(__NAMESPACE__ . '\\nonAutoloadableFunction');
-        } finally {
-            $pool->shutdown();
-        }
+        self::assertSame($value, Worker\execute($task));
     }
 
     /**

@@ -40,14 +40,14 @@ abstract class TaskWorker implements Worker
         $this->context = $context;
 
         $jobQueue = &$this->jobQueue;
-        $receive = &$this->receiveFuture;
+        $receiveFuture = &$this->receiveFuture;
         $this->onReceive = $onReceive = static function (?\Throwable $exception, mixed $data) use (
             $context,
             &$jobQueue,
-            &$receive,
-            &$onReceive
+            &$receiveFuture,
+            &$onReceive,
         ): void {
-            $receive = null;
+            $receiveFuture = null;
 
             if ($exception || !$data instanceof Internal\TaskResult) {
                 $exception ??= new WorkerException("Invalid data from worker");
@@ -74,8 +74,8 @@ abstract class TaskWorker implements Worker
                     $deferred->error($exception);
                 }
             } finally {
-                if ($receive === null && !empty($jobQueue)) {
-                    $receive = self::receive($context, $onReceive);
+                if ($receiveFuture === null && !empty($jobQueue)) {
+                    $receiveFuture = self::receive($context, $onReceive);
                 }
             }
         };
@@ -115,7 +115,7 @@ abstract class TaskWorker implements Worker
     /**
      * {@inheritdoc}
      */
-    final public function enqueue(Task $task, ?Cancellation $cancellation = null): mixed
+    final public function execute(Task $task, ?Cancellation $cancellation = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");

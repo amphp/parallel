@@ -27,7 +27,7 @@ class DefaultPoolTest extends AsyncTestCase
         $this->expectException(WorkerException::class);
         $this->expectExceptionMessage('Worker factory did not create a viable worker');
 
-        $pool->enqueue($this->createMock(Task::class));
+        $pool->execute($this->createMock(Task::class));
     }
 
     public function testCrashedWorker(): void
@@ -41,7 +41,7 @@ class DefaultPoolTest extends AsyncTestCase
                     ->willReturnOnConsecutiveCalls(true, false);
                 $worker->method('shutdown')
                     ->willThrowException(new WorkerException('Worker unexpectedly exited'));
-                $worker->method('enqueue')
+                $worker->method('execute')
                     ->willReturn(null);
 
                 return $worker;
@@ -49,9 +49,9 @@ class DefaultPoolTest extends AsyncTestCase
 
         $pool = new DefaultPool(32, $factory);
 
-        $pool->enqueue($this->createMock(Task::class));
+        $pool->execute($this->createMock(Task::class));
 
-        $pool->enqueue($this->createMock(Task::class));
+        $pool->execute($this->createMock(Task::class));
 
         // Warning is forwarded as an exception to loop.
         $this->expectException(UnhandledException::class);

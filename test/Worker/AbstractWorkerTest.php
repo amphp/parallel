@@ -32,7 +32,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     public function testWorkerConstantDefined()
     {
         $worker = $this->createWorker();
-        self::assertTrue($worker->enqueue(new Fixtures\ConstantTask));
+        self::assertTrue($worker->execute(new Fixtures\ConstantTask));
         $worker->shutdown();
     }
 
@@ -41,7 +41,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
         self::assertTrue($worker->isRunning());
 
-        $worker->enqueue(new Fixtures\TestTask(42)); // Enqueue a task to start the worker.
+        $worker->execute(new Fixtures\TestTask(42)); // Execute a task to start the worker.
 
         self::assertTrue($worker->isRunning());
 
@@ -58,7 +58,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    public function testEnqueueShouldThrowStatusError()
+    public function testExecuteShouldThrowStatusError()
     {
         $this->expectException(StatusError::class);
         $this->expectExceptionMessage('The worker has been shut down');
@@ -68,27 +68,27 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         self::assertTrue($worker->isIdle());
 
         $worker->shutdown();
-        $worker->enqueue(new Fixtures\TestTask(42));
+        $worker->execute(new Fixtures\TestTask(42));
     }
 
-    public function testEnqueue()
+    public function testExecute()
     {
         $worker = $this->createWorker();
 
-        $returnValue = $worker->enqueue(new Fixtures\TestTask(42));
+        $returnValue = $worker->execute(new Fixtures\TestTask(42));
         self::assertEquals(42, $returnValue);
 
         $worker->shutdown();
     }
 
-    public function testEnqueueMultipleSynchronous()
+    public function testExecuteMultipleSynchronous()
     {
         $worker = $this->createWorker();
 
         $futures = [
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(42))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(56))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(72))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(42))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(56))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(72))),
         ];
 
         self::assertEquals([42, 56, 72], Future\all($futures));
@@ -96,16 +96,16 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    public function testEnqueueMultipleAsynchronous()
+    public function testExecuteMultipleAsynchronous()
     {
         $this->setTimeout(0.5);
 
         $worker = $this->createWorker();
 
         $futures = [
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(42, 0.2))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(56, 0.3))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(72, 0.1))),
         ];
 
         self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\all($futures));
@@ -113,16 +113,16 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    public function testEnqueueMultipleThenShutdown()
+    public function testExecuteMultipleThenShutdown()
     {
         $this->setTimeout(0.5);
 
         $worker = $this->createWorker();
 
         $futures = [
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(42, 0.2))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(56, 0.3))),
-            async(fn () => $worker->enqueue(new Fixtures\TestTask(72, 0.1))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(42, 0.2))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(56, 0.3))),
+            async(fn () => $worker->execute(new Fixtures\TestTask(72, 0.1))),
         ];
 
         // Send shutdown signal, but don't await until tasks have finished.
@@ -133,12 +133,12 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $shutdown->await(); // Await shutdown before ending test.
     }
 
-    public function testNotIdleOnEnqueue()
+    public function testNotIdleOnExecute()
     {
         $worker = $this->createWorker();
 
-        $future = async(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
-        delay(0); // Tick event loop to call Worker::enqueue()
+        $future = async(fn () => $worker->execute(new Fixtures\TestTask(42)));
+        delay(0); // Tick event loop to call Worker::execute()
         self::assertFalse($worker->isIdle());
         $future->await();
 
@@ -151,7 +151,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         $worker = $this->createWorker();
 
-        async(fn () => $worker->enqueue(new Fixtures\TestTask(42)))->ignore();
+        async(fn () => $worker->execute(new Fixtures\TestTask(42)))->ignore();
 
         $worker->kill();
 
@@ -163,7 +163,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\FailingTask(\Exception::class));
+            $worker->execute(new Fixtures\FailingTask(\Exception::class));
         } catch (TaskFailureException $exception) {
             self::assertSame(\Exception::class, $exception->getOriginalClassName());
         }
@@ -176,7 +176,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\FailingTask(\Error::class));
+            $worker->execute(new Fixtures\FailingTask(\Error::class));
         } catch (TaskFailureError $exception) {
             self::assertSame(\Error::class, $exception->getOriginalClassName());
         }
@@ -189,7 +189,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\FailingTask(\Error::class, \Exception::class));
+            $worker->execute(new Fixtures\FailingTask(\Error::class, \Exception::class));
         } catch (TaskFailureError $exception) {
             self::assertSame(\Error::class, $exception->getOriginalClassName());
             $previous = $exception->getPrevious();
@@ -205,7 +205,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new NonAutoloadableTask);
+            $worker->execute(new NonAutoloadableTask);
             self::fail("Tasks that cannot be autoloaded should throw an exception");
         } catch (TaskFailureError $exception) {
             self::assertSame("Error", $exception->getOriginalClassName());
@@ -223,7 +223,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
+            $worker->execute(new class implements Task { // Anonymous classes are not serializable.
                 public function run(Environment $environment, Cancellation $token): mixed
                 {
                 }
@@ -241,7 +241,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\UnserializableResultTask);
+            $worker->execute(new Fixtures\UnserializableResultTask);
             self::fail("Tasks results that cannot be serialized should throw an exception");
         } catch (TaskFailureException $exception) {
             self::assertSame(
@@ -258,7 +258,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\NonAutoloadableResultTask);
+            $worker->execute(new Fixtures\NonAutoloadableResultTask);
             self::fail("Tasks results that cannot be autoloaded should throw an exception");
         } catch (\Error $exception) {
             self::assertSame(0, \strpos(
@@ -274,14 +274,14 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker();
 
-        async(fn () => $worker->enqueue(new class implements Task { // Anonymous classes are not serializable.
+        async(fn () => $worker->execute(new class implements Task { // Anonymous classes are not serializable.
             public function run(Environment $environment, Cancellation $token): mixed
             {
                 return null;
             }
         }))->ignore();
 
-        $future = async(fn () => $worker->enqueue(new Fixtures\TestTask(42)));
+        $future = async(fn () => $worker->execute(new Fixtures\TestTask(42)));
 
         self::assertSame(42, $future->await());
 
@@ -292,7 +292,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-bootstrap.php');
 
-        self::assertTrue($worker->enqueue(new Fixtures\AutoloadTestTask));
+        self::assertTrue($worker->execute(new Fixtures\AutoloadTestTask));
 
         $worker->shutdown();
     }
@@ -304,7 +304,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');
 
-        $worker->enqueue(new Fixtures\AutoloadTestTask);
+        $worker->execute(new Fixtures\AutoloadTestTask);
 
         $worker->shutdown();
     }
@@ -316,24 +316,24 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\CancellingTask, new TimeoutCancellation(0.1));
+            $worker->execute(new Fixtures\CancellingTask, new TimeoutCancellation(0.1));
         } finally {
             $worker->shutdown();
         }
     }
 
-    public function testEnqueueAfterCancelledTask()
+    public function testExecuteAfterCancelledTask()
     {
         $worker = $this->createWorker();
 
         try {
-            $worker->enqueue(new Fixtures\CancellingTask, new TimeoutCancellation(0.1));
-            self::fail(TaskCancelledException::class . ' did not fail enqueue promise');
+            $worker->execute(new Fixtures\CancellingTask, new TimeoutCancellation(0.1));
+            self::fail(TaskCancelledException::class . ' did not fail execute promise');
         } catch (TaskCancelledException $exception) {
             // Task should be cancelled, ignore this exception.
         }
 
-        self::assertTrue($worker->enqueue(new Fixtures\ConstantTask));
+        self::assertTrue($worker->execute(new Fixtures\ConstantTask));
 
         $worker->shutdown();
     }
@@ -342,7 +342,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker();
 
-        self::assertTrue($worker->enqueue(new Fixtures\ConstantTask(), new TimeoutCancellation(0.1)));
+        self::assertTrue($worker->execute(new Fixtures\ConstantTask(), new TimeoutCancellation(0.1)));
 
         $worker->shutdown();
     }

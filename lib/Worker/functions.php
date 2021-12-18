@@ -26,29 +26,17 @@ function pool(Pool $pool = null): Pool
 }
 
 /**
- * Enqueues a task to be executed by the global worker pool.
+ * Executes a Task on the global worker pool.
  *
- * @param Task                   $task The task to enqueue.
+ * @param Task $task The task to enqueue.
  * @param Cancellation|null $token
  *
  * @return mixed
+ * @throws TaskFailureThrowable
  */
-function enqueue(Task $task, ?Cancellation $token = null): mixed
+function execute(Task $task, ?Cancellation $token = null): mixed
 {
-    return pool()->enqueue($task, $token);
-}
-
-/**
- * Enqueues a callable to be executed by the global worker pool.
- *
- * @param callable $callable Callable needs to be serializable.
- * @param mixed    ...$args Arguments have to be serializable.
- *
- * @return mixed
- */
-function enqueueCallable(callable $callable, ...$args): mixed
-{
-    return enqueue(new CallableTask($callable, $args));
+    return pool()->execute($task, $token);
 }
 
 /**

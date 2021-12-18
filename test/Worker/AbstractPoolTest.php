@@ -75,7 +75,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
     {
         $pool = $this->createPool();
 
-        $returnValue = $pool->enqueue(new Fixtures\TestTask(42));
+        $returnValue = $pool->execute(new Fixtures\TestTask(42));
         self::assertEquals(42, $returnValue);
 
         $pool->shutdown();
@@ -86,9 +86,9 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $values = Future\all([
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
-            async(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
+            async(fn () => $pool->execute(new Fixtures\TestTask(42))),
+            async(fn () => $pool->execute(new Fixtures\TestTask(56))),
+            async(fn () => $pool->execute(new Fixtures\TestTask(72))),
         ]);
 
         self::assertEquals([42, 56, 72], $values);
@@ -117,7 +117,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
         self::assertTrue($worker->isRunning());
         self::assertTrue($worker->isIdle());
 
-        self::assertSame(42, $worker->enqueue(new Fixtures\TestTask(42)));
+        self::assertSame(42, $worker->execute(new Fixtures\TestTask(42)));
 
         $worker->shutdown();
 
@@ -134,13 +134,13 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return async(fn () => $pool->enqueue($task));
+            return async(fn () => $pool->execute($task));
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return async(fn () => $pool->enqueue($task));
+            return async(fn () => $pool->execute($task));
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
@@ -165,7 +165,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
             $values = \range(1, 50);
 
             $promises = \array_map(static function (int $value) use ($pool): Future {
-                return async(fn () => $pool->enqueue(new Fixtures\TestTask($value)));
+                return async(fn () => $pool->execute(new Fixtures\TestTask($value)));
             }, $values);
 
             self::assertEquals($values, Future\all($promises));
