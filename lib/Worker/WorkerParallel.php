@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cache\LocalCache;
 use Amp\Parallel\Context\Parallel;
 
 /**
@@ -12,17 +13,16 @@ final class WorkerParallel extends TaskWorker
     private const SCRIPT_PATH = __DIR__ . "/Internal/worker-process.php";
 
     /**
-     * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate.
-     *     Defaults to \Amp\Parallel\Worker\BasicEnvironment.
+     * @param string $cacheClass Name of class implementing {@see Cache} to instigate. Defaults to {@see LocalCache}.
      * @param string|null Path to custom bootstrap file.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, ?string $bootstrapPath = null)
+    public function __construct(string $cacheClass = LocalCache::class, ?string $bootstrapPath = null)
     {
         $script = [
             self::SCRIPT_PATH,
-            $envClassName,
+            $cacheClass,
         ];
 
         if ($bootstrapPath !== null) {

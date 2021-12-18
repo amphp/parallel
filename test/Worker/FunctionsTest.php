@@ -2,9 +2,9 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\Parallel\Worker;
-use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
@@ -34,7 +34,7 @@ class FunctionsTest extends AsyncTestCase
         $pool = $this->createMock(Pool::class);
         $pool->method('execute')
             ->willReturnCallback(function (Task $task): mixed {
-                return $task->run($this->createMock(Environment::class), $this->createMock(Cancellation::class));
+                return $task->run($this->createMock(Cache::class), $this->createMock(Cancellation::class));
             });
 
         Worker\pool($pool);

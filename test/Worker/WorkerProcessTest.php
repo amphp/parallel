@@ -2,14 +2,14 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Worker\BasicEnvironment;
+use Amp\Cache\LocalCache;
 use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerProcess;
 
 class WorkerProcessTest extends AbstractWorkerTest
 {
-    protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null): Worker
+    protected function createWorker(string $cacheClass = LocalCache::class, string $autoloadPath = null): Worker
     {
-        return new WorkerProcess($envClassName, [], null, $autoloadPath);
+        return new WorkerProcess($cacheClass, [], null, $autoloadPath);
     }
 }

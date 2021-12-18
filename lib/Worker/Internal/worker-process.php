@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
+use Amp\Cache\Cache;
 use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
 
@@ -31,11 +32,11 @@ return function (Sync\Channel $channel) use ($argc, $argv): int {
         throw new \Error(\sprintf("Invalid environment class name '%s'", $className));
     }
 
-    if (!\is_subclass_of($className, Worker\Environment::class)) {
+    if (!\is_subclass_of($className, Cache::class)) {
         throw new \Error(\sprintf(
             "The class '%s' does not implement '%s'",
             $className,
-            Worker\Environment::class
+            Cache::class
         ));
     }
 

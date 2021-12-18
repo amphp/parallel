@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cache\Cache;
 use Amp\DeferredCancellation;
 use Amp\CancelledException;
 use Amp\Future;
@@ -11,17 +12,13 @@ use Revolt\EventLoop;
 
 final class TaskRunner
 {
-    private Channel $channel;
-
-    private Environment $environment;
-
     /** @var DeferredCancellation[] */
     private array $cancellationSources = [];
 
-    public function __construct(Channel $channel, Environment $environment)
-    {
-        $this->channel = $channel;
-        $this->environment = $environment;
+    public function __construct(
+        private Channel $channel,
+        private Cache $cache
+    ) {
     }
 
     /**
@@ -36,7 +33,7 @@ final class TaskRunner
 
                 EventLoop::queue(function () use ($job, $id, $source): void {
                     try {
-                        $result = $job->getTask()->run($this->environment, $source->getCancellation());
+                        $result = $job->getTask()->run($this->cache, $source->getCancellation());
 
                         if ($result instanceof Future) {
                             $result = $result->await($source->getCancellation());

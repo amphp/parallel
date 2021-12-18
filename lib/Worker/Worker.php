@@ -24,13 +24,15 @@ interface Worker
     public function isIdle(): bool;
 
     /**
+     * @template TResult
+     *
      * Executes a {@see Task} on the worker.
      *
-     * @param Task $task The task to execute.
+     * @param Task<TResult> $task The task to execute.
      * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
      * this to have any effect.
      *
-     * @return mixed The return value of {@see Task::run()}.
+     * @return TResult The return value of {@see Task::run()}.
      *
      * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
      */

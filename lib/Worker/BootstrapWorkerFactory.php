@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cache\Cache;
+use Amp\Cache\LocalCache;
 use Amp\Parallel\Context\Parallel;
 
 /**
@@ -17,31 +19,31 @@ final class BootstrapWorkerFactory implements WorkerFactory
 
     /**
      * @param string $bootstrapFilePath Path to custom bootstrap file.
-     * @param string $envClassName      Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
-     *     worker. Defaults to \Amp\Parallel\Worker\BasicEnvironment.
+     * @param string $cacheClass Name of class implementing {@see Cache} to instigate in each
+     *     worker. Defaults to {@see LocalCache}.
      *
-     * @throws \Error If the given class name does not exist or does not implement {@see Environment}.
+     * @throws \Error If the given class name does not exist or does not implement {@see Cache}.
      */
-    public function __construct(string $bootstrapFilePath, string $envClassName = BasicEnvironment::class)
+    public function __construct(string $bootstrapFilePath, string $cacheClass = LocalCache::class)
     {
         if (!\file_exists($bootstrapFilePath)) {
             throw new \Error(\sprintf("No file found at autoload path given '%s'", $bootstrapFilePath));
         }
 
-        if (!\class_exists($envClassName)) {
-            throw new \Error(\sprintf("Invalid environment class name '%s'", $envClassName));
+        if (!\class_exists($cacheClass)) {
+            throw new \Error(\sprintf("Invalid environment class name '%s'", $cacheClass));
         }
 
-        if (!\is_subclass_of($envClassName, Environment::class)) {
+        if (!\is_subclass_of($cacheClass, Cache::class)) {
             throw new \Error(\sprintf(
                 "The class '%s' does not implement '%s'",
-                $envClassName,
-                Environment::class
+                $cacheClass,
+                Cache::class
             ));
         }
 
         $this->bootstrapPath = $bootstrapFilePath;
-        $this->className = $envClassName;
+        $this->className = $cacheClass;
     }
 
     /**

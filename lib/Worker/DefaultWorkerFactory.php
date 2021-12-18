@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cache\Cache;
+use Amp\Cache\LocalCache;
 use Amp\Parallel\Context\Parallel;
 
 /**
@@ -13,26 +15,26 @@ final class DefaultWorkerFactory implements WorkerFactory
     private string $className;
 
     /**
-     * @param string $envClassName Name of class implementing \Amp\Parallel\Worker\Environment to instigate in each
-     *     worker. Defaults to \Amp\Parallel\Worker\BasicEnvironment.
+     * @param string $cacheClass Name of class implementing {@see Cache} to instigate in each
+     *     worker. Defaults to {@see LocalCache}.
      *
-     * @throws \Error If the given class name does not exist or does not implement {@see Environment}.
+     * @throws \Error If the given class name does not exist or does not implement {@see Cache}.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class)
+    public function __construct(string $cacheClass = LocalCache::class)
     {
-        if (!\class_exists($envClassName)) {
-            throw new \Error(\sprintf("Invalid environment class name '%s'", $envClassName));
+        if (!\class_exists($cacheClass)) {
+            throw new \Error(\sprintf("Invalid cache class name '%s'", $cacheClass));
         }
 
-        if (!\is_subclass_of($envClassName, Environment::class)) {
+        if (!\is_subclass_of($cacheClass, Cache::class)) {
             throw new \Error(\sprintf(
                 "The class '%s' does not implement '%s'",
-                $envClassName,
-                Environment::class
+                $cacheClass,
+                Cache::class
             ));
         }
 
-        $this->className = $envClassName;
+        $this->className = $cacheClass;
     }
 
     /**

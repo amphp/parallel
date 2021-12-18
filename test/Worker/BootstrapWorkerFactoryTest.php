@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Cache\Cache;
 use Amp\Parallel\Worker\BootstrapWorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
 
@@ -34,10 +35,10 @@ class BootstrapWorkerFactoryTest extends AsyncTestCase
         $factory = new BootstrapWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php', "Invalid");
     }
 
-    public function testNonEnvironmentClassName()
+    public function testNonCacheClassName()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage("does not implement 'Amp\Parallel\Worker\Environment'");
+        $this->expectExceptionMessage(\sprintf("does not implement '%s'", Cache::class));
 
         $factory = new BootstrapWorkerFactory(
             __DIR__ . '/Fixtures/custom-bootstrap.php',

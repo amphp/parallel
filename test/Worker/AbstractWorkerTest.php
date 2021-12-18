@@ -2,13 +2,13 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Cache\Cache;
+use Amp\Cache\LocalCache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ContextPanicError;
 use Amp\Parallel\Sync\SerializationException;
-use Amp\Parallel\Worker\BasicEnvironment;
-use Amp\Parallel\Worker\Environment;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
 use Amp\Parallel\Worker\TaskFailureError;
@@ -21,7 +21,7 @@ use function Amp\async;
 
 class NonAutoloadableTask implements Task
 {
-    public function run(Environment $environment, Cancellation $token): int
+    public function run(Cache $cache, Cancellation $cancellation): int
     {
         return 1;
     }
@@ -224,7 +224,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             $worker->execute(new class implements Task { // Anonymous classes are not serializable.
-                public function run(Environment $environment, Cancellation $token): mixed
+                public function run(Cache $cache, Cancellation $cancellation): mixed
                 {
                 }
             });
@@ -275,7 +275,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         async(fn () => $worker->execute(new class implements Task { // Anonymous classes are not serializable.
-            public function run(Environment $environment, Cancellation $token): mixed
+            public function run(Cache $cache, Cancellation $cancellation): mixed
             {
                 return null;
             }
@@ -290,7 +290,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     public function testCustomAutoloader()
     {
-        $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/custom-bootstrap.php');
+        $worker = $this->createWorker(autoloadPath: __DIR__ . '/Fixtures/custom-bootstrap.php');
 
         self::assertTrue($worker->execute(new Fixtures\AutoloadTestTask));
 
@@ -302,7 +302,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $this->expectException(ContextPanicError::class);
         $this->expectExceptionMessage('No file found at bootstrap file path given');
 
-        $worker = $this->createWorker(BasicEnvironment::class, __DIR__ . '/Fixtures/not-found.php');
+        $worker = $this->createWorker(autoloadPath: __DIR__ . '/Fixtures/not-found.php');
 
         $worker->execute(new Fixtures\AutoloadTestTask);
 
@@ -348,13 +348,13 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     }
 
     /**
-     * @param string $envClassName
+     * @param string $cacheClass
      * @param string|null $autoloadPath
      *
      * @return Worker
      */
     abstract protected function createWorker(
-        string $envClassName = BasicEnvironment::class,
+        string $cacheClass = LocalCache::class,
         string $autoloadPath = null
     ): Worker;
 }
