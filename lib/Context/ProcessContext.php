@@ -34,10 +34,10 @@ final class ProcessContext implements Context
     private static ?string $binaryPath = null;
 
     /**
-     * @param string|array $script Path to PHP script or array with first element as path and following elements options
-     *     to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
+     * @param string|string[] $script Path to PHP script or array with first element as path and following elements
+     *     options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
      * @param string|null $workingDirectory Working directory.
-     * @param mixed[] $environment Array of environment variables.
+     * @param string[] $environment Array of environment variables.
      * @param Cancellation|null $cancellation
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
@@ -110,19 +110,13 @@ final class ProcessContext implements Context
             $scriptPath = self::SCRIPT_PATH;
         }
 
-        if (\is_array($script)) {
-            $script = \implode(" ", \array_map("escapeshellarg", $script));
-        } else {
-            $script = \escapeshellarg($script);
-        }
-
-        $command = \implode(" ", [
-            \escapeshellarg($binaryPath),
+        $command = \array_merge(
+            [$binaryPath],
             self::formatOptions($options),
-            \escapeshellarg($scriptPath),
-            $ipcHub->getUri(),
-            $script,
-        ]);
+            [$scriptPath],
+            [$ipcHub->getUri()],
+            \is_array($script) ? $script : [$script],
+        );
 
         try {
             $process = Process::start($command, $workingDirectory, $environment);
@@ -164,7 +158,7 @@ final class ProcessContext implements Context
         throw new \Error("Could not locate PHP executable binary");
     }
 
-    private static function formatOptions(array $options): string
+    private static function formatOptions(array $options): array
     {
         $result = [];
 
@@ -172,7 +166,7 @@ final class ProcessContext implements Context
             $result[] = \sprintf("-d%s=%s", $option, $value);
         }
 
-        return \implode(" ", $result);
+        return $result;
     }
 
     private Process $process;
