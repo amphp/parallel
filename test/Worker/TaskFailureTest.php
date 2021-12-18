@@ -3,15 +3,15 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Worker\Internal\TaskFailure;
-use Amp\Parallel\Worker\TaskError;
-use Amp\Parallel\Worker\TaskException;
+use Amp\Parallel\Worker\TaskFailureError;
+use Amp\Parallel\Worker\TaskFailureException;
 use Amp\PHPUnit\AsyncTestCase;
 
 class TaskFailureTest extends AsyncTestCase
 {
     public function testWithException(): void
     {
-        $this->expectException(TaskException::class);
+        $this->expectException(TaskFailureException::class);
         $this->expectExceptionMessage('Uncaught Exception in worker');
 
         $exception = new \Exception("Message", 1);
@@ -21,7 +21,7 @@ class TaskFailureTest extends AsyncTestCase
 
     public function testWithError(): void
     {
-        $this->expectException(TaskError::class);
+        $this->expectException(TaskFailureError::class);
         $this->expectExceptionMessage('Uncaught Error in worker');
 
         $exception = new \Error("Message", 1);

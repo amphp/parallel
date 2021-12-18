@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Sync;
 
+use Amp\Parallel\Sync\ContextPanicError;
 use Amp\Parallel\Sync\ExitFailure;
-use Amp\Parallel\Sync\PanicError;
 use Amp\PHPUnit\AsyncTestCase;
 
 class ExitFailureTest extends AsyncTestCase
@@ -15,7 +15,7 @@ class ExitFailureTest extends AsyncTestCase
         $result = new ExitFailure($exception);
         try {
             $result->getResult();
-        } catch (PanicError $caught) {
+        } catch (ContextPanicError $caught) {
             self::assertGreaterThan(0, \stripos($caught->getMessage(), $message));
             return;
         }

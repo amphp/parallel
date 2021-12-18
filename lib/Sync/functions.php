@@ -58,7 +58,7 @@ function formatFlattenedBacktrace(array $trace): string
  *
  * @return string Serializable string representation of $value for backtraces.
  */
-function flattenArgument($value): string
+function flattenArgument(mixed $value): string
 {
     if ($value instanceof \Closure) {
         $closureReflection = new \ReflectionFunction($value);
