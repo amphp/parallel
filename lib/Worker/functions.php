@@ -12,7 +12,7 @@ use Revolt\EventLoop;
  *
  * @return Pool The global worker pool instance.
  */
-function pool(Pool $pool = null): Pool
+function pool(?Pool $pool = null): Pool
 {
     static $map;
     $map ??= new \WeakMap();
@@ -26,17 +26,19 @@ function pool(Pool $pool = null): Pool
 }
 
 /**
+ * @template TResult
+ *
  * Executes a Task on the global worker pool.
  *
- * @param Task $task The task to enqueue.
- * @param Cancellation|null $token
+ * @param Task<TResult> $task The task to enqueue.
+ * @param Cancellation|null $cancellation
  *
- * @return mixed
+ * @return TResult
  * @throws TaskFailureThrowable
  */
-function execute(Task $task, ?Cancellation $token = null): mixed
+function execute(Task $task, ?Cancellation $cancellation = null): mixed
 {
-    return pool()->execute($task, $token);
+    return pool()->execute($task, $cancellation);
 }
 
 /**

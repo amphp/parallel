@@ -47,8 +47,6 @@ final class BootstrapWorkerFactory implements WorkerFactory
     }
 
     /**
-     * {@inheritdoc}
-     *
      * The type of worker created depends on the extensions available. If multi-threading is enabled, a WorkerThread
      * will be created. If threads are not available a WorkerProcess will be created.
      */

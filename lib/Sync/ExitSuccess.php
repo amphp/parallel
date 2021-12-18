@@ -20,7 +20,7 @@ final class ExitSuccess implements ExitResult
     }
 
     /**
-     * {@inheritdoc}
+     * @return TValue
      */
     public function getResult(): mixed
     {

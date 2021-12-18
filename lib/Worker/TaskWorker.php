@@ -95,26 +95,17 @@ abstract class TaskWorker implements Worker
         });
     }
 
-    /**
-     * {@inheritdoc}
-     */
     final public function isRunning(): bool
     {
         // Report as running unless shutdown or killed.
         return $this->exitStatus === null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     final public function isIdle(): bool
     {
         return empty($this->jobQueue);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     final public function execute(Task $task, ?Cancellation $cancellation = null): mixed
     {
         if ($this->exitStatus !== null || $this->context === null) {
@@ -166,9 +157,6 @@ abstract class TaskWorker implements Worker
         return $future->await();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     final public function shutdown(): int
     {
         if ($this->exitStatus !== null) {
@@ -198,9 +186,6 @@ abstract class TaskWorker implements Worker
         }))->await();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     final public function kill(): void
     {
         if ($this->exitStatus !== null || $this->context === null) {

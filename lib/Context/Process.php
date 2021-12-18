@@ -43,8 +43,8 @@ final class Process implements Context
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
      *
      * @return Process
-     * @throws ContextException
-     * @throws ProcessException
+     *
+     * @throws ContextException If starting the process fails.
      */
     public static function start(
         string|array $script,
@@ -80,7 +80,7 @@ final class Process implements Context
             } else {
                 $path = \dirname(self::SCRIPT_PATH);
 
-                if (\substr(\Phar::running(false), -5) !== ".phar") {
+                if (!str_ends_with(\Phar::running(false), ".phar")) {
                     self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
                     \copy(\Phar::running(false), self::$pharCopy);
 

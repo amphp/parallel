@@ -45,6 +45,10 @@ class TaskFailure extends TaskResult
         }
     }
 
+    /**
+     * @return never
+     * @throws TaskFailureThrowable
+     */
     public function getResult(): mixed
     {
         throw $this->createException();

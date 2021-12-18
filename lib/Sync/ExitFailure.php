@@ -28,7 +28,8 @@ final class ExitFailure implements ExitResult
     }
 
     /**
-     * {@inheritdoc}
+     * @return never
+     * @throws ContextPanicError
      */
     public function getResult(): mixed
     {

@@ -13,6 +13,10 @@ final class TaskCancelled extends TaskFailure
         parent::__construct($id, $exception);
     }
 
+    /**
+     * @return never
+     * @throws TaskCancelledException
+     */
     public function getResult(): mixed
     {
         throw new TaskCancelledException($this->createException());

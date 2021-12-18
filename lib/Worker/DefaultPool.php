@@ -105,25 +105,16 @@ final class DefaultPool implements Pool
         return $this->idleWorkers->count() > 0 || $this->workers->count() === 0;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getMaxSize(): int
     {
         return $this->maxSize;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getWorkerCount(): int
     {
         return $this->workers->count();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getIdleWorkerCount(): int
     {
         return $this->idleWorkers->count();
@@ -213,9 +204,6 @@ final class DefaultPool implements Pool
         $waiting?->error(new WorkerException('The pool was killed before the task could be executed'));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getWorker(): Worker
     {
         return new Internal\PooledWorker($this->pull(), $this->push);
@@ -225,6 +213,7 @@ final class DefaultPool implements Pool
      * Pulls a worker from the pool.
      *
      * @throws StatusError
+     * @throws WorkerException
      */
     private function pull(): Worker
     {

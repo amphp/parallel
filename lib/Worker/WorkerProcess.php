@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
+use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\Process;
 
 /**
@@ -21,6 +22,7 @@ final class WorkerProcess extends TaskWorker
      * @param string|null $bootstrapPath Path to custom bootstrap file.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
+     * @throws ContextException
      */
     public function __construct(
         string $cacheClass = LocalCache::class,

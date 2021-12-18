@@ -23,13 +23,13 @@ return function (Sync\Channel $channel) use ($argc, $argv): int {
     }
 
     if (!isset($argv[1])) {
-        throw new \Error("No environment class name provided");
+        throw new \Error("No cache class name provided");
     }
 
     $className = $argv[1];
 
     if (!\class_exists($className)) {
-        throw new \Error(\sprintf("Invalid environment class name '%s'", $className));
+        throw new \Error(\sprintf("Invalid cache class name '%s'", $className));
     }
 
     if (!\is_subclass_of($className, Cache::class)) {

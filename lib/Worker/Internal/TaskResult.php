@@ -23,7 +23,7 @@ abstract class TaskResult
     /**
      * @return string Task identifier.
      */
-    public function getId(): string
+    final public function getId(): string
     {
         return $this->id;
     }

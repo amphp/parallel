@@ -114,9 +114,6 @@ final class SharedMemoryParcel implements Parcel
         $this->serializer = $serializer ?? new NativeSerializer;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function unwrap(): mixed
     {
         $lock = $this->semaphore->acquire();
@@ -128,9 +125,6 @@ final class SharedMemoryParcel implements Parcel
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function synchronized(callable $callback): mixed
     {
         $lock = $this->semaphore->acquire();

@@ -4,18 +4,30 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Parallel\Worker\Task;
 
-/** @internal */
+/**
+ * @internal
+ *
+ * @template T
+ * @template-implements TaskResult<T>
+ */
 final class TaskSuccess extends TaskResult
 {
-    /** @var mixed Result of task. */
+    /** @var T Result of task. */
     private mixed $result;
 
+    /**
+     * @param string $id
+     * @param T $result
+     */
     public function __construct(string $id, mixed $result)
     {
         parent::__construct($id);
         $this->result = $result;
     }
 
+    /**
+     * @return T
+     */
     public function getResult(): mixed
     {
         if ($this->result instanceof \__PHP_Incomplete_Class) {
