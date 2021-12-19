@@ -46,7 +46,7 @@ function execute(Task $task, ?Cancellation $cancellation = null): mixed
  *
  * @return Worker
  */
-function worker(): Worker
+function pooledWorker(): Worker
 {
     return pool()->getWorker();
 }
@@ -56,9 +56,9 @@ function worker(): Worker
  *
  * @return Worker
  */
-function create(): Worker
+function createWorker(): Worker
 {
-    return factory()->create();
+    return workerFactory()->create();
 }
 
 /**
@@ -68,7 +68,7 @@ function create(): Worker
  *
  * @return WorkerFactory
  */
-function factory(WorkerFactory $factory = null): WorkerFactory
+function workerFactory(WorkerFactory $factory = null): WorkerFactory
 {
     static $map;
     $map ??= new \WeakMap();

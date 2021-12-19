@@ -49,7 +49,7 @@ final class DefaultPool implements Pool
      *
      * @throws \Error
      */
-    public function __construct(int $maxSize = self::DEFAULT_MAX_SIZE, WorkerFactory $factory = null)
+    public function __construct(int $maxSize = self::DEFAULT_MAX_SIZE, ?WorkerFactory $factory = null)
     {
         if ($maxSize < 0) {
             throw new \Error("Maximum size must be a non-negative integer");
@@ -58,7 +58,7 @@ final class DefaultPool implements Pool
         $this->maxSize = $maxSize;
 
         // Use the global factory if none is given.
-        $this->factory = $factory ?? factory();
+        $this->factory = $factory ?? workerFactory();
 
         $this->workers = new \SplObjectStorage;
         $this->idleWorkers = new \SplQueue;

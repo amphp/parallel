@@ -34,7 +34,7 @@ use Amp\Parallel\Context;
 
 Loop::run(function () {
 	// Creates a context using Process, or if ext-parallel is installed, Parallel.
-    $context = Context\create(__DIR__ . '/child.php');
+    $context = Context\createContext(__DIR__ . '/child.php');
 
     $pid = yield $context->start();
 

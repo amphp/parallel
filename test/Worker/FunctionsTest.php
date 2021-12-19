@@ -58,7 +58,7 @@ class FunctionsTest extends AsyncTestCase
 
         Worker\pool($pool);
 
-        $worker = Worker\worker();
+        $worker = Worker\pooledWorker();
 
         self::assertInstanceOf(Worker\Worker::class, $worker);
     }
@@ -67,9 +67,9 @@ class FunctionsTest extends AsyncTestCase
     {
         $factory = $this->createMock(WorkerFactory::class);
 
-        Worker\factory($factory);
+        Worker\workerFactory($factory);
 
-        self::assertSame(Worker\factory(), $factory);
+        self::assertSame(Worker\workerFactory(), $factory);
     }
 
     /**
@@ -82,7 +82,7 @@ class FunctionsTest extends AsyncTestCase
             ->method('create')
             ->will(self::returnValue($this->createMock(Worker\Worker::class)));
 
-        Worker\factory($factory);
-        Worker\create(); // shouldn't throw
+        Worker\workerFactory($factory);
+        Worker\createWorker(); // shouldn't throw
     }
 }

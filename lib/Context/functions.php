@@ -12,9 +12,9 @@ use Revolt\EventLoop;
  *
  * @return Context<TValue>
  */
-function create(string|array $script): Context
+function createContext(string|array $script): Context
 {
-    return factory()->create($script);
+    return contextFactory()->create($script);
 }
 
 /**
@@ -24,7 +24,7 @@ function create(string|array $script): Context
  *
  * @return ContextFactory
  */
-function factory(?ContextFactory $factory = null): ContextFactory
+function contextFactory(?ContextFactory $factory = null): ContextFactory
 {
     static $map;
     $map ??= new \WeakMap();
