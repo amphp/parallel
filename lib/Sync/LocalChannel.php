@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
+use Amp\ByteStream\ClosableStream;
 use Amp\Cancellation;
 use Amp\Pipeline\Emitter;
 use Amp\Pipeline\Pipeline;
@@ -10,7 +11,7 @@ use Amp\Pipeline\Pipeline;
  * @template TValue
  * @template-implements Channel<TValue>
  */
-final class LocalChannel implements Channel
+final class LocalChannel implements Channel, ClosableStream
 {
     /** @var Emitter<TValue> */
     private Emitter $emitter;

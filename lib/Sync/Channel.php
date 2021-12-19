@@ -3,10 +3,9 @@
 namespace Amp\Parallel\Sync;
 
 use Amp\Cancellation;
-use Amp\Parallel\Context\StatusError;
 
 /**
- * Interface for sending messages between execution contexts.
+ * Interface for sending messages between execution contexts, such as two coroutines or two processes.
  *
  * @template TValue
  */
@@ -18,23 +17,16 @@ interface Channel
      *
      * @return TValue|null Data received or null if the channel closed.
      *
-     * @throws StatusError Thrown if the context has not been started.
-     * @throws SynchronizationError If the context has not been started or the context
-     *     unexpectedly ends.
      * @throws ChannelException If receiving from the channel fails.
-     * @throws SerializationException If unserializing the data fails.
+     * @throws SerializationException If unserializing the data fails (if applicable to the implementation).
      */
     public function receive(?Cancellation $cancellation = null): mixed;
 
     /**
      * @param TValue $data
      *
-     * @throws StatusError Thrown if the context has not been started.
-     * @throws SynchronizationError If the context has not been started or the context
-     *     unexpectedly ends.
      * @throws ChannelException If sending on the channel fails.
-     * @throws \Error If an ExitResult object is given.
-     * @throws SerializationException If serializing the data fails.
+     * @throws SerializationException If serializing the data fails (if applicable to the implementation).
      */
     public function send(mixed $data): void;
 }

@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Sync;
 
+use Amp\ByteStream\ClosableStream;
 use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\WritableStream;
 use Amp\ByteStream\StreamException;
@@ -18,7 +19,7 @@ use function Amp\Pipeline\fromIterable;
  * @template TValue
  * @template-implements Channel<TValue>
  */
-final class ChannelledStream implements Channel
+final class ChannelledStream implements Channel, ClosableStream
 {
     private ReadableStream $read;
 

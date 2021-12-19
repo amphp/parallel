@@ -2,10 +2,11 @@
 
 namespace Amp\Parallel\Sync;
 
+use Amp\ByteStream\ClosableStream;
 use Amp\ByteStream\ReadableResourceStream;
+use Amp\ByteStream\ResourceStream;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
-use Amp\Future;
 use Amp\Serialization\Serializer;
 
 /**
@@ -14,7 +15,7 @@ use Amp\Serialization\Serializer;
  * @template TValue
  * @template-implements Channel<TValue>
  */
-final class ChannelledSocket implements Channel
+final class ChannelledSocket implements Channel, ClosableStream, ResourceStream
 {
     private ChannelledStream $channel;
 
@@ -23,8 +24,8 @@ final class ChannelledSocket implements Channel
     private WritableResourceStream $write;
 
     /**
-     * @param resource        $read Readable stream resource.
-     * @param resource        $write Writable stream resource.
+     * @param resource $read Readable stream resource.
+     * @param resource $write Writable stream resource.
      * @param Serializer|null $serializer
      *
      * @throws \Error If a stream resource is not given for $resource.
@@ -51,11 +52,13 @@ final class ChannelledSocket implements Channel
     public function unreference(): void
     {
         $this->read->unreference();
+        $this->write->unreference();
     }
 
     public function reference(): void
     {
         $this->read->reference();
+        $this->write->unreference();
     }
 
     /**
