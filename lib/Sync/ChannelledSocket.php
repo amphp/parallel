@@ -12,11 +12,13 @@ use Amp\Serialization\Serializer;
 /**
  * Uses stream resources to create a Channel.
  *
- * @template TValue
- * @template-implements Channel<TValue>
+ * @template TReceive
+ * @template TSend
+ * @template-implements Channel<TReceive, TSend>
  */
 final class ChannelledSocket implements Channel, ClosableStream, ResourceStream
 {
+    /** @var ChannelledStream<TReceive, TSend> */
     private ChannelledStream $channel;
 
     private ReadableResourceStream $read;

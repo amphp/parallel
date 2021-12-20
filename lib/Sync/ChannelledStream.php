@@ -16,8 +16,9 @@ use function Amp\Pipeline\fromIterable;
  *
  * Supports full duplex read and write.
  *
- * @template TValue
- * @template-implements Channel<TValue>
+ * @template TReceive
+ * @template TSend
+ * @template-implements Channel<TReceive, TSend>
  */
 final class ChannelledStream implements Channel, ClosableStream
 {
@@ -27,7 +28,7 @@ final class ChannelledStream implements Channel, ClosableStream
 
     private ChannelParser $parser;
 
-    /** @var Pipeline<TValue> */
+    /** @var Pipeline<TReceive> */
     private Pipeline $pipeline;
 
     /**

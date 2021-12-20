@@ -5,24 +5,22 @@ namespace Amp\Parallel\Sync;
 use Amp\ByteStream\ClosableStream;
 use Amp\Cancellation;
 use Amp\Pipeline\Emitter;
-use Amp\Pipeline\Pipeline;
 
 /**
+ * Creates a channel where data sent is immediately receivable on the same channel.
+ *
  * @template TValue
- * @template-implements Channel<TValue>
+ * @template-implements Channel<TValue, TValue>
  */
 final class LocalChannel implements Channel, ClosableStream
 {
-    /** @var Emitter<TValue> */
-    private Emitter $emitter;
-
-    /** @var Pipeline<TValue> */
-    private Pipeline $pipeline;
+    /** @var Channel<TValue, TValue> */
+    private Channel $channel;
 
     public function __construct(int $capacity = 0)
     {
-        $this->emitter = new Emitter($capacity);
-        $this->pipeline = $this->emitter->pipe();
+        $emitter = new Emitter($capacity);
+        $this->channel = new PipelineChannel($emitter->pipe(), $emitter);
     }
 
     public function __destruct()
@@ -32,31 +30,21 @@ final class LocalChannel implements Channel, ClosableStream
 
     public function isClosed(): bool
     {
-        return $this->emitter->isComplete();
+        return $this->channel->isClosed();
     }
 
     public function close(): void
     {
-        if (!$this->emitter->isComplete()) {
-            $this->emitter->complete();
-        }
+        $this->channel->close();
     }
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
-        return $this->pipeline->continue($cancellation);
+        return $this->channel->receive($cancellation);
     }
 
     public function send(mixed $data): void
     {
-        if ($data === null) {
-            throw new ChannelException("Cannot send null on a channel");
-        }
-
-        if ($this->isClosed()) {
-            throw new ChannelException("Cannot send on a closed channel");
-        }
-
-        $this->emitter->yield($data);
+        $this->channel->send($data);
     }
 }

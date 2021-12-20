@@ -2,10 +2,28 @@
 
 namespace Amp\Parallel\Sync;
 
+use Amp\Pipeline\Emitter;
 use Amp\Serialization\SerializationException as SerializerException;
 
 // Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
 \class_alias(SerializerException::class, SerializationException::class);
+
+/**
+ * @template TReceive
+ * @template TSend
+ *
+ * @return array{PipelineChannel<TReceive, TSend>, PipelineChannel<TSend, TReceive>}
+ */
+function createChannelPair(): array
+{
+    $west = new Emitter();
+    $east = new Emitter();
+
+    return [
+        new PipelineChannel($west->pipe(), $east),
+        new PipelineChannel($east->pipe(), $west),
+    ];
+}
 
 /**
  * @param \Throwable $exception
