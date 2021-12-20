@@ -2,7 +2,10 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Future;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker\DefaultPool;
+use Amp\Parallel\Worker\Job;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerException;
@@ -27,7 +30,7 @@ class DefaultPoolTest extends AsyncTestCase
         $this->expectException(WorkerException::class);
         $this->expectExceptionMessage('Worker factory did not create a viable worker');
 
-        $pool->execute($this->createMock(Task::class));
+        $pool->enqueue($this->createMock(Task::class));
     }
 
     public function testCrashedWorker(): void
@@ -40,20 +43,24 @@ class DefaultPoolTest extends AsyncTestCase
                 $worker->method('isRunning')
                     ->willReturnOnConsecutiveCalls(true, false);
                 $worker->method('shutdown')
-                    ->willThrowException(new WorkerException('Worker unexpectedly exited'));
-                $worker->method('execute')
-                    ->willReturn(null);
+                    ->willThrowException(new WorkerException('Test worker unexpectedly exited'));
+                $worker->method('enqueue')
+                    ->willReturn(new Job(
+                        $this->createMock(Task::class),
+                        $this->createMock(Channel::class),
+                        Future::complete(),
+                    ));
 
                 return $worker;
             });
 
         $pool = new DefaultPool(32, $factory);
 
-        $pool->execute($this->createMock(Task::class));
-
-        $pool->execute($this->createMock(Task::class));
+        $pool->enqueue($this->createMock(Task::class))->getFuture()->await();
 
         // Warning is forwarded as an exception to loop.
         $this->expectException(UnhandledException::class);
+
+        $pool->enqueue($this->createMock(Task::class))->getFuture()->await();
     }
 }

@@ -131,17 +131,23 @@ final class DefaultPool implements Pool
      * @throws StatusError If the pool has been shutdown.
      * @throws TaskFailureThrowable If the task throws an exception.
      */
-    public function execute(Task $task, ?Cancellation $cancellation = null): mixed
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
         $worker = $this->pull();
+        $push = $this->push;
 
         try {
-            $result = $worker->execute($task, $cancellation);
-        } finally {
-            ($this->push)($worker);
+            $job = $worker->enqueue($task, $cancellation);
+        } catch (\Throwable $exception) {
+            $push($worker);
+            throw $exception;
         }
 
-        return $result;
+        return new Job(
+            $job->getTask(),
+            $job->getChannel(),
+            $job->getFuture()->finally(static fn () => $push($worker)),
+        );
     }
 
     /**

@@ -157,7 +157,7 @@ final class ParallelContext implements Context
                         throw new \Error(\sprintf("Script '%s' contains a parse error", $path), 0, $exception);
                     }
 
-                    $returnValue = $callable($channel);
+                    $returnValue = $callable(new Internal\ContextChannel($channel));
 
                     $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
                 } catch (\Throwable $exception) {
@@ -317,11 +317,19 @@ final class ParallelContext implements Context
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Thread unexpectedly exited with result of type: %s',
-                \is_object($data) ? \get_class($data) : \gettype($data)
+                get_debug_type($data),
             ));
         }
 
-        return $data;
+
+        if (!$data instanceof Internal\ContextMessage) {
+            throw new SynchronizationError(\sprintf(
+                'Unexpected data type from context: %s',
+                get_debug_type($data),
+            ));
+        }
+
+        return $data->getMessage();
     }
 
     public function send(mixed $data): void
@@ -330,14 +338,10 @@ final class ParallelContext implements Context
             throw new StatusError('The thread has not been started or has already finished.');
         }
 
-        if ($data instanceof ExitResult) {
-            throw new \Error('Cannot send exit result objects.');
-        }
-
         try {
             $this->channel->send($data);
         } catch (ChannelException $e) {
-            if ($this->channel === null) {
+            if ($this->channel->isClosed()) {
                 throw new ContextException(
                     "The thread stopped responding, potentially due to a fatal error or calling exit",
                     0,

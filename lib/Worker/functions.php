@@ -27,18 +27,20 @@ function pool(?Pool $pool = null): Pool
 
 /**
  * @template TResult
+ * @template TReceive
+ * @template TSend
  *
- * Executes a Task on the global worker pool.
+ * Executes a {@see Task} on the global worker pool.
  *
- * @param Task<TResult> $task The task to enqueue.
- * @param Cancellation|null $cancellation
+ * @param Task<TResult> $task The task to execute.
+ * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
+ * this to have any effect.
  *
- * @return TResult
- * @throws TaskFailureThrowable
+ * @return Job<TResult, TReceive, TSend>
  */
-function execute(Task $task, ?Cancellation $cancellation = null): mixed
+function enqueue(Task $task, ?Cancellation $cancellation = null): Job
 {
-    return pool()->execute($task, $cancellation);
+    return pool()->enqueue($task, $cancellation);
 }
 
 /**

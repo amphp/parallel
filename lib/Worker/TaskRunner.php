@@ -8,12 +8,17 @@ use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Sync\SerializationException;
+use Amp\Parallel\Worker\Internal\JobChannel;
+use Amp\Pipeline\Emitter;
 use Revolt\EventLoop;
 
 final class TaskRunner
 {
-    /** @var DeferredCancellation[] */
+    /** @var array<string, DeferredCancellation> */
     private array $cancellationSources = [];
+
+    /** @var array<string, Emitter> */
+    private array $emitters = [];
 
     public function __construct(
         private Channel $channel,
@@ -26,20 +31,22 @@ final class TaskRunner
      */
     public function run(): int
     {
-        while ($job = $this->channel->receive()) {
-            if ($job instanceof Internal\Job) {
-                $id = $job->getId();
+        while ($data = $this->channel->receive()) {
+            if ($data instanceof Internal\Activity) {
+                $id = $data->getId();
                 $this->cancellationSources[$id] = $source = new DeferredCancellation;
+                $this->emitters[$id] = $emitter = new Emitter();
+                $channel = new JobChannel($id, $this->channel, $emitter->pipe());
 
-                EventLoop::queue(function () use ($job, $id, $source): void {
+                EventLoop::queue(function () use ($data, $id, $source, $emitter, $channel): void {
                     try {
-                        $result = $job->getTask()->run($this->cache, $source->getCancellation());
+                        $result = $data->getTask()->run($channel, $this->cache, $source->getCancellation());
 
                         if ($result instanceof Future) {
                             $result = $result->await($source->getCancellation());
                         }
 
-                        $result = new Internal\TaskSuccess($job->getId(), $result);
+                        $result = new Internal\TaskSuccess($data->getId(), $result);
                     } catch (\Throwable $exception) {
                         if ($exception instanceof CancelledException && $source->getCancellation()->isRequested()) {
                             $result = new Internal\TaskCancelled($id, $exception);
@@ -47,7 +54,8 @@ final class TaskRunner
                             $result = new Internal\TaskFailure($id, $exception);
                         }
                     } finally {
-                        unset($this->cancellationSources[$id]);
+                        $emitter->complete();
+                        unset($this->cancellationSources[$id], $this->emitters[$id]);
                     }
 
                     try {
@@ -60,9 +68,15 @@ final class TaskRunner
                 continue;
             }
 
+            // Channel message.
+            if ($data instanceof Internal\JobMessage) {
+                ($this->emitters[$data->getId()] ?? null)?->emit($data->getMessage())->ignore();
+                continue;
+            }
+
             // Cancellation signal.
-            if (\is_string($job)) {
-                ($this->cancellationSources[$job] ?? null)?->cancel();
+            if ($data instanceof Internal\JobCancellation) {
+                ($this->cancellationSources[$data->id] ?? null)?->cancel();
                 continue;
             }
 

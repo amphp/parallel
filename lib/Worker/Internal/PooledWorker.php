@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
+use Amp\Parallel\Worker\Job;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 
@@ -37,9 +38,15 @@ final class PooledWorker implements Worker
         return $this->worker->isIdle();
     }
 
-    public function execute(Task $task, ?Cancellation $cancellation = null): mixed
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
-        return $this->worker->execute($task, $cancellation);
+        $job = $this->worker->enqueue($task, $cancellation);
+
+        return new Job(
+            $job->getTask(),
+            $job->getChannel(),
+            $job->getFuture()->finally(fn () => $this), // Retain a reference to $this to prevent release of worker.
+        );
     }
 
     public function shutdown(): int

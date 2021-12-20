@@ -25,6 +25,8 @@ interface Worker
 
     /**
      * @template TResult
+     * @template TReceive
+     * @template TSend
      *
      * Executes a {@see Task} on the worker.
      *
@@ -32,11 +34,9 @@ interface Worker
      * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
      * this to have any effect.
      *
-     * @return TResult The return value of {@see Task::run()}.
-     *
-     * @throws TaskFailureThrowable Promise fails if {@see Task::run()} throws an exception.
+     * @return Job<TResult, TReceive, TSend>
      */
-    public function execute(Task $task, ?Cancellation $cancellation = null): mixed;
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job;
 
     /**
      * @return int Returns the exit code when the worker successfully shuts down.

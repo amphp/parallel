@@ -211,11 +211,18 @@ final class ProcessContext implements Context
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Process unexpectedly exited with result of type: %s',
-                \is_object($data) ? \get_class($data) : \gettype($data)
+                get_debug_type($data),
             ));
         }
 
-        return $data;
+        if (!$data instanceof Internal\ContextMessage) {
+            throw new SynchronizationError(\sprintf(
+                'Unexpected data type from context: %s',
+                get_debug_type($data),
+            ));
+        }
+
+        return $data->getMessage();
     }
 
     public function send(mixed $data): void
@@ -224,14 +231,10 @@ final class ProcessContext implements Context
             throw new StatusError("The process has not been started");
         }
 
-        if ($data instanceof ExitResult) {
-            throw new \Error("Cannot send exit result objects");
-        }
-
         try {
             $this->channel->send($data);
         } catch (ChannelException $e) {
-            if ($this->channel === null) {
+            if ($this->channel->isClosed()) {
                 throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
 
@@ -246,7 +249,7 @@ final class ProcessContext implements Context
 
             throw new SynchronizationError(\sprintf(
                 'Process unexpectedly exited with result of type: %s',
-                \is_object($data) ? \get_class($data) : \gettype($data)
+                get_debug_type($data),
             ), 0, $e);
         }
     }

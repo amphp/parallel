@@ -4,6 +4,7 @@ namespace Amp\Parallel\Test\Worker\Fixtures;
 
 use Amp\Cache\Cache;
 use Amp\Cancellation;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker\Task;
 
 class FailingTask implements Task
@@ -29,7 +30,7 @@ class FailingTask implements Task
      *
      * @return mixed
      */
-    public function run(Cache $cache, Cancellation $cancellation): mixed
+    public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed
     {
         $previous = $this->previousExceptionType ? new $this->previousExceptionType : null;
         throw new $this->exceptionType('Test', 0, $previous);

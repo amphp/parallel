@@ -9,7 +9,8 @@ use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Serialization\SerializationException;
+use Amp\Parallel\Worker\Internal\JobCancellation;
+use Amp\Pipeline\Emitter;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 
@@ -25,8 +26,11 @@ abstract class TaskWorker implements Worker
 
     private ?Future $receiveFuture;
 
-    /** @var DeferredFuture[] */
+    /** @var array<string, DeferredFuture> */
     private array $jobQueue = [];
+
+    /** @var array<string, Emitter> */
+    private array $emitters = [];
 
     private \Closure $onReceive;
 
@@ -40,17 +44,25 @@ abstract class TaskWorker implements Worker
         $this->context = $context;
 
         $jobQueue = &$this->jobQueue;
+        $emitters = &$this->emitters;
         $receiveFuture = &$this->receiveFuture;
-        $this->onReceive = $onReceive = static function (?\Throwable $exception, mixed $data) use (
+        $this->onReceive = $onReceive = static function (
+            ?\Throwable $exception,
+            Internal\TaskResult|Internal\JobMessage|null $data
+        ) use (
             $context,
             &$jobQueue,
+            &$emitters,
             &$receiveFuture,
             &$onReceive,
         ): void {
             $receiveFuture = null;
 
-            if ($exception || !$data instanceof Internal\TaskResult) {
-                $exception ??= new WorkerException("Invalid data from worker");
+            if (!$data) {
+                $exception ??= new WorkerException("Unexpected error in worker");
+                foreach ($emitters as $emitter) {
+                    $emitter->error($exception);
+                }
                 foreach ($jobQueue as $deferred) {
                     $deferred->error($exception);
                 }
@@ -61,12 +73,20 @@ abstract class TaskWorker implements Worker
             $id = $data->getId();
 
             try {
-                if (!isset($jobQueue[$id])) {
+                if (!isset($jobQueue[$id], $emitters[$id])) {
+                    return;
+                }
+
+                if ($data instanceof Internal\JobMessage) {
+                    $emitters[$id]->emit($data->getMessage())->ignore();
                     return;
                 }
 
                 $deferred = $jobQueue[$id];
-                unset($jobQueue[$id]);
+                $emitter = $emitters[$id];
+                unset($jobQueue[$id], $emitters[$id]);
+
+                $emitter->complete();
 
                 try {
                     $deferred->complete($data->getResult());
@@ -106,33 +126,27 @@ abstract class TaskWorker implements Worker
         return empty($this->jobQueue);
     }
 
-    final public function execute(Task $task, ?Cancellation $cancellation = null): mixed
+    final public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
         if ($this->exitStatus !== null || $this->context === null) {
             throw new StatusError("The worker has been shut down");
         }
 
-        $job = new Internal\Job($task);
-        $jobId = $job->getId();
-        $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
+        $activity = new Internal\Activity($task);
+        $jobId = $activity->getId();
+        $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         try {
-            $this->context->send($job);
+            $this->context->send($activity);
 
             if ($cancellation) {
                 $cancellationId = $cancellation->subscribe(
-                    fn () => async(fn () => $this->context?->send($jobId))->ignore()
+                    fn () => async(fn () => $this->context?->send(new JobCancellation($jobId)))->ignore()
                 );
                 $future->finally(fn () => $cancellation->unsubscribe($cancellationId))->ignore();
             }
-        } catch (SerializationException $exception) {
-            // Could not serialize Task object.
-            unset($this->jobQueue[$jobId]);
-            throw $exception;
         } catch (ChannelException $exception) {
-            unset($this->jobQueue[$jobId]);
-
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
                 async(fn () => $this->context->join())
@@ -150,11 +164,15 @@ abstract class TaskWorker implements Worker
             throw $exception;
         }
 
+        $this->jobQueue[$jobId] = $deferred;
+        $this->emitters[$jobId] = $emitter = new Emitter();
+        $channel = new Internal\JobChannel($jobId, $this->context, $emitter->pipe());
+
         if ($this->receiveFuture === null) {
             $this->receiveFuture = self::receive($this->context, $this->onReceive);
         }
 
-        return $future->await();
+        return new Job($task, $channel, $future);
     }
 
     final public function shutdown(): int

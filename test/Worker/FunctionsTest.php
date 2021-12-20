@@ -4,6 +4,8 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cancellation;
+use Amp\Future;
+use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
@@ -29,12 +31,20 @@ class FunctionsTest extends AsyncTestCase
     /**
      * @depends testPool
      */
-    public function testExecute(): void
+    public function testEnqueue(): void
     {
         $pool = $this->createMock(Pool::class);
-        $pool->method('execute')
-            ->willReturnCallback(function (Task $task): mixed {
-                return $task->run($this->createMock(Cache::class), $this->createMock(Cancellation::class));
+        $pool->method('enqueue')
+            ->willReturnCallback(function (Task $task): Worker\Job {
+                $channel = $this->createMock(Channel::class);
+
+                $future = Future::complete($task->run(
+                    $channel,
+                    $this->createMock(Cache::class),
+                    $this->createMock(Cancellation::class),
+                ));
+
+                return new Worker\Job($task, $channel, $future);
             });
 
         Worker\pool($pool);
@@ -43,7 +53,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        self::assertSame($value, Worker\execute($task));
+        self::assertSame($value, Worker\enqueue($task)->getFuture()->await());
     }
 
     /**

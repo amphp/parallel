@@ -81,7 +81,7 @@ if (\function_exists("cli_set_process_title")) {
             throw new \Error(\sprintf("Script '%s' contains a parse error: " . $exception->getMessage(), $argv[0]), 0, $exception);
         }
 
-        $returnValue = $callable($channel);
+        $returnValue = $callable(new ContextChannel($channel));
         $result = new Sync\ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
     } catch (\Throwable $exception) {
         $result = new Sync\ExitFailure($exception);
