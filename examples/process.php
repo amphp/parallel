@@ -16,7 +16,7 @@ $timer = EventLoop::repeat(1, function () {
 
 try {
     // Create a new child process that does some blocking stuff.
-    $context = ProcessContext::run(__DIR__ . "/blocking-process.php");
+    $context = ProcessContext::start(__DIR__ . "/blocking-process.php");
 
     \assert($context instanceof ProcessContext);
 

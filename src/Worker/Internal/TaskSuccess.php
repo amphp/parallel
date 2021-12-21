@@ -8,7 +8,7 @@ use Amp\Parallel\Worker\Task;
  * @internal
  *
  * @template T
- * @template-implements TaskResult<T>
+ * @template-extends TaskResult<T>
  */
 final class TaskSuccess extends TaskResult
 {

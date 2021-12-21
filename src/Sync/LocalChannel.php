@@ -14,8 +14,8 @@ use Amp\Pipeline\Emitter;
  */
 final class LocalChannel implements Channel, ClosableStream
 {
-    /** @var Channel<TValue, TValue> */
-    private Channel $channel;
+    /** @var PipelineChannel<TValue, TValue> */
+    private PipelineChannel $channel;
 
     public function __construct(int $capacity = 0)
     {

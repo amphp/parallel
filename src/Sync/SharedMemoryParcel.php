@@ -5,6 +5,7 @@ namespace Amp\Parallel\Sync;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
 use Amp\Sync\PosixSemaphore;
+use Amp\Sync\Semaphore;
 use Amp\Sync\SyncException;
 
 /**
@@ -57,12 +58,22 @@ final class SharedMemoryParcel implements Parcel
      */
     public static function create(
         string $id,
-        $value,
+        mixed $value,
         int $size = 8192,
         int $permissions = 0600,
         ?Serializer $serializer = null
     ): self {
-        $parcel = new self($id, $serializer);
+
+        if ($size <= 0) {
+            throw new \Error('The memory size must be greater than 0');
+        }
+
+        if ($permissions <= 0 || $permissions > 0777) {
+            throw new \Error('Invalid permissions');
+        }
+
+        $semaphore = PosixSemaphore::create($id, 1);
+        $parcel = new self($id, $semaphore, $serializer);
         $parcel->init($value, $size, $permissions);
         return $parcel;
     }
@@ -77,39 +88,44 @@ final class SharedMemoryParcel implements Parcel
      */
     public static function use(string $id, ?Serializer $serializer = null): self
     {
-        $parcel = new self($id, $serializer);
+        $semaphore = PosixSemaphore::use($id);
+        $parcel = new self($id, $semaphore, $serializer);
         $parcel->open();
         return $parcel;
     }
 
     private static function makeKey(string $id): int
     {
-        return \abs(\unpack("l", \md5($id, true))[1]);
+        return (int) \abs(\unpack("l", \md5($id, true))[1]);
     }
     /** @var string */
     private string $id;
+
     /** @var int The shared memory segment key. */
     private int $key;
+
     /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
     private PosixSemaphore $semaphore;
+
     /** @var resource|null An open handle to the shared memory segment. */
     private $handle;
-    /** @var int */
+
     private int $initializer = 0;
-    /** @var Serializer */
+
     private Serializer $serializer;
 
     /**
      * @param string          $id
      * @param Serializer|null $serializer
      */
-    private function __construct(string $id, ?Serializer $serializer = null)
+    private function __construct(string $id, PosixSemaphore $semaphore, ?Serializer $serializer = null)
     {
         if (!\extension_loaded("shmop")) {
             throw new \Error(__CLASS__ . " requires the shmop extension");
         }
 
         $this->id = $id;
+        $this->semaphore = $semaphore;
         $this->key = self::makeKey($this->id);
         $this->serializer = $serializer ?? new NativeSerializer;
     }
@@ -160,7 +176,7 @@ final class SharedMemoryParcel implements Parcel
         }
 
         // Invalidate the memory block by setting its state to FREED.
-        $this->setHeader(static::STATE_FREED, 0, 0);
+        $this->setHeader(self::STATE_FREED, 0, 0);
 
         // Request the block to be deleted, then close our local handle.
         $this->memDelete();
@@ -183,20 +199,10 @@ final class SharedMemoryParcel implements Parcel
      * @param int   $permissions
      *
      * @throws SharedMemoryException
-     * @throws SyncException
      * @throws \Error If the size or permissions are invalid.
      */
-    private function init($value, int $size = 8192, int $permissions = 0600): void
+    private function init(mixed $value, int $size = 8192, int $permissions = 0600): void
     {
-        if ($size <= 0) {
-            throw new \Error('The memory size must be greater than 0');
-        }
-
-        if ($permissions <= 0 || $permissions > 0777) {
-            throw new \Error('Invalid permissions');
-        }
-
-        $this->semaphore = PosixSemaphore::create($this->id, 1);
         $this->initializer = \getmypid();
 
         $this->memOpen($this->key, 'n', $permissions, $size + self::MEM_DATA_OFFSET);
@@ -206,7 +212,6 @@ final class SharedMemoryParcel implements Parcel
 
     private function open(): void
     {
-        $this->semaphore = PosixSemaphore::use($this->id);
         $this->memOpen($this->key, 'w', 0, 0);
     }
 
@@ -225,7 +230,7 @@ final class SharedMemoryParcel implements Parcel
         if ($this->handle !== null) {
             $this->handleMovedMemory();
             $header = $this->getHeader();
-            return $header['state'] === static::STATE_FREED;
+            return $header['state'] === self::STATE_FREED;
         }
 
         return true;

@@ -23,6 +23,7 @@ final class ChannelParser extends Parser
     private static function parser(callable $push, Serializer $serializer): \Generator
     {
         while (true) {
+            /** @var string $header */
             $header = yield self::HEADER_LENGTH;
             $data = \unpack("Cprefix/Llength", $header);
 

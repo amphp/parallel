@@ -34,6 +34,7 @@ if (\function_exists("cli_set_process_title")) {
         \trigger_error("Could not locate autoload.php in any of the following files: " . \implode(", ", $paths), E_USER_ERROR);
     }
 
+    /** @psalm-suppress UnresolvableInclude */
     require $autoloadPath;
 })();
 
@@ -73,6 +74,7 @@ if (\function_exists("cli_set_process_title")) {
         try {
             // Protect current scope by requiring script within another function.
             $callable = (function () use ($argc, $argv): callable { // Using $argc so it is available to the required script.
+                /** @psalm-suppress UnresolvableInclude */
                 return require $argv[0];
             })();
         } catch (\TypeError $exception) {

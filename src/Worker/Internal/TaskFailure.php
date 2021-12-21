@@ -7,7 +7,11 @@ use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\TaskFailureThrowable;
 
-/** @internal */
+/**
+ * @internal
+ *
+ * @template-extends TaskResult<never>
+ */
 class TaskFailure extends TaskResult
 {
     private const PARENT_EXCEPTION = 0;

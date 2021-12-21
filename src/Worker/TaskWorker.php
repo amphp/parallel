@@ -22,7 +22,7 @@ abstract class TaskWorker implements Worker
     private const SHUTDOWN_TIMEOUT = 1;
     private const ERROR_TIMEOUT = 0.25;
 
-    private ?Context $context;
+    private Context $context;
 
     private ?Future $receiveFuture;
 
@@ -94,7 +94,7 @@ abstract class TaskWorker implements Worker
                     $deferred->error($exception);
                 }
             } finally {
-                if ($receiveFuture === null && !empty($jobQueue)) {
+                if (!empty($jobQueue)) {
                     $receiveFuture = self::receive($context, $onReceive);
                 }
             }
@@ -128,7 +128,7 @@ abstract class TaskWorker implements Worker
 
     final public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
-        if ($this->exitStatus !== null || $this->context === null) {
+        if ($this->exitStatus !== null) {
             throw new StatusError("The worker has been shut down");
         }
 
@@ -142,7 +142,7 @@ abstract class TaskWorker implements Worker
 
             if ($cancellation) {
                 $cancellationId = $cancellation->subscribe(
-                    fn () => async(fn () => $this->context?->send(new JobCancellation($jobId)))->ignore()
+                    fn () => async(fn () => $this->context->send(new JobCancellation($jobId)))->ignore()
                 );
                 $future->finally(fn () => $cancellation->unsubscribe($cancellationId))->ignore();
             }
@@ -197,16 +197,13 @@ abstract class TaskWorker implements Worker
             } catch (\Throwable $exception) {
                 $this->context->kill();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
-            } finally {
-                // Null properties to free memory because the shutdown function has references to these.
-                $this->context = null;
             }
         }))->await();
     }
 
     final public function kill(): void
     {
-        if ($this->exitStatus !== null || $this->context === null) {
+        if ($this->exitStatus !== null) {
             return;
         }
 
@@ -218,8 +215,5 @@ abstract class TaskWorker implements Worker
         }
 
         $this->exitStatus = Future::complete();
-
-        // Null properties to free memory because the shutdown function has references to these.
-        $this->context = null;
     }
 }

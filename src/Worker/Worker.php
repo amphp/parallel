@@ -46,5 +46,5 @@ interface Worker
     /**
      * Immediately kills the context.
      */
-    public function kill();
+    public function kill(): void;
 }

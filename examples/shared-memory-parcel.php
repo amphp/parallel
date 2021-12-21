@@ -10,7 +10,7 @@ use function Amp\delay;
 // Create a parcel that then can be accessed in any number of child processes.
 $parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);
 
-$context = ProcessContext::run([
+$context = ProcessContext::start([
     __DIR__ . "/parcel-process.php",
     $id, // Send parcel ID to child process as command argument.
 ]);

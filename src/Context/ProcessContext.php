@@ -85,7 +85,9 @@ final class ProcessContext implements Context
                     \copy(\Phar::running(false), self::$pharCopy);
 
                     \register_shutdown_function(static function (): void {
-                        @\unlink(self::$pharCopy);
+                        if (self::$pharCopy) {
+                            @\unlink(self::$pharCopy);
+                        }
                     });
 
                     $path = "phar://" . self::$pharCopy . "/" . \substr($path, \strlen(\Phar::running(true)));
@@ -98,7 +100,9 @@ final class ProcessContext implements Context
                 \file_put_contents($scriptPath, $contents);
 
                 \register_shutdown_function(static function (): void {
-                    @\unlink(self::$pharScriptPath);
+                    if (self::$pharScriptPath) {
+                        @\unlink(self::$pharScriptPath);
+                    }
                 });
             }
 
@@ -144,7 +148,10 @@ final class ProcessContext implements Context
     {
         $executable = \PHP_OS_FAMILY === 'Windows' ? "php.exe" : "php";
 
-        $paths = \array_filter(\explode(\PATH_SEPARATOR, \getenv("PATH")));
+        $paths = \array_filter(\explode(
+            \PATH_SEPARATOR,
+            \getenv('PATH') ?: '/usr/bin' . \PATH_SEPARATOR . '/usr/local/bin',
+        ));
         $paths[] = \PHP_BINDIR;
         $paths = \array_unique($paths);
 

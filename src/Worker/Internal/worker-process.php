@@ -18,6 +18,7 @@ return function (Sync\Channel $channel) use ($argc, $argv): int {
 
         // Include file within closure to protect scope.
         (function () use ($argc, $argv): void {
+            /** @psalm-suppress UnresolvableInclude */
             require $argv[2];
         })();
     }

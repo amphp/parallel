@@ -47,7 +47,7 @@ final class ParallelContext implements Context
         return \extension_loaded('parallel');
     }
 
-    private ?int $id;
+    private int $id;
 
     private ?Runtime $runtime;
 
@@ -80,7 +80,6 @@ final class ParallelContext implements Context
 
         $command = (string) \array_shift($script);
         $args = \array_values(\array_map("strval", $script));
-
 
         if (self::$autoloadPath === null) {
             $paths = [
@@ -145,8 +144,9 @@ final class ParallelContext implements Context
                             $argc,
                             $argv
                         ): callable { // Using $argc so it is available to the required script.
+                            /** @psalm-suppress UnresolvableInclude */
                             return require $argv[0];
-                        })->bindTo(null, null)();
+                        })->bindTo(new \stdClass)();
                     } catch (\TypeError $exception) {
                         throw new \Error(
                             \sprintf("Script '%s' did not return a callable function", $path),
@@ -376,10 +376,6 @@ final class ParallelContext implements Context
      */
     public function getId(): int
     {
-        if ($this->id === null) {
-            throw new StatusError('The thread has not been started');
-        }
-
         return $this->id;
     }
 

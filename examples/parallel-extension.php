@@ -14,7 +14,7 @@ $timer = EventLoop::repeat(1, function () {
 
 try {
     // Create a new child thread that does some blocking stuff.
-    $context = ParallelContext::run(__DIR__ . "/blocking-process.php");
+    $context = ParallelContext::start(__DIR__ . "/blocking-process.php");
 
     \assert($context instanceof ParallelContext);
 

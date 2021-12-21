@@ -64,7 +64,7 @@ final class ChannelledSocket implements Channel, ClosableStream, ResourceStream
     }
 
     /**
-     * @return resource|null
+     * @return resource|object|null
      */
     public function getResource()
     {

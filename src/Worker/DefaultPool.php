@@ -68,6 +68,7 @@ final class DefaultPool implements Pool
         $waiting = &$this->waiting;
 
         $this->push = static function (Worker $worker) use (&$waiting, $workers, $idleWorkers): void {
+            /** @psalm-suppress InvalidArgument */
             if (!$workers->contains($worker)) {
                 return;
             }
@@ -122,14 +123,6 @@ final class DefaultPool implements Pool
 
     /**
      * Enqueues a {@see Task} to be executed by the worker pool.
-     *
-     * @param Task $task The task to enqueue.
-     * @param Cancellation|null $cancellation
-     *
-     * @return mixed The return (or resolution) value of {@see Task::run()}.
-     *
-     * @throws StatusError If the pool has been shutdown.
-     * @throws TaskFailureThrowable If the task throws an exception.
      */
     public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
@@ -273,5 +266,8 @@ final class DefaultPool implements Pool
 
             $this->workers->detach($worker);
         } while (true);
+
+        // Required for Psalm.
+        throw new \RuntimeException('Unreachable statement');
     }
 }
