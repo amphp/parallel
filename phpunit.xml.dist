@@ -19,7 +19,7 @@
     </testsuites>
     <coverage>
         <include>
-            <directory suffix=".php">lib</directory>
+            <directory suffix=".php">src</directory>
         </include>
         <exclude>
             <!-- Only executed in child contexts -->

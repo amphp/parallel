@@ -45,12 +45,12 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Amp\\Parallel\\": "lib"
+            "Amp\\Parallel\\": "src"
         },
         "files": [
-            "lib/Context/functions.php",
-            "lib/Sync/functions.php",
-            "lib/Worker/functions.php"
+            "src/Context/functions.php",
+            "src/Sync/functions.php",
+            "src/Worker/functions.php"
         ]
     },
     "autoload-dev": {
