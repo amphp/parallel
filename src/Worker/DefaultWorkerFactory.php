@@ -44,13 +44,12 @@ final class DefaultWorkerFactory implements WorkerFactory
     public function create(): Worker
     {
         if (ParallelContext::isSupported()) {
-            return new WorkerParallel($this->className);
+            return WorkerParallel::start($this->className);
         }
 
-        return new WorkerProcess(
+        return WorkerProcess::start(
             $this->className,
-            [],
-            \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null)
+            binaryPath: \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null),
         );
     }
 }

@@ -53,14 +53,13 @@ final class BootstrapWorkerFactory implements WorkerFactory
     public function create(): Worker
     {
         if (ParallelContext::isSupported()) {
-            return new WorkerParallel($this->className, $this->bootstrapPath);
+            return WorkerParallel::start($this->className, $this->bootstrapPath);
         }
 
-        return new WorkerProcess(
+        return WorkerProcess::start(
             $this->className,
-            [],
-            \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null),
-            $this->bootstrapPath
+            binaryPath: \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null),
+            bootstrapPath: $this->bootstrapPath
         );
     }
 }

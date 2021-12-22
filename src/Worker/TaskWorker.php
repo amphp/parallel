@@ -17,7 +17,7 @@ use function Amp\async;
 /**
  * Base class for workers executing {@see Task}s.
  */
-abstract class TaskWorker implements Worker
+final class TaskWorker implements Worker
 {
     private const SHUTDOWN_TIMEOUT = 1;
     private const ERROR_TIMEOUT = 0.25;
@@ -45,7 +45,7 @@ abstract class TaskWorker implements Worker
         $emitters = &$this->emitters;
         $this->onReceive = $onReceive = static function (
             ?\Throwable $exception,
-            Internal\JobPacket|null $data
+            ?Internal\JobPacket $data
         ) use (
             $context,
             &$jobQueue,
@@ -113,18 +113,18 @@ abstract class TaskWorker implements Worker
         });
     }
 
-    final public function isRunning(): bool
+    public function isRunning(): bool
     {
         // Report as running unless shutdown or killed.
         return $this->exitStatus === null;
     }
 
-    final public function isIdle(): bool
+    public function isIdle(): bool
     {
         return empty($this->jobQueue);
     }
 
-    final public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
+    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
         if ($this->exitStatus !== null) {
             throw new StatusError("The worker has been shut down");
@@ -180,7 +180,7 @@ abstract class TaskWorker implements Worker
         return new Job($task, $channel, $future);
     }
 
-    final public function shutdown(): int
+    public function shutdown(): int
     {
         if ($this->exitStatus !== null) {
             return $this->exitStatus->await();
@@ -206,7 +206,7 @@ abstract class TaskWorker implements Worker
         }))->await();
     }
 
-    final public function kill(): void
+    public function kill(): void
     {
         if ($this->exitStatus !== null) {
             return;

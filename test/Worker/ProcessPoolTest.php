@@ -16,7 +16,7 @@ class ProcessPoolTest extends AbstractPoolTest
     {
         $factory = $this->createMock(WorkerFactory::class);
         $factory->method('create')->willReturnCallback(function () {
-            return new WorkerProcess;
+            return WorkerProcess::start();
         });
 
         return new DefaultPool($max, $factory);

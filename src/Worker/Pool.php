@@ -16,6 +16,10 @@ interface Pool extends Worker
      * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of
      * idle workers. The worker will be automatically marked as idle once no references to the returned worker remain.
      *
+     * This method does not guarantee the worker will be dedicated to a particular task, rather is designed if you
+     * wish to send a series of tasks to a single worker. For a dedicated worker, create a new worker using a
+     * {@see WorkerFactory} or {@see createWorker()}.
+     *
      * @return Worker
      *
      * @throws StatusError If the pool is not running.

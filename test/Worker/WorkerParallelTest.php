@@ -13,6 +13,6 @@ class WorkerParallelTest extends AbstractWorkerTest
 {
     protected function createWorker(string $cacheClass = LocalCache::class, string $autoloadPath = null): Worker
     {
-        return new WorkerParallel($cacheClass, $autoloadPath);
+        return WorkerParallel::start($cacheClass, $autoloadPath);
     }
 }

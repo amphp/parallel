@@ -10,6 +10,6 @@ class WorkerProcessTest extends AbstractWorkerTest
 {
     protected function createWorker(string $cacheClass = LocalCache::class, string $autoloadPath = null): Worker
     {
-        return new WorkerProcess($cacheClass, [], null, $autoloadPath);
+        return WorkerProcess::start($cacheClass, bootstrapPath: $autoloadPath);
     }
 }
