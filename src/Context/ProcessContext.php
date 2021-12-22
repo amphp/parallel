@@ -9,6 +9,7 @@ use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitResult;
+use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;

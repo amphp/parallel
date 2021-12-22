@@ -11,6 +11,7 @@ use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\ExitFailure;
 use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\ExitSuccess;
+use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\TimeoutCancellation;

@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Cancellation;
-use Amp\Parallel\Context\IpcHub;
+use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Socket\ResourceSocket;
 use parallel\Events;

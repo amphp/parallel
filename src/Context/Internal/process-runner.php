@@ -5,7 +5,6 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\ByteStream;
 use Amp\Future;
 use Amp\Parallel\Context\ProcessContext;
-use Amp\Parallel\Context\IpcHub;
 use Amp\Parallel\Sync;
 use Amp\TimeoutCancellation;
 
@@ -54,8 +53,8 @@ if (\function_exists("cli_set_process_title")) {
     $cancellation = new TimeoutCancellation(ProcessContext::DEFAULT_START_TIMEOUT);
 
     try {
-        $key = IpcHub::readKey(ByteStream\getStdin(), $cancellation);
-        $socket = IpcHub::connect($uri, $key, $cancellation);
+        $key = Sync\IpcHub::readKey(ByteStream\getStdin(), $cancellation);
+        $socket = Sync\IpcHub::connect($uri, $key, $cancellation);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }

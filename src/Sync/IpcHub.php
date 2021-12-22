@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Context;
+namespace Amp\Parallel\Sync;
 
 use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
@@ -116,7 +116,6 @@ final class IpcHub
      * @param Cancellation|null $cancellation
      *
      * @return ResourceSocket
-     * @throws ContextException
      */
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
@@ -133,7 +132,7 @@ final class IpcHub
             $client = $deferred->getFuture()->await($cancellation);
         } catch (CancelledException $exception) {
             unset($this->acceptor[$id], $this->keys[$key]);
-            throw new ContextException("Starting the process timed out", 0, $exception);
+            throw $exception;
         }
 
         return $client;

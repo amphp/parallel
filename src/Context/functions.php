@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Parallel\Sync\IpcHub;
 use Revolt\EventLoop;
 
 /**
