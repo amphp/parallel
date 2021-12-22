@@ -136,11 +136,8 @@ final class DefaultPool implements Pool
             throw $exception;
         }
 
-        return new Job(
-            $job->getTask(),
-            $job->getChannel(),
-            $job->getFuture()->finally(static fn () => $push($worker)),
-        );
+        $future = $job->getFuture()->finally(static fn () => $push($worker));
+        return $job->withFuture($future);
     }
 
     /**
