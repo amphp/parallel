@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Parallel\Worker\Task;
 
 /** @internal */
-final class Activity
+final class JobTaskRun
 {
     private static string $nextId = 'a';
 

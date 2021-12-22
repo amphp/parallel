@@ -9,9 +9,9 @@ use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Worker\Internal\JobCancellation;
 use Amp\Pipeline\Emitter;
 use Amp\TimeoutCancellation;
+use Revolt\EventLoop;
 use function Amp\async;
 
 /**
@@ -45,7 +45,6 @@ abstract class TaskWorker implements Worker
 
         $jobQueue = &$this->jobQueue;
         $emitters = &$this->emitters;
-        $receiveFuture = &$this->receiveFuture;
         $this->onReceive = $onReceive = static function (
             ?\Throwable $exception,
             Internal\TaskResult|Internal\JobMessage|null $data
@@ -53,11 +52,8 @@ abstract class TaskWorker implements Worker
             $context,
             &$jobQueue,
             &$emitters,
-            &$receiveFuture,
             &$onReceive,
         ): void {
-            $receiveFuture = null;
-
             if (!$data) {
                 $exception ??= new WorkerException("Unexpected error in worker");
                 foreach ($emitters as $emitter) {
@@ -95,15 +91,15 @@ abstract class TaskWorker implements Worker
                 }
             } finally {
                 if (!empty($jobQueue)) {
-                    $receiveFuture = self::receive($context, $onReceive);
+                    self::receive($context, $onReceive);
                 }
             }
         };
     }
 
-    private static function receive(Context $context, callable $onReceive): Future
+    private static function receive(Context $context, callable $onReceive): void
     {
-        return async(static function () use ($context, $onReceive): void {
+        EventLoop::queue(static function () use ($context, $onReceive): void {
             try {
                 $received = $context->receive();
             } catch (\Throwable $exception) {
@@ -132,19 +128,23 @@ abstract class TaskWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
-        $activity = new Internal\Activity($task);
+        $receive = empty($this->jobQueue);
+        $activity = new Internal\JobTaskRun($task);
         $jobId = $activity->getId();
-        $deferred = new DeferredFuture;
+        $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         try {
             $this->context->send($activity);
 
             if ($cancellation) {
+                $context = $this->context;
                 $cancellationId = $cancellation->subscribe(
-                    fn () => async(fn () => $this->context->send(new JobCancellation($jobId)))->ignore()
+                    static fn () => async(static fn () => $context->send(
+                        new Internal\JobCancellation($jobId),
+                    ))->ignore()
                 );
-                $future->finally(fn () => $cancellation->unsubscribe($cancellationId))->ignore();
+                $future = $future->finally(static fn () => $cancellation->unsubscribe($cancellationId));
             }
         } catch (ChannelException $exception) {
             try {
@@ -161,15 +161,18 @@ abstract class TaskWorker implements Worker
                 $this->exitStatus = Future::error($exception);
             }
 
+            unset($this->jobQueue[$jobId]);
+            throw $exception;
+        } catch (\Throwable $exception) {
+            unset($this->jobQueue[$jobId]);
             throw $exception;
         }
 
-        $this->jobQueue[$jobId] = $deferred;
         $this->emitters[$jobId] = $emitter = new Emitter();
         $channel = new Internal\JobChannel($jobId, $this->context, $emitter->pipe());
 
-        if ($this->receiveFuture === null) {
-            $this->receiveFuture = self::receive($this->context, $this->onReceive);
+        if ($receive) {
+            self::receive($this->context, $this->onReceive);
         }
 
         return new Job($task, $channel, $future);
@@ -189,7 +192,7 @@ abstract class TaskWorker implements Worker
             // Wait for pending tasks to finish.
             Future\settle(\array_map(fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
-            $this->context->send('');
+            $this->context->send(0);
 
             try {
                 return async(fn () => $this->context->join())

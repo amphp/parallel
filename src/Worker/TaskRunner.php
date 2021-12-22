@@ -32,7 +32,8 @@ final class TaskRunner
     public function run(): int
     {
         while ($data = $this->channel->receive()) {
-            if ($data instanceof Internal\Activity) {
+            // New Task execution request.
+            if ($data instanceof Internal\JobTaskRun) {
                 $id = $data->getId();
                 $this->cancellationSources[$id] = $source = new DeferredCancellation;
                 $this->emitters[$id] = $emitter = new Emitter();

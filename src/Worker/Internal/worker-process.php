@@ -41,9 +41,9 @@ return function (Sync\Channel $channel) use ($argc, $argv): int {
         ));
     }
 
-    $environment = new $className;
+    $cache = new $className;
 
-    $runner = new Worker\TaskRunner($channel, $environment);
+    $runner = new Worker\TaskRunner($channel, $cache);
 
     return $runner->run();
 };
