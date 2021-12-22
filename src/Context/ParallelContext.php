@@ -8,9 +8,6 @@ use Amp\Future;
 use Amp\Parallel\Context\Internal\ParallelHub;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Parallel\Sync\ExitFailure;
-use Amp\Parallel\Sync\ExitResult;
-use Amp\Parallel\Sync\ExitSuccess;
 use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
@@ -160,16 +157,16 @@ final class ParallelContext implements Context
 
                     $returnValue = $callable(new Internal\ContextChannel($channel));
 
-                    $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
+                    $result = new Internal\ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
                 } catch (\Throwable $exception) {
-                    $result = new ExitFailure($exception);
+                    $result = new Internal\ExitFailure($exception);
                 }
 
                 try {
                     $channel->send($result);
                 } catch (SerializationException $exception) {
                     // Serializing the result failed. Send the reason why.
-                    $channel->send(new ExitFailure($exception));
+                    $channel->send(new Internal\ExitFailure($exception));
                 }
             } catch (\Throwable $exception) {
                 \trigger_error(sprintf(
@@ -286,7 +283,7 @@ final class ParallelContext implements Context
             throw new ContextException("Failed to receive result from thread");
         }
 
-        if (!$response instanceof ExitResult) {
+        if (!$response instanceof Internal\ExitResult) {
             $this->kill();
             throw new SynchronizationError('Did not receive an exit result from thread.');
         }
@@ -314,7 +311,7 @@ final class ParallelContext implements Context
             throw new ContextException("The channel closed when receiving data from the thread");
         }
 
-        if ($data instanceof ExitResult) {
+        if ($data instanceof Internal\ExitResult) {
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Thread unexpectedly exited with result of type: %s',

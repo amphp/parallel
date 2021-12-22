@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Sync\ContextPanicError;
-use Amp\Parallel\Sync\ExitFailure;
+use Amp\Parallel\Context\ContextPanicError;
+use Amp\Parallel\Context\Internal\ExitFailure;
 use Amp\PHPUnit\AsyncTestCase;
 
 class ExitFailureTest extends AsyncTestCase

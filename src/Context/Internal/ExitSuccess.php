@@ -1,8 +1,9 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Context\Internal;
 
 /**
+ * @internal
  * @template TValue
  * @template-implements ExitResult<TValue>
  */

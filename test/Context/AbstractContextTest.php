@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Context;
 
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
-use Amp\Parallel\Sync\ContextPanicError;
+use Amp\Parallel\Context\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
 use function Amp\delay;
 use function Amp\async;

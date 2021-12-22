@@ -1,6 +1,8 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Context;
+
+use function Amp\Parallel\Sync\formatFlattenedBacktrace;
 
 final class ContextPanicError extends \Error
 {

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Sync;
 
-use Amp\Parallel\Sync\ExitSuccess;
+use Amp\Parallel\Context\Internal\ExitSuccess;
 use Amp\PHPUnit\AsyncTestCase;
 
 class ExitSuccessTest extends AsyncTestCase

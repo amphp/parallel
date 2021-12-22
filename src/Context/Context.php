@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\ContextPanicError;
+use Amp\Parallel\Context\ContextPanicError;
 
 /**
  * @template TValue

@@ -1,8 +1,11 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Context\Internal;
+
+use Amp\Parallel\Context\ContextPanicError;
 
 /**
+ * @internal
  * @template TValue
  */
 interface ExitResult

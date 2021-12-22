@@ -83,9 +83,9 @@ if (\function_exists("cli_set_process_title")) {
         }
 
         $returnValue = $callable(new ContextChannel($channel));
-        $result = new Sync\ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
+        $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
     } catch (\Throwable $exception) {
-        $result = new Sync\ExitFailure($exception);
+        $result = new ExitFailure($exception);
     }
 
     try {
@@ -93,7 +93,7 @@ if (\function_exists("cli_set_process_title")) {
             $channel->send($result);
         } catch (Sync\SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $channel->send(new Sync\ExitFailure($exception));
+            $channel->send(new ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
         \trigger_error(sprintf(

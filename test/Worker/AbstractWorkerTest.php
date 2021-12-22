@@ -8,7 +8,7 @@ use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\ContextPanicError;
+use Amp\Parallel\Context\ContextPanicError;
 use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;

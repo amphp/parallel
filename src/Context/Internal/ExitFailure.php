@@ -1,7 +1,14 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Context\Internal;
 
+use Amp\Parallel\Context\ContextPanicError;
+use function Amp\Parallel\Sync\flattenThrowableBacktrace;
+
+/**
+ * @internal
+ * @template-implements ExitResult<never>
+ */
 final class ExitFailure implements ExitResult
 {
     private string $type;

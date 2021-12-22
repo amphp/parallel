@@ -8,7 +8,6 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Parallel\Sync\ChannelException;
 use Amp\Parallel\Sync\ChannelledStream;
-use Amp\Parallel\Sync\ExitResult;
 use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process;
@@ -215,7 +214,7 @@ final class ProcessContext implements Context
             throw new ContextException("The channel closed when receiving data from the process");
         }
 
-        if ($data instanceof ExitResult) {
+        if ($data instanceof Internal\ExitResult) {
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Process unexpectedly exited with result of type: %s',
@@ -281,7 +280,7 @@ final class ProcessContext implements Context
             throw new ContextException("Failed to receive result from process");
         }
 
-        if (!$data instanceof ExitResult) {
+        if (!$data instanceof Internal\ExitResult) {
             if ($this->isRunning()) {
                 $this->kill();
             }
