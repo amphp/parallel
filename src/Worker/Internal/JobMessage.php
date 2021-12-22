@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
+/** @internal */
 final class JobMessage extends JobPacket
 {
     public function __construct(

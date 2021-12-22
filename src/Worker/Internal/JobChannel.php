@@ -6,6 +6,7 @@ use Amp\Cancellation;
 use Amp\Parallel\Sync\Channel;
 use Amp\Pipeline\Pipeline;
 
+/** @internal */
 final class JobChannel implements Channel
 {
     public function __construct(
