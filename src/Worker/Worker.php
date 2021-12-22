@@ -27,10 +27,11 @@ interface Worker
      * @template TResult
      * @template TReceive
      * @template TSend
+     * @template TCache
      *
      * Executes a {@see Task} on the worker.
      *
-     * @param Task<TResult> $task The task to execute.
+     * @param Task<TResult, TReceive, TSend, TCache> $task The task to execute.
      * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
      * this to have any effect.
      *

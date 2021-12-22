@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Worker\Internal\JobTaskRun;
+use Amp\Parallel\Worker\Internal\TaskEnqueue;
 use Amp\PHPUnit\AsyncTestCase;
 
 class JobTest extends AsyncTestCase
@@ -10,7 +10,7 @@ class JobTest extends AsyncTestCase
     public function testGetJob(): void
     {
         $task = new Fixtures\TestTask(42);
-        $job = new JobTaskRun($task);
+        $job = new TaskEnqueue($task);
         self::assertSame($task, $job->getTask());
     }
 
@@ -20,9 +20,9 @@ class JobTest extends AsyncTestCase
         $this->expectExceptionMessage('Classes implementing Amp\\Parallel\\Worker\\Task must be autoloadable by the Composer autoloader');
 
         $task = new Fixtures\TestTask(42);
-        $job = new JobTaskRun($task);
+        $job = new TaskEnqueue($task);
         $serialized = \serialize($job);
-        $job = \unserialize($serialized, ['allowed_classes' => [JobTaskRun::class]]);
+        $job = \unserialize($serialized, ['allowed_classes' => [TaskEnqueue::class]]);
         $task = $job->getTask();
     }
 }

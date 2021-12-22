@@ -2,10 +2,6 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-final class JobCancellation
+final class JobCancellation extends JobPacket
 {
-    public function __construct(
-        public /* readonly */ string $id,
-    ) {
-    }
 }

@@ -2,20 +2,13 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-final class JobMessage
+final class JobMessage extends JobPacket
 {
     public function __construct(
-        private string $id,
+        string $id,
         private mixed $message,
     ) {
-    }
-
-    /**
-     * @return string Task identifier.
-     */
-    public function getId(): string
-    {
-        return $this->id;
+        parent::__construct($id);
     }
 
     public function getMessage(): mixed

@@ -7,27 +7,8 @@ namespace Amp\Parallel\Worker\Internal;
  *
  * @template T
  */
-abstract class TaskResult
+abstract class TaskResult extends JobPacket
 {
-    /** @var string Task identifier. */
-    private string $id;
-
-    /**
-     * @param string $id Task identifier.
-     */
-    public function __construct(string $id)
-    {
-        $this->id = $id;
-    }
-
-    /**
-     * @return string Task identifier.
-     */
-    final public function getId(): string
-    {
-        return $this->id;
-    }
-
     /**
      * @return T Resolved with the task result or failure reason.
      */

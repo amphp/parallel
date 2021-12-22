@@ -33,7 +33,7 @@ final class TaskRunner
     {
         while ($data = $this->channel->receive()) {
             // New Task execution request.
-            if ($data instanceof Internal\JobTaskRun) {
+            if ($data instanceof Internal\TaskEnqueue) {
                 $id = $data->getId();
                 $this->cancellationSources[$id] = $source = new DeferredCancellation;
                 $this->emitters[$id] = $emitter = new Emitter();
@@ -77,7 +77,7 @@ final class TaskRunner
 
             // Cancellation signal.
             if ($data instanceof Internal\JobCancellation) {
-                ($this->cancellationSources[$data->id] ?? null)?->cancel();
+                ($this->cancellationSources[$data->getId()] ?? null)?->cancel();
                 continue;
             }
 

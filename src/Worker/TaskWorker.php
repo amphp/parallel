@@ -24,8 +24,6 @@ abstract class TaskWorker implements Worker
 
     private Context $context;
 
-    private ?Future $receiveFuture;
-
     /** @var array<string, DeferredFuture> */
     private array $jobQueue = [];
 
@@ -47,7 +45,7 @@ abstract class TaskWorker implements Worker
         $emitters = &$this->emitters;
         $this->onReceive = $onReceive = static function (
             ?\Throwable $exception,
-            Internal\TaskResult|Internal\JobMessage|null $data
+            Internal\JobPacket|null $data
         ) use (
             $context,
             &$jobQueue,
@@ -75,6 +73,10 @@ abstract class TaskWorker implements Worker
 
                 if ($data instanceof Internal\JobMessage) {
                     $emitters[$id]->emit($data->getMessage())->ignore();
+                    return;
+                }
+
+                if (!$data instanceof Internal\TaskResult) {
                     return;
                 }
 
@@ -129,7 +131,7 @@ abstract class TaskWorker implements Worker
         }
 
         $receive = empty($this->jobQueue);
-        $activity = new Internal\JobTaskRun($task);
+        $activity = new Internal\TaskEnqueue($task);
         $jobId = $activity->getId();
         $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
         $future = $deferred->getFuture();

@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
-class DefaultContextFactory implements ContextFactory
+final class DefaultContextFactory implements ContextFactory
 {
     /**
      * @template TValue

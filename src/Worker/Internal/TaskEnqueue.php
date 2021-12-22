@@ -5,23 +5,16 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Parallel\Worker\Task;
 
 /** @internal */
-final class JobTaskRun
+final class TaskEnqueue extends JobPacket
 {
     private static string $nextId = 'a';
-
-    private string $id;
 
     private Task|\__PHP_Incomplete_Class $task;
 
     public function __construct(Task $task)
     {
         $this->task = $task;
-        $this->id = self::$nextId++;
-    }
-
-    public function getId(): string
-    {
-        return $this->id;
+        parent::__construct(self::$nextId++);
     }
 
     public function getTask(): Task
