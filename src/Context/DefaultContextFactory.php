@@ -5,11 +5,15 @@ namespace Amp\Parallel\Context;
 final class DefaultContextFactory implements ContextFactory
 {
     /**
-     * @template TValue
+     * @template TResult
+     * @template TReceive
+     * @template TSend
      *
-     * @param string|array $script
+     * @param string|string[] $script
      *
-     * @return Context<TValue>
+     * @return Context<TResult, TReceive, TSend>
+     *
+     * @throws ContextException
      */
     public function create(string|array $script): Context
     {

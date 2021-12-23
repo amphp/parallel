@@ -16,8 +16,10 @@ use Amp\TimeoutCancellation;
 use function Amp\async;
 
 /**
- * @template TValue
- * @template-implements Context<TValue>
+ * @template TResult
+ * @template TReceive
+ * @template TSend
+ * @template-implements Context<TResult, TReceive, TSend>
  */
 final class ProcessContext implements Context
 {
@@ -42,7 +44,7 @@ final class ProcessContext implements Context
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
      *
-     * @return ProcessContext
+     * @return ProcessContext<TResult, TReceive, TSend>
      *
      * @throws ContextException If starting the process fails.
      */
@@ -176,13 +178,14 @@ final class ProcessContext implements Context
         return $result;
     }
 
-    private Process $process;
-    private ?ChannelledStream $channel;
-
-    private function __construct(Process $process, ChannelledStream $channel)
-    {
-        $this->process = $process;
-        $this->channel = $channel;
+    /**
+     * @param Process $process
+     * @param ChannelledStream<TReceive, TSend> $channel
+     */
+    private function __construct(
+        private Process $process,
+        private ChannelledStream $channel,
+    ) {
     }
 
     /**
@@ -200,10 +203,6 @@ final class ProcessContext implements Context
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
-        if ($this->channel === null) {
-            throw new StatusError("The process has not been started");
-        }
-
         try {
             $data = $this->channel->receive($cancellation);
         } catch (ChannelException $e) {
@@ -234,10 +233,6 @@ final class ProcessContext implements Context
 
     public function send(mixed $data): void
     {
-        if ($this->channel === null) {
-            throw new StatusError("The process has not been started");
-        }
-
         try {
             $this->channel->send($data);
         } catch (ChannelException $e) {
@@ -261,12 +256,12 @@ final class ProcessContext implements Context
         }
     }
 
+    /**
+     * @return TResult
+     * @throws ContextException
+     */
     public function join(): mixed
     {
-        if ($this->channel === null) {
-            throw new StatusError("The process has not been started");
-        }
-
         try {
             $data = $this->channel->receive();
         } catch (\Throwable $exception) {
@@ -293,7 +288,6 @@ final class ProcessContext implements Context
         if ($code !== 0) {
             throw new ContextException(\sprintf("Process exited with code %d", $code));
         }
-
 
         return $data->getResult();
     }

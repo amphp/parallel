@@ -19,8 +19,10 @@ use function Amp\async;
 /**
  * Implements an execution context using native threads provided by the parallel extension.
  *
- * @template TValue
- * @template-implements Context<TValue>
+ * @template TResult
+ * @template TReceive
+ * @template TSend
+ * @template-implements Context<TResult, TReceive, TSend>
  */
 final class ParallelContext implements Context
 {
@@ -60,6 +62,8 @@ final class ParallelContext implements Context
      * @param string|array $script Path to PHP script or array with first element as path and following elements options
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      * @param IpcHub|null $hub Optional IpcHub instance.
+     *
+     * @return ParallelContext<TResult, TReceive, TSend>
      *
      * @throws \Error Thrown if the pthreads extension is not available.
      */
@@ -259,7 +263,7 @@ final class ParallelContext implements Context
      * Gets a promise that resolves when the context ends and joins with the
      * parent context.
      *
-     * @return mixed
+     * @return TResult
      *
      * @throws StatusError Thrown if the context has not been started.
      * @throws SynchronizationError Thrown if an exit status object is not received.

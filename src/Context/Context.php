@@ -3,11 +3,12 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Context\ContextPanicError;
 
 /**
- * @template TValue
- * @template-extends Channel<TValue>
+ * @template TResult
+ * @template TReceive
+ * @template TSend
+ * @template-extends Channel<TReceive, TSend>
  */
 interface Context extends Channel
 {
@@ -22,7 +23,7 @@ interface Context extends Channel
     public function kill(): void;
 
     /**
-     * @return mixed The data returned from the context.
+     * @return TResult The data returned from the context.
      *
      * @throws ContextException If the context dies unexpectedly.
      * @throws ContextPanicError If the context throws an uncaught exception.
