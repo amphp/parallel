@@ -25,14 +25,14 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         $this->parcel = null;
     }
 
-    public function testObjectOverflowMoved(): \Generator
+    public function testObjectOverflowMoved(): void
     {
         $object = SharedMemoryParcel::create(self::ID, 'hi', 2);
         $object->synchronized(function () {
             return 'hello world';
         });
 
-        self::assertEquals('hello world', yield $object->unwrap());
+        self::assertEquals('hello world', $object->unwrap());
     }
 
     /**
@@ -98,7 +98,7 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         SharedMemoryParcel::create(self::ID, 42, 1 << 50);
     }
 
-    protected function createParcel($value): Parcel
+    protected function createParcel(mixed $value): Parcel
     {
         $this->parcel = SharedMemoryParcel::create(self::ID, $value);
         return $this->parcel;

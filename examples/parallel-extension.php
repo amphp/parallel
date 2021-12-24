@@ -16,8 +16,6 @@ try {
     // Create a new child thread that does some blocking stuff.
     $context = ParallelContext::start(__DIR__ . "/blocking-process.php");
 
-    \assert($context instanceof ParallelContext);
-
     print "Waiting 2 seconds to send start data...\n";
     delay(2);
 

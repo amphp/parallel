@@ -37,6 +37,8 @@
         "amphp/sync": "^2"
     },
     "require-dev": {
+        "ext-shmop": "*",
+        "ext-sysvmsg": "*",
         "phpunit/phpunit": "^9",
         "amphp/phpunit-util": "^3",
         "amphp/php-cs-fixer-config": "dev-master",

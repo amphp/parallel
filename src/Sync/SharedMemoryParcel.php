@@ -5,7 +5,6 @@ namespace Amp\Parallel\Sync;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
 use Amp\Sync\PosixSemaphore;
-use Amp\Sync\Semaphore;
 use Amp\Sync\SyncException;
 
 /**
@@ -29,6 +28,9 @@ use Amp\Sync\SyncException;
  * @see http://php.net/manual/en/book.shmop.php The shared memory extension.
  * @see http://man7.org/linux/man-pages/man2/shmctl.2.html How shared memory works on Linux.
  * @see https://msdn.microsoft.com/en-us/library/ms810613.aspx How shared memory works on Windows.
+ *
+ * @template T
+ * @template-implements Parcel<T>
  */
 final class SharedMemoryParcel implements Parcel
 {
@@ -98,6 +100,7 @@ final class SharedMemoryParcel implements Parcel
     {
         return (int) \abs(\unpack("l", \md5($id, true))[1]);
     }
+
     /** @var string */
     private string $id;
 
@@ -107,8 +110,8 @@ final class SharedMemoryParcel implements Parcel
     /** @var PosixSemaphore A semaphore for synchronizing on the parcel. */
     private PosixSemaphore $semaphore;
 
-    /** @var resource|null An open handle to the shared memory segment. */
-    private $handle;
+    /** @var \Shmop An open handle to the shared memory segment. */
+    private ?\Shmop $handle = null;
 
     private int $initializer = 0;
 
@@ -126,8 +129,13 @@ final class SharedMemoryParcel implements Parcel
 
         $this->id = $id;
         $this->semaphore = $semaphore;
-        $this->key = self::makeKey($this->id);
+        $this->key = self::makeKey($id);
         $this->serializer = $serializer ?? new NativeSerializer;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
     }
 
     public function unwrap(): mixed
@@ -141,12 +149,12 @@ final class SharedMemoryParcel implements Parcel
         }
     }
 
-    public function synchronized(callable $callback): mixed
+    public function synchronized(\Closure $closure): mixed
     {
         $lock = $this->semaphore->acquire();
 
         try {
-            $result = $callback($this->getValue());
+            $result = $closure($this->getValue());
 
             if ($result !== null) {
                 $this->wrap($result);

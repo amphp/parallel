@@ -3,6 +3,8 @@
 namespace Amp\Parallel\Sync;
 
 /**
+ * @template T
+ *
  * A parcel object for sharing data across execution contexts.
  *
  * A parcel is an object that stores a value in a safe way that can be shared
@@ -18,18 +20,18 @@ namespace Amp\Parallel\Sync;
 interface Parcel
 {
     /**
-     * Asynchronously invokes a callback while maintaining an exclusive lock on the parcel. The current value of the
+     * Asynchronously invokes a callback while maintaining a lock on the parcel. The current value of the
      * parcel is provided as the first argument to the callback function.
      *
-     * @param callable $callback The synchronized callback to invoke. The parcel value is given as the single argument
-     *     to the callback function. The callback may be a regular function or a coroutine.
+     * @param \Closure(T):T $closure The closure to invoke when a lock is obtained on the parcel. The parcel value
+     * is given as the single argument to the closure.
      *
-     * @return mixed Return value of $callback.
+     * @return T Return value of $closure.
      */
-    public function synchronized(callable $callback): mixed;
+    public function synchronized(\Closure $closure): mixed;
 
     /**
-     * @return mixed The value inside the parcel.
+     * @return T The value inside the parcel.
      */
     public function unwrap(): mixed;
 }
