@@ -7,6 +7,7 @@ use Amp\Future;
 use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Sync;
 use Amp\TimeoutCancellation;
+use Revolt\EventLoop;
 
 \define("AMP_CONTEXT", "process");
 \define("AMP_CONTEXT_ID", \getmypid());
@@ -37,7 +38,7 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-(function () use ($argc, $argv): void {
+EventLoop::queue(function () use ($argc, $argv): void {
     // Remove this scripts path from process arguments.
     --$argc;
     \array_shift($argv);
@@ -101,4 +102,6 @@ if (\function_exists("cli_set_process_title")) {
             $exception->getMessage(),
         ), E_USER_ERROR);
     }
-})();
+});
+
+EventLoop::run();

@@ -117,18 +117,18 @@ final class ParallelContext implements Context
             \define("AMP_CONTEXT", "parallel");
             \define("AMP_CONTEXT_ID", $id);
 
-            try {
-                $socket = IpcHub::connect($uri, $key);
-                $channel = new ChannelledStream($socket, $socket);
-            } catch (\RuntimeException $exception) {
-                \trigger_error($exception->getMessage(), E_USER_ERROR);
-            }
+            EventLoop::unreference(EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
+                // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls
+                // such as select() will not be interrupted.
+            }));
 
-            try {
-                EventLoop::unreference(EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, function (): void {
-                    // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls
-                    // such as select() will not be interrupted.
-                }));
+            EventLoop::queue(function () use ($uri, $key, $path, $argv): void {
+                try {
+                    $socket = IpcHub::connect($uri, $key);
+                    $channel = new ChannelledStream($socket, $socket);
+                } catch (\Throwable $exception) {
+                    \trigger_error($exception->getMessage(), E_USER_ERROR);
+                }
 
                 try {
                     if (!\is_file($path)) {
@@ -167,19 +167,23 @@ final class ParallelContext implements Context
                 }
 
                 try {
-                    $channel->send($result);
-                } catch (SerializationException $exception) {
-                    // Serializing the result failed. Send the reason why.
-                    $channel->send(new Internal\ExitFailure($exception));
+                    try {
+                        $channel->send($result);
+                    } catch (SerializationException $exception) {
+                        // Serializing the result failed. Send the reason why.
+                        $channel->send(new Internal\ExitFailure($exception));
+                    }
+                } catch (\Throwable $exception) {
+                    \trigger_error(sprintf(
+                        "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
+                        $exception->getMessage(),
+                    ), E_USER_ERROR);
+                } finally {
+                    $channel->close();
                 }
-            } catch (\Throwable $exception) {
-                \trigger_error(sprintf(
-                    "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
-                    $exception->getMessage(),
-                ), E_USER_ERROR);
-            } finally {
-                $channel->close();
-            }
+            });
+
+            EventLoop::run();
 
             return 0;
             // @codeCoverageIgnoreEnd
