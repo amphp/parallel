@@ -16,7 +16,7 @@ use const Amp\Process\IS_WINDOWS;
 
 final class IpcHub
 {
-    public const KEY_RECEIVE_TIMEOUT = 1;
+    public const KEY_RECEIVE_TIMEOUT = 5;
     public const KEY_LENGTH = 64;
 
     private int $nextId = 0;
@@ -35,7 +35,12 @@ final class IpcHub
 
     private ?string $toUnlink = null;
 
-    public function __construct()
+    /**
+     * @param float $keyReceiveTimeout
+     *
+     * @throws Socket\SocketException
+     */
+    public function __construct(float $keyReceiveTimeout = self::KEY_RECEIVE_TIMEOUT)
     {
         if (IS_WINDOWS) {
             $this->uri = "tcp://127.0.0.1:0";
@@ -54,10 +59,10 @@ final class IpcHub
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->accept = static function () use (&$keys, &$acceptor, $server): void {
+        $this->accept = static function () use (&$keys, &$acceptor, $server, $keyReceiveTimeout): void {
             while (!empty($acceptor) && $client = $server->accept()) {
                 try {
-                    $received = self::readKey($client, new TimeoutCancellation(self::KEY_RECEIVE_TIMEOUT));
+                    $received = self::readKey($client, new TimeoutCancellation($keyReceiveTimeout));
                 } catch (\Throwable) {
                     $client->close();
                     continue; // Ignore possible foreign connection attempt.
@@ -71,13 +76,13 @@ final class IpcHub
                 }
 
                 $deferred = $acceptor[$id] ?? null;
+                unset($acceptor[$id], $keys[$received]);
 
                 if ($deferred === null) {
                     $client->close();
                     continue; // Client accept cancelled.
                 }
 
-                unset($acceptor[$id], $keys[$received]);
                 $deferred->complete($client);
             }
         };
