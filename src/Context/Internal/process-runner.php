@@ -39,22 +39,24 @@ if (\function_exists("cli_set_process_title")) {
 })();
 
 EventLoop::queue(function () use ($argc, $argv): void {
-    // Remove this scripts path from process arguments.
-    --$argc;
-    \array_shift($argv);
-
-    if (!isset($argv[0])) {
+    if (!isset($argv[1])) {
         \trigger_error("No socket path provided", E_USER_ERROR);
     }
 
-    // Remove socket path from process arguments.
-    --$argc;
-    $uri = \array_shift($argv);
+    if (!isset($argv[2]) || !is_numeric($argv[2])) {
+        \trigger_error("No key length provided", E_USER_ERROR);
+    }
+
+    [, $uri, $length] = $argv;
+
+    // Remove script path, socket path, and key length from process arguments.
+    $argc -= 3;
+    $argv = \array_slice($argv, 3);
 
     $cancellation = new TimeoutCancellation(ProcessContext::DEFAULT_START_TIMEOUT);
 
     try {
-        $key = Sync\IpcHub::readKey(ByteStream\getStdin(), $cancellation);
+        $key = Sync\IpcHub::readKey(ByteStream\getStdin(), $cancellation, (int) $length);
         $socket = Sync\IpcHub::connect($uri, $key, $cancellation);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);

@@ -16,8 +16,8 @@ use const Amp\Process\IS_WINDOWS;
 
 final class IpcHub
 {
-    public const KEY_RECEIVE_TIMEOUT = 5;
-    public const KEY_LENGTH = 64;
+    public const DEFAULT_KEY_RECEIVE_TIMEOUT = 5;
+    public const DEFAULT_KEY_LENGTH = 64;
 
     private int $nextId = 0;
 
@@ -36,12 +36,15 @@ final class IpcHub
     private ?string $toUnlink = null;
 
     /**
-     * @param float $keyReceiveTimeout
+     * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
+     * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
      *
      * @throws Socket\SocketException
      */
-    public function __construct(float $keyReceiveTimeout = self::KEY_RECEIVE_TIMEOUT)
-    {
+    public function __construct(
+        private int $keyLength = self::DEFAULT_KEY_LENGTH,
+        float $keyReceiveTimeout = self::DEFAULT_KEY_RECEIVE_TIMEOUT,
+    ) {
         if (IS_WINDOWS) {
             $this->uri = "tcp://127.0.0.1:0";
         } else {
@@ -59,10 +62,10 @@ final class IpcHub
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
-        $this->accept = static function () use (&$keys, &$acceptor, $server, $keyReceiveTimeout): void {
+        $this->accept = static function () use (&$keys, &$acceptor, $server, $keyReceiveTimeout, $keyLength): void {
             while (!empty($acceptor) && $client = $server->accept()) {
                 try {
-                    $received = self::readKey($client, new TimeoutCancellation($keyReceiveTimeout));
+                    $received = self::readKey($client, new TimeoutCancellation($keyReceiveTimeout), $keyLength);
                 } catch (\Throwable) {
                     $client->close();
                     continue; // Ignore possible foreign connection attempt.
@@ -113,7 +116,7 @@ final class IpcHub
 
     public function generateKey(): string
     {
-        return \random_bytes(self::KEY_LENGTH);
+        return \random_bytes($this->keyLength);
     }
 
     /**
@@ -124,6 +127,14 @@ final class IpcHub
      */
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
+        if (\strlen($key) !== $this->keyLength) {
+            throw new \ValueError(sprintf(
+                "Key provided is of length %d, expected %d",
+                \strlen($key),
+                $this->keyLength,
+            ));
+        }
+
         $id = $this->nextId++;
 
         if (empty($this->acceptor)) {
@@ -148,20 +159,22 @@ final class IpcHub
      *
      * @param ReadableResourceStream|ResourceSocket $stream
      * @param Cancellation|null $cancellation Closes the stream if cancelled.
+     * @param positive-int $keyLength
      */
     public static function readKey(
         ReadableResourceStream|ResourceSocket $stream,
-        ?Cancellation $cancellation = null
+        ?Cancellation $cancellation = null,
+        int $keyLength = self::DEFAULT_KEY_LENGTH,
     ): string {
         $key = "";
 
         // Read random key from $stream and send back to parent over IPC socket to authenticate.
         do {
-            if (($chunk = $stream->read($cancellation, self::KEY_LENGTH - \strlen($key))) === null) {
+            if (($chunk = $stream->read($cancellation, $keyLength - \strlen($key))) === null) {
                 throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
             }
             $key .= $chunk;
-        } while (\strlen($key) < self::KEY_LENGTH);
+        } while (\strlen($key) < $keyLength);
 
         return $key;
     }

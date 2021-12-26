@@ -116,11 +116,14 @@ final class ProcessContext implements Context
             $scriptPath = self::SCRIPT_PATH;
         }
 
+        $key = $ipcHub->generateKey();
+
         $command = \array_merge(
             [$binaryPath],
             self::formatOptions($options),
             [$scriptPath],
             [$ipcHub->getUri()],
+            [(string) \strlen($key)],
             \is_array($script) ? $script : [$script],
         );
 
@@ -131,9 +134,7 @@ final class ProcessContext implements Context
         }
 
         try {
-            $key = $ipcHub->generateKey();
             $process->getStdin()->write($key);
-
             $socket = $ipcHub->accept($key, $cancellation);
             $channel = new ChannelledStream($socket, $socket);
         } catch (\Throwable $exception) {
