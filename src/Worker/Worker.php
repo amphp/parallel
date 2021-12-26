@@ -35,7 +35,7 @@ interface Worker
      * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
      * this to have any effect.
      *
-     * @return Job<TResult, TReceive, TSend>
+     * @return Job<TResult, TReceive, TSend, TCache>
      */
     public function enqueue(Task $task, ?Cancellation $cancellation = null): Job;
 

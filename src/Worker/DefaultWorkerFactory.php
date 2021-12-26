@@ -4,15 +4,17 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
-use Amp\Parallel\Context\ParallelContext;
+use Amp\Parallel\Context\ContextFactory;
+use Amp\Parallel\Context\DefaultContextFactory;
 
 /**
  * The built-in worker factory type.
  */
 final class DefaultWorkerFactory implements WorkerFactory
 {
-    /** @var string */
-    private string $className;
+    public const SCRIPT_PATH = __DIR__ . "/Internal/task-runner.php";
+
+    private ContextFactory $contextFactory;
 
     /**
      * @param string $cacheClass Name of class implementing {@see Cache} to instigate in each
@@ -20,21 +22,28 @@ final class DefaultWorkerFactory implements WorkerFactory
      *
      * @throws \Error If the given class name does not exist or does not implement {@see Cache}.
      */
-    public function __construct(string $cacheClass = LocalCache::class)
-    {
-        if (!\class_exists($cacheClass)) {
-            throw new \Error(\sprintf("Invalid cache class name '%s'", $cacheClass));
+    public function __construct(
+        private string $cacheClass = LocalCache::class,
+        private ?string $bootstrapPath = null,
+        ?ContextFactory $contextFactory = null,
+    ) {
+        $this->contextFactory = $contextFactory ?? new DefaultContextFactory();
+
+        if (!\class_exists($this->cacheClass)) {
+            throw new \Error(\sprintf("Invalid cache class name '%s'", $this->cacheClass));
         }
 
-        if (!\is_subclass_of($cacheClass, Cache::class)) {
+        if (!\is_subclass_of($this->cacheClass, Cache::class)) {
             throw new \Error(\sprintf(
                 "The class '%s' does not implement '%s'",
-                $cacheClass,
+                $this->cacheClass,
                 Cache::class
             ));
         }
 
-        $this->className = $cacheClass;
+        if ($this->bootstrapPath !== null && !\file_exists($this->bootstrapPath)) {
+            throw new \Error(\sprintf("No file found at bootstrap path given '%s'", $this->bootstrapPath));
+        }
     }
 
     /**
@@ -43,13 +52,15 @@ final class DefaultWorkerFactory implements WorkerFactory
      */
     public function create(): Worker
     {
-        if (ParallelContext::isSupported()) {
-            return WorkerParallel::start($this->className);
+        $script = [
+            self::SCRIPT_PATH,
+            $this->cacheClass,
+        ];
+
+        if ($this->bootstrapPath !== null) {
+            $script[] = $this->bootstrapPath;
         }
 
-        return WorkerProcess::start(
-            $this->className,
-            binaryPath: \getenv("AMP_PHP_BINARY") ?: (\defined("AMP_PHP_BINARY") ? \AMP_PHP_BINARY : null),
-        );
+        return new TaskWorker($this->contextFactory->create($script));
     }
 }

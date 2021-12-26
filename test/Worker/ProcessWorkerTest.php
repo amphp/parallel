@@ -6,10 +6,7 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\ProcessContext;
 
-/**
- * @group process
- */
-class ProcessPoolTest extends AbstractPoolTest
+class ProcessWorkerTest extends AbstractWorkerTest
 {
     public function createContextFactory(): ContextFactory
     {

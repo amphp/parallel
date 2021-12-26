@@ -2,36 +2,18 @@
 
 namespace Amp\Parallel\Test\Worker;
 
+use Amp\Cache\LocalCache;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Worker\DefaultPool;
+use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
-use Amp\PHPUnit\AsyncTestCase;
 use Revolt\EventLoop;
-use function Amp\async;
 
-abstract class AbstractPoolTest extends AsyncTestCase
+abstract class AbstractPoolTest extends AbstractWorkerTest
 {
-    public function testIsRunning()
-    {
-        $pool = $this->createPool();
-
-        self::assertTrue($pool->isRunning());
-
-        $pool->shutdown();
-        self::assertFalse($pool->isRunning());
-    }
-
-    public function testIsIdleOnStart()
-    {
-        $pool = $this->createPool();
-
-        self::assertTrue($pool->isIdle());
-
-        $pool->shutdown();
-    }
-
     public function testShutdownShouldReturnSameResult()
     {
         $pool = $this->createPool();
@@ -45,7 +27,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
     public function testPullShouldThrowStatusError()
     {
         $this->expectException(StatusError::class);
-        $this->expectExceptionMessage('The pool was shutdown');
+        $this->expectExceptionMessage('shut down');
 
         $pool = $this->createPool();
 
@@ -69,42 +51,6 @@ abstract class AbstractPoolTest extends AsyncTestCase
         self::assertEquals(0, $pool->getIdleWorkerCount());
 
         $pool->shutdown();
-    }
-
-    public function testEnqueue()
-    {
-        $pool = $this->createPool();
-
-        $returnValue = $pool->enqueue(new Fixtures\TestTask(42))->getFuture()->await();
-        self::assertEquals(42, $returnValue);
-
-        $pool->shutdown();
-    }
-
-    public function testEnqueueMultiple()
-    {
-        $pool = $this->createPool();
-
-        $values = Future\all([
-            $pool->enqueue(new Fixtures\TestTask(42))->getFuture(),
-            $pool->enqueue(new Fixtures\TestTask(56))->getFuture(),
-            $pool->enqueue(new Fixtures\TestTask(72))->getFuture(),
-        ]);
-
-        self::assertEquals([42, 56, 72], $values);
-
-        $pool->shutdown();
-    }
-
-    public function testKill(): void
-    {
-        $this->setTimeout(1);
-
-        $pool = $this->createPool();
-
-        $pool->kill();
-
-        self::assertFalse($pool->isRunning());
     }
 
     public function testGet()
@@ -190,10 +136,27 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $worker2 = $pool->getWorker();
     }
 
+    protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
+    {
+        return $this->createPool(cacheClass: $cacheClass, autoloadPath: $autoloadPath);
+    }
+
     /**
      * @param int $max
      *
      * @return Pool
      */
-    abstract protected function createPool(int $max = Pool::DEFAULT_MAX_SIZE): Pool;
+    protected function createPool(
+        int $max = Pool::DEFAULT_MAX_SIZE,
+        string $cacheClass = LocalCache::class,
+        ?string $autoloadPath = null
+    ): Pool {
+        $factory = new DefaultWorkerFactory(
+            cacheClass: $cacheClass,
+            bootstrapPath: $autoloadPath,
+            contextFactory: $this->createContextFactory(),
+        );
+
+        return new DefaultPool($max, $factory);
+    }
 }

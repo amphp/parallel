@@ -6,10 +6,11 @@ use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
 use Amp\Cancellation;
 use Amp\Future;
+use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Context\ContextPanicError;
 use Amp\Parallel\Sync\SerializationException;
+use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
 use Amp\Parallel\Worker\TaskFailureError;
@@ -58,7 +59,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     public function testEnqueueShouldThrowStatusError()
     {
         $this->expectException(StatusError::class);
-        $this->expectExceptionMessage('The worker has been shut down');
+        $this->expectExceptionMessage('shut down');
 
         $worker = $this->createWorker();
 
@@ -297,8 +298,8 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     public function testInvalidCustomAutoloader()
     {
-        $this->expectException(ContextPanicError::class);
-        $this->expectExceptionMessage('No file found at bootstrap file path given');
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('No file found at bootstrap path given');
 
         $worker = $this->createWorker(autoloadPath: __DIR__ . '/Fixtures/not-found.php');
 
@@ -348,14 +349,16 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    /**
-     * @param string $cacheClass
-     * @param string|null $autoloadPath
-     *
-     * @return Worker
-     */
-    abstract protected function createWorker(
-        string $cacheClass = LocalCache::class,
-        string $autoloadPath = null,
-    ): Worker;
+    protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
+    {
+        $factory = new DefaultWorkerFactory(
+            cacheClass: $cacheClass,
+            bootstrapPath: $autoloadPath,
+            contextFactory: $this->createContextFactory(),
+        );
+
+        return $factory->create();
+    }
+
+    abstract protected function createContextFactory(): ContextFactory;
 }

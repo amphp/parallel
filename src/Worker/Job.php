@@ -9,9 +9,15 @@ use Amp\Parallel\Sync\Channel;
  * @template TResult
  * @template TReceive
  * @template TSend
+ * @template TCache
  */
 final class Job
 {
+    /**
+     * @param Task<TResult, TReceive, TSend, TCache> $task
+     * @param Channel<TSend, TReceive> $channel
+     * @param Future<TResult> $future
+     */
     public function __construct(
         private Task $task,
         private Channel $channel,
@@ -20,7 +26,7 @@ final class Job
     }
 
     /**
-     * @return Task<TResult>
+     * @return Task<TResult, TReceive, TSend>
      */
     public function getTask(): Task
     {
@@ -28,7 +34,7 @@ final class Job
     }
 
     /**
-     * @return Channel<TReceive, TSend>
+     * @return Channel<TSend, TReceive>
      */
     public function getChannel(): Channel
     {
@@ -38,9 +44,9 @@ final class Job
     /**
      * Returns a cloned object with the given channel.
      *
-     * @param Channel<TReceive, TSend> $channel
+     * @param Channel<TSend, TReceive> $channel
      *
-     * @return Job<TResult, TReceive, TSend>
+     * @return Job<TResult, TReceive, TSend, TCache>
      */
     public function withChannel(Channel $channel): self
     {
@@ -62,7 +68,7 @@ final class Job
      *
      * @param Future<TResult> $future
      *
-     * @return Job<TResult, TReceive, TSend>
+     * @return Job<TResult, TReceive, TSend, TCache>
      */
     public function withFuture(Future $future): self
     {

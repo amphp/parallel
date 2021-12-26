@@ -22,8 +22,6 @@ final class TaskWorker implements Worker
     private const SHUTDOWN_TIMEOUT = 1;
     private const ERROR_TIMEOUT = 0.25;
 
-    private Context $context;
-
     /** @var array<string, DeferredFuture> */
     private array $jobQueue = [];
 
@@ -35,12 +33,11 @@ final class TaskWorker implements Worker
     private ?Future $exitStatus = null;
 
     /**
-     * @param Context $context A context running an instance of {@see TaskRunner}.
+     * @param Context<int, Internal\JobPacket, Internal\JobPacket|int> $context A context running an instance of
+     * {@see TaskRunner}.
      */
-    public function __construct(Context $context)
+    public function __construct(private Context $context)
     {
-        $this->context = $context;
-
         $jobQueue = &$this->jobQueue;
         $emitters = &$this->emitters;
         $this->onReceive = $onReceive = static function (

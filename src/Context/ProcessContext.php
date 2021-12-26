@@ -360,6 +360,6 @@ final class ProcessContext implements Context
     public function kill(): void
     {
         $this->process->kill();
-        $this->channel?->close();
+        $this->channel->close();
     }
 }

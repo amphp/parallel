@@ -13,7 +13,7 @@ return function (Sync\Channel $channel) use ($argc, $argv): int {
 
     if (isset($argv[2])) {
         if (!\is_file($argv[2])) {
-            throw new \Error(\sprintf("No file found at bootstrap file path given '%s'", $argv[2]));
+            throw new \Error(\sprintf("No file found at bootstrap path given '%s'", $argv[2]));
         }
 
         // Include file within closure to protect scope.

@@ -33,4 +33,27 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
 
         $worker->shutdown();
     }
+
+    public function testAutoloading()
+    {
+        $factory = new DefaultWorkerFactory(bootstrapPath: __DIR__ . '/Fixtures/custom-bootstrap.php');
+
+        $worker = $factory->create();
+
+        self::assertTrue($worker->enqueue(new Fixtures\AutoloadTestTask)->getFuture()->await());
+
+        $worker->shutdown();
+    }
+
+    public function testInvalidAutoloaderPath()
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('No file found at bootstrap path given');
+
+        $factory = new DefaultWorkerFactory(bootstrapPath: __DIR__ . '/Fixtures/not-found.php');
+
+        $worker = $factory->create();
+
+        $worker->enqueue(new Fixtures\TestTask(42))->getFuture()->await();
+    }
 }

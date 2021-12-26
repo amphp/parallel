@@ -166,7 +166,7 @@ final class DefaultPool implements Pool
         if ($this->waiting !== null) {
             $deferred = $this->waiting;
             $this->waiting = null;
-            $deferred->error(new WorkerException('The pool shutdown before the task could be executed'));
+            $deferred->error(new WorkerException('The pool shut down before the task could be executed'));
         }
 
         return ($this->exitStatus = async(function () use ($shutdowns): int {
@@ -214,7 +214,7 @@ final class DefaultPool implements Pool
     private function pull(): Worker
     {
         if (!$this->isRunning()) {
-            throw new StatusError("The pool was shutdown");
+            throw new StatusError("The pool was shut down");
         }
 
         do {

@@ -4,20 +4,21 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextFactory;
-use Amp\Parallel\Context\ProcessContext;
+use Amp\Parallel\Context\ParallelContext;
 
 /**
- * @group process
+ * @requires extension parallel
  */
-class ProcessPoolTest extends AbstractPoolTest
+class ParallelWorkerTest extends AbstractWorkerTest
 {
     public function createContextFactory(): ContextFactory
     {
         return new class implements ContextFactory {
             public function create(array|string $script): Context
             {
-                return ProcessContext::start($script);
+                return ParallelContext::start($script);
             }
         };
     }
+
 }
