@@ -40,9 +40,10 @@ interface Worker
     public function enqueue(Task $task, ?Cancellation $cancellation = null): Job;
 
     /**
-     * @return int Returns the exit code when the worker successfully shuts down.
+     * Gracefully shutdown the worker once all outstanding tasks have completed executing. Returns once the
+     * worker has been shutdown.
      */
-    public function shutdown(): int;
+    public function shutdown(): void;
 
     /**
      * Immediately kills the context.

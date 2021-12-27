@@ -12,7 +12,7 @@ final class PooledWorker implements Worker
 {
     /**
      * @param Worker $worker
-     * @param \Closure(Worker):void $push Callable to push the worker back into the queue.
+     * @param Closure(Worker):void $push Callable to push the worker back into the queue.
      */
     public function __construct(
         private Worker $worker,
@@ -47,9 +47,9 @@ final class PooledWorker implements Worker
         return $job->withFuture($future);
     }
 
-    public function shutdown(): int
+    public function shutdown(): void
     {
-        return $this->worker->shutdown();
+        $this->worker->shutdown();
     }
 
     public function kill(): void

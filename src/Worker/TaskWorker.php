@@ -123,7 +123,7 @@ final class TaskWorker implements Worker
 
     public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
     {
-        if ($this->exitStatus !== null) {
+        if ($this->exitStatus) {
             throw new StatusError("The worker has been shut down");
         }
 
@@ -156,7 +156,7 @@ final class TaskWorker implements Worker
                 $exception = new WorkerException("The worker crashed", 0, $exception);
             }
 
-            if ($this->exitStatus === null) {
+            if (!$this->exitStatus) {
                 $this->exitStatus = Future::error($exception);
             }
 
@@ -177,13 +177,14 @@ final class TaskWorker implements Worker
         return new Job($task, $channel, $future);
     }
 
-    public function shutdown(): int
+    public function shutdown(): void
     {
-        if ($this->exitStatus !== null) {
-            return $this->exitStatus->await();
+        if ($this->exitStatus) {
+            $this->exitStatus->await();
+            return;
         }
 
-        return ($this->exitStatus = async(function (): int {
+        ($this->exitStatus = async(function (): void {
             if (!$this->context->isRunning()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
@@ -194,7 +195,7 @@ final class TaskWorker implements Worker
             $this->context->send(0);
 
             try {
-                return async(fn () => $this->context->join())
+                async(fn () => $this->context->join())
                     ->await(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->kill();
@@ -205,17 +206,13 @@ final class TaskWorker implements Worker
 
     public function kill(): void
     {
-        if ($this->exitStatus !== null) {
-            return;
-        }
-
         if ($this->context->isRunning()) {
             $this->context->kill();
-            $this->exitStatus = Future::error(new WorkerException("The worker was killed"));
-            $this->exitStatus->ignore();
-            return;
         }
 
-        $this->exitStatus = Future::complete();
+        if (!$this->exitStatus) {
+            $this->exitStatus = Future::error(new WorkerException("The worker was killed"));
+            $this->exitStatus->ignore();
+        }
     }
 }

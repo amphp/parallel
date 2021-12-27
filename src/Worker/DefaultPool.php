@@ -147,34 +147,26 @@ final class DefaultPool implements Pool
      *
      * @throws StatusError If the pool has not been started.
      */
-    public function shutdown(): int
+    public function shutdown(): void
     {
         if ($this->exitStatus) {
-            return $this->exitStatus->await();
+            $this->exitStatus->await();
+            return;
         }
 
         $this->running = false;
 
-        $shutdowns = [];
-        foreach ($this->workers as $worker) {
-            \assert($worker instanceof Worker);
-            if ($worker->isRunning()) {
-                $shutdowns[] = async(fn () => $worker->shutdown());
-            }
-        }
+        $this->waiting?->error(new WorkerException('The pool shut down before the task could be executed'));
+        $this->waiting = null;
 
-        if ($this->waiting !== null) {
-            $deferred = $this->waiting;
-            $this->waiting = null;
-            $deferred->error(new WorkerException('The pool shut down before the task could be executed'));
-        }
-
-        return ($this->exitStatus = async(function () use ($shutdowns): int {
-            $shutdowns = Future\all($shutdowns);
-            if (\array_sum($shutdowns)) {
-                return 1;
+        $workers = $this->workers;
+        ($this->exitStatus = async(static function () use ($workers): void {
+            foreach ($workers as $worker) {
+                \assert($worker instanceof Worker);
+                if ($worker->isRunning()) {
+                    $worker->shutdown();
+                }
             }
-            return 0;
         }))->await();
     }
 
@@ -229,13 +221,13 @@ final class DefaultPool implements Pool
                     return $worker;
                 }
 
-                if ($this->waiting === null) {
+                if (!$this->waiting) {
                     $this->waiting = new DeferredFuture;
                 }
 
                 do {
                     $worker = $this->waiting->getFuture()->await();
-                } while ($this->waiting !== null);
+                } while ($this->waiting);
             } else {
                 // Shift a worker off the idle queue.
                 $worker = $this->idleWorkers->shift();
@@ -249,7 +241,7 @@ final class DefaultPool implements Pool
 
             // Worker crashed; trigger error and remove it from the pool.
 
-            EventLoop::queue(function () use ($worker): void {
+            EventLoop::queue(static function () use ($worker): void {
                 try {
                     $code = $worker->shutdown();
                     \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);
