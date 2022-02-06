@@ -23,9 +23,12 @@ final class ContextPanicError extends \Error
 
         parent::__construct(
             \sprintf($format, $className, $originalMessage, $originalCode, self::class),
-            $originalCode,
+            0, // don't use $originalCode here due to string codes
             $previous
         );
+
+        /** @psalm-suppress PossiblyInvalidPropertyAssignmentValue */
+        $this->code = $this->originalCode;
     }
 
     /**

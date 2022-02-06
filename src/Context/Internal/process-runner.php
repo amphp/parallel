@@ -54,6 +54,8 @@ EventLoop::queue(function () use ($argc, $argv): void {
 
     [, $uri, $length, $timeout] = $argv;
 
+    \assert($length > 0);
+
     // Remove script path, socket path, key length, and timeout from process arguments.
     $argc -= 4;
     $argv = \array_slice($argv, 4);
@@ -61,6 +63,7 @@ EventLoop::queue(function () use ($argc, $argv): void {
     $cancellation = new TimeoutCancellation((int) $timeout);
 
     try {
+        /** @psalm-suppress ArgumentTypeCoercion */
         $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, (int) $length);
         $socket = Ipc\connect($uri, $key, $cancellation);
     } catch (\Throwable $exception) {

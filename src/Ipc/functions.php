@@ -45,6 +45,7 @@ function readKey(
 
     // Read random key from $stream and send back to parent over IPC socket to authenticate.
     do {
+        /** @psalm-suppress ArgumentTypeCoercion */
         if (($chunk = $stream->read($cancellation, $keyLength - \strlen($key))) === null) {
             throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
         }

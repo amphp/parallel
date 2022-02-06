@@ -35,6 +35,7 @@ final class DefaultWorkerPool implements WorkerPool
 
     private ?DeferredFuture $waiting = null;
 
+    /** @var \Closure(Worker):void */
     private \Closure $push;
 
     private ?Future $exitStatus = null;
@@ -144,8 +145,6 @@ final class DefaultWorkerPool implements WorkerPool
     /**
      * Shuts down the pool and all workers in it.
      *
-     * @return int
-     *
      * @throws StatusError If the pool has not been started.
      */
     public function shutdown(): void
@@ -244,8 +243,8 @@ final class DefaultWorkerPool implements WorkerPool
 
             EventLoop::queue(static function () use ($worker): void {
                 try {
-                    $code = $worker->shutdown();
-                    \trigger_error('Worker in pool exited unexpectedly with code ' . $code, \E_USER_WARNING);
+                    $worker->shutdown();
+                    \trigger_error('Worker in pool exited unexpectedly', \E_USER_WARNING);
                 } catch (\Throwable $exception) {
                     \trigger_error(
                         'Worker in pool crashed with exception on shutdown: ' . $exception->getMessage(),

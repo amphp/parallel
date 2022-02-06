@@ -17,6 +17,7 @@ final class SocketIpcHub implements IpcHub
 
     private int $nextId = 0;
 
+    /** @var non-empty-string */
     private string $uri;
 
     /** @var int[] */

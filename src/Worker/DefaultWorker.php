@@ -180,6 +180,7 @@ final class DefaultWorker implements Worker
             self::receive($this->context, $this->onReceive);
         }
 
+        /** @psalm-suppress InvalidArgument */
         return new Execution($task, $channel, $future);
     }
 

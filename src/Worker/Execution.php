@@ -26,7 +26,7 @@ final class Execution
     }
 
     /**
-     * @return Task<TResult, TReceive, TSend>
+     * @return Task<TResult, TReceive, TSend, TCache>
      */
     public function getTask(): Task
     {

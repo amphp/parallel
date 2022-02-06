@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
-require \dirname(__DIR__).'/vendor/autoload.php';
+
+require __DIR__ . '/../vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Parallel\Context\ProcessContext;
@@ -20,8 +21,8 @@ $parcel = SharedMemoryParcel::create($mutex, 1);
 // Send semaphore and parcel key to child process as command argument.
 $context = ProcessContext::start([
     __DIR__ . "/contexts/parcel-process.php",
-    $semaphore->getKey(),
-    $parcel->getKey(),
+    (string) $semaphore->getKey(),
+    (string) $parcel->getKey(),
 ]);
 
 // Pipe any data written to the STDOUT in the child process to STDOUT of this process.

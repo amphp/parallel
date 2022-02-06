@@ -25,9 +25,12 @@ final class TaskFailureError extends \Error implements TaskFailureThrowable
 
         parent::__construct(
             \sprintf($format, $className, $originalMessage, $originalCode, self::class),
-            $originalCode,
+            0, // don't use $originalCode here due to string codes
             $previous
         );
+
+        /** @psalm-suppress PossiblyInvalidPropertyAssignmentValue */
+        $this->code = $this->originalCode;
     }
 
     /**

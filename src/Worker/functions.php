@@ -45,7 +45,7 @@ function workerPool(?WorkerPool $pool = null): WorkerPool
  * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
  * this to have any effect.
  *
- * @return Execution<TResult, TReceive, TSend>
+ * @return Execution<TResult, TReceive, TSend, TCache>
  */
 function submit(Task $task, ?Cancellation $cancellation = null): Execution
 {
