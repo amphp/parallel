@@ -14,7 +14,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("Invalid cache class name 'Invalid'");
 
-        $factory = new DefaultWorkerFactory("Invalid");
+        new DefaultWorkerFactory(cacheClass: "Invalid");
     }
 
     public function testNonCacheClassName(): void
@@ -22,7 +22,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage(\sprintf("does not implement '%s'", Cache::class));
 
-        $factory = new DefaultWorkerFactory(DefaultWorkerFactory::class);
+        new DefaultWorkerFactory(cacheClass: DefaultWorkerFactory::class);
     }
 
     public function testCreate(): void
@@ -34,9 +34,9 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    public function testAutoloading()
+    public function testAutoloading(): void
     {
-        $factory = new DefaultWorkerFactory(bootstrapPath: __DIR__ . '/Fixtures/custom-bootstrap.php');
+        $factory = new DefaultWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php');
 
         $worker = $factory->create();
 
@@ -45,12 +45,12 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $worker->shutdown();
     }
 
-    public function testInvalidAutoloaderPath()
+    public function testInvalidAutoloaderPath(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('No file found at bootstrap path given');
 
-        $factory = new DefaultWorkerFactory(bootstrapPath: __DIR__ . '/Fixtures/not-found.php');
+        $factory = new DefaultWorkerFactory(__DIR__ . '/Fixtures/not-found.php');
 
         $worker = $factory->create();
 

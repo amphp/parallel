@@ -352,9 +352,9 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
     {
         $factory = new DefaultWorkerFactory(
-            cacheClass: $cacheClass,
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
+            cacheClass: $cacheClass,
         );
 
         return $factory->create();

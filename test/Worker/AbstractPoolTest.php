@@ -14,7 +14,13 @@ use Revolt\EventLoop;
 
 abstract class AbstractPoolTest extends AbstractWorkerTest
 {
-    public function testShutdownShouldReturnSameResult()
+    public function testNotIdleOnSubmit(): void
+    {
+        // Skip, because workers ARE idle even after submitting a job
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function testShutdownShouldReturnSameResult(): void
     {
         $pool = $this->createPool();
 
@@ -24,7 +30,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         self::assertSame($result, $pool->shutdown());
     }
 
-    public function testPullShouldThrowStatusError()
+    public function testPullShouldThrowStatusError(): void
     {
         $this->expectException(StatusError::class);
         $this->expectExceptionMessage('shut down');
@@ -44,7 +50,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         self::assertEquals(17, $pool->getLimit());
     }
 
-    public function testWorkersIdleOnStart()
+    public function testWorkersIdleOnStart(): void
     {
         $pool = $this->createPool();
 
@@ -53,7 +59,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         $pool->shutdown();
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $pool = $this->createPool();
 
@@ -70,7 +76,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         $worker->kill();
     }
 
-    public function testBusyPool()
+    public function testBusyPool(): void
     {
         $pool = $this->createPool(2);
 
@@ -102,7 +108,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         $this->createPool(-1);
     }
 
-    public function testCleanGarbageCollection()
+    public function testCleanGarbageCollection(): void
     {
         // See https://github.com/amphp/parallel-functions/issues/5
         for ($i = 0; $i < 3; $i++) {
@@ -118,7 +124,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         }
     }
 
-    public function testPooledKill()
+    public function testPooledKill(): void
     {
         EventLoop::setErrorHandler(function (\Throwable $exception): void {
             $this->assertStringContainsString("Worker in pool crashed", $exception->getMessage());
@@ -152,9 +158,9 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         ?string $autoloadPath = null
     ): WorkerPool {
         $factory = new DefaultWorkerFactory(
-            cacheClass: $cacheClass,
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
+            cacheClass: $cacheClass,
         );
 
         return new DefaultWorkerPool($max, $factory);
