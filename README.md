@@ -32,7 +32,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Amp\Future;
 use Amp\Parallel\Worker;
-use function Amp\launch;
+use function Amp\async;
 
 $urls = [
     'https://secure.php.net',
@@ -42,22 +42,21 @@ $urls = [
 
 $futures = [];
 foreach ($urls as $url) {
-    // TODO: Adjust to new APIs
-    $futures[$url] = launch(fn () => Worker\enqueueCallable('file_get_contents', $url));
+    // FetchTask is just an example, you'll have to implement the Task interface for your task
+    $futures[$url] = async(fn () => Worker\submit(new FetchTask, $url));
 }
 
-$responses = Future\all($futures);
+$responses = Future\await($futures);
 
 foreach ($responses as $url => $response) {
     \printf("Read %d bytes from %s\n", \strlen($response), $url);
 }
 ```
 
-[`file_get_contents`](https://secure.php.net/file_get_contents) is just used as an example for a blocking function here.
+`FetchTask` is just used as an example for a blocking function here.
 If you just want to fetch multiple HTTP resources concurrently, it's better to use [`amphp/http-client`](https://amphp.org/http-client/), our non-blocking HTTP client.
 
 The functions you call must be predefined or autoloadable by Composer, so they also exist in the worker processes.
-Instead of simple callables, you can also submit `Task` instances with `Amp\Parallel\Worker\submit()`.
 
 ## Documentation
 
