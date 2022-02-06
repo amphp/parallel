@@ -2,7 +2,15 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cache\Cache;
 use Amp\Cancellation;
+use Amp\CancelledException;
+use Amp\DeferredCancellation;
+use Amp\Future;
+use Amp\Parallel\Worker\Internal\JobChannel;
+use Amp\Pipeline\Queue;
+use Amp\Serialization\SerializationException;
+use Amp\Sync\Channel;
 use Revolt\EventLoop;
 
 /**
@@ -82,4 +90,82 @@ function workerFactory(WorkerFactory $factory = null): WorkerFactory
     }
 
     return $map[$driver] ??= new DefaultWorkerFactory();
+}
+
+/**
+ * Runs the tasks, receiving tasks from the parent and sending the result of those tasks.
+ */
+function runTasks(Channel $channel, Cache $cache): void
+{
+    /** @var array<string, DeferredCancellation> */
+    $cancellationSources = [];
+
+    /** @var array<string, Queue> */
+    $queues = [];
+
+    while ($data = $channel->receive()) {
+        // New Task execution request.
+        if ($data instanceof Internal\TaskEnqueue) {
+            $id = $data->getId();
+
+            $cancellationSources[$id] = $source = new DeferredCancellation;
+            $queues[$id] = $queue = new Queue();
+
+            $jobChannel = new JobChannel($id, $channel, $queue->iterate(), static fn () => $source->cancel());
+
+            EventLoop::queue(static function () use (
+                &$cancellationSources,
+                &$queues,
+                $data,
+                $id,
+                $source,
+                $queue,
+                $jobChannel,
+                $channel,
+                $cache
+            ): void {
+                try {
+                    $result = $data->getTask()->run($jobChannel, $cache, $source->getCancellation());
+
+                    if ($result instanceof Future) {
+                        $result = $result->await($source->getCancellation());
+                    }
+
+                    $result = new Internal\TaskSuccess($data->getId(), $result);
+                } catch (\Throwable $exception) {
+                    if ($exception instanceof CancelledException && $source->getCancellation()->isRequested()) {
+                        $result = new Internal\TaskCancelled($id, $exception);
+                    } else {
+                        $result = new Internal\TaskFailure($id, $exception);
+                    }
+                } finally {
+                    $queue->complete();
+                    unset($cancellationSources[$id], $queues[$id]);
+                }
+
+                try {
+                    $channel->send($result);
+                } catch (SerializationException $exception) {
+                    // Could not serialize task result.
+                    $channel->send(new Internal\TaskFailure($id, $exception));
+                }
+            });
+            continue;
+        }
+
+        // Channel message.
+        if ($data instanceof Internal\JobMessage) {
+            ($queues[$data->getId()] ?? null)?->pushAsync($data->getMessage())->ignore();
+            continue;
+        }
+
+        // Cancellation signal.
+        if ($data instanceof Internal\JobCancellation) {
+            ($cancellationSources[$data->getId()] ?? null)?->cancel();
+            continue;
+        }
+
+        // Should not happen, but just in case...
+        throw new \Error('Invalid value received in ' . __FUNCTION__);
+    }
 }

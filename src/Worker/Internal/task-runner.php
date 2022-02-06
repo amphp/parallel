@@ -43,8 +43,7 @@ return static function (Channel $channel) use ($argc, $argv): int {
 
     $cache = new $className;
 
-    $runner = new Worker\TaskRunner($channel, $cache);
-    $runner->run();
+    Worker\runTasks($channel, $cache);
 
     return 0;
 };
