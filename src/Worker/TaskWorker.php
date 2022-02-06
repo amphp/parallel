@@ -196,7 +196,7 @@ final class TaskWorker implements Worker
             }
 
             // Wait for pending tasks to finish.
-            Future\settle(\array_map(fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
+            Future\awaitAll(\array_map(static fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
             $this->context->send(0);
 
