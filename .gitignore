@@ -6,3 +6,4 @@ composer.lock
 docs/Gemfile.lock
 phpunit.xml
 vendor
+composer-require-checker.phar

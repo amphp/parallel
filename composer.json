@@ -34,7 +34,8 @@
         "amphp/process": "^2",
         "amphp/serialization": "^1",
         "amphp/socket": "^2",
-        "amphp/sync": "v2.x-dev"
+        "amphp/sync": "v2.x-dev",
+        "revolt/event-loop": "^0.2.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^9",

@@ -1,0 +1,38 @@
+{
+    "symbol-whitelist": [
+        "null",
+        "true",
+        "false",
+        "static",
+        "self",
+        "parent",
+        "array",
+        "string",
+        "int",
+        "float",
+        "bool",
+        "iterable",
+        "callable",
+        "mixed",
+        "void",
+        "object",
+        "readKey",
+        "formatFlattenedBacktrace",
+        "contextFactory",
+        "workerFactory",
+        "workerPool",
+        "parallel\\Events",
+        "parallel\\Future",
+        "parallel\\Runtime"
+    ],
+    "php-core-extensions": [
+        "Core",
+        "date",
+        "pcre",
+        "Phar",
+        "Reflection",
+        "SPL",
+        "standard",
+        "hash"
+    ]
+}
