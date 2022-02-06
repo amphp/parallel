@@ -111,7 +111,7 @@ function runTasks(Channel $channel, Cache $cache): void
             $cancellationSources[$id] = $source = new DeferredCancellation;
             $queues[$id] = $queue = new Queue();
 
-            $jobChannel = new JobChannel($id, $channel, $queue->iterate(), static fn () => $source->cancel());
+            $jobChannel = new JobChannel($id, $channel, $queue->iterate());
 
             EventLoop::queue(static function () use (
                 &$cancellationSources,

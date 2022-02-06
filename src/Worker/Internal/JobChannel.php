@@ -16,12 +16,15 @@ final class JobChannel implements Channel
         private string $id,
         private Channel $channel,
         private ConcurrentIterator $iterator,
-        private \Closure $cancel,
     ) {
     }
 
     public function send(mixed $data): void
     {
+        if ($this->closed) {
+            throw new ChannelException('Channel has already been closed.');
+        }
+
         $this->channel->send(new JobMessage($this->id, $data));
     }
 
@@ -38,7 +41,6 @@ final class JobChannel implements Channel
     {
         $this->closed = true;
         $this->iterator->dispose();
-        ($this->cancel)();
     }
 
     public function isClosed(): bool

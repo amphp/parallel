@@ -176,7 +176,7 @@ final class DefaultWorker implements Worker
         }
 
         $this->queues[$jobId] = $queue = new Queue();
-        $channel = new Internal\JobChannel($jobId, $this->context, $queue->iterate(), $cancel);
+        $channel = new Internal\JobChannel($jobId, $this->context, $queue->iterate());
 
         if ($receive) {
             self::receive($this->context, $this->onReceive);
