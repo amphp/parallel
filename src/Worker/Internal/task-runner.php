@@ -6,7 +6,7 @@ use Amp\Cache\Cache;
 use Amp\Parallel\Worker;
 use Amp\Sync\Channel;
 
-return function (Channel $channel) use ($argc, $argv): int {
+return static function (Channel $channel) use ($argc, $argv): int {
     if (!\defined("AMP_WORKER")) {
         \define("AMP_WORKER", \AMP_CONTEXT);
     }
@@ -44,6 +44,7 @@ return function (Channel $channel) use ($argc, $argv): int {
     $cache = new $className;
 
     $runner = new Worker\TaskRunner($channel, $cache);
+    $runner->run();
 
-    return $runner->run();
+    return 0;
 };

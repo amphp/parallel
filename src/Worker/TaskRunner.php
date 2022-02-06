@@ -29,7 +29,7 @@ final class TaskRunner
     /**
      * Runs the task runner, receiving tasks from the parent and sending the result of those tasks.
      */
-    public function run(): int
+    public function run(): void
     {
         while ($data = $this->channel->receive()) {
             // New Task execution request.
@@ -84,7 +84,5 @@ final class TaskRunner
             // Should not happen, but just in case...
             throw new \Error('Invalid value received in ' . self::class);
         }
-
-        return 0;
     }
 }
