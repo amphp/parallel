@@ -16,9 +16,11 @@ use Revolt\EventLoop;
 use function Amp\async;
 
 /**
- * Base class for workers executing {@see Task}s.
+ * Default worker implementation executing {@see Task}s.
+ *
+ * Use {@see TaskRunner} to run tasks.
  */
-final class TaskWorker implements Worker
+final class DefaultWorker implements Worker
 {
     private const SHUTDOWN_TIMEOUT = 1;
     private const ERROR_TIMEOUT = 0.25;
