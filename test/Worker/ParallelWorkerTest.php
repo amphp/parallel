@@ -14,7 +14,7 @@ class ParallelWorkerTest extends AbstractWorkerTest
     public function createContextFactory(): ContextFactory
     {
         return new class implements ContextFactory {
-            public function create(array|string $script): Context
+            public function start(array|string $script): Context
             {
                 return ParallelContext::start($script);
             }

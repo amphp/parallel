@@ -16,5 +16,5 @@ interface ContextFactory
      *
      * @return Context<TResult, TReceive, TSend>
      */
-    public function create(string|array $script): Context;
+    public function start(string|array $script): Context;
 }

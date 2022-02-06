@@ -15,9 +15,9 @@ use Revolt\EventLoop;
  *
  * @return Context<TResult, TReceive, TSend>
  */
-function createContext(string|array $script): Context
+function startContext(string|array $script): Context
 {
-    return contextFactory()->create($script);
+    return contextFactory()->start($script);
 }
 
 /**

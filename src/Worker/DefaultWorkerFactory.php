@@ -61,6 +61,6 @@ final class DefaultWorkerFactory implements WorkerFactory
             $script[] = $this->bootstrapPath;
         }
 
-        return new TaskWorker($this->contextFactory->create($script));
+        return new TaskWorker($this->contextFactory->start($script));
     }
 }

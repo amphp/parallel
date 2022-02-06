@@ -15,7 +15,7 @@ final class DefaultContextFactory implements ContextFactory
      *
      * @throws ContextException
      */
-    public function create(string|array $script): Context
+    public function start(string|array $script): Context
     {
         /**
          * Creates a thread if ext-parallel is installed, otherwise creates a child process.
