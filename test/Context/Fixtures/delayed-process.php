@@ -1,6 +1,6 @@
 <?php
 
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 use function Amp\delay;
 
 return function (Channel $channel) use ($argv) {

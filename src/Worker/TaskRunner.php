@@ -3,13 +3,13 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
-use Amp\DeferredCancellation;
 use Amp\CancelledException;
-use Amp\Future;
-use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\SerializationException;
+use Amp\DeferredCancellation;
+use Amp\Future;;
 use Amp\Parallel\Worker\Internal\JobChannel;
-use Amp\Pipeline\Emitter;
+use Amp\Pipeline\Queue;
+use Amp\Serialization\SerializationException;
+use Amp\Sync\Channel;
 use Revolt\EventLoop;
 
 final class TaskRunner
@@ -17,8 +17,8 @@ final class TaskRunner
     /** @var array<string, DeferredCancellation> */
     private array $cancellationSources = [];
 
-    /** @var array<string, Emitter> */
-    private array $emitters = [];
+    /** @var array<string, Queue> */
+    private array $queues = [];
 
     public function __construct(
         private Channel $channel,
@@ -36,10 +36,10 @@ final class TaskRunner
             if ($data instanceof Internal\TaskEnqueue) {
                 $id = $data->getId();
                 $this->cancellationSources[$id] = $source = new DeferredCancellation;
-                $this->emitters[$id] = $emitter = new Emitter();
-                $channel = new JobChannel($id, $this->channel, $emitter->pipe());
+                $this->queues[$id] = $queue = new Queue();
+                $channel = new JobChannel($id, $this->channel, $queue->iterate(), static fn () => $source->cancel());
 
-                EventLoop::queue(function () use ($data, $id, $source, $emitter, $channel): void {
+                EventLoop::queue(function () use ($data, $id, $source, $queue, $channel): void {
                     try {
                         $result = $data->getTask()->run($channel, $this->cache, $source->getCancellation());
 
@@ -55,8 +55,8 @@ final class TaskRunner
                             $result = new Internal\TaskFailure($id, $exception);
                         }
                     } finally {
-                        $emitter->complete();
-                        unset($this->cancellationSources[$id], $this->emitters[$id]);
+                        $queue->complete();
+                        unset($this->cancellationSources[$id], $this->queues[$id]);
                     }
 
                     try {
@@ -71,7 +71,7 @@ final class TaskRunner
 
             // Channel message.
             if ($data instanceof Internal\JobMessage) {
-                ($this->emitters[$data->getId()] ?? null)?->emit($data->getMessage())->ignore();
+                ($this->queues[$data->getId()] ?? null)?->emit($data->getMessage())->ignore();
                 continue;
             }
 

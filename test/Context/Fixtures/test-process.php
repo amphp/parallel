@@ -1,6 +1,6 @@
 <?php
 
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 
 return function (Channel $channel) use ($argv): string {
     if (!isset($argv[1])) {

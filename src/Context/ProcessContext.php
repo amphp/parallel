@@ -6,12 +6,12 @@ use Amp\ByteStream\ReadableResourceStream;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
-use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
+use Amp\Sync\ChannelException;
+use Amp\Sync\StreamChannel;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 
@@ -136,7 +136,7 @@ final class ProcessContext implements Context
         try {
             $process->getStdin()->write($key);
             $socket = $ipcHub->accept($key, $cancellation);
-            $channel = new ChannelledStream($socket, $socket);
+            $channel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {
                 $process->kill();
@@ -181,11 +181,11 @@ final class ProcessContext implements Context
 
     /**
      * @param Process $process
-     * @param ChannelledStream<TReceive, TSend> $channel
+     * @param StreamChannel<TReceive, TSend> $channel
      */
     private function __construct(
         private Process $process,
-        private ChannelledStream $channel,
+        private StreamChannel $channel,
     ) {
     }
 

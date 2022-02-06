@@ -4,8 +4,8 @@ namespace Amp\Parallel\Test\Worker\Fixtures;
 
 use Amp\Cache\Cache;
 use Amp\Cancellation;
-use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker\Task;
+use Amp\Sync\Channel;
 
 class UnserializableResultTask implements Task
 {

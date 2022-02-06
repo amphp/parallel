@@ -6,11 +6,11 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Context\Internal\ParallelHub;
-use Amp\Parallel\Sync\ChannelException;
-use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Parallel\Sync\IpcHub;
-use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Sync\SynchronizationError;
+use Amp\Serialization\SerializationException;
+use Amp\Sync\ChannelException;
+use Amp\Sync\StreamChannel;
 use Amp\TimeoutCancellation;
 use parallel\Runtime;
 use Revolt\EventLoop;
@@ -51,8 +51,8 @@ final class ParallelContext implements Context
 
     private ?Runtime $runtime;
 
-    /** @var ChannelledStream|null A channel for communicating with the parallel thread. */
-    private ?ChannelledStream $channel;
+    /** @var StreamChannel|null A channel for communicating with the parallel thread. */
+    private ?StreamChannel $channel;
 
     private int $oid;
 
@@ -125,7 +125,7 @@ final class ParallelContext implements Context
             EventLoop::queue(function () use ($uri, $key, $path, $argv): void {
                 try {
                     $socket = IpcHub::connect($uri, $key);
-                    $channel = new ChannelledStream($socket, $socket);
+                    $channel = new StreamChannel($socket, $socket);
                 } catch (\Throwable $exception) {
                     \trigger_error($exception->getMessage(), E_USER_ERROR);
                 }
@@ -197,7 +197,7 @@ final class ParallelContext implements Context
 
         try {
             $socket = $hub->accept($key);
-            $channel = new ChannelledStream($socket, $socket);
+            $channel = new StreamChannel($socket, $socket);
             $hub->add($id, $channel, $future);
         } catch (\Throwable $exception) {
             $runtime->kill();
@@ -210,7 +210,7 @@ final class ParallelContext implements Context
     private function __construct(
         int $id,
         Runtime $runtime,
-        ChannelledStream $channel,
+        StreamChannel $channel,
         private ParallelHub $hub,
     ) {
         $this->oid = \getmypid();
@@ -388,7 +388,7 @@ final class ParallelContext implements Context
     /**
      * Closes channel and socket if still open.
      */
-    private function close(): void
+    public function close(): void
     {
         $this->runtime = null;
 
@@ -399,5 +399,10 @@ final class ParallelContext implements Context
         $this->channel = null;
 
         $this->hub->remove($this->id);
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->channel && $this->channel->isClosed();
     }
 }

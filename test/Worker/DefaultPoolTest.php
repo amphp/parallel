@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Future;
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 use Amp\Parallel\Worker\DefaultPool;
 use Amp\Parallel\Worker\Job;
 use Amp\Parallel\Worker\Task;

@@ -3,7 +3,7 @@
 // The function returned by this script is run by process.php in a separate process.
 // $argc and $argv are available in this process as any other cli PHP script.
 
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 
 return function (Channel $channel): int {
     \printf("Received the following from parent: %s\n", $channel->receive());

@@ -3,16 +3,19 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
-use Amp\Parallel\Sync\Channel;
-use Amp\Pipeline\Pipeline;
+use Amp\Parallel\Context\Context;
+use Amp\Pipeline\ConcurrentIterator;
+use Amp\Sync\Channel;
+use Amp\Sync\ChannelException;
 
 /** @internal */
 final class JobChannel implements Channel
 {
     public function __construct(
         private string $id,
-        private Channel $channel,
-        private Pipeline $pipeline,
+        private Context|Channel $channel,
+        private ConcurrentIterator $iterator,
+        private \Closure $cancel,
     ) {
     }
 
@@ -23,6 +26,21 @@ final class JobChannel implements Channel
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
-        return $this->pipeline->continue($cancellation);
+        if (!$this->iterator->continue($cancellation)) {
+            throw new ChannelException('Channel source closed unexpectedly');
+        }
+
+        return $this->iterator->getValue();
+    }
+
+    public function close(): void
+    {
+        $this->iterator->dispose();
+        ($this->cancel)();
+    }
+
+    public function isClosed(): bool
+    {
+        return !$this->channel->isRunning();
     }
 }

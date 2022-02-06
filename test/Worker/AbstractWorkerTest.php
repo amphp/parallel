@@ -8,8 +8,6 @@ use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Sync\Channel;
-use Amp\Parallel\Sync\SerializationException;
 use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
@@ -17,9 +15,11 @@ use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\Serialization\SerializationException;
+use Amp\Sync\Channel;
 use Amp\TimeoutCancellation;
-use function Amp\delay;
 use function Amp\async;
+use function Amp\delay;
 
 class NonAutoloadableTask implements Task
 {

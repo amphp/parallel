@@ -4,8 +4,8 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Cancellation;
 use Amp\Parallel\Sync\IpcHub;
-use Amp\Parallel\Sync\ChannelledStream;
 use Amp\Socket\ResourceSocket;
+use Amp\Sync\StreamChannel;
 use parallel\Events;
 use parallel\Future;
 use Revolt\EventLoop;
@@ -14,7 +14,7 @@ final class ParallelHub
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
 
-    /** @var ChannelledStream[] */
+    /** @var StreamChannel[] */
     private array $channels = [];
 
     private string $watcher;
@@ -59,7 +59,7 @@ final class ParallelHub
         return $this->hub->getUri();
     }
 
-    public function add(int $id, ChannelledStream $channel, Future $future): void
+    public function add(int $id, StreamChannel $channel, Future $future): void
     {
         $this->channels[$id] = $channel;
         $this->events->addFuture((string) $id, $future);

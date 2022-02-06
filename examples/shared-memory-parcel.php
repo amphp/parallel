@@ -4,18 +4,24 @@ require \dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Parallel\Context\ProcessContext;
-use Amp\Parallel\Sync\SharedMemoryParcel;
+use Amp\Sync\PosixSemaphore;
+use Amp\Sync\SemaphoreMutex;
+use Amp\Sync\SharedMemoryParcel;
 use function Amp\async;
 use function Amp\delay;
 
+$mutex = new SemaphoreMutex($semaphore = PosixSemaphore::create(1));
+
 // Create a parcel that then can be accessed in any number of child processes.
-$parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);
+$parcel = SharedMemoryParcel::create($mutex, 1);
 
-\printf("Parent %d created parcel: %s\n", \getmypid(), $id);
+\printf("Parent %d created semaphore %s and parcel: %s\n", \getmypid(), $semaphore->getKey(), $parcel->getKey());
 
+// Send semaphore and parcel key to child process as command argument.
 $context = ProcessContext::start([
     __DIR__ . "/parcel-process.php",
-    $id, // Send parcel ID to child process as command argument.
+    $semaphore->getKey(),
+    $parcel->getKey(),
 ]);
 
 // Pipe any data written to the STDOUT in the child process to STDOUT of this process.

@@ -3,10 +3,10 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cache\Cache;
-use Amp\Parallel\Sync;
 use Amp\Parallel\Worker;
+use Amp\Sync\Channel;
 
-return function (Sync\Channel $channel) use ($argc, $argv): int {
+return function (Channel $channel) use ($argc, $argv): int {
     if (!\defined("AMP_WORKER")) {
         \define("AMP_WORKER", \AMP_CONTEXT);
     }

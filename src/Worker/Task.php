@@ -4,7 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cancellation;
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 
 /**
  * A runnable unit of execution.

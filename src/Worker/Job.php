@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Future;
-use Amp\Parallel\Sync\Channel;
+use Amp\Sync\Channel;
 
 /**
  * @template TResult

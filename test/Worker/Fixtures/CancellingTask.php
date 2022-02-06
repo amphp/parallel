@@ -6,8 +6,8 @@ use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\DeferredFuture;
 use Amp\Future;
-use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker\Task;
+use Amp\Sync\Channel;
 
 class CancellingTask implements Task
 {
