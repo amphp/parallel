@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Context;
 
 use Amp\ByteStream\ReadableResourceStream;
+use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
@@ -11,7 +12,6 @@ use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
 use Amp\Sync\ChannelException;
-use Amp\Sync\StreamChannel;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 
@@ -362,5 +362,15 @@ final class ProcessContext implements Context
     {
         $this->process->kill();
         $this->channel->close();
+    }
+
+    public function close(): void
+    {
+        $this->kill();
+    }
+
+    public function isClosed(): bool
+    {
+        return !$this->isRunning();
     }
 }

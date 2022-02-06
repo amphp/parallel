@@ -27,7 +27,7 @@
     "require": {
         "php": ">=8",
         "amphp/amp": "^3",
-        "amphp/byte-stream": "^2",
+        "amphp/byte-stream": "v2.x-dev",
         "amphp/cache": "^2",
         "amphp/parser": "^1",
         "amphp/pipeline": "^1",

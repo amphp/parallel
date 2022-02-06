@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
@@ -10,7 +11,6 @@ use Amp\Parallel\Sync\IpcHub;
 use Amp\Parallel\Sync\SynchronizationError;
 use Amp\Serialization\SerializationException;
 use Amp\Sync\ChannelException;
-use Amp\Sync\StreamChannel;
 use Amp\TimeoutCancellation;
 use parallel\Runtime;
 use Revolt\EventLoop;
@@ -258,7 +258,7 @@ final class ParallelContext implements Context
             try {
                 $this->runtime->kill();
             } finally {
-                $this->close();
+                $this->cleanup();
             }
         }
     }
@@ -281,7 +281,7 @@ final class ParallelContext implements Context
 
         try {
             $response = $this->channel->receive();
-            $this->close();
+            $this->cleanup();
         } catch (\Throwable $exception) {
             $this->kill();
             throw new ContextException("Failed to receive result from thread", 0, $exception);
@@ -388,7 +388,7 @@ final class ParallelContext implements Context
     /**
      * Closes channel and socket if still open.
      */
-    public function close(): void
+    private function cleanup(): void
     {
         $this->runtime = null;
 
@@ -401,8 +401,16 @@ final class ParallelContext implements Context
         $this->hub->remove($this->id);
     }
 
+    /**
+     * Alias of {@see kill()}.
+     */
+    public function close(): void
+    {
+        $this->kill();
+    }
+
     public function isClosed(): bool
     {
-        return $this->channel && $this->channel->isClosed();
+        return !$this->isRunning();
     }
 }

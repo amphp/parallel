@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
-use Amp\Parallel\Context\Context;
 use Amp\Pipeline\ConcurrentIterator;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
@@ -11,12 +10,15 @@ use Amp\Sync\ChannelException;
 /** @internal */
 final class JobChannel implements Channel
 {
+    private bool $closed;
+
     public function __construct(
         private string $id,
-        private Context|Channel $channel,
+        private Channel $channel,
         private ConcurrentIterator $iterator,
         private \Closure $cancel,
     ) {
+        $this->channel->isClosed();
     }
 
     public function send(mixed $data): void
@@ -35,12 +37,13 @@ final class JobChannel implements Channel
 
     public function close(): void
     {
+        $this->closed = true;
         $this->iterator->dispose();
         ($this->cancel)();
     }
 
     public function isClosed(): bool
     {
-        return !$this->channel->isRunning();
+        return $this->channel->isClosed() || $this->closed;
     }
 }

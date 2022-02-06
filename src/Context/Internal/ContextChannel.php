@@ -29,6 +29,6 @@ final class ContextChannel implements Channel
 
     public function isClosed(): bool
     {
-        return false;
+        return $this->channel->isClosed();
     }
 }

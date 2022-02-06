@@ -71,7 +71,7 @@ final class TaskRunner
 
             // Channel message.
             if ($data instanceof Internal\JobMessage) {
-                ($this->queues[$data->getId()] ?? null)?->emit($data->getMessage())->ignore();
+                ($this->queues[$data->getId()] ?? null)?->pushAsync($data->getMessage())->ignore();
                 continue;
             }
 

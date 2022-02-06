@@ -5,12 +5,12 @@ namespace Amp\Parallel\Test\Worker;
 use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\Future;
-use Amp\Parallel\Sync\Channel;
 use Amp\Parallel\Worker;
 use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\Sync\Channel;
 
 function nonAutoloadableFunction(): void
 {

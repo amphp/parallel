@@ -3,11 +3,11 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\ByteStream;
+use Amp\ByteStream\StreamChannel;
 use Amp\Future;
 use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Sync\IpcHub;
 use Amp\Serialization\SerializationException;
-use Amp\Sync\StreamChannel;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 
