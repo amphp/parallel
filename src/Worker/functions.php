@@ -57,7 +57,7 @@ function submit(Task $task, ?Cancellation $cancellation = null): Execution
  *
  * @return Worker
  */
-function pooledWorker(): Worker
+function getWorker(): Worker
 {
     return workerPool()->getWorker();
 }

@@ -68,7 +68,7 @@ class FunctionsTest extends AsyncTestCase
 
         Worker\workerPool($pool);
 
-        $worker = Worker\pooledWorker();
+        $worker = Worker\getWorker();
 
         self::assertInstanceOf(Worker\Worker::class, $worker);
     }
