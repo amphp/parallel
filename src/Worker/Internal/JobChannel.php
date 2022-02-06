@@ -10,7 +10,7 @@ use Amp\Sync\ChannelException;
 /** @internal */
 final class JobChannel implements Channel
 {
-    private bool $closed;
+    private bool $closed = false;
 
     public function __construct(
         private string $id,
@@ -18,7 +18,6 @@ final class JobChannel implements Channel
         private ConcurrentIterator $iterator,
         private \Closure $cancel,
     ) {
-        $this->channel->isClosed();
     }
 
     public function send(mixed $data): void
