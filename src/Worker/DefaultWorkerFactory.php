@@ -14,7 +14,7 @@ final class DefaultWorkerFactory implements WorkerFactory
 {
     public const SCRIPT_PATH = __DIR__ . "/Internal/task-runner.php";
 
-    private ContextFactory $contextFactory;
+    private ?ContextFactory $contextFactory;
 
     /**
      * @param string $cacheClass Name of class implementing {@see Cache} to instantiate in each worker. Defaults
@@ -27,7 +27,7 @@ final class DefaultWorkerFactory implements WorkerFactory
         ?ContextFactory $contextFactory = null,
         private string $cacheClass = LocalCache::class,
     ) {
-        $this->contextFactory = $contextFactory ?? contextFactory();
+        $this->contextFactory = $contextFactory;
 
         if (!\class_exists($this->cacheClass)) {
             throw new \Error(\sprintf("Invalid cache class name '%s'", $this->cacheClass));
@@ -61,6 +61,6 @@ final class DefaultWorkerFactory implements WorkerFactory
             $script[] = $this->bootstrapPath;
         }
 
-        return new DefaultWorker($this->contextFactory->start($script));
+        return new DefaultWorker(($this->contextFactory ?? contextFactory())->start($script));
     }
 }

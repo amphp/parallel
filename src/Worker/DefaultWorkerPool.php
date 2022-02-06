@@ -25,7 +25,7 @@ final class DefaultWorkerPool implements WorkerPool
     private int $limit;
 
     /** @var WorkerFactory A worker factory to be used to create new workers. */
-    private WorkerFactory $factory;
+    private ?WorkerFactory $factory;
 
     /** @var \SplObjectStorage A collection of all workers in the pool. */
     private \SplObjectStorage $workers;
@@ -58,7 +58,7 @@ final class DefaultWorkerPool implements WorkerPool
         $this->limit = $limit;
 
         // Use the global factory if none is given.
-        $this->factory = $factory ?? workerFactory();
+        $this->factory = $factory;
 
         $this->workers = new \SplObjectStorage;
         $this->idleWorkers = new \SplQueue;
@@ -214,7 +214,7 @@ final class DefaultWorkerPool implements WorkerPool
             if ($this->idleWorkers->isEmpty()) {
                 if ($this->getWorkerCount() < $this->limit) {
                     // Max worker count has not been reached, so create another worker.
-                    $worker = $this->factory->create();
+                    $worker = ($this->factory ?? workerFactory())->create();
                     if (!$worker->isRunning()) {
                         throw new WorkerException('Worker factory did not create a viable worker');
                     }
