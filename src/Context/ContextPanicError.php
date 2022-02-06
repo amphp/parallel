@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Context;
 
-use function Amp\Parallel\Sync\formatFlattenedBacktrace;
-
 final class ContextPanicError extends \Error
 {
     /**

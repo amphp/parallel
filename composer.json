@@ -50,7 +50,7 @@
         },
         "files": [
             "src/Context/functions.php",
-            "src/Sync/functions.php",
+            "src/Ipc/functions.php",
             "src/Worker/functions.php"
         ]
     },

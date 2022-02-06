@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Parallel\Context\ContextPanicError;
-use function Amp\Parallel\Sync\flattenThrowableBacktrace;
+use function Amp\Parallel\Context\flattenThrowableBacktrace;
 
 /**
  * @internal

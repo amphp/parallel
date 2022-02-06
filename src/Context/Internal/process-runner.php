@@ -6,7 +6,7 @@ use Amp\ByteStream;
 use Amp\ByteStream\StreamChannel;
 use Amp\Future;
 use Amp\Parallel\Context\ProcessContext;
-use Amp\Parallel\Sync\IpcHub;
+use Amp\Parallel\Ipc;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
@@ -58,8 +58,8 @@ EventLoop::queue(function () use ($argc, $argv): void {
     $cancellation = new TimeoutCancellation(ProcessContext::DEFAULT_START_TIMEOUT);
 
     try {
-        $key = IpcHub::readKey(ByteStream\getStdin(), $cancellation, (int) $length);
-        $socket = IpcHub::connect($uri, $key, $cancellation);
+        $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, (int) $length);
+        $socket = Ipc\connect($uri, $key, $cancellation);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }

@@ -7,8 +7,9 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
 use Amp\Parallel\Context\Internal\ParallelHub;
-use Amp\Parallel\Sync\IpcHub;
-use Amp\Parallel\Sync\SynchronizationError;
+use Amp\Parallel\Ipc;
+use Amp\Parallel\Ipc\IpcHub;
+use Amp\Parallel\Ipc\SynchronizationError;
 use Amp\Serialization\SerializationException;
 use Amp\Sync\ChannelException;
 use Amp\TimeoutCancellation;
@@ -74,7 +75,7 @@ final class ParallelContext implements Context
         }
 
         self::$hubs ??= new \WeakMap();
-        $hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($hub ?? ipcHub()));
+        $hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($hub ?? Ipc\ipcHub()));
 
         if (!\is_array($script)) {
             $script = [$script];
@@ -124,7 +125,7 @@ final class ParallelContext implements Context
 
             EventLoop::queue(function () use ($uri, $key, $path, $argv): void {
                 try {
-                    $socket = IpcHub::connect($uri, $key);
+                    $socket = Ipc\connect($uri, $key);
                     $channel = new StreamChannel($socket, $socket);
                 } catch (\Throwable $exception) {
                     \trigger_error($exception->getMessage(), E_USER_ERROR);

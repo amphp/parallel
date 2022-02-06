@@ -1,27 +1,18 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Ipc;
 
-use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
 use Amp\Socket\ResourceSocket;
 use Amp\TimeoutCancellation;
 use Amp\Socket;
-use Amp\Socket\EncryptableSocket;
-use Amp\Socket\SocketConnector;
 use Revolt\EventLoop;
-use const Amp\Process\IS_WINDOWS;
 
-final class IpcHub
+final class SocketIpcHub implements IpcHub
 {
-    public const DEFAULT_KEY_RECEIVE_TIMEOUT = 5;
-    public const DEFAULT_KEY_LENGTH = 64;
-
     private int $nextId = 0;
-
-    private Socket\ResourceSocketServer $server;
 
     private string $uri;
 
@@ -33,39 +24,29 @@ final class IpcHub
 
     private \Closure $accept;
 
-    private ?string $toUnlink = null;
-
     /**
      * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
-     *
-     * @throws Socket\SocketException
      */
     public function __construct(
+        private Socket\SocketServer $server,
         private int $keyLength = self::DEFAULT_KEY_LENGTH,
         float $keyReceiveTimeout = self::DEFAULT_KEY_RECEIVE_TIMEOUT,
     ) {
-        if (IS_WINDOWS) {
-            $this->uri = "tcp://127.0.0.1:0";
+        $address = $this->server->getAddress();
+        if ($address->getPort() === null) {
+            $this->uri = 'unix://' . $address->toString();
         } else {
-            $suffix = \bin2hex(\random_bytes(10));
-            $path = \sys_get_temp_dir() . "/amp-parallel-ipc-" . $suffix . ".sock";
-            $this->uri = "unix://" . $path;
-            $this->toUnlink = $path;
+            $this->uri = 'tcp://' . $address->toString();
         }
 
-        $this->server = $server = Socket\listen($this->uri);
-
-        if (IS_WINDOWS) {
-            $this->uri = "tcp://127.0.0.1:" . $this->server->getAddress()->getPort();
-        }
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
         $this->accept = static function () use (&$keys, &$acceptor, $server, $keyReceiveTimeout, $keyLength): void {
             while (!empty($acceptor) && $client = $server->accept()) {
                 try {
-                    $received = self::readKey($client, new TimeoutCancellation($keyReceiveTimeout), $keyLength);
+                    $received = readKey($client, new TimeoutCancellation($keyReceiveTimeout), $keyLength);
                 } catch (\Throwable) {
                     $client->close();
                     continue; // Ignore possible foreign connection attempt.
@@ -104,9 +85,6 @@ final class IpcHub
     public function close(): void
     {
         $this->server->close();
-        if ($this->toUnlink !== null) {
-            @\unlink($this->toUnlink);
-        }
     }
 
     public function getUri(): string
@@ -150,50 +128,6 @@ final class IpcHub
             unset($this->acceptor[$id], $this->keys[$key]);
             throw $exception;
         }
-
-        return $client;
-    }
-
-    /**
-     * Note this is designed to be used in the child process/thread.
-     *
-     * @param ReadableResourceStream|ResourceSocket $stream
-     * @param Cancellation|null $cancellation Closes the stream if cancelled.
-     * @param positive-int $keyLength
-     */
-    public static function readKey(
-        ReadableResourceStream|ResourceSocket $stream,
-        ?Cancellation $cancellation = null,
-        int $keyLength = self::DEFAULT_KEY_LENGTH,
-    ): string {
-        $key = "";
-
-        // Read random key from $stream and send back to parent over IPC socket to authenticate.
-        do {
-            if (($chunk = $stream->read($cancellation, $keyLength - \strlen($key))) === null) {
-                throw new \RuntimeException("Could not read key from parent", E_USER_ERROR);
-            }
-            $key .= $chunk;
-        } while (\strlen($key) < $keyLength);
-
-        return $key;
-    }
-
-    /**
-     * Note that this is designed to be used in the child process/thread and performs a blocking connect.
-     *
-     * @return EncryptableSocket
-     */
-    public static function connect(
-        string $uri,
-        string $key,
-        ?Cancellation $cancellation = null,
-        ?SocketConnector $connector = null,
-    ): EncryptableSocket {
-        $connector ??= Socket\socketConnector();
-
-        $client = $connector->connect($uri, cancellation: $cancellation);
-        $client->write($key);
 
         return $client;
     }

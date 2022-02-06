@@ -2,10 +2,10 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Parallel\Sync;
 use Amp\Parallel\Worker\TaskFailureError;
 use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\TaskFailureThrowable;
+use function Amp\Parallel\Context\flattenThrowableBacktrace;
 
 /**
  * @internal
@@ -42,7 +42,7 @@ class TaskFailure extends TaskResult
         $this->parent = $exception instanceof \Error ? self::PARENT_ERROR : self::PARENT_EXCEPTION;
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
-        $this->trace = Sync\flattenThrowableBacktrace($exception);
+        $this->trace = flattenThrowableBacktrace($exception);
 
         if ($previous = $exception->getPrevious()) {
             $this->previous = new self($id, $previous);

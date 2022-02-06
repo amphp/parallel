@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Sync;
+namespace Amp\Parallel\Ipc;
 
 class SynchronizationError extends \Error
 {

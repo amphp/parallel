@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use function Amp\Parallel\Sync\formatFlattenedBacktrace;
+use function Amp\Parallel\Context\formatFlattenedBacktrace;
 
 final class TaskFailureException extends \Exception implements TaskFailureThrowable
 {

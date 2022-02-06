@@ -7,8 +7,9 @@ use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
-use Amp\Parallel\Sync\IpcHub;
-use Amp\Parallel\Sync\SynchronizationError;
+use Amp\Parallel\Ipc;
+use Amp\Parallel\Ipc\IpcHub;
+use Amp\Parallel\Ipc\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
 use Amp\Sync\ChannelException;
@@ -56,7 +57,7 @@ final class ProcessContext implements Context
         ?string $binaryPath = null,
         ?IpcHub $ipcHub = null
     ): self {
-        $ipcHub ??= ipcHub();
+        $ipcHub ??= Ipc\ipcHub();
 
         $options = [
             "html_errors" => "0",

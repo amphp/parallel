@@ -4,7 +4,7 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
-use Amp\Parallel\Sync\IpcHub;
+use Amp\Parallel\Ipc\IpcHub;
 use Amp\Socket\ResourceSocket;
 use parallel\Events;
 use parallel\Future;
