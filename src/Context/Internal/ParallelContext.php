@@ -1,12 +1,15 @@
 <?php
 
-namespace Amp\Parallel\Context;
+namespace Amp\Parallel\Context\Internal;
 
 use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\Future;
-use Amp\Parallel\Context\Internal\ParallelHub;
+use Amp\Parallel\Context\Context;
+use Amp\Parallel\Context\ContextException;
+use Amp\Parallel\Context\Internal;
+use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Ipc;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Parallel\Ipc\SynchronizationError;
@@ -28,7 +31,7 @@ use function Amp\async;
 final class ParallelContext implements Context
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
-    public const DEFAULT_START_TIMEOUT = 5;
+    private const DEFAULT_START_TIMEOUT = 5;
 
     private static ?\WeakMap $hubs = null;
 

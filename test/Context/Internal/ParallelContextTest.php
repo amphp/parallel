@@ -1,9 +1,10 @@
 <?php
 
-namespace Amp\Parallel\Test\Context;
+namespace Amp\Parallel\Test\Context\Internal;
 
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\ParallelContext;
+use Amp\Parallel\Context\Internal\ParallelContext;
+use Amp\Parallel\Test\Context\AbstractContextTest;
 
 /**
  * @requires extension parallel

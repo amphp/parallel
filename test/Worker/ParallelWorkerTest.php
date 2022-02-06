@@ -4,7 +4,7 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextFactory;
-use Amp\Parallel\Context\ParallelContext;
+use Amp\Parallel\Context\Internal\ParallelContext;
 
 /**
  * @requires extension parallel
