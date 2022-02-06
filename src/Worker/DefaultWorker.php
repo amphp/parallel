@@ -131,21 +131,19 @@ final class DefaultWorker implements Worker
         }
 
         $receive = empty($this->jobQueue);
-        $activity = new Internal\TaskSubmission($task);
-        $jobId = $activity->getId();
+        $submission = new Internal\TaskSubmission($task);
+        $jobId = $submission->getId();
         $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
-        $context = $this->context;
-        $cancel = static fn () => async(static fn () => $context->send(
-            new Internal\JobCancellation($jobId),
-        ))->ignore();
-
         try {
-            $this->context->send($activity);
+            $this->context->send($submission);
 
             if ($cancellation) {
-                $cancellationId = $cancellation->subscribe($cancel);
+                $context = $this->context;
+                $cancellationId = $cancellation->subscribe(static fn () => async(static fn () => $context->send(
+                    new Internal\JobCancellation($jobId),
+                ))->ignore());
                 $future = $future->finally(static fn () => $cancellation->unsubscribe($cancellationId));
             }
         } catch (ChannelException $exception) {
