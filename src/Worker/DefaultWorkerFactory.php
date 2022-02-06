@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker;
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
 use Amp\Parallel\Context\ContextFactory;
-use Amp\Parallel\Context\DefaultContextFactory;
+use function Amp\Parallel\Context\contextFactory;
 
 /**
  * The built-in worker factory type.
@@ -27,7 +27,7 @@ final class DefaultWorkerFactory implements WorkerFactory
         private ?string $bootstrapPath = null,
         ?ContextFactory $contextFactory = null,
     ) {
-        $this->contextFactory = $contextFactory ?? new DefaultContextFactory();
+        $this->contextFactory = $contextFactory ?? contextFactory();
 
         if (!\class_exists($this->cacheClass)) {
             throw new \Error(\sprintf("Invalid cache class name '%s'", $this->cacheClass));
