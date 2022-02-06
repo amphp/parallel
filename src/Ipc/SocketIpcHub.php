@@ -12,6 +12,9 @@ use Revolt\EventLoop;
 
 final class SocketIpcHub implements IpcHub
 {
+    public const DEFAULT_KEY_RECEIVE_TIMEOUT = 5;
+    public const DEFAULT_KEY_LENGTH = 64;
+
     private int $nextId = 0;
 
     private string $uri;
@@ -25,13 +28,13 @@ final class SocketIpcHub implements IpcHub
     private \Closure $accept;
 
     /**
-     * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
+     * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      */
     public function __construct(
         private Socket\SocketServer $server,
-        private int $keyLength = self::DEFAULT_KEY_LENGTH,
         float $keyReceiveTimeout = self::DEFAULT_KEY_RECEIVE_TIMEOUT,
+        private int $keyLength = self::DEFAULT_KEY_LENGTH,
     ) {
         $address = $this->server->getAddress();
         if ($address->getPort() === null) {

@@ -14,14 +14,14 @@ final class LocalIpcHub implements IpcHub
     private ?string $toUnlink = null;
 
     /**
-     * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
+     * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      *
      * @throws Socket\SocketException
      */
     public function __construct(
-        int $keyLength = self::DEFAULT_KEY_LENGTH,
-        float $keyReceiveTimeout = self::DEFAULT_KEY_RECEIVE_TIMEOUT,
+        float $keyReceiveTimeout = SocketIpcHub::DEFAULT_KEY_RECEIVE_TIMEOUT,
+        int $keyLength = SocketIpcHub::DEFAULT_KEY_LENGTH,
     ) {
         if (IS_WINDOWS) {
             $uri = "tcp://127.0.0.1:0";
@@ -32,7 +32,7 @@ final class LocalIpcHub implements IpcHub
             $this->toUnlink = $path;
         }
 
-        $this->delegate = new SocketIpcHub(Socket\listen($uri), $keyLength, $keyReceiveTimeout);
+        $this->delegate = new SocketIpcHub(Socket\listen($uri), $keyReceiveTimeout, $keyLength);
     }
 
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
