@@ -103,7 +103,7 @@ final class DefaultWorkerPool implements WorkerPool
      */
     public function isIdle(): bool
     {
-        return $this->idleWorkers->count() > 0 || $this->workers->count() === 0;
+        return $this->idleWorkers->count() > 0 || $this->workers->count() < $this->limit;
     }
 
     public function getLimit(): int
