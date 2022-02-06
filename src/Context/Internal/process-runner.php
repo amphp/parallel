@@ -5,7 +5,6 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\ByteStream;
 use Amp\ByteStream\StreamChannel;
 use Amp\Future;
-use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Ipc;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellation;
@@ -49,13 +48,17 @@ EventLoop::queue(function () use ($argc, $argv): void {
         \trigger_error("No key length provided", E_USER_ERROR);
     }
 
-    [, $uri, $length] = $argv;
+    if (!isset($argv[3]) || !is_numeric($argv[3])) {
+        \trigger_error("No timeout provided", E_USER_ERROR);
+    }
 
-    // Remove script path, socket path, and key length from process arguments.
-    $argc -= 3;
-    $argv = \array_slice($argv, 3);
+    [, $uri, $length, $timeout] = $argv;
 
-    $cancellation = new TimeoutCancellation(ProcessContext::DEFAULT_START_TIMEOUT);
+    // Remove script path, socket path, key length, and timeout from process arguments.
+    $argc -= 4;
+    $argv = \array_slice($argv, 4);
+
+    $cancellation = new TimeoutCancellation((int) $timeout);
 
     try {
         $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, (int) $length);

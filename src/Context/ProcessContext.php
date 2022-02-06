@@ -25,7 +25,7 @@ use function Amp\async;
 final class ProcessContext implements Context
 {
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
-    public const DEFAULT_START_TIMEOUT = 5;
+    private const DEFAULT_START_TIMEOUT = 5;
 
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static ?string $pharScriptPath = null;
@@ -43,6 +43,7 @@ final class ProcessContext implements Context
      * @param string[] $environment Array of environment variables.
      * @param Cancellation|null $cancellation
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param positive-int $timeout Number of seconds the child will wait for the child to connect before failing.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
      *
      * @return ProcessContext<TResult, TReceive, TSend>
@@ -55,6 +56,7 @@ final class ProcessContext implements Context
         array $environment = [],
         ?Cancellation $cancellation = null,
         ?string $binaryPath = null,
+        int $timeout = self::DEFAULT_START_TIMEOUT,
         ?IpcHub $ipcHub = null
     ): self {
         $ipcHub ??= Ipc\ipcHub();
@@ -122,9 +124,7 @@ final class ProcessContext implements Context
         $command = \array_merge(
             [$binaryPath],
             self::formatOptions($options),
-            [$scriptPath],
-            [$ipcHub->getUri()],
-            [(string) \strlen($key)],
+            [$scriptPath, $ipcHub->getUri(), (string) \strlen($key), $timeout],
             \is_array($script) ? $script : [$script],
         );
 
