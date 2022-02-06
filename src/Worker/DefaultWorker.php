@@ -124,14 +124,14 @@ final class DefaultWorker implements Worker
         return empty($this->jobQueue);
     }
 
-    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
+    public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         if ($this->exitStatus) {
             throw new StatusError("The worker has been shut down");
         }
 
         $receive = empty($this->jobQueue);
-        $activity = new Internal\TaskEnqueue($task);
+        $activity = new Internal\TaskSubmission($task);
         $jobId = $activity->getId();
         $this->jobQueue[$jobId] = $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
@@ -182,7 +182,7 @@ final class DefaultWorker implements Worker
             self::receive($this->context, $this->onReceive);
         }
 
-        return new Job($task, $channel, $future);
+        return new Execution($task, $channel, $future);
     }
 
     public function shutdown(): void

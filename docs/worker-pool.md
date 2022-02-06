@@ -2,14 +2,14 @@
 title: Worker Pool
 permalink: /worker-pool
 ---
-The easiest way to use workers is through a worker pool. `Pool` implements `Worker`, so worker pools can be used to enqueue
+The easiest way to use workers is through a worker pool. `Pool` implements `Worker`, so worker pools can be used to submit
 tasks in the same way as a worker, but rather than using a single worker process or thread, the pool uses multiple workers
 to execute tasks. This allows multiple tasks to be executed simultaneously.
 
-## `Pool`
+## `WorkerPool`
 
-The `Pool` interface extends [`Worker`](./workers#worker), adding methods to get information about the pool or pull a single `Worker` instance
-out of the pool. A pool uses multiple `Worker` instances to execute enqueued [tasks](./workers#task).
+The `WorkerPool` interface extends [`Worker`](./workers#worker), adding methods to get information about the pool or pull a single `Worker` instance
+out of the pool. A pool uses multiple `Worker` instances to execute [tasks](./workers#task).
 
 ```php
 <?php

@@ -122,21 +122,21 @@ final class DefaultWorkerPool implements WorkerPool
     }
 
     /**
-     * Enqueues a {@see Task} to be executed by the worker pool.
+     * Submits a {@see Task} to be executed by the worker pool.
      */
-    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
+    public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         $worker = $this->pull();
         $push = $this->push;
 
         try {
-            $job = $worker->enqueue($task, $cancellation);
+            $job = $worker->submit($task, $cancellation);
         } catch (\Throwable $exception) {
             $push($worker);
             throw $exception;
         }
 
-        $job->getFuture()->finally(static fn () => $push($worker))->ignore();
+        $job->getResult()->finally(static fn () => $push($worker))->ignore();
 
         return $job;
     }

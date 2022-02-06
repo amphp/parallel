@@ -178,7 +178,7 @@ final class ParallelContext implements Context
                         $channel->send(new Internal\ExitFailure($exception));
                     }
                 } catch (\Throwable $exception) {
-                    \trigger_error(sprintf(
+                    \trigger_error(\sprintf(
                         "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
                         $exception->getMessage(),
                     ), E_USER_ERROR);
@@ -190,7 +190,7 @@ final class ParallelContext implements Context
             EventLoop::run();
 
             return 0;
-            // @codeCoverageIgnoreEnd
+        // @codeCoverageIgnoreEnd
         }, [
             $id,
             $hub->getUri(),
@@ -327,7 +327,7 @@ final class ParallelContext implements Context
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Thread unexpectedly exited with result of type: %s',
-                get_debug_type($data),
+                \get_debug_type($data),
             ));
         }
 
@@ -335,7 +335,7 @@ final class ParallelContext implements Context
         if (!$data instanceof Internal\ContextMessage) {
             throw new SynchronizationError(\sprintf(
                 'Unexpected data type from context: %s',
-                get_debug_type($data),
+                \get_debug_type($data),
             ));
         }
 

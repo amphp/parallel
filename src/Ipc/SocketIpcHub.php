@@ -5,9 +5,9 @@ namespace Amp\Parallel\Ipc;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
+use Amp\Socket;
 use Amp\Socket\ResourceSocket;
 use Amp\TimeoutCancellation;
-use Amp\Socket;
 use Revolt\EventLoop;
 
 final class SocketIpcHub implements IpcHub
@@ -109,7 +109,7 @@ final class SocketIpcHub implements IpcHub
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
         if (\strlen($key) !== $this->keyLength) {
-            throw new \ValueError(sprintf(
+            throw new \ValueError(\sprintf(
                 "Key provided is of length %d, expected %d",
                 \strlen($key),
                 $this->keyLength,

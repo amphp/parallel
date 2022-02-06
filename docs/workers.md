@@ -13,7 +13,7 @@ Classes implementing [`Task`](#task) are used to define the code to be run in pa
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Promise;
+use Amp\Cancellation;
 
 /**
  * An interface for a parallel worker thread that runs a queue of tasks.
@@ -35,23 +35,31 @@ interface Worker
     public function isIdle(): bool;
 
     /**
-     * Enqueues a task to be executed by the worker.
+     * @template TResult
+     * @template TReceive
+     * @template TSend
+     * @template TCache
      *
-     * @param Task $task The task to enqueue.
+     * Executes a {@see Task} on the worker.
      *
-     * @return \Amp\Promise<mixed> Resolves with the return value of Task::run().
+     * @param Task<TResult, TReceive, TSend, TCache> $task The task to execute.
+     * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
+     * this to have any effect.
+     *
+     * @return Execution<TResult, TReceive, TSend, TCache>
      */
-    public function enqueue(Task $task): Promise;
+    public function submit(Task $task, ?Cancellation $cancellation = null): Execution;
 
     /**
-     * @return \Amp\Promise<int> Exit code.
+     * Gracefully shutdown the worker once all outstanding tasks have completed executing. Returns once the
+     * worker has been shutdown.
      */
-    public function shutdown(): Promise;
+    public function shutdown(): void;
 
     /**
      * Immediately kills the context.
      */
-    public function kill();
+    public function kill(): void;
 }
 ```
 

@@ -45,11 +45,11 @@ function workerPool(?WorkerPool $pool = null): WorkerPool
  * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
  * this to have any effect.
  *
- * @return Job<TResult, TReceive, TSend>
+ * @return Execution<TResult, TReceive, TSend>
  */
-function enqueue(Task $task, ?Cancellation $cancellation = null): Job
+function submit(Task $task, ?Cancellation $cancellation = null): Execution
 {
-    return workerPool()->enqueue($task, $cancellation);
+    return workerPool()->submit($task, $cancellation);
 }
 
 /**
@@ -105,7 +105,7 @@ function runTasks(Channel $channel, Cache $cache): void
 
     while ($data = $channel->receive()) {
         // New Task execution request.
-        if ($data instanceof Internal\TaskEnqueue) {
+        if ($data instanceof Internal\TaskSubmission) {
             $id = $data->getId();
 
             $cancellationSources[$id] = $source = new DeferredCancellation;

@@ -20,5 +20,4 @@ class ParallelWorkerTest extends AbstractWorkerTest
             }
         };
     }
-
 }

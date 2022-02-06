@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
-use Amp\Parallel\Worker\Job;
+use Amp\Parallel\Worker\Execution;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 
@@ -38,12 +38,12 @@ final class PooledWorker implements Worker
         return $this->worker->isIdle();
     }
 
-    public function enqueue(Task $task, ?Cancellation $cancellation = null): Job
+    public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
-        $job = $this->worker->enqueue($task, $cancellation);
+        $job = $this->worker->submit($task, $cancellation);
 
         // Retain a reference to $this to prevent premature release of worker.
-        $job->getFuture()->finally(fn () => $this)->ignore();
+        $job->getResult()->finally(fn () => $this)->ignore();
 
         return $job;
     }

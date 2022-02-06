@@ -45,5 +45,5 @@ foreach ($responses as $url => $response) {
 [`file_get_contents`](https://secure.php.net/file_get_contents) is just used as an example for a blocking function here.
 If you just want to fetch multiple HTTP resources concurrently, it's better to use [`amphp/http-client`](https://amphp.org/http-client/), our non-blocking HTTP client.
 
-The functions you call must be predefined or autoloadable by Composer so they also exist in the worker processes.
-Instead of simple callables, you can also [enqueue `Task` instances](./workers#task) with `Amp\Parallel\Worker\enqueue()`.
+The functions you call must be predefined or autoloadable by Composer, so they also exist in the worker processes.
+Instead of simple callables, you can also [submit `Task` instances](./workers#task) with `Amp\Parallel\Worker\submit()`.

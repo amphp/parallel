@@ -11,17 +11,17 @@ use Amp\Sync\Channel;
  * @template TSend
  * @template TCache
  */
-final class Job
+final class Execution
 {
     /**
      * @param Task<TResult, TReceive, TSend, TCache> $task
      * @param Channel<TSend, TReceive> $channel
-     * @param Future<TResult> $future
+     * @param Future<TResult> $result
      */
     public function __construct(
         private Task $task,
         private Channel $channel,
-        private Future $future,
+        private Future $result,
     ) {
     }
 
@@ -44,8 +44,8 @@ final class Job
     /**
      * @return Future<TResult>
      */
-    public function getFuture(): Future
+    public function getResult(): Future
     {
-        return $this->future;
+        return $this->result;
     }
 }

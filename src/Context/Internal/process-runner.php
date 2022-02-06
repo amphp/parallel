@@ -44,11 +44,11 @@ EventLoop::queue(function () use ($argc, $argv): void {
         \trigger_error("No socket path provided", E_USER_ERROR);
     }
 
-    if (!isset($argv[2]) || !is_numeric($argv[2])) {
+    if (!isset($argv[2]) || !\is_numeric($argv[2])) {
         \trigger_error("No key length provided", E_USER_ERROR);
     }
 
-    if (!isset($argv[3]) || !is_numeric($argv[3])) {
+    if (!isset($argv[3]) || !\is_numeric($argv[3])) {
         \trigger_error("No timeout provided", E_USER_ERROR);
     }
 
@@ -104,7 +104,7 @@ EventLoop::queue(function () use ($argc, $argv): void {
             $channel->send(new ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
-        \trigger_error(sprintf(
+        \trigger_error(\sprintf(
             "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
             $exception->getMessage(),
         ), E_USER_ERROR);

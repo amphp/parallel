@@ -5,11 +5,11 @@ namespace Amp\Parallel\Test\Worker;
 use Amp\Cache\LocalCache;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Worker\DefaultWorkerPool;
 use Amp\Parallel\Worker\DefaultWorkerFactory;
-use Amp\Parallel\Worker\WorkerPool;
+use Amp\Parallel\Worker\DefaultWorkerPool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
+use Amp\Parallel\Worker\WorkerPool;
 use Revolt\EventLoop;
 
 abstract class AbstractPoolTest extends AbstractWorkerTest
@@ -63,7 +63,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         self::assertTrue($worker->isRunning());
         self::assertTrue($worker->isIdle());
 
-        self::assertSame(42, $worker->enqueue(new Fixtures\TestTask(42))->getFuture()->await());
+        self::assertSame(42, $worker->submit(new Fixtures\TestTask(42))->getResult()->await());
 
         $worker->shutdown();
 
@@ -80,13 +80,13 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return $pool->enqueue($task)->getFuture();
+            return $pool->submit($task)->getResult();
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return $pool->enqueue($task)->getFuture();
+            return $pool->submit($task)->getResult();
         }, $tasks);
 
         self::assertEquals($values, Future\all($promises));
@@ -111,7 +111,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
             $values = \range(1, 50);
 
             $promises = \array_map(static function (int $value) use ($pool): Future {
-                return $pool->enqueue(new Fixtures\TestTask($value))->getFuture();
+                return $pool->submit(new Fixtures\TestTask($value))->getResult();
             }, $values);
 
             self::assertEquals($values, Future\all($promises));

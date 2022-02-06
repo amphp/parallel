@@ -50,7 +50,7 @@ final class LocalIpcHub implements IpcHub
         $this->delegate->close();
         if ($this->toUnlink !== null) {
             // Ignore errors when unlinking temp socket.
-            \set_error_handler(static fn() => true);
+            \set_error_handler(static fn () => true);
             try {
                 \unlink($this->toUnlink);
             } finally {

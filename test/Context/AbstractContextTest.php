@@ -6,8 +6,8 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
-use function Amp\delay;
 use function Amp\async;
+use function Amp\delay;
 
 abstract class AbstractContextTest extends AsyncTestCase
 {

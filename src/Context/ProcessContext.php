@@ -85,7 +85,7 @@ final class ProcessContext implements Context
             } else {
                 $path = \dirname(self::SCRIPT_PATH);
 
-                if (!str_ends_with(\Phar::running(false), ".phar")) {
+                if (!\str_ends_with(\Phar::running(false), ".phar")) {
                     self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
                     \copy(\Phar::running(false), self::$pharCopy);
 
@@ -214,14 +214,14 @@ final class ProcessContext implements Context
             $data = $data->getResult();
             throw new SynchronizationError(\sprintf(
                 'Process unexpectedly exited with result of type: %s',
-                get_debug_type($data),
+                \get_debug_type($data),
             ));
         }
 
         if (!$data instanceof Internal\ContextMessage) {
             throw new SynchronizationError(\sprintf(
                 'Unexpected data type from context: %s',
-                get_debug_type($data),
+                \get_debug_type($data),
             ));
         }
 
@@ -248,7 +248,7 @@ final class ProcessContext implements Context
 
             throw new SynchronizationError(\sprintf(
                 'Process unexpectedly exited with result of type: %s',
-                get_debug_type($data),
+                \get_debug_type($data),
             ), 0, $e);
         }
     }

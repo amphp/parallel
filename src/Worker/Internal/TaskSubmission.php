@@ -5,7 +5,7 @@ namespace Amp\Parallel\Worker\Internal;
 use Amp\Parallel\Worker\Task;
 
 /** @internal */
-final class TaskEnqueue extends JobPacket
+final class TaskSubmission extends JobPacket
 {
     private static string $nextId = 'a';
 

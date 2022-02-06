@@ -6,9 +6,9 @@ use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Worker;
-use Amp\Parallel\Worker\WorkerPool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
+use Amp\Parallel\Worker\WorkerPool;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Sync\Channel;
 
@@ -31,11 +31,11 @@ class FunctionsTest extends AsyncTestCase
     /**
      * @depends testPool
      */
-    public function testEnqueue(): void
+    public function testSubmit(): void
     {
         $pool = $this->createMock(WorkerPool::class);
-        $pool->method('enqueue')
-            ->willReturnCallback(function (Task $task): Worker\Job {
+        $pool->method('submit')
+            ->willReturnCallback(function (Task $task): Worker\Execution {
                 $channel = $this->createMock(Channel::class);
 
                 $future = Future::complete($task->run(
@@ -44,7 +44,7 @@ class FunctionsTest extends AsyncTestCase
                     $this->createMock(Cancellation::class),
                 ));
 
-                return new Worker\Job($task, $channel, $future);
+                return new Worker\Execution($task, $channel, $future);
             });
 
         Worker\workerPool($pool);
@@ -53,7 +53,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        self::assertSame($value, Worker\enqueue($task)->getFuture()->await());
+        self::assertSame($value, Worker\submit($task)->getResult()->await());
     }
 
     /**
