@@ -7,10 +7,10 @@ use Amp\Parallel\Context\StatusError;
 /**
  * An interface for worker pools.
  */
-interface Pool extends Worker
+interface WorkerPool extends Worker
 {
     /** @var int The default maximum pool size. */
-    public const DEFAULT_MAX_SIZE = 32;
+    public const DEFAULT_WORKER_LIMIT = 32;
 
     /**
      * Gets a worker from the pool. The worker is marked as busy and will only be reused if the pool runs out of

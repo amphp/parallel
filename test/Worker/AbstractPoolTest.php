@@ -5,9 +5,9 @@ namespace Amp\Parallel\Test\Worker;
 use Amp\Cache\LocalCache;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Worker\DefaultPool;
+use Amp\Parallel\Worker\DefaultWorkerPool;
 use Amp\Parallel\Worker\DefaultWorkerFactory;
-use Amp\Parallel\Worker\Pool;
+use Amp\Parallel\Worker\WorkerPool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Revolt\EventLoop;
@@ -144,19 +144,19 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
     /**
      * @param int $max
      *
-     * @return Pool
+     * @return WorkerPool
      */
     protected function createPool(
-        int $max = Pool::DEFAULT_MAX_SIZE,
+        int $max = WorkerPool::DEFAULT_WORKER_LIMIT,
         string $cacheClass = LocalCache::class,
         ?string $autoloadPath = null
-    ): Pool {
+    ): WorkerPool {
         $factory = new DefaultWorkerFactory(
             cacheClass: $cacheClass,
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
         );
 
-        return new DefaultPool($max, $factory);
+        return new DefaultWorkerPool($max, $factory);
     }
 }

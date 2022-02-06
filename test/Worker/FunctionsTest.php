@@ -6,7 +6,7 @@ use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Worker;
-use Amp\Parallel\Worker\Pool;
+use Amp\Parallel\Worker\WorkerPool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
@@ -21,11 +21,11 @@ class FunctionsTest extends AsyncTestCase
 {
     public function testPool(): void
     {
-        $pool = $this->createMock(Pool::class);
+        $pool = $this->createMock(WorkerPool::class);
 
-        Worker\pool($pool);
+        Worker\workerPool($pool);
 
-        self::assertSame(Worker\pool(), $pool);
+        self::assertSame(Worker\workerPool(), $pool);
     }
 
     /**
@@ -33,7 +33,7 @@ class FunctionsTest extends AsyncTestCase
      */
     public function testEnqueue(): void
     {
-        $pool = $this->createMock(Pool::class);
+        $pool = $this->createMock(WorkerPool::class);
         $pool->method('enqueue')
             ->willReturnCallback(function (Task $task): Worker\Job {
                 $channel = $this->createMock(Channel::class);
@@ -47,7 +47,7 @@ class FunctionsTest extends AsyncTestCase
                 return new Worker\Job($task, $channel, $future);
             });
 
-        Worker\pool($pool);
+        Worker\workerPool($pool);
 
         $value = 42;
 
@@ -61,12 +61,12 @@ class FunctionsTest extends AsyncTestCase
      */
     public function testWorker(): void
     {
-        $pool = $this->createMock(Pool::class);
+        $pool = $this->createMock(WorkerPool::class);
         $pool->expects(self::once())
             ->method('getWorker')
             ->will(self::returnValue($this->createMock(Worker\Worker::class)));
 
-        Worker\pool($pool);
+        Worker\workerPool($pool);
 
         $worker = Worker\pooledWorker();
 

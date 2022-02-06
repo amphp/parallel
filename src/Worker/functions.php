@@ -8,11 +8,11 @@ use Revolt\EventLoop;
 /**
  * Gets or sets the global worker pool.
  *
- * @param Pool|null $pool A worker pool instance.
+ * @param WorkerPool|null $pool A worker pool instance.
  *
- * @return Pool The global worker pool instance.
+ * @return WorkerPool The global worker pool instance.
  */
-function pool(?Pool $pool = null): Pool
+function workerPool(?WorkerPool $pool = null): WorkerPool
 {
     static $map;
     $map ??= new \WeakMap();
@@ -22,7 +22,7 @@ function pool(?Pool $pool = null): Pool
         return $map[$driver] = $pool;
     }
 
-    return $map[$driver] ??= new DefaultPool();
+    return $map[$driver] ??= new DefaultWorkerPool();
 }
 
 /**
@@ -41,7 +41,7 @@ function pool(?Pool $pool = null): Pool
  */
 function enqueue(Task $task, ?Cancellation $cancellation = null): Job
 {
-    return pool()->enqueue($task, $cancellation);
+    return workerPool()->enqueue($task, $cancellation);
 }
 
 /**
@@ -51,7 +51,7 @@ function enqueue(Task $task, ?Cancellation $cancellation = null): Job
  */
 function pooledWorker(): Worker
 {
-    return pool()->getWorker();
+    return workerPool()->getWorker();
 }
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Parallel\Test\Sync;
+namespace Amp\Parallel\Test\Context\Internal;
 
 use Amp\Parallel\Context\ContextPanicError;
 use Amp\Parallel\Context\Internal\ExitFailure;

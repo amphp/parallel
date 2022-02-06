@@ -125,7 +125,7 @@ final class ParallelContext implements Context
 
             EventLoop::queue(function () use ($uri, $key, $path, $argv): void {
                 try {
-                    $socket = Ipc\connect($uri, $key);
+                    $socket = Ipc\connect($uri, $key, new TimeoutCancellation(self::DEFAULT_START_TIMEOUT));
                     $channel = new StreamChannel($socket, $socket);
                 } catch (\Throwable $exception) {
                     \trigger_error($exception->getMessage(), E_USER_ERROR);

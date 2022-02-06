@@ -5,6 +5,7 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Cancellation;
 use Amp\Sync\Channel;
 
+/** @internal */
 final class ContextChannel implements Channel
 {
     public function __construct(

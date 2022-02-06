@@ -16,7 +16,7 @@ use function Amp\async;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-final class DefaultPool implements Pool
+final class DefaultWorkerPool implements WorkerPool
 {
     /** @var bool Indicates if the pool is currently running. */
     private bool $running = true;
@@ -42,20 +42,20 @@ final class DefaultPool implements Pool
     /**
      * Creates a new worker pool.
      *
-     * @param int $maxSize The maximum number of workers the pool should spawn.
+     * @param int $limit The maximum number of workers the pool should spawn.
      *     Defaults to `Pool::DEFAULT_MAX_SIZE`.
      * @param WorkerFactory|null $factory A worker factory to be used to create
      *     new workers.
      *
      * @throws \Error
      */
-    public function __construct(int $maxSize = self::DEFAULT_MAX_SIZE, ?WorkerFactory $factory = null)
+    public function __construct(int $limit = self::DEFAULT_WORKER_LIMIT, ?WorkerFactory $factory = null)
     {
-        if ($maxSize < 0) {
+        if ($limit < 0) {
             throw new \Error("Maximum size must be a non-negative integer");
         }
 
-        $this->maxSize = $maxSize;
+        $this->maxSize = $limit;
 
         // Use the global factory if none is given.
         $this->factory = $factory ?? workerFactory();

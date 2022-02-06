@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+/** @internal */
 final class ContextMessage
 {
     public function __construct(
