@@ -45,5 +45,5 @@ interface WorkerPool extends Worker
      *
      * @return int The maximum number of workers.
      */
-    public function getMaxSize(): int;
+    public function getLimit(): int;
 }

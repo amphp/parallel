@@ -41,7 +41,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
     public function testGetMaxSize(): void
     {
         $pool = $this->createPool(17);
-        self::assertEquals(17, $pool->getMaxSize());
+        self::assertEquals(17, $pool->getLimit());
     }
 
     public function testWorkersIdleOnStart()

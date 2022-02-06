@@ -22,7 +22,7 @@ final class DefaultWorkerPool implements WorkerPool
     private bool $running = true;
 
     /** @var int The maximum number of workers the pool should spawn. */
-    private int $maxSize;
+    private int $limit;
 
     /** @var WorkerFactory A worker factory to be used to create new workers. */
     private WorkerFactory $factory;
@@ -55,7 +55,7 @@ final class DefaultWorkerPool implements WorkerPool
             throw new \Error("Maximum size must be a non-negative integer");
         }
 
-        $this->maxSize = $limit;
+        $this->limit = $limit;
 
         // Use the global factory if none is given.
         $this->factory = $factory ?? workerFactory();
@@ -106,9 +106,9 @@ final class DefaultWorkerPool implements WorkerPool
         return $this->idleWorkers->count() > 0 || $this->workers->count() === 0;
     }
 
-    public function getMaxSize(): int
+    public function getLimit(): int
     {
-        return $this->maxSize;
+        return $this->limit;
     }
 
     public function getWorkerCount(): int
@@ -211,7 +211,7 @@ final class DefaultWorkerPool implements WorkerPool
 
         do {
             if ($this->idleWorkers->isEmpty()) {
-                if ($this->getWorkerCount() < $this->maxSize) {
+                if ($this->getWorkerCount() < $this->limit) {
                     // Max worker count has not been reached, so create another worker.
                     $worker = $this->factory->create();
                     if (!$worker->isRunning()) {
