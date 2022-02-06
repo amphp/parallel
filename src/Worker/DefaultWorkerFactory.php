@@ -17,8 +17,8 @@ final class DefaultWorkerFactory implements WorkerFactory
     private ContextFactory $contextFactory;
 
     /**
-     * @param string $cacheClass Name of class implementing {@see Cache} to instigate in each
-     *     worker. Defaults to {@see LocalCache}.
+     * @param string $cacheClass Name of class implementing {@see Cache} to instantiate in each worker. Defaults
+     * to {@see LocalCache}.
      *
      * @throws \Error If the given class name does not exist or does not implement {@see Cache}.
      */
