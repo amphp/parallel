@@ -96,37 +96,37 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     public function testSubmitMultipleAsynchronous(): void
     {
-        $this->setTimeout(0.5);
+        $this->setTimeout(5);
 
         $worker = $this->createWorker();
 
         $futures = [
-            $worker->submit(new Fixtures\TestTask(42, 0.2))->getResult(),
-            $worker->submit(new Fixtures\TestTask(56, 0.3))->getResult(),
-            $worker->submit(new Fixtures\TestTask(72, 0.1))->getResult(),
+            $worker->submit(new Fixtures\TestTask(42, 2))->getResult(),
+            $worker->submit(new Fixtures\TestTask(56, 3))->getResult(),
+            $worker->submit(new Fixtures\TestTask(72, 1))->getResult(),
         ];
 
-        self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\all($futures));
+        self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\await($futures));
 
         $worker->shutdown();
     }
 
     public function testSubmitMultipleThenShutdown(): void
     {
-        $this->setTimeout(0.5);
+        $this->setTimeout(5);
 
         $worker = $this->createWorker();
 
         $futures = [
-            $worker->submit(new Fixtures\TestTask(42, 0.2))->getResult(),
-            $worker->submit(new Fixtures\TestTask(56, 0.3))->getResult(),
-            $worker->submit(new Fixtures\TestTask(72, 0.1))->getResult(),
+            $worker->submit(new Fixtures\TestTask(42, 2))->getResult(),
+            $worker->submit(new Fixtures\TestTask(56, 3))->getResult(),
+            $worker->submit(new Fixtures\TestTask(72, 1))->getResult(),
         ];
 
         // Send shutdown signal, but don't await until tasks have finished.
         $shutdown = async(fn () => $worker->shutdown());
 
-        self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\all($futures));
+        self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\await($futures));
 
         $shutdown->await(); // Await shutdown before ending test.
     }
@@ -225,6 +225,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
             $worker->submit(new class implements Task { // Anonymous classes are not serializable.
                 public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed
                 {
+                    return null;
                 }
             })->getResult()->await();
             self::fail("Tasks that cannot be serialized should throw an exception");
