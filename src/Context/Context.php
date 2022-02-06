@@ -13,16 +13,6 @@ use Amp\Sync\Channel;
 interface Context extends Channel
 {
     /**
-     * @return bool
-     */
-    public function isRunning(): bool;
-
-    /**
-     * Immediately kills the context.
-     */
-    public function kill(): void;
-
-    /**
      * @return TResult The data returned from the context.
      *
      * @throws ContextException If the context dies unexpectedly.

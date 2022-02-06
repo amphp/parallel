@@ -197,11 +197,6 @@ final class ProcessContext implements Context
         throw new \Error(self::class . ' objects cannot be cloned');
     }
 
-    public function isRunning(): bool
-    {
-        return $this->process->isRunning();
-    }
-
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
@@ -244,8 +239,8 @@ final class ProcessContext implements Context
             try {
                 $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
             } catch (ContextException|ChannelException|CancelledException) {
-                if ($this->isRunning()) {
-                    $this->kill();
+                if (!$this->isClosed()) {
+                    $this->close();
                 }
                 throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
@@ -266,8 +261,8 @@ final class ProcessContext implements Context
         try {
             $data = $this->channel->receive();
         } catch (\Throwable $exception) {
-            if ($this->isRunning()) {
-                $this->kill();
+            if (!$this->isClosed()) {
+                $this->close();
             }
             throw new ContextException("Failed to receive result from process", 0, $exception);
         }
@@ -277,8 +272,8 @@ final class ProcessContext implements Context
         }
 
         if (!$data instanceof Internal\ExitResult) {
-            if ($this->isRunning()) {
-                $this->kill();
+            if (!$this->isClosed()) {
+                $this->close();
             }
             throw new SynchronizationError("Did not receive an exit result from process");
         }
@@ -358,19 +353,14 @@ final class ProcessContext implements Context
         return $this->process->getStderr();
     }
 
-    public function kill(): void
+    public function close(): void
     {
         $this->process->kill();
         $this->channel->close();
     }
 
-    public function close(): void
-    {
-        $this->kill();
-    }
-
     public function isClosed(): bool
     {
-        return !$this->isRunning();
+        return !$this->process->isRunning();
     }
 }

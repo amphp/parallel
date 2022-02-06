@@ -58,7 +58,7 @@ final class TaskWorker implements Worker
                 foreach ($jobQueue as $deferred) {
                     $deferred->error($exception);
                 }
-                $context->kill();
+                $context->close();
                 return;
             }
 
@@ -191,7 +191,7 @@ final class TaskWorker implements Worker
         }
 
         ($this->exitStatus = async(function (): void {
-            if (!$this->context->isRunning()) {
+            if ($this->context->isClosed()) {
                 throw new WorkerException("The worker had crashed prior to being shutdown");
             }
 
@@ -204,7 +204,7 @@ final class TaskWorker implements Worker
                 async(fn () => $this->context->join())
                     ->await(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
-                $this->context->kill();
+                $this->context->close();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
             }
         }))->await();
@@ -212,8 +212,8 @@ final class TaskWorker implements Worker
 
     public function kill(): void
     {
-        if ($this->context->isRunning()) {
-            $this->context->kill();
+        if (!$this->context->isClosed()) {
+            $this->context->close();
         }
 
         if (!$this->exitStatus) {

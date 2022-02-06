@@ -86,7 +86,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $context->join();
     }
 
-    public function testKillWhenJoining(): void
+    public function testCloseWhenJoining(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Failed to receive result');
@@ -96,11 +96,11 @@ abstract class AbstractContextTest extends AsyncTestCase
             5,
         ]);
         $promise = async(fn () => $context->join());
-        $context->kill();
+        $context->close();
         $promise->await();
     }
 
-    public function testKillBusyContext(): void
+    public function testCloseBusyContext(): void
     {
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Failed to receive result');
@@ -110,7 +110,7 @@ abstract class AbstractContextTest extends AsyncTestCase
             5,
         ]);
         $promise = async(fn () => $context->join());
-        $context->kill();
+        $context->close();
         $promise->await();
     }
 

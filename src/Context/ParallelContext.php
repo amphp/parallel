@@ -233,24 +233,24 @@ final class ParallelContext implements Context
     public function __destruct()
     {
         if (\getmypid() === $this->oid) {
-            $this->kill();
+            $this->close();
         }
     }
 
     /**
      * Checks if the context is running.
      *
-     * @return bool True if the context is running, otherwise false.
+     * @return bool False if the context is running, otherwise true.
      */
-    public function isRunning(): bool
+    public function isClosed(): bool
     {
-        return $this->channel !== null;
+        return $this->channel === null;
     }
 
     /**
      * Immediately kills the context.
      */
-    public function kill(): void
+    public function close(): void
     {
         $this->killed = true;
 
@@ -283,7 +283,7 @@ final class ParallelContext implements Context
             $response = $this->channel->receive();
             $this->cleanup();
         } catch (\Throwable $exception) {
-            $this->kill();
+            $this->close();
             throw new ContextException("Failed to receive result from thread", 0, $exception);
         }
 
@@ -292,7 +292,7 @@ final class ParallelContext implements Context
         }
 
         if (!$response instanceof Internal\ExitResult) {
-            $this->kill();
+            $this->close();
             throw new SynchronizationError('Did not receive an exit result from thread.');
         }
 
@@ -358,7 +358,7 @@ final class ParallelContext implements Context
             try {
                 $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
             } catch (ContextException | ChannelException | CancelledException) {
-                $this->kill();
+                $this->close();
                 throw new ContextException(
                     "The thread stopped responding, potentially due to a fatal error or calling exit",
                     0,
@@ -399,18 +399,5 @@ final class ParallelContext implements Context
         $this->channel = null;
 
         $this->hub->remove($this->id);
-    }
-
-    /**
-     * Alias of {@see kill()}.
-     */
-    public function close(): void
-    {
-        $this->kill();
-    }
-
-    public function isClosed(): bool
-    {
-        return !$this->isRunning();
     }
 }

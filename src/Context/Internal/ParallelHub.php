@@ -2,10 +2,10 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
 use Amp\Parallel\Sync\IpcHub;
 use Amp\Socket\ResourceSocket;
-use Amp\Sync\StreamChannel;
 use parallel\Events;
 use parallel\Future;
 use Revolt\EventLoop;
