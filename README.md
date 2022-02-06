@@ -73,15 +73,3 @@ If you discover any security related issues, please email [`me@kelunik.com`](mai
 ## License
 
 The MIT License (MIT). Please see [`LICENSE`](./LICENSE) for more information.
-
-## Development and Contributing
-
-Want to hack on the source? A [Vagrant](http://vagrantup.com) box is provided with the repository to give a common development environment for running concurrent threads and processes, and comes with a bunch of handy tools and scripts for testing and experimentation.
-
-Starting up and logging into the virtual machine is as simple as
-
-```bash
-vagrant up && vagrant ssh
-```
-
-Once inside the VM, you can install PHP extensions with [Pickle](https://github.com/FriendsOfPHP/pickle), switch versions with `newphp VERSION`, and test for memory leaks with [Valgrind](http://valgrind.org).
