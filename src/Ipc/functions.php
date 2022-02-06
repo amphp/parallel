@@ -6,7 +6,6 @@ use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
 use Amp\Socket;
 use Amp\Socket\EncryptableSocket;
-use Amp\Socket\ResourceSocket;
 use Amp\Socket\SocketConnector;
 use Revolt\EventLoop;
 
@@ -33,14 +32,14 @@ function ipcHub(?IpcHub $ipcHub = null): IpcHub
 /**
  * Note this is designed to be used in the child process/thread.
  *
- * @param ReadableResourceStream|ResourceSocket $stream
+ * @param ReadableResourceStream|Socket\Socket $stream
  * @param Cancellation|null $cancellation Closes the stream if cancelled.
  * @param positive-int $keyLength
  */
 function readKey(
-    ReadableResourceStream|ResourceSocket $stream,
+    ReadableResourceStream|Socket\Socket $stream,
     ?Cancellation $cancellation = null,
-    int $keyLength = IpcHub::DEFAULT_KEY_LENGTH,
+    int $keyLength = SocketIpcHub::DEFAULT_KEY_LENGTH,
 ): string {
     $key = "";
 
