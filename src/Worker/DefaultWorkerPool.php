@@ -136,8 +136,9 @@ final class DefaultWorkerPool implements WorkerPool
             throw $exception;
         }
 
-        $future = $job->getFuture()->finally(static fn () => $push($worker));
-        return $job->withFuture($future);
+        $job->getFuture()->finally(static fn () => $push($worker))->ignore();
+
+        return $job;
     }
 
     /**

@@ -43,8 +43,9 @@ final class PooledWorker implements Worker
         $job = $this->worker->enqueue($task, $cancellation);
 
         // Retain a reference to $this to prevent premature release of worker.
-        $future = $job->getFuture()->finally(fn () => $this);
-        return $job->withFuture($future);
+        $job->getFuture()->finally(fn () => $this)->ignore();
+
+        return $job;
     }
 
     public function shutdown(): void
