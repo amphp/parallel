@@ -11,15 +11,23 @@ use Amp\Socket\SocketConnector;
 use Revolt\EventLoop;
 
 /**
- * Gets the global shared IpcHub instance.
+ * Gets or sets the global shared IpcHub instance.
+ *
+ * @param IpcHub|null If not null, set the global shared IpcHub to this instance.
  *
  * @return IpcHub
  */
-function ipcHub(): IpcHub
+function ipcHub(?IpcHub $ipcHub = null): IpcHub
 {
-    static $hubs;
-    $hubs ??= new \WeakMap();
-    return $hubs[EventLoop::getDriver()] ??= new LocalIpcHub();
+    static $map;
+    $map ??= new \WeakMap();
+    $driver = EventLoop::getDriver();
+
+    if ($ipcHub) {
+        return $map[$driver] = $ipcHub;
+    }
+
+    return $map[$driver] ??= new LocalIpcHub();
 }
 
 /**
