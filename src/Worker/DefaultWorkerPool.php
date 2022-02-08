@@ -21,12 +21,6 @@ final class DefaultWorkerPool implements WorkerPool
     /** @var bool Indicates if the pool is currently running. */
     private bool $running = true;
 
-    /** @var int The maximum number of workers the pool should spawn. */
-    private int $limit;
-
-    /** @var WorkerFactory A worker factory to be used to create new workers. */
-    private ?WorkerFactory $factory;
-
     /** @var \SplObjectStorage A collection of all workers in the pool. */
     private \SplObjectStorage $workers;
 
@@ -50,16 +44,13 @@ final class DefaultWorkerPool implements WorkerPool
      *
      * @throws \Error
      */
-    public function __construct(int $limit = self::DEFAULT_WORKER_LIMIT, ?WorkerFactory $factory = null)
-    {
+    public function __construct(
+        private int $limit = self::DEFAULT_WORKER_LIMIT,
+        private ?WorkerFactory $factory = null,
+    ) {
         if ($limit < 0) {
             throw new \Error("Maximum size must be a non-negative integer");
         }
-
-        $this->limit = $limit;
-
-        // Use the global factory if none is given.
-        $this->factory = $factory;
 
         $this->workers = new \SplObjectStorage;
         $this->idleWorkers = new \SplQueue;

@@ -14,8 +14,6 @@ final class DefaultWorkerFactory implements WorkerFactory
 {
     public const SCRIPT_PATH = __DIR__ . "/Internal/task-runner.php";
 
-    private ?ContextFactory $contextFactory;
-
     /**
      * @param string $cacheClass Name of class implementing {@see Cache} to instantiate in each worker. Defaults
      * to {@see LocalCache}.
@@ -24,7 +22,7 @@ final class DefaultWorkerFactory implements WorkerFactory
      */
     public function __construct(
         private ?string $bootstrapPath = null,
-        ?ContextFactory $contextFactory = null,
+        private ?ContextFactory $contextFactory = null,
         private string $cacheClass = LocalCache::class,
     ) {
         $this->contextFactory = $contextFactory;
