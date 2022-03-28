@@ -6,7 +6,7 @@ namespace Amp\Parallel\Worker\Internal;
 abstract class JobPacket
 {
     public function __construct(
-        private string $id,
+        private readonly string $id,
     ) {
     }
 

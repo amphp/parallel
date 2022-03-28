@@ -7,7 +7,7 @@ final class JobMessage extends JobPacket
 {
     public function __construct(
         string $id,
-        private mixed $message,
+        private readonly mixed $message,
     ) {
         parent::__construct($id);
     }

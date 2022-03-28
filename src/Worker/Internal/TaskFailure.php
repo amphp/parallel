@@ -18,22 +18,22 @@ class TaskFailure extends TaskResult
     private const PARENT_ERROR = 1;
 
     /** @var string */
-    private string $type;
+    private readonly string $type;
 
     /** @var int */
-    private int $parent;
+    private readonly int $parent;
 
     /** @var string */
-    private string $message;
+    private readonly string $message;
 
     /** @var int|string */
-    private string|int $code;
+    private readonly string|int $code;
 
     /** @var string[] */
-    private array $trace;
+    private readonly array $trace;
 
     /** @var self|null */
-    private ?self $previous = null;
+    private readonly ?self $previous;
 
     public function __construct(string $id, \Throwable $exception)
     {
@@ -44,16 +44,14 @@ class TaskFailure extends TaskResult
         $this->code = $exception->getCode();
         $this->trace = flattenThrowableBacktrace($exception);
 
-        if ($previous = $exception->getPrevious()) {
-            $this->previous = new self($id, $previous);
-        }
+        $previous = $exception->getPrevious();
+        $this->previous = $previous ? new self($id, $previous) : null;
     }
 
     /**
-     * @return never
      * @throws TaskFailureThrowable
      */
-    public function getResult(): mixed
+    public function getResult(): never
     {
         throw $this->createException();
     }

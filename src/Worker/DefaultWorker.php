@@ -31,7 +31,7 @@ final class DefaultWorker implements Worker
     /** @var array<string, Queue> */
     private array $queues = [];
 
-    private \Closure $onReceive;
+    private readonly \Closure $onReceive;
 
     private ?Future $exitStatus = null;
 

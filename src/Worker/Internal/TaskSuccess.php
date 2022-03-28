@@ -12,17 +12,15 @@ use Amp\Parallel\Worker\Task;
  */
 final class TaskSuccess extends TaskResult
 {
-    /** @var T Result of task. */
-    private mixed $result;
-
     /**
      * @param string $id
      * @param T $result
      */
-    public function __construct(string $id, mixed $result)
-    {
+    public function __construct(
+        string $id,
+        private readonly mixed $result
+    ) {
         parent::__construct($id);
-        $this->result = $result;
     }
 
     /**

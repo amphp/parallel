@@ -9,15 +9,12 @@ namespace Amp\Parallel\Context\Internal;
  */
 final class ExitSuccess implements ExitResult
 {
-    /** @var mixed */
-    private mixed $result;
-
     /**
      * @param TValue $result
      */
-    public function __construct(mixed $result)
-    {
-        $this->result = $result;
+    public function __construct(
+        private readonly mixed $result
+    ) {
     }
 
     /**

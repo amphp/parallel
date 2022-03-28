@@ -22,15 +22,15 @@ final class DefaultWorkerPool implements WorkerPool
     private bool $running = true;
 
     /** @var \SplObjectStorage A collection of all workers in the pool. */
-    private \SplObjectStorage $workers;
+    private readonly \SplObjectStorage $workers;
 
     /** @var \SplQueue A collection of idle workers. */
-    private \SplQueue $idleWorkers;
+    private readonly \SplQueue $idleWorkers;
 
     private ?DeferredFuture $waiting = null;
 
     /** @var \Closure(Worker):void */
-    private \Closure $push;
+    private readonly \Closure $push;
 
     private ?Future $exitStatus = null;
 

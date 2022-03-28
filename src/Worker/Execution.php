@@ -19,9 +19,9 @@ final class Execution
      * @param Future<TResult> $result
      */
     public function __construct(
-        private Task $task,
-        private Channel $channel,
-        private Future $result,
+        private readonly Task $task,
+        private readonly Channel $channel,
+        private readonly Future $result,
     ) {
     }
 

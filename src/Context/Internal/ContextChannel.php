@@ -9,7 +9,7 @@ use Amp\Sync\Channel;
 final class ContextChannel implements Channel
 {
     public function __construct(
-        private Channel $channel,
+        private readonly Channel $channel,
     ) {
     }
 

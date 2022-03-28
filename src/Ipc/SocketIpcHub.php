@@ -34,9 +34,9 @@ final class SocketIpcHub implements IpcHub
      * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
      */
     public function __construct(
-        private Socket\SocketServer $server,
+        private readonly Socket\SocketServer $server,
         float $keyReceiveTimeout = self::DEFAULT_KEY_RECEIVE_TIMEOUT,
-        private int $keyLength = self::DEFAULT_KEY_LENGTH,
+        private readonly int $keyLength = self::DEFAULT_KEY_LENGTH,
     ) {
         $address = $this->server->getAddress();
         $this->uri = match ($address->getType()) {

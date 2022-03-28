@@ -9,7 +9,7 @@ use const Amp\Process\IS_WINDOWS;
 
 final class LocalIpcHub implements IpcHub
 {
-    private SocketIpcHub $delegate;
+    private readonly SocketIpcHub $delegate;
 
     private ?string $toUnlink = null;
 

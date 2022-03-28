@@ -14,10 +14,9 @@ final class TaskCancelled extends TaskFailure
     }
 
     /**
-     * @return never
      * @throws TaskCancelledException
      */
-    public function getResult(): mixed
+    public function getResult(): never
     {
         throw new TaskCancelledException($this->createException());
     }

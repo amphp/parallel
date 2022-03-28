@@ -13,9 +13,9 @@ final class JobChannel implements Channel
     private bool $closed = false;
 
     public function __construct(
-        private string $id,
-        private Channel $channel,
-        private ConcurrentIterator $iterator,
+        private readonly string $id,
+        private readonly Channel $channel,
+        private readonly ConcurrentIterator $iterator,
     ) {
     }
 

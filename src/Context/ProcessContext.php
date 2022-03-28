@@ -185,8 +185,8 @@ final class ProcessContext implements Context
      * @param StreamChannel<TReceive, TSend> $channel
      */
     private function __construct(
-        private Process $process,
-        private StreamChannel $channel,
+        private readonly Process $process,
+        private readonly StreamChannel $channel,
     ) {
     }
 

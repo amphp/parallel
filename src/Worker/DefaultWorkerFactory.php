@@ -21,12 +21,10 @@ final class DefaultWorkerFactory implements WorkerFactory
      * @throws \Error If the given class name does not exist or does not implement {@see Cache}.
      */
     public function __construct(
-        private ?string $bootstrapPath = null,
-        private ?ContextFactory $contextFactory = null,
-        private string $cacheClass = LocalCache::class,
+        private readonly ?string $bootstrapPath = null,
+        private readonly ?ContextFactory $contextFactory = null,
+        private readonly string $cacheClass = LocalCache::class,
     ) {
-        $this->contextFactory = $contextFactory;
-
         if (!\class_exists($this->cacheClass)) {
             throw new \Error(\sprintf("Invalid cache class name '%s'", $this->cacheClass));
         }

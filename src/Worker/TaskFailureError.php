@@ -14,10 +14,10 @@ final class TaskFailureError extends \Error implements TaskFailureThrowable
      * @param TaskFailureThrowable|null $previous Instance representing any previous exception thrown in the Task.
      */
     public function __construct(
-        private string $className,
-        private string $originalMessage,
-        private int|string $originalCode,
-        private array $originalTrace,
+        private readonly string $className,
+        private readonly string $originalMessage,
+        private readonly int|string $originalCode,
+        private readonly array $originalTrace,
         ?TaskFailureThrowable $previous = null
     ) {
         $format = 'Uncaught %s in worker with message "%s" and code "%s"; use %s::getOriginalTrace() '

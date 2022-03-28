@@ -11,16 +11,16 @@ use function Amp\Parallel\Context\flattenThrowableBacktrace;
  */
 final class ExitFailure implements ExitResult
 {
-    private string $type;
+    private readonly string $type;
 
-    private string $message;
+    private readonly string $message;
 
-    private int|string $code;
+    private readonly int|string $code;
 
     /** @var string[] */
-    private array $trace;
+    private readonly array $trace;
 
-    private ?self $previous = null;
+    private readonly ?self $previous;
 
     public function __construct(\Throwable $exception)
     {
@@ -29,16 +29,14 @@ final class ExitFailure implements ExitResult
         $this->code = $exception->getCode();
         $this->trace = flattenThrowableBacktrace($exception);
 
-        if ($previous = $exception->getPrevious()) {
-            $this->previous = new self($previous);
-        }
+        $previous = $exception->getPrevious();
+        $this->previous = $previous ? new self($previous) : null;
     }
 
     /**
-     * @return never
      * @throws ContextPanicError
      */
-    public function getResult(): mixed
+    public function getResult(): never
     {
         throw $this->createException();
     }

@@ -6,7 +6,7 @@ namespace Amp\Parallel\Context\Internal;
 final class ContextMessage
 {
     public function __construct(
-        private mixed $message,
+        private readonly mixed $message,
     ) {
     }
 

@@ -15,8 +15,8 @@ final class PooledWorker implements Worker
      * @param Closure(Worker):void $push Callable to push the worker back into the queue.
      */
     public function __construct(
-        private Worker $worker,
-        private \Closure $push,
+        private readonly Worker $worker,
+        private readonly \Closure $push,
     ) {
     }
 
