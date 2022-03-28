@@ -69,8 +69,6 @@ final class TaskFailureException extends \Exception implements TaskFailureThrowa
 
     /**
      * Original backtrace flattened to a human-readable string.
-     *
-     * @return string
      */
     public function getOriginalTraceAsString(): string
     {

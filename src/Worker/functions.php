@@ -54,8 +54,6 @@ function submit(Task $task, ?Cancellation $cancellation = null): Execution
 
 /**
  * Gets an available worker from the global worker pool.
- *
- * @return Worker
  */
 function getWorker(): Worker
 {
@@ -64,8 +62,6 @@ function getWorker(): Worker
 
 /**
  * Creates a worker using the global worker factory.
- *
- * @return Worker
  */
 function createWorker(): Worker
 {
@@ -74,10 +70,6 @@ function createWorker(): Worker
 
 /**
  * Gets or sets the global worker factory.
- *
- * @param WorkerFactory|null $factory
- *
- * @return WorkerFactory
  */
 function workerFactory(WorkerFactory $factory = null): WorkerFactory
 {

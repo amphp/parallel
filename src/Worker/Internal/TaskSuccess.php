@@ -13,7 +13,6 @@ use Amp\Parallel\Worker\Task;
 final class TaskSuccess extends TaskResult
 {
     /**
-     * @param string $id
      * @param T $result
      */
     public function __construct(

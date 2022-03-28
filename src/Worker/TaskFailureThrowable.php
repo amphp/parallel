@@ -31,8 +31,6 @@ interface TaskFailureThrowable extends \Throwable
 
     /**
      * Original backtrace flattened to a human-readable string.
-     *
-     * @return string
      */
     public function getOriginalTraceAsString(): string;
 }

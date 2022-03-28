@@ -17,22 +17,17 @@ class TaskFailure extends TaskResult
     private const PARENT_EXCEPTION = 0;
     private const PARENT_ERROR = 1;
 
-    /** @var string */
     private readonly string $type;
 
-    /** @var int */
     private readonly int $parent;
 
-    /** @var string */
     private readonly string $message;
 
-    /** @var int|string */
     private readonly string|int $code;
 
     /** @var string[] */
     private readonly array $trace;
 
-    /** @var self|null */
     private readonly ?self $previous;
 
     public function __construct(string $id, \Throwable $exception)

@@ -21,10 +21,6 @@ function startContext(string|array $script): Context
 
 /**
  * Gets or sets the global context factory.
- *
- * @param ContextFactory|null $factory
- *
- * @return ContextFactory
  */
 function contextFactory(?ContextFactory $factory = null): ContextFactory
 {
@@ -40,8 +36,6 @@ function contextFactory(?ContextFactory $factory = null): ContextFactory
 }
 
 /**
- * @param \Throwable $exception
- *
  * @return array Serializable exception backtrace, with all function arguments flattened to strings.
  */
 function flattenThrowableBacktrace(\Throwable $exception): array
@@ -58,8 +52,6 @@ function flattenThrowableBacktrace(\Throwable $exception): array
 
 /**
  * @param array $trace Backtrace produced by {@see formatFlattenedBacktrace()}.
- *
- * @return string
  */
 function formatFlattenedBacktrace(array $trace): string
 {
@@ -86,8 +78,6 @@ function formatFlattenedBacktrace(array $trace): string
 }
 
 /**
- * @param mixed $value
- *
  * @return string Serializable string representation of $value for backtraces.
  */
 function flattenArgument(mixed $value): string

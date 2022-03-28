@@ -40,7 +40,7 @@
     "require-dev": {
         "phpunit/phpunit": "^9",
         "amphp/phpunit-util": "^3",
-        "amphp/php-cs-fixer-config": "dev-master",
+        "amphp/php-cs-fixer-config": "^2",
         "psalm/phar": "^4.15"
     },
     "prefer-stable": true,

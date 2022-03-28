@@ -8,9 +8,6 @@ final class TaskCancelledException extends CancelledException implements TaskFai
 {
     private TaskFailureThrowable $failure;
 
-    /**
-     * @param TaskFailureThrowable $exception
-     */
     public function __construct(TaskFailureThrowable $exception)
     {
         parent::__construct($exception);

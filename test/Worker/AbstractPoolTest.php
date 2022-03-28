@@ -147,11 +147,6 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         return $this->createPool(cacheClass: $cacheClass, autoloadPath: $autoloadPath);
     }
 
-    /**
-     * @param int $max
-     *
-     * @return WorkerPool
-     */
     protected function createPool(
         int $max = WorkerPool::DEFAULT_WORKER_LIMIT,
         string $cacheClass = LocalCache::class,

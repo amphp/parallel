@@ -16,7 +16,7 @@ $mutex = new SemaphoreMutex($semaphore = PosixSemaphore::create(1));
 // Create a parcel that then can be accessed in any number of child processes.
 $parcel = SharedMemoryParcel::create($mutex, 1);
 
-\printf("Parent %d created semaphore %s and parcel: %s\n", \getmypid(), $semaphore->getKey(), $parcel->getKey());
+printf("Parent %d created semaphore %s and parcel: %s\n", getmypid(), $semaphore->getKey(), $parcel->getKey());
 
 // Send semaphore and parcel key to child process as command argument.
 $context = ProcessContext::start([
@@ -36,4 +36,4 @@ $parcel->synchronized(function (int $value): int {
 
 $context->join(); // Wait for child process to finish.
 
-\printf("Final value of parcel: %d\n", $parcel->unwrap());
+printf("Final value of parcel: %d\n", $parcel->unwrap());

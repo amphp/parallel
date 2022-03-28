@@ -20,8 +20,6 @@ interface WorkerPool extends Worker
      * wish to send a series of tasks to a single worker. For a dedicated worker, create a new worker using a
      * {@see WorkerFactory} or {@see createWorker()}.
      *
-     * @return Worker
-     *
      * @throws StatusError If the pool is not running.
      */
     public function getWorker(): Worker;

@@ -6,15 +6,15 @@
 use Amp\Sync\Channel;
 
 return function (Channel $channel): int {
-    \printf("Received the following from parent: %s\n", $channel->receive());
+    printf("Received the following from parent: %s\n", $channel->receive());
 
     print "Sleeping for 3 seconds...\n";
-    \sleep(3); // Blocking call in process.
+    sleep(3); // Blocking call in process.
 
     $channel->send("Data sent from child.");
 
     print "Sleeping for 2 seconds...\n";
-    \sleep(2); // Blocking call in process.
+    sleep(2); // Blocking call in process.
 
     return 42;
 };

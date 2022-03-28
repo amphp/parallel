@@ -13,8 +13,6 @@ use Revolt\EventLoop;
  * Gets or sets the global shared IpcHub instance.
  *
  * @param IpcHub|null If not null, set the global shared IpcHub to this instance.
- *
- * @return IpcHub
  */
 function ipcHub(?IpcHub $ipcHub = null): IpcHub
 {
@@ -32,7 +30,6 @@ function ipcHub(?IpcHub $ipcHub = null): IpcHub
 /**
  * Note this is designed to be used in the child process/thread.
  *
- * @param ReadableResourceStream|Socket\Socket $stream
  * @param Cancellation|null $cancellation Closes the stream if cancelled.
  * @param positive-int $keyLength
  */
@@ -57,8 +54,6 @@ function readKey(
 
 /**
  * Note that this is designed to be used in the child process/thread and performs a blocking connect.
- *
- * @return EncryptableSocket
  */
 function connect(
     string $uri,

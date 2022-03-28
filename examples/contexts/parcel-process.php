@@ -20,7 +20,7 @@ return function () use ($argv): int {
     $semaphoreKey = (int) $argv[1];
     $parcelKey = (int) $argv[2];
 
-    \printf("Child process using semaphore %s and parcel %s\n", $semaphoreKey, $parcelKey);
+    printf("Child process using semaphore %s and parcel %s\n", $semaphoreKey, $parcelKey);
 
     $mutex = new SemaphoreMutex(PosixSemaphore::use($semaphoreKey));
     $parcel = SharedMemoryParcel::use($mutex, $parcelKey);
@@ -29,18 +29,18 @@ return function () use ($argv): int {
         return $value + 1;
     });
 
-    \printf("Value after modifying in child process: %s\n", $value);
+    printf("Value after modifying in child process: %s\n", $value);
 
     delay(1); // Parent process should access parcel during this time.
 
     // Unwrapping the parcel now should give value from parent process.
-    \printf("Value in child process after being modified in parent process: %s\n", $parcel->unwrap());
+    printf("Value in child process after being modified in parent process: %s\n", $parcel->unwrap());
 
     $value = $parcel->synchronized(function (int $value): int {
         return $value + 1;
     });
 
-    \printf("Value after modifying in child process: %s\n", $value);
+    printf("Value after modifying in child process: %s\n", $value);
 
     return $value;
 };

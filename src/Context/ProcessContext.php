@@ -41,7 +41,6 @@ final class ProcessContext implements Context
      *     options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
      * @param string|null $workingDirectory Working directory.
      * @param string[] $environment Array of environment variables.
-     * @param Cancellation|null $cancellation
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param positive-int $timeout Number of seconds the child will wait for the child to connect before failing.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
@@ -292,8 +291,6 @@ final class ProcessContext implements Context
     /**
      * Send a signal to the process.
      *
-     * @param int $signo
-     *
      * @throws StatusError|ProcessException
      * @see Process::signal()
      */
@@ -304,8 +301,6 @@ final class ProcessContext implements Context
 
     /**
      * Returns the PID of the process.
-     *
-     * @return int
      *
      * @throws StatusError
      * @see Process::getPid()
@@ -318,8 +313,6 @@ final class ProcessContext implements Context
     /**
      * Returns the STDIN stream of the process.
      *
-     * @return WritableResourceStream
-     *
      * @throws StatusError
      * @see Process::getStdin()
      */
@@ -331,8 +324,6 @@ final class ProcessContext implements Context
     /**
      * Returns the STDOUT stream of the process.
      *
-     * @return ReadableResourceStream
-     *
      * @throws StatusError
      * @see Process::getStdout()
      */
@@ -343,8 +334,6 @@ final class ProcessContext implements Context
 
     /**
      * Returns the STDOUT stream of the process.
-     *
-     * @return ReadableResourceStream
      *
      * @throws StatusError
      * @see Process::getStderr()
