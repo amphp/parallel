@@ -7,6 +7,7 @@ use Amp\CancelledException;
 use Amp\DeferredFuture;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
+use Amp\Socket\SocketAddressType;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 
@@ -38,12 +39,10 @@ final class SocketIpcHub implements IpcHub
         private int $keyLength = self::DEFAULT_KEY_LENGTH,
     ) {
         $address = $this->server->getAddress();
-        if ($address->getPort() === null) {
-            $this->uri = 'unix://' . $address->toString();
-        } else {
-            $this->uri = 'tcp://' . $address->toString();
-        }
-
+        $this->uri = match ($address->getType()) {
+            SocketAddressType::Unix => 'unix://' . $address->toString(),
+            SocketAddressType::Internet => 'tcp://' . $address->toString(),
+        };
 
         $keys = &$this->keys;
         $acceptor = &$this->acceptor;
@@ -89,6 +88,11 @@ final class SocketIpcHub implements IpcHub
     public function close(): void
     {
         $this->server->close();
+    }
+
+    public function onClose(\Closure $onClose): void
+    {
+        $this->server->onClose($onClose);
     }
 
     public function getUri(): string

@@ -59,6 +59,11 @@ final class LocalIpcHub implements IpcHub
         }
     }
 
+    public function onClose(\Closure $onClose): void
+    {
+        $this->delegate->onClose($onClose);
+    }
+
     public function getUri(): string
     {
         return $this->delegate->getUri();
