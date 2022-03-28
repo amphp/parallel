@@ -15,6 +15,7 @@
         "callable",
         "mixed",
         "void",
+        "never",
         "object",
         "readKey",
         "formatFlattenedBacktrace",
