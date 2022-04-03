@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
+use Amp\DeferredFuture;
 use Amp\Pipeline\ConcurrentIterator;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
@@ -10,18 +11,24 @@ use Amp\Sync\ChannelException;
 /** @internal */
 final class JobChannel implements Channel
 {
-    private bool $closed = false;
+    private readonly DeferredFuture $onClose;
 
     public function __construct(
         private readonly string $id,
         private readonly Channel $channel,
         private readonly ConcurrentIterator $iterator,
     ) {
+        $this->onClose = new DeferredFuture();
+    }
+
+    public function __destruct()
+    {
+        $this->close();
     }
 
     public function send(mixed $data): void
     {
-        if ($this->closed) {
+        if ($this->onClose->isComplete()) {
             throw new ChannelException('Channel has already been closed.');
         }
 
@@ -31,6 +38,7 @@ final class JobChannel implements Channel
     public function receive(?Cancellation $cancellation = null): mixed
     {
         if (!$this->iterator->continue($cancellation)) {
+            $this->close();
             throw new ChannelException('Channel source closed unexpectedly');
         }
 
@@ -39,12 +47,20 @@ final class JobChannel implements Channel
 
     public function close(): void
     {
-        $this->closed = true;
         $this->iterator->dispose();
+
+        if (!$this->onClose->isComplete()) {
+            $this->onClose->complete();
+        }
     }
 
     public function isClosed(): bool
     {
-        return $this->channel->isClosed() || $this->closed;
+        return $this->channel->isClosed() || $this->onClose->isComplete();
+    }
+
+    public function onClose(\Closure $onClose): void
+    {
+        $this->onClose->getFuture()->finally($onClose);
     }
 }

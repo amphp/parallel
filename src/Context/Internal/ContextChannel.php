@@ -32,4 +32,9 @@ final class ContextChannel implements Channel
     {
         return $this->channel->isClosed();
     }
+
+    public function onClose(\Closure $onClose): void
+    {
+        $this->channel->onClose($onClose);
+    }
 }

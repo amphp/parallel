@@ -353,4 +353,9 @@ final class ProcessContext implements Context
     {
         return !$this->process->isRunning();
     }
+
+    public function onClose(\Closure $onClose): void
+    {
+        $this->channel->onClose($onClose);
+    }
 }

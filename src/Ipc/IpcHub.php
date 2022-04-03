@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Ipc;
 
-use Amp\ByteStream\Closable;
+use Amp\Closable;
 use Amp\Cancellation;
 use Amp\Socket\Socket;
 
