@@ -2,8 +2,8 @@
 
 namespace Amp\Parallel\Ipc;
 
-use Amp\Closable;
 use Amp\Cancellation;
+use Amp\Closable;
 use Amp\Socket\Socket;
 
 interface IpcHub extends Closable
