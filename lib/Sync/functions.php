@@ -5,7 +5,9 @@ namespace Amp\Parallel\Sync;
 use Amp\Serialization\SerializationException as SerializerException;
 
 // Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
-\class_alias(SerializerException::class, SerializationException::class);
+if (!class_exists(SerializationException::class, false)) {
+    \class_alias(SerializerException::class, SerializationException::class);
+}
 
 /**
  * @param \Throwable $exception
