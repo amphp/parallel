@@ -89,7 +89,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
             $worker->submit(new Fixtures\TestTask(72))->getResult(),
         ];
 
-        self::assertEquals([42, 56, 72], Future\all($futures));
+        self::assertEquals([42, 56, 72], Future\await($futures));
 
         $worker->shutdown();
     }

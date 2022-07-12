@@ -89,13 +89,13 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
             return $pool->submit($task)->getResult();
         }, $tasks);
 
-        self::assertEquals($values, Future\all($promises));
+        self::assertEquals($values, Future\await($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
             return $pool->submit($task)->getResult();
         }, $tasks);
 
-        self::assertEquals($values, Future\all($promises));
+        self::assertEquals($values, Future\await($promises));
 
         $pool->shutdown();
     }
@@ -120,7 +120,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
                 return $pool->submit(new Fixtures\TestTask($value))->getResult();
             }, $values);
 
-            self::assertEquals($values, Future\all($promises));
+            self::assertEquals($values, Future\await($promises));
         }
     }
 
