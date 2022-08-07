@@ -27,6 +27,7 @@ final class SocketIpcHub implements IpcHub
     /** @var DeferredFuture[] */
     private array $acceptor = [];
 
+    /** @var \Closure(): void */
     private \Closure $accept;
 
     /**
@@ -116,6 +117,10 @@ final class SocketIpcHub implements IpcHub
                 \strlen($key),
                 $this->keyLength,
             ));
+        }
+
+        if (isset($this->keys[$key])) {
+            throw new \Error("An accept is already pending for the given key");
         }
 
         $id = $this->nextId++;
