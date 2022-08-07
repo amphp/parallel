@@ -18,6 +18,7 @@
         "never",
         "object",
         "readKey",
+        "flattenArgument",
         "formatFlattenedBacktrace",
         "contextFactory",
         "workerFactory",
