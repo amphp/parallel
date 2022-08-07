@@ -14,7 +14,6 @@ use Amp\Process\Process;
 use Amp\Process\ProcessException;
 use Amp\Sync\ChannelException;
 use Amp\TimeoutCancellation;
-use function Amp\async;
 
 /**
  * @template TResult
@@ -37,10 +36,11 @@ final class ProcessContext implements Context
     private static ?string $binaryPath = null;
 
     /**
-     * @param string|string[] $script Path to PHP script or array with first element as path and following elements
+     * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
      *     options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
      * @param string|null $workingDirectory Working directory.
-     * @param string[] $environment Array of environment variables.
+     * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
+     *     the parent.
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
      * @param positive-int $timeout Number of seconds the child will wait for the child to connect before failing.
      * @param IpcHub|null $ipcHub Optional IpcHub instance.
@@ -67,11 +67,7 @@ final class ProcessContext implements Context
         ];
 
         if ($binaryPath === null) {
-            if (\PHP_SAPI === "cli") {
-                $binaryPath = \PHP_BINARY;
-            } else {
-                $binaryPath = self::$binaryPath ?? self::locateBinary();
-            }
+            $binaryPath = self::$binaryPath ??= self::locateBinary();
         } elseif (!\is_executable($binaryPath)) {
             throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binaryPath));
         }
@@ -123,7 +119,7 @@ final class ProcessContext implements Context
         $command = \array_merge(
             [$binaryPath],
             self::formatOptions($options),
-            [$scriptPath, $ipcHub->getUri(), (string) \strlen($key), $timeout],
+            [$scriptPath, $ipcHub->getUri(), (string) \strlen($key), (string) $timeout],
             \is_array($script) ? $script : [$script],
         );
 
@@ -135,8 +131,12 @@ final class ProcessContext implements Context
 
         try {
             $process->getStdin()->write($key);
+
             $socket = $ipcHub->accept($key, $cancellation);
-            $channel = new StreamChannel($socket, $socket);
+            $dataChannel = new StreamChannel($socket, $socket);
+
+            $socket = $ipcHub->accept($key, $cancellation);
+            $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {
                 $process->kill();
@@ -144,11 +144,15 @@ final class ProcessContext implements Context
             throw new ContextException("Starting the process failed", 0, $exception);
         }
 
-        return new self($process, $channel);
+        return new self($process, $dataChannel, $resultChannel);
     }
 
     private static function locateBinary(): string
     {
+        if (\PHP_SAPI === "cli") {
+            return \PHP_BINARY;
+        }
+
         $executable = \PHP_OS_FAMILY === 'Windows' ? "php.exe" : "php";
 
         $paths = \array_filter(\explode(
@@ -161,13 +165,18 @@ final class ProcessContext implements Context
         foreach ($paths as $path) {
             $path .= \DIRECTORY_SEPARATOR . $executable;
             if (\is_executable($path)) {
-                return self::$binaryPath = $path;
+                return $path;
             }
         }
 
         throw new \Error("Could not locate PHP executable binary");
     }
 
+    /**
+     * @param array<string, string> $options
+     *
+     * @return list<string>
+     */
     private static function formatOptions(array $options): array
     {
         $result = [];
@@ -181,11 +190,13 @@ final class ProcessContext implements Context
 
     /**
      * @param Process $process
-     * @param StreamChannel<TReceive, TSend> $channel
+     * @param StreamChannel<TReceive, TSend> $dataChannel
+     * @param StreamChannel<TResult, never> $resultChannel
      */
     private function __construct(
         private readonly Process $process,
-        private readonly StreamChannel $channel,
+        private readonly StreamChannel $dataChannel,
+        private readonly StreamChannel $resultChannel,
     ) {
     }
 
@@ -200,21 +211,13 @@ final class ProcessContext implements Context
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
-            $data = $this->channel->receive($cancellation);
+            $data = $this->dataChannel->receive($cancellation);
         } catch (ChannelException $e) {
             throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
         }
 
         if ($data === null) {
             throw new ContextException("The channel closed when receiving data from the process");
-        }
-
-        if ($data instanceof Internal\ExitResult) {
-            $data = $data->getResult();
-            throw new SynchronizationError(\sprintf(
-                'Process unexpectedly exited with result of type: %s',
-                \get_debug_type($data),
-            ));
         }
 
         if (!$data instanceof Internal\ContextMessage) {
@@ -230,14 +233,14 @@ final class ProcessContext implements Context
     public function send(mixed $data): void
     {
         try {
-            $this->channel->send($data);
+            $this->dataChannel->send($data);
         } catch (ChannelException $e) {
-            if ($this->channel->isClosed()) {
+            if ($this->dataChannel->isClosed()) {
                 throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
             }
 
             try {
-                $data = async(fn () => $this->join())->await(new TimeoutCancellation(0.1));
+                $data = $this->join(new TimeoutCancellation(0.1));
             } catch (ContextException|ChannelException|CancelledException) {
                 if (!$this->isClosed()) {
                     $this->close();
@@ -256,10 +259,12 @@ final class ProcessContext implements Context
      * @return TResult
      * @throws ContextException
      */
-    public function join(): mixed
+    public function join(?Cancellation $cancellation = null): mixed
     {
         try {
-            $data = $this->channel->receive();
+            $data = $this->resultChannel->receive($cancellation);
+        } catch (CancelledException $exception) {
+            throw $exception;
         } catch (\Throwable $exception) {
             if (!$this->isClosed()) {
                 $this->close();
@@ -278,7 +283,8 @@ final class ProcessContext implements Context
             throw new SynchronizationError("Did not receive an exit result from process");
         }
 
-        $this->channel->close();
+        $this->dataChannel->close();
+        $this->resultChannel->close();
 
         $code = $this->process->join();
         if ($code !== 0) {
@@ -346,7 +352,8 @@ final class ProcessContext implements Context
     public function close(): void
     {
         $this->process->kill();
-        $this->channel->close();
+        $this->dataChannel->close();
+        $this->resultChannel->close();
     }
 
     public function isClosed(): bool
@@ -356,6 +363,6 @@ final class ProcessContext implements Context
 
     public function onClose(\Closure $onClose): void
     {
-        $this->channel->onClose($onClose);
+        $this->resultChannel->onClose($onClose);
     }
 }

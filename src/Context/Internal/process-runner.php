@@ -32,7 +32,10 @@ if (\function_exists("cli_set_process_title")) {
     }
 
     if (!isset($autoloadPath)) {
-        \trigger_error("Could not locate autoload.php in any of the following files: " . \implode(", ", $paths), E_USER_ERROR);
+        \trigger_error(
+            "Could not locate autoload.php in any of the following files: " . \implode(", ", $paths),
+            E_USER_ERROR,
+        );
     }
 
     /** @psalm-suppress UnresolvableInclude */
@@ -40,6 +43,8 @@ if (\function_exists("cli_set_process_title")) {
 })();
 
 EventLoop::queue(function () use ($argc, $argv): void {
+    /** @var list<string> $argv */
+
     if (!isset($argv[1])) {
         \trigger_error("No socket path provided", E_USER_ERROR);
     }
@@ -53,24 +58,28 @@ EventLoop::queue(function () use ($argc, $argv): void {
     }
 
     [, $uri, $length, $timeout] = $argv;
+    $length = (int) $length;
+    $timeout = (int) $timeout;
 
-    \assert($length > 0);
+    \assert($length > 0 && $timeout > 0);
 
     // Remove script path, socket path, key length, and timeout from process arguments.
     $argc -= 4;
     $argv = \array_slice($argv, 4);
 
-    $cancellation = new TimeoutCancellation((int) $timeout);
+    $cancellation = new TimeoutCancellation($timeout);
 
     try {
-        /** @psalm-suppress ArgumentTypeCoercion */
-        $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, (int) $length);
+        $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, $length);
+
         $socket = Ipc\connect($uri, $key, $cancellation);
+        $dataChannel = new StreamChannel($socket, $socket);
+
+        $socket = Ipc\connect($uri, $key, $cancellation);
+        $resultChannel = new StreamChannel($socket, $socket);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
-
-    $channel = new StreamChannel($socket, $socket);
 
     try {
         if (!isset($argv[0])) {
@@ -78,22 +87,34 @@ EventLoop::queue(function () use ($argc, $argv): void {
         }
 
         if (!\is_file($argv[0])) {
-            throw new \Error(\sprintf("No script found at '%s' (be sure to provide the full path to the script)", $argv[0]));
+            throw new \Error(\sprintf(
+                "No script found at '%s' (be sure to provide the full path to the script)",
+                $argv[0],
+            ));
         }
 
         try {
             // Protect current scope by requiring script within another function.
-            $callable = (function () use ($argc, $argv): callable { // Using $argc so it is available to the required script.
+            // Using $argc so it is available to the required script.
+            $callable = (function () use ($argc, $argv): callable {
                 /** @psalm-suppress UnresolvableInclude */
                 return require $argv[0];
             })();
         } catch (\TypeError $exception) {
-            throw new \Error(\sprintf("Script '%s' did not return a callable function", $argv[0]), 0, $exception);
+            throw new \Error(\sprintf(
+                "Script '%s' did not return a callable function: %s",
+                $argv[0],
+                $exception->getMessage(),
+            ), 0, $exception);
         } catch (\ParseError $exception) {
-            throw new \Error(\sprintf("Script '%s' contains a parse error: " . $exception->getMessage(), $argv[0]), 0, $exception);
+            throw new \Error(\sprintf(
+                "Script '%s' contains a parse error: %s",
+                $argv[0],
+                $exception->getMessage(),
+            ), 0, $exception);
         }
 
-        $returnValue = $callable(new ContextChannel($channel));
+        $returnValue = $callable(new ContextChannel($dataChannel));
         $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
     } catch (\Throwable $exception) {
         $result = new ExitFailure($exception);
@@ -101,10 +122,10 @@ EventLoop::queue(function () use ($argc, $argv): void {
 
     try {
         try {
-            $channel->send($result);
+            $resultChannel->send($result);
         } catch (SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $channel->send(new ExitFailure($exception));
+            $resultChannel->send(new ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
         \trigger_error(\sprintf(

@@ -9,7 +9,7 @@ use Revolt\EventLoop;
  * @template TReceive
  * @template TSend
  *
- * @param string|string[] $script Path to PHP script or array with first element as path and following elements
+ * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
  *     options to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
  *
  * @return Context<TResult, TReceive, TSend>
@@ -43,15 +43,16 @@ function flattenThrowableBacktrace(\Throwable $exception): array
     $trace = $exception->getTrace();
 
     foreach ($trace as &$call) {
+        /** @psalm-suppress InvalidArrayOffset */
         unset($call['object']);
-        $call['args'] = \array_map(__NAMESPACE__ . '\\flattenArgument', $call['args'] ?? []);
+        $call['args'] = \array_map(flattenArgument(...), $call['args'] ?? []);
     }
 
     return $trace;
 }
 
 /**
- * @param array $trace Backtrace produced by {@see formatFlattenedBacktrace()}.
+ * @param array $trace Backtrace produced by {@see flattenThrowableBacktrace()}.
  */
 function formatFlattenedBacktrace(array $trace): string
 {
