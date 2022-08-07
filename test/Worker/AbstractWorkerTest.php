@@ -8,6 +8,7 @@ use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Test\Worker\Fixtures\CommunicatingTask;
 use Amp\Parallel\Worker\DefaultWorkerFactory;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
@@ -348,6 +349,21 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         )->getResult()->await());
 
         $worker->shutdown();
+    }
+
+    public function testCommunicatingJob(): void
+    {
+        $worker = $this->createWorker();
+
+        $cancellation = new TimeoutCancellation(1);
+        $execution = $worker->submit(new CommunicatingTask(), $cancellation);
+
+        $channel = $execution->getChannel();
+
+        self::assertSame('test', $channel->receive($cancellation));
+        $channel->send('out');
+
+        self::assertSame('out', $execution->getResult()->await($cancellation));
     }
 
     protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
