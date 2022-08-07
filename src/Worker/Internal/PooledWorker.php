@@ -11,7 +11,6 @@ use Amp\Parallel\Worker\Worker;
 final class PooledWorker implements Worker
 {
     /**
-     * @param Worker $worker
      * @param Closure(Worker):void $push Callable to push the worker back into the queue.
      */
     public function __construct(

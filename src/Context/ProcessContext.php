@@ -189,7 +189,6 @@ final class ProcessContext implements Context
     }
 
     /**
-     * @param Process $process
      * @param StreamChannel<TReceive, TSend> $dataChannel
      * @param StreamChannel<TResult, never> $resultChannel
      */
