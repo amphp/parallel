@@ -153,7 +153,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('stopped responding');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
-        delay(0.5);
+        delay(1);
         $context->send(1);
     }
 
