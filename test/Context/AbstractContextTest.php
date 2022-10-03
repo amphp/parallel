@@ -56,13 +56,13 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        delay(0.1);
+        delay(1);
 
         try {
             $context->send(1);
             self::fail('Sending should have failed');
         } catch (ContextException) {
-            $context->join(new TimeoutCancellation(0.1));
+            $context->join(new TimeoutCancellation(1));
         }
     }
 
