@@ -10,7 +10,6 @@ use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\Parallel\Worker\WorkerFactory;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\UnhandledException;
 use Amp\Sync\Channel;
 
 class DefaultPoolTest extends AsyncTestCase
@@ -41,7 +40,7 @@ class DefaultPoolTest extends AsyncTestCase
             ->willReturnCallback(function (): Worker {
                 $worker = $this->createMock(Worker::class);
                 $worker->method('isRunning')
-                    ->willReturnOnConsecutiveCalls(true, false);
+                    ->willReturnOnConsecutiveCalls(true, false, false);
                 $worker->method('shutdown')
                     ->willThrowException(new WorkerException('Test worker unexpectedly exited'));
                 $worker->method('submit')
@@ -57,9 +56,6 @@ class DefaultPoolTest extends AsyncTestCase
         $pool = new DefaultWorkerPool(32, $factory);
 
         $pool->submit($this->createMock(Task::class))->getResult()->await();
-
-        // Warning is forwarded as an exception to loop.
-        $this->expectException(UnhandledException::class);
 
         $pool->submit($this->createMock(Task::class))->getResult()->await();
     }

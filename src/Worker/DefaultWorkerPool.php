@@ -21,12 +21,13 @@ final class DefaultWorkerPool implements WorkerPool
     /** @var bool Indicates if the pool is currently running. */
     private bool $running = true;
 
-    /** @var \SplObjectStorage A collection of all workers in the pool. */
+    /** @var \SplObjectStorage<Worker, int> A collection of all workers in the pool. */
     private readonly \SplObjectStorage $workers;
 
-    /** @var \SplQueue A collection of idle workers. */
+    /** @var \SplQueue<Worker> A collection of idle workers. */
     private readonly \SplQueue $idleWorkers;
 
+    /** @var DeferredFuture<Worker>|null */
     private ?DeferredFuture $waiting = null;
 
     /** @var \Closure(Worker):void */
@@ -45,8 +46,8 @@ final class DefaultWorkerPool implements WorkerPool
      * @throws \Error
      */
     public function __construct(
-        private int $limit = self::DEFAULT_WORKER_LIMIT,
-        private ?WorkerFactory $factory = null,
+        private readonly int $limit = self::DEFAULT_WORKER_LIMIT,
+        private readonly ?WorkerFactory $factory = null,
     ) {
         if ($limit < 0) {
             throw new \Error("Maximum size must be a non-negative integer");
@@ -65,7 +66,12 @@ final class DefaultWorkerPool implements WorkerPool
                 return;
             }
 
-            $idleWorkers->push($worker);
+            if ($worker->isRunning()) {
+                $idleWorkers->push($worker);
+            } else {
+                $workers->detach($worker);
+            }
+
             $waiting?->complete($worker);
             $waiting = null;
         };
@@ -171,6 +177,9 @@ final class DefaultWorkerPool implements WorkerPool
         $this->waiting = null;
     }
 
+    /**
+     * @param \SplObjectStorage<Worker, int> $workers
+     */
     private static function killWorkers(\SplObjectStorage $workers, ?DeferredFuture $waiting): void
     {
         foreach ($workers as $worker) {
