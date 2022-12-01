@@ -27,8 +27,8 @@ final class DefaultWorkerPool implements WorkerPool
     /** @var \SplQueue<Worker> A collection of idle workers. */
     private readonly \SplQueue $idleWorkers;
 
-    /** @var DeferredFuture<Worker>|null */
-    private ?DeferredFuture $waiting = null;
+    /** @var \SplQueue<DeferredFuture<Worker|null>> Task submissions awaiting an available worker. */
+    private \SplQueue $waiting;
 
     /** @var \Closure(Worker):void */
     private readonly \Closure $push;
@@ -55,13 +55,13 @@ final class DefaultWorkerPool implements WorkerPool
 
         $this->workers = new \SplObjectStorage;
         $this->idleWorkers = new \SplQueue;
+        $this->waiting = new \SplQueue;
 
         $workers = $this->workers;
         $idleWorkers = $this->idleWorkers;
-        $waiting = &$this->waiting;
+        $waiting = $this->waiting;
 
-        $this->push = static function (Worker $worker) use (&$waiting, $workers, $idleWorkers): void {
-            /** @psalm-suppress InvalidArgument */
+        $this->push = static function (Worker $worker) use ($waiting, $workers, $idleWorkers): void {
             if (!$workers->contains($worker)) {
                 return;
             }
@@ -70,10 +70,12 @@ final class DefaultWorkerPool implements WorkerPool
                 $idleWorkers->push($worker);
             } else {
                 $workers->detach($worker);
+                $worker = null;
             }
 
-            $waiting?->complete($worker);
-            $waiting = null;
+            if (!$waiting->isEmpty()) {
+                $waiting->dequeue()->complete($worker);
+            }
         };
     }
 
@@ -128,15 +130,15 @@ final class DefaultWorkerPool implements WorkerPool
         $push = $this->push;
 
         try {
-            $job = $worker->submit($task, $cancellation);
+            $execution = $worker->submit($task, $cancellation);
         } catch (\Throwable $exception) {
             $push($worker);
             throw $exception;
         }
 
-        $job->getResult()->finally(static fn () => $push($worker))->ignore();
+        $execution->getResult()->finally(static fn () => $push($worker))->ignore();
 
-        return $job;
+        return $execution;
     }
 
     /**
@@ -153,8 +155,11 @@ final class DefaultWorkerPool implements WorkerPool
 
         $this->running = false;
 
-        $this->waiting?->error(new WorkerException('The pool shut down before the task could be executed'));
-        $this->waiting = null;
+        while (!$this->waiting->isEmpty()) {
+            $this->waiting->dequeue()->error(
+                $exception ??= new WorkerException('The pool shut down before the task could be executed'),
+            );
+        }
 
         $workers = $this->workers;
         ($this->exitStatus = async(static function () use ($workers): void {
@@ -174,13 +179,13 @@ final class DefaultWorkerPool implements WorkerPool
     {
         $this->running = false;
         self::killWorkers($this->workers, $this->waiting);
-        $this->waiting = null;
     }
 
     /**
      * @param \SplObjectStorage<Worker, int> $workers
+     * @param \SplQueue<DeferredFuture<Worker|null>> $waiting
      */
-    private static function killWorkers(\SplObjectStorage $workers, ?DeferredFuture $waiting): void
+    private static function killWorkers(\SplObjectStorage $workers, \SplQueue $waiting): void
     {
         foreach ($workers as $worker) {
             \assert($worker instanceof Worker);
@@ -189,7 +194,11 @@ final class DefaultWorkerPool implements WorkerPool
             }
         }
 
-        $waiting?->error(new WorkerException('The pool was killed before the task could be executed'));
+        while (!$waiting->isEmpty()) {
+            $waiting->dequeue()->error(
+                $exception ??= new WorkerException('The pool was killed before the task could be executed'),
+            );
+        }
     }
 
     public function getWorker(): Worker
@@ -221,16 +230,19 @@ final class DefaultWorkerPool implements WorkerPool
                     return $worker;
                 }
 
-                if (!$this->waiting) {
-                    $this->waiting = new DeferredFuture;
-                }
+                /** @var DeferredFuture<Worker|null> $deferred */
+                $deferred = new DeferredFuture;
+                $this->waiting->enqueue($deferred);
 
-                do {
-                    $worker = $this->waiting->getFuture()->await();
-                } while ($this->waiting);
+                $worker = $deferred->getFuture()->await();
             } else {
                 // Shift a worker off the idle queue.
                 $worker = $this->idleWorkers->shift();
+            }
+
+            if ($worker === null) {
+                // Worker crashed when executing a Task, which should have failed.
+                continue;
             }
 
             \assert($worker instanceof Worker);
@@ -239,8 +251,7 @@ final class DefaultWorkerPool implements WorkerPool
                 return $worker;
             }
 
-            // Worker crashed; trigger error and remove it from the pool.
-
+            // Worker crashed while idle; trigger error and remove it from the pool.
             EventLoop::queue(static function () use ($worker): void {
                 try {
                     $worker->shutdown();
