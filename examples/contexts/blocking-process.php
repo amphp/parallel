@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 // The function returned by this script is run by process.php in a separate process.
 // $argc and $argv are available in this process as any other cli PHP script.
