@@ -5,7 +5,13 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\Cancellation;
 use Amp\Sync\Channel;
 
-/** @internal */
+/**
+ * @template-covariant TReceive
+ * @template TSend
+ * @implements Channel<TReceive, TSend>
+ *
+ * @internal
+ */
 final class ContextChannel implements Channel
 {
     public function __construct(

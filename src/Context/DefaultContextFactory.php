@@ -9,7 +9,7 @@ final class DefaultContextFactory implements ContextFactory
      * @template TReceive
      * @template TSend
      *
-     * @param string|string[] $script
+     * @param string|list<string> $script
      *
      * @return Context<TResult, TReceive, TSend>
      *

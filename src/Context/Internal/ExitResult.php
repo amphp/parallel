@@ -6,7 +6,7 @@ use Amp\Parallel\Context\ContextPanicError;
 
 /**
  * @internal
- * @template TValue
+ * @template-covariant TValue
  */
 interface ExitResult
 {

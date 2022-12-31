@@ -9,7 +9,7 @@ use Amp\Sync\Channel;
 /**
  * A runnable unit of execution.
  *
- * @template TResult
+ * @template-covariant TResult
  * @template TReceive
  * @template TSend
  * @template TCache

@@ -11,8 +11,8 @@ interface ContextFactory
      * @template TReceive
      * @template TSend
      *
-     * @param string|string[] $script Path to PHP script or array with first element as path and following elements
-     *     options to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+     * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
+     *     options to the PHP script (e.g.: ['bin/worker', 'ArgumentValue', '--option', 'OptionValue'].
      *
      * @return Context<TResult, TReceive, TSend>
      */

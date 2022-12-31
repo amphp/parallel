@@ -39,7 +39,7 @@ final class DefaultWorker implements Worker
      * @param Context<int, Internal\JobPacket, Internal\JobPacket|int> $context A context running an instance of
      * {@see runTasks()}.
      */
-    public function __construct(private Context $context)
+    public function __construct(private readonly Context $context)
     {
         $jobQueue = &$this->jobQueue;
         $queues = &$this->queues;

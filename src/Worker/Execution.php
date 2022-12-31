@@ -6,7 +6,7 @@ use Amp\Future;
 use Amp\Sync\Channel;
 
 /**
- * @template TResult
+ * @template-covariant TResult
  * @template TReceive
  * @template TSend
  * @template TCache

@@ -7,7 +7,7 @@ use Amp\Parallel\Worker\Task;
 /**
  * @internal
  *
- * @template T
+ * @template-covariant T
  * @template-extends TaskResult<T>
  */
 final class TaskSuccess extends TaskResult

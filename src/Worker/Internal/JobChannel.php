@@ -8,7 +8,13 @@ use Amp\Pipeline\ConcurrentIterator;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
 
-/** @internal */
+/**
+ * @template-covariant TReceive
+ * @template TSend
+ * @implements Channel<TReceive, TSend>
+ *
+ * @internal
+ */
 final class JobChannel implements Channel
 {
     private readonly DeferredFuture $onClose;
