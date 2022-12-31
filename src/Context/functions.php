@@ -3,6 +3,7 @@
 namespace Amp\Parallel\Context;
 
 use Revolt\EventLoop;
+use function Amp\Serialization\encodeUnprintableChars;
 
 /**
  * @template TResult
@@ -36,19 +37,21 @@ function contextFactory(?ContextFactory $factory = null): ContextFactory
 }
 
 /**
- * @return array Serializable exception backtrace, with all function arguments flattened to strings.
+ * @psalm-type FlattenedTraceEntry = array<non-empty-string, scalar|list<scalar>>
+ *
+ * @return list<FlattenedTraceEntry> Serializable exception backtrace, with all function
+ *      arguments flattened to strings.
  */
 function flattenThrowableBacktrace(\Throwable $exception): array
 {
-    $trace = $exception->getTrace();
-
-    foreach ($trace as &$call) {
+    return \array_map(function (array $call): array {
         /** @psalm-suppress InvalidArrayOffset */
         unset($call['object']);
         $call['args'] = \array_map(flattenArgument(...), $call['args'] ?? []);
-    }
 
-    return $trace;
+        /** @var FlattenedTraceEntry $call */
+        return $call;
+    }, $exception->getTrace());
 }
 
 /**
@@ -71,7 +74,7 @@ function formatFlattenedBacktrace(array $trace): string
             $call['file'] ?? '[internal function]',
             $call['line'] ?? 0,
             $name,
-            \implode(', ', $call['args'] ?? ['...'])
+            \implode(', ', $call['args'] ?? [])
         );
     }
 
@@ -97,7 +100,12 @@ function flattenArgument(mixed $value): string
     }
 
     if (\is_array($value)) {
-        return 'Array([' . \implode(', ', \array_map(__FUNCTION__, $value)) . '])';
+        $length = \count($value);
+        if ($length > 5) {
+            $value = \array_slice($value, 0, 5);
+        }
+        $value = \implode(', ', \array_map(flattenArgument(...), $value));
+        return 'Array([' . $value . ($length > 5 ? ', ...' : '') . '])';
     }
 
     if (\is_resource($value)) {
@@ -105,7 +113,10 @@ function flattenArgument(mixed $value): string
     }
 
     if (\is_string($value)) {
-        return '"' . $value . '"';
+        if (\strlen($value) > 30) {
+            $value = \substr($value, 0, 27) . '...';
+        }
+        return '"' . encodeUnprintableChars($value) . '"';
     }
 
     if (\is_null($value)) {

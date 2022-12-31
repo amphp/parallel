@@ -7,26 +7,34 @@ use function Amp\Parallel\Context\flattenThrowableBacktrace;
 
 /**
  * @internal
+ * @psalm-import-type FlattenedTrace from ContextPanicError
  * @template-implements ExitResult<never>
  */
 final class ExitFailure implements ExitResult
 {
-    private readonly string $type;
+    /** @var class-string<\Throwable> */
+    private readonly string $className;
 
     private readonly string $message;
 
     private readonly int|string $code;
 
-    /** @var string[] */
+    private readonly string $file;
+
+    private readonly int $line;
+
+    /** @var FlattenedTrace */
     private readonly array $trace;
 
     private readonly ?self $previous;
 
     public function __construct(\Throwable $exception)
     {
-        $this->type = \get_class($exception);
+        $this->className = \get_class($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
+        $this->file = $exception->getFile();
+        $this->line = $exception->getLine();
         $this->trace = flattenThrowableBacktrace($exception);
 
         $previous = $exception->getPrevious();
@@ -45,6 +53,14 @@ final class ExitFailure implements ExitResult
     {
         $previous = $this->previous?->createException();
 
-        return new ContextPanicError($this->type, $this->message, $this->code, $this->trace, $previous);
+        return new ContextPanicError(
+            $this->className,
+            $this->message,
+            $this->code,
+            $this->file,
+            $this->line,
+            $this->trace,
+            $previous,
+        );
     }
 }

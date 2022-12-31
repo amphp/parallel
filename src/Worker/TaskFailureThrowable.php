@@ -4,6 +4,8 @@ namespace Amp\Parallel\Worker;
 
 /**
  * Common interface for exceptions thrown when Task::run() throws an exception when being executed in a worker.
+ *
+ * @psalm-type FlattenedTrace = list<array<non-empty-string, scalar|list<scalar>>>
  */
 interface TaskFailureThrowable extends \Throwable
 {
@@ -23,9 +25,20 @@ interface TaskFailureThrowable extends \Throwable
     public function getOriginalCode(): string|int;
 
     /**
+     * @return string Original exception file from which it was thrown.
+     */
+    public function getOriginalFile(): string;
+
+    /**
+     * @return int Original exception line from which it was thrown.
+     */
+    public function getOriginalLine(): int;
+
+    /**
      * Returns the original exception stack trace.
      *
-     * @return array Same as {@see Throwable::getTrace()}, except all function arguments are formatted as strings.
+     * @return FlattenedTrace Same as {@see Throwable::getTrace()}, except all function arguments are formatted
+     *      as strings. See {@see formatFlattenedBacktrace()}.
      */
     public function getOriginalTrace(): array;
 

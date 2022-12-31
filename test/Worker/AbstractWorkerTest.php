@@ -247,7 +247,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         } catch (TaskFailureException $exception) {
             self::assertSame(
                 0,
-                \strpos($exception->getMessage(), "Uncaught Amp\Serialization\SerializationException in worker")
+                \strpos($exception->getMessage(), "Uncaught Amp\Serialization\SerializationException in context")
             );
         }
 

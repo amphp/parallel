@@ -18,11 +18,13 @@ class TaskFailureExceptionTest extends AsyncTestCase
             ],
         ];
 
-        $exception = new TaskFailureException('name', 'error_message', 0, $trace);
+        $exception = new TaskFailureException('name', 'error_message', 0, 'filename', 1, $trace);
 
         self::assertSame('name', $exception->getOriginalClassName());
         self::assertSame('error_message', $exception->getOriginalMessage());
         self::assertSame(0, $exception->getOriginalCode());
+        self::assertSame('filename', $exception->getOriginalFile());
+        self::assertSame(1, $exception->getOriginalLine());
         self::assertSame($trace, $exception->getOriginalTrace());
     }
 }

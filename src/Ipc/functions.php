@@ -12,7 +12,7 @@ use Revolt\EventLoop;
 /**
  * Gets or sets the global shared IpcHub instance.
  *
- * @param IpcHub|null If not null, set the global shared IpcHub to this instance.
+ * @param IpcHub|null $ipcHub If not null, set the global shared IpcHub to this instance.
  */
 function ipcHub(?IpcHub $ipcHub = null): IpcHub
 {

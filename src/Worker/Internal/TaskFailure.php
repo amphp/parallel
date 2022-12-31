@@ -2,30 +2,30 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Parallel\Worker\TaskFailureError;
-use Amp\Parallel\Worker\TaskFailureException;
 use Amp\Parallel\Worker\TaskFailureThrowable;
 use function Amp\Parallel\Context\flattenThrowableBacktrace;
 
 /**
  * @internal
- *
+ * @psalm-import-type FlattenedTrace from TaskFailureThrowable
  * @template-extends TaskResult<never>
  */
 class TaskFailure extends TaskResult
 {
-    private const PARENT_EXCEPTION = 0;
-    private const PARENT_ERROR = 1;
+    /** @var class-string<\Throwable> */
+    private readonly string $className;
 
-    private readonly string $type;
-
-    private readonly int $parent;
+    private readonly TaskExceptionType $type;
 
     private readonly string $message;
 
     private readonly string|int $code;
 
-    /** @var string[] */
+    private readonly string $file;
+
+    private readonly int $line;
+
+    /** @var FlattenedTrace */
     private readonly array $trace;
 
     private readonly ?self $previous;
@@ -33,10 +33,12 @@ class TaskFailure extends TaskResult
     public function __construct(string $id, \Throwable $exception)
     {
         parent::__construct($id);
-        $this->type = \get_class($exception);
-        $this->parent = $exception instanceof \Error ? self::PARENT_ERROR : self::PARENT_EXCEPTION;
+        $this->className = \get_class($exception);
+        $this->type = TaskExceptionType::fromException($exception);
         $this->message = $exception->getMessage();
         $this->code = $exception->getCode();
+        $this->file = $exception->getFile();
+        $this->line = $exception->getLine();
         $this->trace = flattenThrowableBacktrace($exception);
 
         $previous = $exception->getPrevious();
@@ -53,12 +55,14 @@ class TaskFailure extends TaskResult
 
     final protected function createException(): TaskFailureThrowable
     {
-        $previous = $this->previous?->createException();
-
-        if ($this->parent === self::PARENT_ERROR) {
-            return new TaskFailureError($this->type, $this->message, $this->code, $this->trace, $previous);
-        }
-
-        return new TaskFailureException($this->type, $this->message, $this->code, $this->trace, $previous);
+        return $this->type->createException(
+            $this->className,
+            $this->message,
+            $this->code,
+            $this->file,
+            $this->line,
+            $this->trace,
+            $this->previous?->createException(),
+        );
     }
 }
