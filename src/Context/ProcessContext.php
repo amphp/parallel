@@ -26,6 +26,19 @@ final class ProcessContext implements Context
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     private const DEFAULT_START_TIMEOUT = 5;
 
+    private const DEFAULT_OPTIONS = [
+        "html_errors" => "0",
+        "display_errors" => "0",
+        "log_errors" => "1",
+    ];
+
+    private const XDEBUG_OPTIONS = [
+        "xdebug.mode" => "debug",
+        "xdebug.start_with_request" => "default",
+        "xdebug.client_port" => "9003",
+        "xdebug.client_host" => "localhost",
+    ];
+
     /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static ?string $pharScriptPath = null;
 
@@ -34,6 +47,9 @@ final class ProcessContext implements Context
 
     /** @var string|null Cached path to located PHP binary. */
     private static ?string $binaryPath = null;
+
+    /** @var list<string>|null */
+    private static ?array $options = null;
 
     /**
      * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
@@ -60,11 +76,11 @@ final class ProcessContext implements Context
     ): self {
         $ipcHub ??= Ipc\ipcHub();
 
-        $options = [
-            "html_errors" => "0",
-            "display_errors" => "0",
-            "log_errors" => "1",
-        ];
+        /** @psalm-suppress RedundantFunctionCall */
+        $script = \is_array($script) ? \array_values($script) : [$script];
+        if (!$script) {
+            throw new \ValueError('Empty script array provided to process context');
+        }
 
         if ($binaryPath === null) {
             $binaryPath = self::$binaryPath ??= self::locateBinary();
@@ -107,7 +123,7 @@ final class ProcessContext implements Context
             }
 
             // Monkey-patch the script path in the same way, only supported if the command is given as array.
-            if (isset(self::$pharCopy) && \is_array($script) && isset($script[0])) {
+            if (isset(self::$pharCopy)) {
                 $script[0] = "phar://" . self::$pharCopy . \substr($script[0], \strlen(\Phar::running(true)));
             }
         } else {
@@ -116,12 +132,16 @@ final class ProcessContext implements Context
 
         $key = $ipcHub->generateKey();
 
-        $command = \array_merge(
-            [$binaryPath],
-            self::formatOptions($options),
-            [$scriptPath, $ipcHub->getUri(), (string) \strlen($key), (string) $timeout],
-            \is_array($script) ? $script : [$script],
-        );
+        /** @var list<string> $command */
+        $command = [
+            $binaryPath,
+            ...(self::$options ??= self::buildOptions()),
+            $scriptPath,
+            $ipcHub->getUri(),
+            (string) \strlen($key),
+            (string) $timeout,
+            ...$script,
+        ];
 
         try {
             $process = Process::start($command, $workingDirectory, $environment);
@@ -173,12 +193,21 @@ final class ProcessContext implements Context
     }
 
     /**
-     * @param array<string, string> $options
-     *
      * @return list<string>
      */
-    private static function formatOptions(array $options): array
+    private static function buildOptions(): array
     {
+        $options = self::DEFAULT_OPTIONS;
+
+        // This copies any ini values set via the command line (e.g., a debug run in PhpStorm)
+        // to the child process, instead of relying only on those set in an ini file.
+        if (\ini_get("xdebug.mode") !== false) {
+            foreach (self::XDEBUG_OPTIONS as $option => $defaultValue) {
+                $iniValue = \ini_get($option);
+                $options[$option] = $iniValue === false ? $defaultValue : $iniValue;
+            }
+        }
+
         $result = [];
 
         foreach ($options as $option => $value) {

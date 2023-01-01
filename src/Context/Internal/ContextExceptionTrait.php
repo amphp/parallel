@@ -23,9 +23,10 @@ trait ContextExceptionTrait
         private readonly array $originalTrace,
         ?\Throwable $previous = null,
     ) {
-        $format = 'Uncaught %s in context with message "%s" and code "%s" in %s:%d; '
-            . "use %s::getOriginalTrace() for the stack trace in the context as an array\n"
-            . "Stack trace in context:\n%s\n";
+        $format = '%s thrown in context with message "%s" and code "%s" in %s:%d'
+            . '; call %s::getOriginalTrace() for the stack trace in the context as an array'
+            . ' or if the Xdebug extension is enabled, set "xdebug.mode" to "debug" to include'
+            . ' the exception stack trace in the exception message';
 
         $this->invokeExceptionConstructor(\sprintf(
             $format,
@@ -35,11 +36,15 @@ trait ContextExceptionTrait
             $originalFile,
             $originalLine,
             self::class,
-            $this->getOriginalTraceAsString(),
         ), $previous);
     }
 
     abstract protected function invokeExceptionConstructor(string $message, ?\Throwable $previous): void;
+
+    public function __toString(): string
+    {
+        return \sprintf("%s\nStack trace in context:\n%s", $this->getMessage(), $this->getOriginalTraceAsString());
+    }
 
     /**
      * @return class-string<\Throwable> Original exception class name.

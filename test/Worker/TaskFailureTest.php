@@ -12,7 +12,7 @@ class TaskFailureTest extends AsyncTestCase
     public function testWithException(): void
     {
         $this->expectException(TaskFailureException::class);
-        $this->expectExceptionMessage('Uncaught Exception in context');
+        $this->expectExceptionMessage('Exception thrown in context');
 
         $exception = new \Exception("Message", 1);
         $result = new TaskFailure('a', $exception);
@@ -22,7 +22,7 @@ class TaskFailureTest extends AsyncTestCase
     public function testWithError(): void
     {
         $this->expectException(TaskFailureError::class);
-        $this->expectExceptionMessage('Uncaught Error in context');
+        $this->expectExceptionMessage('Error thrown in context');
 
         $exception = new \Error("Message", 1);
         $result = new TaskFailure('a', $exception);
