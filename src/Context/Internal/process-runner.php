@@ -71,12 +71,8 @@ EventLoop::queue(function () use ($argc, $argv): void {
 
     try {
         $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, $length);
-
         $socket = Ipc\connect($uri, $key, $cancellation);
-        $dataChannel = new StreamChannel($socket, $socket);
-
-        $socket = Ipc\connect($uri, $key, $cancellation);
-        $resultChannel = new StreamChannel($socket, $socket);
+        $channel = new StreamChannel($socket, $socket);
     } catch (\Throwable $exception) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
@@ -114,7 +110,7 @@ EventLoop::queue(function () use ($argc, $argv): void {
             ), 0, $exception);
         }
 
-        $returnValue = $callable(new ContextChannel($dataChannel));
+        $returnValue = $callable(new ContextChannel($channel));
         $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
     } catch (\Throwable $exception) {
         $result = new ExitFailure($exception);
@@ -122,10 +118,10 @@ EventLoop::queue(function () use ($argc, $argv): void {
 
     try {
         try {
-            $resultChannel->send($result);
+            $channel->send($result);
         } catch (SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $resultChannel->send(new ExitFailure($exception));
+            $channel->send(new ExitFailure($exception));
         }
     } catch (\Throwable $exception) {
         \trigger_error(\sprintf(

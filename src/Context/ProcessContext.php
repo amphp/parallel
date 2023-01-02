@@ -153,10 +153,7 @@ final class ProcessContext implements Context
             $process->getStdin()->write($key);
 
             $socket = $ipcHub->accept($key, $cancellation);
-            $dataChannel = new StreamChannel($socket, $socket);
-
-            $socket = $ipcHub->accept($key, $cancellation);
-            $resultChannel = new StreamChannel($socket, $socket);
+            $channel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {
                 $process->kill();
@@ -164,7 +161,7 @@ final class ProcessContext implements Context
             throw new ContextException("Starting the process failed", 0, $exception);
         }
 
-        return new self($process, $dataChannel, $resultChannel);
+        return new self($process, $channel);
     }
 
     private static function locateBinary(): string
@@ -218,13 +215,11 @@ final class ProcessContext implements Context
     }
 
     /**
-     * @param StreamChannel<TReceive, TSend> $dataChannel
-     * @param StreamChannel<TResult, never> $resultChannel
+     * @param StreamChannel<TReceive, TSend> $channel
      */
     private function __construct(
         private readonly Process $process,
-        private readonly StreamChannel $dataChannel,
-        private readonly StreamChannel $resultChannel,
+        private readonly StreamChannel $channel,
     ) {
     }
 
@@ -239,19 +234,40 @@ final class ProcessContext implements Context
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
-            $data = $this->dataChannel->receive($cancellation);
-        } catch (ChannelException $e) {
-            throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-        }
+            $data = $this->channel->receive($cancellation);
+        } catch (ChannelException $exception) {
+            try {
+                $data = $this->join(new TimeoutCancellation(0.1));
+            } catch (ContextException|ChannelException|CancelledException) {
+                if (!$this->isClosed()) {
+                    $this->close();
+                }
+                throw new ContextException(
+                    "The process stopped responding, potentially due to a fatal error or calling exit",
+                    0,
+                    $exception,
+                );
+            }
 
-        if ($data === null) {
-            throw new ContextException("The channel closed when receiving data from the process");
+            throw new SynchronizationError(\sprintf(
+                'Process unexpectedly exited when waiting to receive data with result: %s',
+                flattenArgument($data),
+            ), 0, $exception);
         }
 
         if (!$data instanceof Internal\ContextMessage) {
+            if ($data instanceof Internal\ExitResult) {
+                $data = $data->getResult();
+
+                throw new SynchronizationError(\sprintf(
+                    'Process unexpectedly exited when waiting to receive data with result: %s',
+                    flattenArgument($data),
+                ));
+            }
+
             throw new SynchronizationError(\sprintf(
                 'Unexpected data type from context: %s',
-                \get_debug_type($data),
+                flattenArgument($data),
             ));
         }
 
@@ -261,25 +277,25 @@ final class ProcessContext implements Context
     public function send(mixed $data): void
     {
         try {
-            $this->dataChannel->send($data);
-        } catch (ChannelException $e) {
-            if ($this->dataChannel->isClosed()) {
-                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
-            }
-
+            $this->channel->send($data);
+        } catch (ChannelException $exception) {
             try {
                 $data = $this->join(new TimeoutCancellation(0.1));
             } catch (ContextException|ChannelException|CancelledException) {
                 if (!$this->isClosed()) {
                     $this->close();
                 }
-                throw new ContextException("The process stopped responding, potentially due to a fatal error or calling exit", 0, $e);
+                throw new ContextException(
+                    "The process stopped responding, potentially due to a fatal error or calling exit",
+                    0,
+                    $exception,
+                );
             }
 
             throw new SynchronizationError(\sprintf(
-                'Process unexpectedly exited with result of type: %s',
-                \get_debug_type($data),
-            ), 0, $e);
+                'Process unexpectedly exited when sending data with result: %s',
+                flattenArgument($data),
+            ), 0, $exception);
         }
     }
 
@@ -290,7 +306,7 @@ final class ProcessContext implements Context
     public function join(?Cancellation $cancellation = null): mixed
     {
         try {
-            $data = $this->resultChannel->receive($cancellation);
+            $data = $this->channel->receive($cancellation);
         } catch (CancelledException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
@@ -300,19 +316,22 @@ final class ProcessContext implements Context
             throw new ContextException("Failed to receive result from process", 0, $exception);
         }
 
-        if ($data === null) {
-            throw new ContextException("Failed to receive result from process");
-        }
-
         if (!$data instanceof Internal\ExitResult) {
             if (!$this->isClosed()) {
                 $this->close();
             }
+
+            if ($data instanceof Internal\ContextMessage) {
+                throw new SynchronizationError(\sprintf(
+                    "The process sent data instead of exiting: %s",
+                    flattenArgument($data),
+                ));
+            }
+
             throw new SynchronizationError("Did not receive an exit result from process");
         }
 
-        $this->dataChannel->close();
-        $this->resultChannel->close();
+        $this->channel->close();
 
         $code = $this->process->join();
         if ($code !== 0) {
@@ -380,8 +399,7 @@ final class ProcessContext implements Context
     public function close(): void
     {
         $this->process->kill();
-        $this->dataChannel->close();
-        $this->resultChannel->close();
+        $this->channel->close();
     }
 
     public function isClosed(): bool
@@ -391,6 +409,6 @@ final class ProcessContext implements Context
 
     public function onClose(\Closure $onClose): void
     {
-        $this->resultChannel->onClose($onClose);
+        $this->channel->onClose($onClose);
     }
 }
