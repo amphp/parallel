@@ -2,8 +2,18 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Cancellation;
+use Amp\Parallel\Ipc\IpcHub;
+
 final class DefaultContextFactory implements ContextFactory
 {
+    /**
+     * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
+     */
+    public function __construct(private readonly ?IpcHub $ipcHub = null)
+    {
+    }
+
     /**
      * @template TResult
      * @template TReceive
@@ -15,8 +25,8 @@ final class DefaultContextFactory implements ContextFactory
      *
      * @throws ContextException
      */
-    public function start(string|array $script): Context
+    public function start(string|array $script, ?Cancellation $cancellation = null): Context
     {
-        return ProcessContext::start($script);
+        return ProcessContext::start($script, cancellation: $cancellation, ipcHub: $this->ipcHub);
     }
 }

@@ -4,6 +4,7 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
+use Amp\Cancellation;
 use Amp\Parallel\Context\ContextFactory;
 use function Amp\Parallel\Context\contextFactory;
 
@@ -46,7 +47,7 @@ final class DefaultWorkerFactory implements WorkerFactory
      * The type of worker created depends on the extensions available. If multi-threading is enabled, a WorkerThread
      * will be created. If threads are not available a WorkerProcess will be created.
      */
-    public function create(): Worker
+    public function create(?Cancellation $cancellation = null): Worker
     {
         $script = [
             self::SCRIPT_PATH,
@@ -57,6 +58,6 @@ final class DefaultWorkerFactory implements WorkerFactory
             $script[] = $this->bootstrapPath;
         }
 
-        return new DefaultWorker(($this->contextFactory ?? contextFactory())->start($script));
+        return new DefaultWorker(($this->contextFactory ?? contextFactory())->start($script, $cancellation));
     }
 }

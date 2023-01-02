@@ -53,7 +53,7 @@ function readKey(
 }
 
 /**
- * Note that this is designed to be used in the child process/thread and performs a blocking connect.
+ * Note that this is designed to be used in the child process/thread to connect to an IPC socket.
  */
 function connect(
     string $uri,

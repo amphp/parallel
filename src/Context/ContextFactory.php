@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Cancellation;
+
 interface ContextFactory
 {
     /**
@@ -16,5 +18,5 @@ interface ContextFactory
      *
      * @return Context<TResult, TReceive, TSend>
      */
-    public function start(string|array $script): Context;
+    public function start(string|array $script, ?Cancellation $cancellation = null): Context;
 }

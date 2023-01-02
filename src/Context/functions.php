@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Cancellation;
 use Revolt\EventLoop;
 use function Amp\Serialization\encodeUnprintableChars;
 
@@ -15,9 +16,9 @@ use function Amp\Serialization\encodeUnprintableChars;
  *
  * @return Context<TResult, TReceive, TSend>
  */
-function startContext(string|array $script): Context
+function startContext(string|array $script, ?Cancellation $cancellation = null): Context
 {
-    return contextFactory()->start($script);
+    return contextFactory()->start($script, $cancellation);
 }
 
 /**

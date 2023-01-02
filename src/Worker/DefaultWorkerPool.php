@@ -3,6 +3,8 @@
 namespace Amp\Parallel\Worker;
 
 use Amp\Cancellation;
+use Amp\CancelledException;
+use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
@@ -35,6 +37,8 @@ final class DefaultWorkerPool implements WorkerPool
 
     private ?Future $exitStatus = null;
 
+    private readonly DeferredCancellation $deferredCancellation;
+
     /**
      * Creates a new worker pool.
      *
@@ -53,9 +57,11 @@ final class DefaultWorkerPool implements WorkerPool
             throw new \Error("Maximum size must be a non-negative integer");
         }
 
-        $this->workers = new \SplObjectStorage;
-        $this->idleWorkers = new \SplQueue;
-        $this->waiting = new \SplQueue;
+        $this->workers = new \SplObjectStorage();
+        $this->idleWorkers = new \SplQueue();
+        $this->waiting = new \SplQueue();
+
+        $this->deferredCancellation = new DeferredCancellation();
 
         $workers = $this->workers;
         $idleWorkers = $this->idleWorkers;
@@ -221,11 +227,19 @@ final class DefaultWorkerPool implements WorkerPool
         do {
             if ($this->idleWorkers->isEmpty()) {
                 if ($this->getWorkerCount() < $this->limit) {
-                    // Max worker count has not been reached, so create another worker.
-                    $worker = ($this->factory ?? workerFactory())->create();
+                    try {
+                        // Max worker count has not been reached, so create another worker.
+                        $worker = ($this->factory ?? workerFactory())->create(
+                            $this->deferredCancellation->getCancellation(),
+                        );
+                    } catch (CancelledException) {
+                        throw new WorkerException('The pool shut down before the task could be executed');
+                    }
+
                     if (!$worker->isRunning()) {
                         throw new WorkerException('Worker factory did not create a viable worker');
                     }
+
                     $this->workers->attach($worker, 0);
                     return $worker;
                 }
@@ -266,8 +280,5 @@ final class DefaultWorkerPool implements WorkerPool
 
             $this->workers->detach($worker);
         } while (true);
-
-        // Required for Psalm.
-        throw new \RuntimeException('Unreachable statement');
     }
 }

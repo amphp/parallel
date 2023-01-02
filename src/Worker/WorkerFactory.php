@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\Cancellation;
+
 /**
  * Interface for factories used to create new workers.
  */
@@ -12,5 +14,5 @@ interface WorkerFactory
      *
      * @return Worker The newly created worker.
      */
-    public function create(): Worker;
+    public function create(?Cancellation $cancellation = null): Worker;
 }

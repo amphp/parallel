@@ -58,8 +58,9 @@ final class ProcessContext implements Context
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
      *     the parent.
      * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
-     * @param positive-int $timeout Number of seconds the child will wait for the child to connect before failing.
-     * @param IpcHub|null $ipcHub Optional IpcHub instance.
+     * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
+     *      before failing.
+     * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
      *
      * @return ProcessContext<TResult, TReceive, TSend>
      *
@@ -67,11 +68,11 @@ final class ProcessContext implements Context
      */
     public static function start(
         string|array $script,
-        string $workingDirectory = null,
+        ?string $workingDirectory = null,
         array $environment = [],
         ?Cancellation $cancellation = null,
         ?string $binaryPath = null,
-        int $timeout = self::DEFAULT_START_TIMEOUT,
+        int $childConnectTimeout = self::DEFAULT_START_TIMEOUT,
         ?IpcHub $ipcHub = null
     ): self {
         $ipcHub ??= Ipc\ipcHub();
@@ -139,7 +140,7 @@ final class ProcessContext implements Context
             $scriptPath,
             $ipcHub->getUri(),
             (string) \strlen($key),
-            (string) $timeout,
+            (string) $childConnectTimeout,
             ...$script,
         ];
 
@@ -158,6 +159,9 @@ final class ProcessContext implements Context
             if ($process->isRunning()) {
                 $process->kill();
             }
+
+            $cancellation?->throwIfRequested();
+
             throw new ContextException("Starting the process failed", 0, $exception);
         }
 
