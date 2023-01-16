@@ -35,6 +35,7 @@
         "Reflection",
         "SPL",
         "standard",
-        "hash"
+        "hash",
+        "pcntl"
     ]
 }
