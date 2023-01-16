@@ -5,6 +5,7 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\ByteStream;
 use Amp\ByteStream\StreamChannel;
 use Amp\Future;
+use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Ipc;
 use Amp\Serialization\SerializationException;
 use Amp\TimeoutCancellation;
@@ -41,6 +42,18 @@ if (\function_exists("cli_set_process_title")) {
     /** @psalm-suppress UnresolvableInclude */
     require $autoloadPath;
 })();
+
+EventLoop::queue(function (): void {
+    $handler = fn () => null;
+
+    try {
+        foreach (ProcessContext::getSignalIgnoreList() as $signal) {
+            EventLoop::unreference(EventLoop::onSignal($signal, $handler));
+        }
+    } catch (EventLoop\UnsupportedFeatureException) {
+        // Signal handling not supported on current event loop driver.
+    }
+});
 
 EventLoop::queue(function () use ($argc, $argv): void {
     /** @var list<string> $argv */

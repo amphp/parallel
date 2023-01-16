@@ -219,6 +219,22 @@ final class ProcessContext implements Context
     }
 
     /**
+     * @return list<int>
+     */
+    public static function getSignalIgnoreList(): array
+    {
+        return [
+            \defined('SIGHUP') ? \SIGHUP : 1,
+            \defined('SIGINT') ? \SIGINT : 2,
+            \defined('SIGQUIT') ? \SIGQUIT : 3,
+            \defined('SIGTERM') ? \SIGTERM : 15,
+            \defined('SIGALRM') ? \SIGALRM : 14,
+            \defined('SIGUSR1') ? \SIGUSR1 : 10,
+            \defined('SIGUSR2') ? \SIGUSR2 : 12,
+        ];
+    }
+
+    /**
      * @param StreamChannel<TReceive, TSend> $channel
      */
     private function __construct(
