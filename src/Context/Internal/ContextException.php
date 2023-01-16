@@ -8,7 +8,7 @@ use function Amp\Parallel\Context\formatFlattenedBacktrace;
 /**
  * @psalm-import-type FlattenedTrace from ContextPanicError
  */
-trait ContextExceptionTrait
+trait ContextException
 {
     /**
      * @param class-string<\Throwable> $className Original exception class name.

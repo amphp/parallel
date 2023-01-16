@@ -6,7 +6,7 @@ use Amp\Parallel\Context\Internal;
 
 final class TaskFailureError extends \Error implements TaskFailureThrowable
 {
-    use Internal\ContextExceptionTrait;
+    use Internal\ContextException;
 
     protected function invokeExceptionConstructor(string $message, ?\Throwable $previous): void
     {

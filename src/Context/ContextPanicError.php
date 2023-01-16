@@ -7,7 +7,7 @@ namespace Amp\Parallel\Context;
  */
 final class ContextPanicError extends \Error
 {
-    use Internal\ContextExceptionTrait;
+    use Internal\ContextException;
 
     protected function invokeExceptionConstructor(string $message, ?\Throwable $previous): void
     {
