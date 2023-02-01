@@ -75,6 +75,55 @@ The `run()` method can be written using blocking code since the code is executed
 Task instances are `serialize`'d in the main process and `unserialize`'d in the worker.
 That means that all data that is passed between the main process and a worker needs to be serializable.
 
+In the example below, a `Task` is defined which calls a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests).
+
+Child processes executing tasks may be reused to execute multiple tasks.
+
+```php
+use Amp\Cache\Cache;
+use Amp\Cancellation;
+use Amp\Parallel\Worker\Task;
+use Amp\Sync\Channel;
+
+class FetchTask implements Task
+{
+    public function __construct(
+        private readonly string $url,
+    ) {
+    }
+
+    public function run(
+        Channel $channel,
+        Cache $cache,
+        Cancellation $cancellation,
+    ): string {
+        return file_get_contents($url); // Example blocking function
+    }
+}
+```
+
+```php
+use Amp\Parallel\Worker\DefaultWorker;
+
+$worker = new DefaultWorker();
+$task = new FetchTask('https://amphp.org');
+
+$execution = $worker->submit($task);
+
+$future = $execution->getResult();
+
+// $data will be the return value from FetchTask::run()
+$data = $future->await(); 
+```
+
+#### Sharing data between tasks
+
+`Task::run()` is provided a `Cache` object which is shared amongst all tasks executed on a single child process, including across different `Task` implementations. This storage can be used to access and store data between task executions and reuse resources initiated by prior tasks, such as a database connection or open file handle. A worker may be executing multiple tasks at once and multiple workers may be executing tasks concurrently, so consider using a mutex or other mutual exclusion mechanism guard accessing the cache if necessary.
+
+#### Task cancellation
+
+A `Cancellation` provided to `Worker::submit()` may be used to request cancellation of the task in the worker. When cancellation is requested in the parent, the `Cancellation` provided to `Task::run()` is cancelled. The task may choose to ignore this cancellation request or act accordingly and throw a `CancelledException` from `Task::run()`. If the cancellation request is ignored, the task may continue and return a value which will be returned to the parent as though cancellation had not been requested.
+
 ### Worker Pools
 
 The easiest way to use workers is through a worker pool.
@@ -155,6 +204,28 @@ An execution context can be created by a `ContextFactory`. The worker pool uses 
 A global worker pool is available and can be set using the function `Amp\Parallel\Worker\workerPool(?WorkerPool $pool = null)`.
 Passing an instance of `WorkerPool` will set the global pool to the given instance.
 Invoking the function without an instance will return the current global instance.
+
+### Debugging
+
+Step debugging may be used in child processes with PhpStorm and Xdebug by listening for debug connections in the IDE.
+
+In PhpStorm settings, under `PHP > Debug`, ensure the box "Can accept external connections" is checked. The specific ports used are not important, yours may differ.
+
+<img src="https://amphp.org/asset/img/packages/parallel/xdebug-settings.png" alt="PhpStorm Xdebug settings" width="510"/>
+
+For child processes to connect to the IDE and stop at breakpoints set in the child processes, turn on listening for debug connections.
+
+Listening off: <img src="https://amphp.org/asset/img/packages/parallel/debug-listen-off.png" alt="Debug listening off" width="350" align="middle"/> 
+
+Listening on: <img src="https://amphp.org/asset/img/packages/parallel/debug-listen-on.png" alt="Debug listening on" width="350" align="middle"/>
+
+No PHP ini settings need to be set manually. Settings set by PhpStorm when invoking the parent PHP process will be forwarded to child processes.
+
+Run the parent script in debug mode from PhpStorm with breakpoints set in code executed in the child process. Execution should stop at any breakpoints set in the child.
+
+Debugger running: <img src="https://amphp.org/asset/img/packages/parallel/debug-running.png" alt="Debug running" width="350" align="middle"/>
+
+When stopping at a breakpoint in a child process, execution of the parent process and any other child processes will continue. PhpStorm will open a new debugger tab for each child process connecting to the debugger, so you may need to limit the amount of child processes created when debugging or the number of connections may become overwhelming! If you set breakpoints in the parent and child process, you may need to switch between debug tabs to resume both the parent and child.
 
 ## Versioning
 
