@@ -43,8 +43,6 @@
         "amphp/php-cs-fixer-config": "^2",
         "psalm/phar": "^5.4"
     },
-    "prefer-stable": true,
-    "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
             "Amp\\Parallel\\": "src"
