@@ -5,7 +5,6 @@ namespace Amp\Parallel\Ipc;
 use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
 use Amp\Socket;
-use Amp\Socket\EncryptableSocket;
 use Amp\Socket\SocketConnector;
 use Revolt\EventLoop;
 
@@ -60,7 +59,7 @@ function connect(
     string $key,
     ?Cancellation $cancellation = null,
     ?SocketConnector $connector = null,
-): EncryptableSocket {
+): Socket\Socket {
     $connector ??= Socket\socketConnector();
 
     $client = $connector->connect($uri, cancellation: $cancellation);
