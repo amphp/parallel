@@ -215,15 +215,21 @@ In PhpStorm settings, under `PHP > Debug`, ensure the box "Can accept external c
 
 For child processes to connect to the IDE and stop at breakpoints set in the child processes, turn on listening for debug connections.
 
-Listening off: <img src="https://amphp.org/asset/img/packages/parallel/debug-listen-off.png" alt="Debug listening off" width="350" align="middle"/> 
+**Listening off:**
 
-Listening on: <img src="https://amphp.org/asset/img/packages/parallel/debug-listen-on.png" alt="Debug listening on" width="350" align="middle"/>
+<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-off.png" alt="Debug listening off" width="350" align="middle"/> 
+
+**Listening on:**
+
+<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-on.png" alt="Debug listening on" width="350" align="middle"/>
 
 No PHP ini settings need to be set manually. Settings set by PhpStorm when invoking the parent PHP process will be forwarded to child processes.
 
 Run the parent script in debug mode from PhpStorm with breakpoints set in code executed in the child process. Execution should stop at any breakpoints set in the child.
 
-Debugger running: <img src="https://amphp.org/asset/img/packages/parallel/debug-running.png" alt="Debug running" width="350" align="middle"/>
+**Debugger running:**
+
+<img src="https://amphp.org/asset/img/packages/parallel/debug-running.png" alt="Debug running" width="350" align="middle"/>
 
 When stopping at a breakpoint in a child process, execution of the parent process and any other child processes will continue. PhpStorm will open a new debugger tab for each child process connecting to the debugger, so you may need to limit the amount of child processes created when debugging or the number of connections may become overwhelming! If you set breakpoints in the parent and child process, you may need to switch between debug tabs to resume both the parent and child.
 
