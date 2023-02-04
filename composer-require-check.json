@@ -17,6 +17,7 @@
         "void",
         "never",
         "object",
+        "random_bytes",
         "readKey",
         "flattenArgument",
         "formatFlattenedBacktrace",
