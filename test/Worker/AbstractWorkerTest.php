@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Cache\Cache;
+use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
@@ -23,7 +23,7 @@ use function Amp\delay;
 
 class NonAutoloadableTask implements Task
 {
-    public function run(Channel $channel, Cache $cache, Cancellation $cancellation): int
+    public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): int
     {
         return 1;
     }
@@ -223,7 +223,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         try {
             $worker->submit(new class implements Task { // Anonymous classes are not serializable.
-                public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed
+                public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): mixed
                 {
                     return null;
                 }
@@ -275,7 +275,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         async(fn () => $worker->submit(new class implements Task { // Anonymous classes are not serializable.
-            public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed
+            public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): mixed
             {
                 return null;
             }

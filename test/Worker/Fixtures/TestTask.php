@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker\Fixtures;
 
-use Amp\Cache\Cache;
+use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
@@ -19,7 +19,7 @@ class TestTask implements Task
         $this->delay = $delay;
     }
 
-    public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed
+    public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): mixed
     {
         if ($this->delay) {
             delay($this->delay);

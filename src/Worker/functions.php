@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Cache\Cache;
+use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
@@ -87,12 +87,12 @@ function workerFactory(WorkerFactory $factory = null): WorkerFactory
 /**
  * Runs the tasks, receiving tasks from the parent and sending the result of those tasks.
  */
-function runTasks(Channel $channel, Cache $cache): void
+function runTasks(Channel $channel, AtomicCache $cache): void
 {
-    /** @var array<string, DeferredCancellation> */
+    /** @var array<string, DeferredCancellation> $cancellationSources */
     $cancellationSources = [];
 
-    /** @var array<string, Queue> */
+    /** @var array<string, Queue> $queues */
     $queues = [];
 
     while ($data = $channel->receive()) {
@@ -125,7 +125,7 @@ function runTasks(Channel $channel, Cache $cache): void
 
                     $result = new Internal\TaskSuccess($data->getId(), $result);
                 } catch (\Throwable $exception) {
-                    if ($exception instanceof CancelledException && $source->getCancellation()->isRequested()) {
+                    if ($exception instanceof CancelledException && $source->isCancelled()) {
                         $result = new Internal\TaskCancelled($id, $exception);
                     } else {
                         $result = new Internal\TaskFailure($id, $exception);
@@ -158,6 +158,6 @@ function runTasks(Channel $channel, Cache $cache): void
         }
 
         // Should not happen, but just in case...
-        throw new \Error('Invalid value received in ' . __FUNCTION__);
+        throw new \Error('Invalid value ' . \get_debug_type($data) . ' received in ' . __FUNCTION__);
     }
 }

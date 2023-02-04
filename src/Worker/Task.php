@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Cache\Cache;
+use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Sync\Channel;
 
@@ -17,13 +17,13 @@ use Amp\Sync\Channel;
 interface Task
 {
     /**
-     * Runs the task inside the caller's context.
+     * Executed when running the Task in a worker.
      *
      * @param Channel<TReceive, TSend> $channel Communication channel to parent process.
-     * @param Cache<TCache> $cache Cache instance shared between all Tasks executed on the Worker.
+     * @param AtomicCache $cache AtomicCache instance shared between all Tasks executed on the Worker.
      * @param Cancellation $cancellation Tasks may safely ignore this parameter if they are not cancellable.
      *
-     * @return TResult A more specific type can (and should) be declared in implementing classes.
+     * @return TResult A specific type can (and should) be declared in implementing classes.
      */
-    public function run(Channel $channel, Cache $cache, Cancellation $cancellation): mixed;
+    public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): mixed;
 }

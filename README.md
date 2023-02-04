@@ -80,7 +80,7 @@ In the example below, a `Task` is defined which calls a blocking function (`file
 Child processes executing tasks may be reused to execute multiple tasks.
 
 ```php
-use Amp\Cache\Cache;
+use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
@@ -94,7 +94,7 @@ class FetchTask implements Task
 
     public function run(
         Channel $channel,
-        Cache $cache,
+        AtomicCache $cache,
         Cancellation $cancellation,
     ): string {
         return file_get_contents($url); // Example blocking function
@@ -118,7 +118,7 @@ $data = $future->await();
 
 #### Sharing data between tasks
 
-`Task::run()` is provided a `Cache` object which is shared amongst all tasks executed on a single child process, including across different `Task` implementations. This storage can be used to access and store data between task executions and reuse resources initiated by prior tasks, such as a database connection or open file handle. A worker may be executing multiple tasks at once and multiple workers may be executing tasks concurrently, so consider using a mutex or other mutual exclusion mechanism guard accessing the cache if necessary.
+`Task::run()` is provided an `AtomicCache` object which is shared amongst all tasks executed on a single child process, including across different `Task` implementations. This storage can be used to access and store data between task executions and reuse resources initiated by prior tasks, such as a database connection or open file handle. A worker may be executing multiple tasks, so consider using the methods of `AtomicCache` which guarantee mutual exclusion when creating or updating cache values if a task uses async I/O to generate a cache value.
 
 #### Task cancellation
 
@@ -217,11 +217,11 @@ For child processes to connect to the IDE and stop at breakpoints set in the chi
 
 **Listening off:**
 
-<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-off.png" alt="Debug listening off" width="350" align="middle"/> 
+<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-off.png" alt="Debug listening off" width="350"/> 
 
 **Listening on:**
 
-<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-on.png" alt="Debug listening on" width="350" align="middle"/>
+<img src="https://amphp.org/asset/img/packages/parallel/debug-listen-on.png" alt="Debug listening on" width="350"/>
 
 No PHP ini settings need to be set manually. Settings set by PhpStorm when invoking the parent PHP process will be forwarded to child processes.
 
@@ -229,7 +229,7 @@ Run the parent script in debug mode from PhpStorm with breakpoints set in code e
 
 **Debugger running:**
 
-<img src="https://amphp.org/asset/img/packages/parallel/debug-running.png" alt="Debug running" width="350" align="middle"/>
+<img src="https://amphp.org/asset/img/packages/parallel/debug-running.png" alt="Debug running" width="350"/>
 
 When stopping at a breakpoint in a child process, execution of the parent process and any other child processes will continue. PhpStorm will open a new debugger tab for each child process connecting to the debugger, so you may need to limit the amount of child processes created when debugging or the number of connections may become overwhelming! If you set breakpoints in the parent and child process, you may need to switch between debug tabs to resume both the parent and child.
 
