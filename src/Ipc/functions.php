@@ -4,9 +4,10 @@ namespace Amp\Parallel\Ipc;
 
 use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
-use Amp\Socket;
+use Amp\Socket\Socket;
 use Amp\Socket\SocketConnector;
 use Revolt\EventLoop;
+use function Amp\Socket\socketConnector;
 
 /**
  * Gets or sets the global shared IpcHub instance.
@@ -27,13 +28,10 @@ function ipcHub(?IpcHub $ipcHub = null): IpcHub
 }
 
 /**
- * Note this is designed to be used in the child process/thread.
- *
- * @param Cancellation|null $cancellation Closes the stream if cancelled.
  * @param positive-int $keyLength
  */
 function readKey(
-    ReadableResourceStream|Socket\Socket $stream,
+    ReadableResourceStream|Socket $stream,
     ?Cancellation $cancellation = null,
     int $keyLength = SocketIpcHub::DEFAULT_KEY_LENGTH,
 ): string {
@@ -59,8 +57,8 @@ function connect(
     string $key,
     ?Cancellation $cancellation = null,
     ?SocketConnector $connector = null,
-): Socket\Socket {
-    $connector ??= Socket\socketConnector();
+): Socket {
+    $connector ??= socketConnector();
 
     $client = $connector->connect($uri, cancellation: $cancellation);
     $client->write($key);

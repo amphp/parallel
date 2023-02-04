@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Ipc;
 
 use Amp\Cancellation;
-use Amp\CancelledException;
 use Amp\DeferredFuture;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
@@ -24,16 +23,16 @@ final class SocketIpcHub implements IpcHub
     private int $nextId = 0;
 
     /** @var non-empty-string */
-    private string $uri;
+    private readonly string $uri;
 
-    /** @var int[] */
+    /** @var array<string, int> */
     private array $keys = [];
 
-    /** @var DeferredFuture[] */
-    private array $acceptor = [];
+    /** @var array<int, DeferredFuture> */
+    private array $pending = [];
 
     /** @var \Closure(): void */
-    private \Closure $accept;
+    private readonly \Closure $accept;
 
     /**
      * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
@@ -51,9 +50,9 @@ final class SocketIpcHub implements IpcHub
         };
 
         $keys = &$this->keys;
-        $acceptor = &$this->acceptor;
-        $this->accept = static function () use (&$keys, &$acceptor, $server, $keyReceiveTimeout, $keyLength): void {
-            while (!empty($acceptor) && $client = $server->accept()) {
+        $pending = &$this->pending;
+        $this->accept = static function () use (&$keys, &$pending, $server, $keyReceiveTimeout, $keyLength): void {
+            while ($pending && $client = $server->accept()) {
                 try {
                     $received = readKey($client, new TimeoutCancellation($keyReceiveTimeout), $keyLength);
                 } catch (\Throwable) {
@@ -68,8 +67,8 @@ final class SocketIpcHub implements IpcHub
                     continue; // Ignore possible foreign connection attempt.
                 }
 
-                $deferred = $acceptor[$id] ?? null;
-                unset($acceptor[$id], $keys[$received]);
+                $deferred = $pending[$id] ?? null;
+                unset($pending[$id], $keys[$received]);
 
                 if ($deferred === null) {
                     $client->close();
@@ -94,6 +93,15 @@ final class SocketIpcHub implements IpcHub
     public function close(): void
     {
         $this->server->close();
+
+        if (!$this->pending) {
+            return;
+        }
+
+        $exception = new Socket\SocketException('IPC socket closed before the client connected');
+        foreach ($this->pending as $deferred) {
+            $deferred->error($exception);
+        }
     }
 
     public function onClose(\Closure $onClose): void
@@ -130,18 +138,17 @@ final class SocketIpcHub implements IpcHub
 
         $id = $this->nextId++;
 
-        if (empty($this->acceptor)) {
+        if (!$this->pending) {
             EventLoop::queue($this->accept);
         }
 
         $this->keys[$key] = $id;
-        $this->acceptor[$id] = $deferred = new DeferredFuture;
+        $this->pending[$id] = $deferred = new DeferredFuture;
 
         try {
             $client = $deferred->getFuture()->await($cancellation);
-        } catch (CancelledException $exception) {
-            unset($this->acceptor[$id], $this->keys[$key]);
-            throw $exception;
+        } finally {
+            unset($this->pending[$id], $this->keys[$key]);
         }
 
         return $client;
