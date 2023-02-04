@@ -3,7 +3,6 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Cache\Cache;
-use Amp\Cache\LocalCache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
@@ -366,12 +365,11 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         self::assertSame('out', $execution->getResult()->await($cancellation));
     }
 
-    protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
+    protected function createWorker(?string $autoloadPath = null): Worker
     {
         $factory = new DefaultWorkerFactory(
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
-            cacheClass: $cacheClass,
         );
 
         return $factory->create();

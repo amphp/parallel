@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Cache\LocalCache;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Worker\DefaultWorkerFactory;
@@ -143,20 +142,18 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         self::assertTrue($worker2->isRunning());
     }
 
-    protected function createWorker(string $cacheClass = LocalCache::class, ?string $autoloadPath = null): Worker
+    protected function createWorker(?string $autoloadPath = null): Worker
     {
-        return $this->createPool(cacheClass: $cacheClass, autoloadPath: $autoloadPath);
+        return $this->createPool(autoloadPath: $autoloadPath);
     }
 
     protected function createPool(
         int $max = WorkerPool::DEFAULT_WORKER_LIMIT,
-        string $cacheClass = LocalCache::class,
         ?string $autoloadPath = null
     ): WorkerPool {
         $factory = new DefaultWorkerFactory(
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
-            cacheClass: $cacheClass,
         );
 
         return new DefaultWorkerPool($max, $factory);
