@@ -7,6 +7,8 @@ use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\CancelledException;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Parallel\Ipc\SynchronizationError;
@@ -23,6 +25,9 @@ use Amp\TimeoutCancellation;
  */
 final class ProcessContext implements Context
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     private const DEFAULT_START_TIMEOUT = 5;
 

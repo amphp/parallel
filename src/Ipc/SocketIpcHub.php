@@ -5,6 +5,8 @@ namespace Amp\Parallel\Ipc;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
 use Amp\Socket\SocketAddressType;
@@ -13,6 +15,9 @@ use Revolt\EventLoop;
 
 final class SocketIpcHub implements IpcHub
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     public const DEFAULT_KEY_RECEIVE_TIMEOUT = 5;
     public const DEFAULT_KEY_LENGTH = 64;
 

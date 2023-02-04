@@ -3,6 +3,8 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Sync\Channel;
 
 /**
@@ -14,6 +16,9 @@ use Amp\Sync\Channel;
  */
 final class ContextChannel implements Channel
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     public function __construct(
         private readonly Channel $channel,
     ) {

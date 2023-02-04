@@ -4,6 +4,8 @@ namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
 use Amp\DeferredFuture;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Pipeline\ConcurrentIterator;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
@@ -17,6 +19,9 @@ use Amp\Sync\ChannelException;
  */
 final class JobChannel implements Channel
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly DeferredFuture $onClose;
 
     public function __construct(

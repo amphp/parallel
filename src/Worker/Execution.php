@@ -2,6 +2,8 @@
 
 namespace Amp\Parallel\Worker;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\Sync\Channel;
 
@@ -13,6 +15,9 @@ use Amp\Sync\Channel;
  */
 final class Execution
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * @param Task<TResult, TReceive, TSend, TCache> $task
      * @param Channel<TSend, TReceive> $channel

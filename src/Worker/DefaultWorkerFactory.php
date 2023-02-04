@@ -5,6 +5,8 @@ namespace Amp\Parallel\Worker;
 use Amp\Cache\Cache;
 use Amp\Cache\LocalCache;
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Context\ContextFactory;
 use function Amp\Parallel\Context\contextFactory;
 
@@ -13,6 +15,9 @@ use function Amp\Parallel\Context\contextFactory;
  */
 final class DefaultWorkerFactory implements WorkerFactory
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     public const SCRIPT_PATH = __DIR__ . "/Internal/task-runner.php";
 
     /**

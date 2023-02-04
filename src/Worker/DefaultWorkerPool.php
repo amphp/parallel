@@ -6,6 +6,8 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
 use Revolt\EventLoop;
@@ -20,6 +22,9 @@ use function Amp\async;
  */
 final class DefaultWorkerPool implements WorkerPool
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var bool Indicates if the pool is currently running. */
     private bool $running = true;
 

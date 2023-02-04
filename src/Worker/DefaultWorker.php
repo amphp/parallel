@@ -5,11 +5,12 @@ namespace Amp\Parallel\Worker;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
 use Amp\Pipeline\Queue;
-use Amp\Serialization\SerializationException;
 use Amp\Sync\ChannelException;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
@@ -22,6 +23,9 @@ use function Amp\async;
  */
 final class DefaultWorker implements Worker
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private const SHUTDOWN_TIMEOUT = 1;
     private const ERROR_TIMEOUT = 0.25;
 
@@ -138,23 +142,10 @@ final class DefaultWorker implements Worker
 
         try {
             $this->context->send($submission);
-
-            if ($cancellation) {
-                $context = $this->context;
-                $cancellationId = $cancellation->subscribe(static fn () => async(static fn () => $context->send(
-                    new Internal\JobCancellation($jobId),
-                ))->ignore());
-                $future = $future->finally(static fn () => $cancellation->unsubscribe($cancellationId));
-            }
         } catch (ChannelException $exception) {
-            $previous = $exception->getPrevious();
-            if ($previous instanceof SerializationException) {
-                throw $previous;
-            }
-
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                async(fn () => $this->context->join())
+                async($this->context->join(...))
                     ->await(new TimeoutCancellation(self::ERROR_TIMEOUT));
             } catch (CancelledException) {
                 $this->kill();
@@ -162,15 +153,22 @@ final class DefaultWorker implements Worker
                 $exception = new WorkerException("The worker crashed", 0, $exception);
             }
 
-            if (!$this->exitStatus) {
-                $this->exitStatus = Future::error($exception);
-            }
+            $this->exitStatus ??= Future::error($exception);
 
             unset($this->jobQueue[$jobId]);
             throw $exception;
         } catch (\Throwable $exception) {
             unset($this->jobQueue[$jobId]);
             throw $exception;
+        }
+
+        if ($cancellation) {
+            $context = $this->context;
+            $cancellationId = $cancellation->subscribe(static fn () => async(
+                $context->send(...),
+                new Internal\JobCancellation($jobId),
+            )->ignore());
+            $future = $future->finally(static fn () => $cancellation->unsubscribe($cancellationId));
         }
 
         $this->queues[$jobId] = $queue = new Queue();
@@ -202,7 +200,7 @@ final class DefaultWorker implements Worker
             $this->context->send(0);
 
             try {
-                async(fn () => $this->context->join())
+                async($this->context->join(...))
                     ->await(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->close();
@@ -217,9 +215,7 @@ final class DefaultWorker implements Worker
             $this->context->close();
         }
 
-        if (!$this->exitStatus) {
-            $this->exitStatus = Future::error(new WorkerException("The worker was killed"));
-            $this->exitStatus->ignore();
-        }
+        $this->exitStatus ??= Future::error(new WorkerException("The worker was killed"));
+        $this->exitStatus->ignore();
     }
 }

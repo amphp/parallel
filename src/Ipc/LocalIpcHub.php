@@ -3,12 +3,17 @@
 namespace Amp\Parallel\Ipc;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
 use const Amp\Process\IS_WINDOWS;
 
 final class LocalIpcHub implements IpcHub
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly SocketIpcHub $delegate;
 
     private ?string $toUnlink = null;

@@ -3,10 +3,15 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
 
 final class DefaultContextFactory implements ContextFactory
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
      */

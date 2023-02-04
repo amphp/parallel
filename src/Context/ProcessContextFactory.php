@@ -3,10 +3,15 @@
 namespace Amp\Parallel\Context;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
 
 final class ProcessContextFactory implements ContextFactory
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * @param string|null $workingDirectory Working directory.
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from

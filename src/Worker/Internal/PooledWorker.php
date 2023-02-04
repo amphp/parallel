@@ -3,6 +3,8 @@
 namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Worker\Execution;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
@@ -10,6 +12,9 @@ use Amp\Parallel\Worker\Worker;
 /** @internal */
 final class PooledWorker implements Worker
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * @param Closure(Worker):void $push Callable to push the worker back into the queue.
      */
