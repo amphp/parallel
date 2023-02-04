@@ -56,6 +56,9 @@ final class ProcessContext implements Context
     /** @var list<string>|null */
     private static ?array $options = null;
 
+    /** @var list<int> */
+    private static ?array $ignoredSignals = null;
+
     /**
      * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
      *     options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
@@ -226,9 +229,9 @@ final class ProcessContext implements Context
     /**
      * @return list<int>
      */
-    public static function getSignalIgnoreList(): array
+    public static function getIgnoredSignals(): array
     {
-        return [
+        return self::$ignoredSignals ??= [
             \defined('SIGHUP') ? \SIGHUP : 1,
             \defined('SIGINT') ? \SIGINT : 2,
             \defined('SIGQUIT') ? \SIGQUIT : 3,

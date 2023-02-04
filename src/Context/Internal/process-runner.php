@@ -47,7 +47,7 @@ EventLoop::queue(function (): void {
     $handler = fn () => null;
 
     try {
-        foreach (ProcessContext::getSignalIgnoreList() as $signal) {
+        foreach (ProcessContext::getIgnoredSignals() as $signal) {
             EventLoop::unreference(EventLoop::onSignal($signal, $handler));
         }
     } catch (EventLoop\UnsupportedFeatureException) {
