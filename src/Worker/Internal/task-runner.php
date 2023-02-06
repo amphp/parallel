@@ -2,11 +2,8 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
-use Amp\Cache\AtomicCache;
-use Amp\Cache\LocalCache;
 use Amp\Parallel\Worker;
 use Amp\Sync\Channel;
-use Amp\Sync\LocalKeyedMutex;
 
 return static function (Channel $channel) use ($argc, $argv): int {
     if (!\defined("AMP_WORKER")) {
@@ -25,9 +22,7 @@ return static function (Channel $channel) use ($argc, $argv): int {
         })();
     }
 
-    $cache = new AtomicCache(new LocalCache(), new LocalKeyedMutex());
-
-    Worker\runTasks($channel, $cache);
+    Worker\runTasks($channel);
 
     return 0;
 };

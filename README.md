@@ -80,7 +80,6 @@ In the example below, a `Task` is defined which calls a blocking function (`file
 Child processes executing tasks may be reused to execute multiple tasks.
 
 ```php
-use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
@@ -92,11 +91,8 @@ class FetchTask implements Task
     ) {
     }
 
-    public function run(
-        Channel $channel,
-        AtomicCache $cache,
-        Cancellation $cancellation,
-    ): string {
+    public function run(Channel $channel, Cancellation $cancellation): string
+    {
         return file_get_contents($url); // Example blocking function
     }
 }
@@ -118,7 +114,32 @@ $data = $future->await();
 
 #### Sharing data between tasks
 
-`Task::run()` is provided an `AtomicCache` object which is shared amongst all tasks executed on a single child process, including across different `Task` implementations. This storage can be used to access and store data between task executions and reuse resources initiated by prior tasks, such as a database connection or open file handle. A worker may be executing multiple tasks, so consider using the methods of `AtomicCache` which guarantee mutual exclusion when creating or updating cache values if a task uses async I/O to generate a cache value.
+Tasks may wish to share data between tasks runs. A `Cache` instance stored in a static property that is only initialized within `Task::run()` is our recommended strategy to share data.
+
+```php
+use Amp\Cache\LocalCache;
+use Amp\Cancellation;
+use Amp\Parallel\Worker\Task;
+use Amp\Sync\Channel;
+
+final class ExampleTask implements Task
+{
+    private static ?LocalCache $cache = null;
+    
+    public function run(Channel $channel, Cancellation $cancellation): mixed
+    {
+        $cache = self::$cache ??= new LocalCache();
+        $cachedValue = $cache->get('cache-key');
+        // Use and modify $cachedValue...
+        $cache->set('cache-key', $updatedValue);
+        return $updatedValue;
+    }
+}
+```
+
+You may wish to provide a hook to initialize the cache with mock data for testing.
+
+A worker may be executing multiple tasks, so consider using `AtomicCache` instead of `LocalCache` when creating or updating cache values if a task uses async I/O to generate a cache value. `AtomicCache` has methods which provide mutual exclusion based on a cache key.
 
 #### Task cancellation
 

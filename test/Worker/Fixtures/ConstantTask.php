@@ -2,14 +2,13 @@
 
 namespace Amp\Parallel\Test\Worker\Fixtures;
 
-use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
 
 class ConstantTask implements Task
 {
-    public function run(Channel $channel, AtomicCache $cache, Cancellation $cancellation): bool
+    public function run(Channel $channel, Cancellation $cancellation): bool
     {
         return \defined("AMP_WORKER");
     }

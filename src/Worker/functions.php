@@ -2,7 +2,6 @@
 
 namespace Amp\Parallel\Worker;
 
-use Amp\Cache\AtomicCache;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
@@ -87,7 +86,7 @@ function workerFactory(WorkerFactory $factory = null): WorkerFactory
 /**
  * Runs the tasks, receiving tasks from the parent and sending the result of those tasks.
  */
-function runTasks(Channel $channel, AtomicCache $cache): void
+function runTasks(Channel $channel): void
 {
     /** @var array<string, DeferredCancellation> $cancellationSources */
     $cancellationSources = [];
@@ -114,10 +113,9 @@ function runTasks(Channel $channel, AtomicCache $cache): void
                 $queue,
                 $jobChannel,
                 $channel,
-                $cache
             ): void {
                 try {
-                    $result = $data->getTask()->run($jobChannel, $cache, $source->getCancellation());
+                    $result = $data->getTask()->run($jobChannel, $source->getCancellation());
 
                     if ($result instanceof Future) {
                         $result = $result->await($source->getCancellation());

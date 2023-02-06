@@ -2,8 +2,6 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Cache\AtomicCache;
-use Amp\Cache\Cache;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Worker;
@@ -12,7 +10,6 @@ use Amp\Parallel\Worker\WorkerFactory;
 use Amp\Parallel\Worker\WorkerPool;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Sync\Channel;
-use Amp\Sync\KeyedMutex;
 
 function nonAutoloadableFunction(): void
 {
@@ -42,7 +39,6 @@ class FunctionsTest extends AsyncTestCase
 
                 $future = Future::complete($task->run(
                     $channel,
-                    new AtomicCache($this->createMock(Cache::class), $this->createMock(KeyedMutex::class)),
                     $this->createMock(Cancellation::class),
                 ));
 
