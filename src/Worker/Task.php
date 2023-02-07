@@ -11,7 +11,6 @@ use Amp\Sync\Channel;
  * @template-covariant TResult
  * @template TReceive
  * @template TSend
- * @template TCache
  */
 interface Task
 {

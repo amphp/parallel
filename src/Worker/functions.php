@@ -36,15 +36,14 @@ function workerPool(?WorkerPool $pool = null): WorkerPool
  * @template TResult
  * @template TReceive
  * @template TSend
- * @template TCache
  *
  * Executes a {@see Task} on the global worker pool.
  *
- * @param Task<TResult, TReceive, TSend, TCache> $task The task to execute.
+ * @param Task<TResult, TReceive, TSend> $task The task to execute.
  * @param Cancellation|null $cancellation Token to request cancellation. The task must support cancellation for
  * this to have any effect.
  *
- * @return Execution<TResult, TReceive, TSend, TCache>
+ * @return Execution<TResult, TReceive, TSend>
  */
 function submit(Task $task, ?Cancellation $cancellation = null): Execution
 {

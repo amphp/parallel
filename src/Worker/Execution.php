@@ -11,7 +11,6 @@ use Amp\Sync\Channel;
  * @template-covariant TResult
  * @template TReceive
  * @template TSend
- * @template TCache
  */
 final class Execution
 {
@@ -19,7 +18,7 @@ final class Execution
     use ForbidSerialization;
 
     /**
-     * @param Task<TResult, TReceive, TSend, TCache> $task
+     * @param Task<TResult, TReceive, TSend> $task
      * @param Channel<TSend, TReceive> $channel
      * @param Future<TResult> $result
      */
@@ -31,7 +30,7 @@ final class Execution
     }
 
     /**
-     * @return Task<TResult, TReceive, TSend, TCache>
+     * @return Task<TResult, TReceive, TSend>
      */
     public function getTask(): Task
     {
