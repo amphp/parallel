@@ -11,8 +11,8 @@ use function Amp\Serialization\encodeUnprintableChars;
  * @template TReceive
  * @template TSend
  *
- * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
- *     options to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
+ * @param string|non-empty-list<string> $script Path to PHP script or array with first element as path and following
+ *     elements as options to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
  *
  * @return Context<TResult, TReceive, TSend>
  */

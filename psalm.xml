@@ -28,5 +28,11 @@
                 <directory name="src"/>
             </errorLevel>
         </MissingClosureReturnType>
+
+        <DocblockTypeContradiction>
+            <errorLevel type="suppress">
+                <directory name="src"/>
+            </errorLevel>
+        </DocblockTypeContradiction>
     </issueHandlers>
 </psalm>

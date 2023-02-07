@@ -50,8 +50,8 @@ final class ProcessContext implements Context
     /** @var string|null PHAR path with a '.phar' extension. */
     private static ?string $pharCopy = null;
 
-    /** @var string|null Cached path to located PHP binary. */
-    private static ?string $binaryPath = null;
+    /** @var non-empty-list<string>|null Cached path to located PHP binary. */
+    private static ?array $binary = null;
 
     /** @var list<string>|null */
     private static ?array $options = null;
@@ -60,12 +60,13 @@ final class ProcessContext implements Context
     private static ?array $ignoredSignals = null;
 
     /**
-     * @param string|list<string> $script Path to PHP script or array with first element as path and following elements
-     *     options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
+     * @param string|non-empty-list<string> $script Path to PHP script or array with first element as path and
+     *     following elements options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
      * @param string|null $workingDirectory Working directory.
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
      *     the parent.
-     * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|non-empty-list<string>|null $binary Path to PHP binary or array of binary path and options.
+     *      Null will attempt to automatically locate the binary.
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
      * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
@@ -79,7 +80,7 @@ final class ProcessContext implements Context
         ?string $workingDirectory = null,
         array $environment = [],
         ?Cancellation $cancellation = null,
-        ?string $binaryPath = null,
+        string|array|null $binary = null,
         int $childConnectTimeout = self::DEFAULT_START_TIMEOUT,
         ?IpcHub $ipcHub = null
     ): self {
@@ -91,10 +92,20 @@ final class ProcessContext implements Context
             throw new \ValueError('Empty script array provided to process context');
         }
 
-        if ($binaryPath === null) {
-            $binaryPath = self::$binaryPath ??= self::locateBinary();
-        } elseif (!\is_executable($binaryPath)) {
-            throw new \Error(\sprintf("The PHP binary path '%s' was not found or is not executable", $binaryPath));
+        if ($binary === null) {
+            $binary = self::$binary ??= self::locateBinary();
+        } else {
+            /** @psalm-suppress RedundantFunctionCall */
+            $binary = \is_array($binary) ? \array_values($binary) : [$binary];
+            if (!$binary) {
+                throw new \ValueError('Empty binary array provided to process context');
+            }
+
+            if (!\is_executable($binary[0])) {
+                throw new \ValueError(
+                    \sprintf("The PHP binary path '%s' was not found or is not executable", $binary[0])
+                );
+            }
         }
 
         // Write process runner to external file if inside a PHAR,
@@ -143,7 +154,7 @@ final class ProcessContext implements Context
 
         /** @var list<string> $command */
         $command = [
-            $binaryPath,
+            ...$binary,
             ...(self::$options ??= self::buildOptions()),
             $scriptPath,
             $ipcHub->getUri(),
@@ -176,10 +187,15 @@ final class ProcessContext implements Context
         return new self($process, $channel);
     }
 
-    private static function locateBinary(): string
+    /**
+     * @return non-empty-list<string>
+     */
+    private static function locateBinary(): array
     {
         if (\PHP_SAPI === "cli") {
-            return \PHP_BINARY;
+            return [\PHP_BINARY];
+        } elseif (\PHP_SAPI === "phpdbg") {
+            return [\PHP_BINARY, '-qrr'];
         }
 
         $executable = \PHP_OS_FAMILY === 'Windows' ? "php.exe" : "php";
@@ -194,7 +210,7 @@ final class ProcessContext implements Context
         foreach ($paths as $path) {
             $path .= \DIRECTORY_SEPARATOR . $executable;
             if (\is_executable($path)) {
-                return $path;
+                return [$path];
             }
         }
 

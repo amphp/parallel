@@ -16,7 +16,8 @@ final class ProcessContextFactory implements ContextFactory
      * @param string|null $workingDirectory Working directory.
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
      *     the parent.
-     * @param string|null $binaryPath Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|non-empty-list<string>|null $binary Path to PHP binary or array of binary path and options.
+     *      Null will attempt to automatically locate the binary.
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
      * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
@@ -24,7 +25,7 @@ final class ProcessContextFactory implements ContextFactory
     public function __construct(
         private readonly ?string $workingDirectory = null,
         private readonly array $environment = [],
-        private readonly ?string $binaryPath = null,
+        private readonly string|array|null $binary = null,
         private readonly int $childConnectTimeout = 5,
         private readonly ?IpcHub $ipcHub = null,
     ) {
@@ -35,7 +36,7 @@ final class ProcessContextFactory implements ContextFactory
      * @template TReceive
      * @template TSend
      *
-     * @param string|list<string> $script
+     * @param string|non-empty-list<string> $script
      *
      * @return ProcessContext<TResult, TReceive, TSend>
      *
@@ -48,7 +49,7 @@ final class ProcessContextFactory implements ContextFactory
             workingDirectory: $this->workingDirectory,
             environment: $this->environment,
             cancellation: $cancellation,
-            binaryPath: $this->binaryPath,
+            binary: $this->binary,
             childConnectTimeout: $this->childConnectTimeout,
             ipcHub: $this->ipcHub,
         );

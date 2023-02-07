@@ -12,11 +12,14 @@ final class DefaultContextFactory implements ContextFactory
     use ForbidCloning;
     use ForbidSerialization;
 
+    private readonly ProcessContextFactory $contextFactory;
+
     /**
      * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
      */
-    public function __construct(private readonly ?IpcHub $ipcHub = null)
+    public function __construct(?IpcHub $ipcHub = null)
     {
+        $this->contextFactory = new ProcessContextFactory(ipcHub: $ipcHub);
     }
 
     /**
@@ -24,7 +27,7 @@ final class DefaultContextFactory implements ContextFactory
      * @template TReceive
      * @template TSend
      *
-     * @param string|list<string> $script
+     * @param string|non-empty-list<string> $script
      *
      * @return Context<TResult, TReceive, TSend>
      *
@@ -32,6 +35,6 @@ final class DefaultContextFactory implements ContextFactory
      */
     public function start(string|array $script, ?Cancellation $cancellation = null): Context
     {
-        return ProcessContext::start($script, cancellation: $cancellation, ipcHub: $this->ipcHub);
+        return $this->contextFactory->start($script, $cancellation);
     }
 }
