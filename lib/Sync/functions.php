@@ -6,7 +6,7 @@ use Amp\Serialization\SerializationException as SerializerException;
 
 if (!\class_exists(SerializationException::class)) {
     // Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
-    \class_alias(SerializerException::class, SerializationException::class);
+     \class_alias(SerializerException::class, __NAMESPACE__ . \SerializationException::class);
 }
 
 /**
