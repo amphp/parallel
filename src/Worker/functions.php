@@ -69,7 +69,7 @@ function createWorker(): Worker
 /**
  * Gets or sets the global worker factory.
  */
-function workerFactory(WorkerFactory $factory = null): WorkerFactory
+function workerFactory(?WorkerFactory $factory = null): WorkerFactory
 {
     static $map;
     $map ??= new \WeakMap();
