@@ -13,8 +13,6 @@ final class ProcessContextFactory implements ContextFactory
     use ForbidCloning;
     use ForbidSerialization;
 
-    private readonly IpcHub $ipcHub;
-
     /**
      * @param string|null $workingDirectory Working directory.
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
@@ -23,18 +21,15 @@ final class ProcessContextFactory implements ContextFactory
      *      Null will attempt to automatically locate the binary.
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
-     * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
+     * @param IpcHub $ipcHub Optional IpcHub instance.
      */
     public function __construct(
         private readonly ?string $workingDirectory = null,
         private readonly array $environment = [],
         private readonly string|array|null $binary = null,
         private readonly int $childConnectTimeout = 5,
-        ?IpcHub $ipcHub = null,
+        private readonly IpcHub $ipcHub = new LocalIpcHub(),
     ) {
-        $ipcHub ??= new LocalIpcHub();
-
-        $this->ipcHub = $ipcHub;
     }
 
     /**

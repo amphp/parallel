@@ -6,6 +6,7 @@ use Amp\Cancellation;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
+use Amp\Parallel\Ipc\LocalIpcHub;
 
 final class DefaultContextFactory implements ContextFactory
 {
@@ -15,9 +16,9 @@ final class DefaultContextFactory implements ContextFactory
     private readonly ProcessContextFactory $contextFactory;
 
     /**
-     * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
+     * @param IpcHub $ipcHub Optional IpcHub instance.
      */
-    public function __construct(?IpcHub $ipcHub = null)
+    public function __construct(IpcHub $ipcHub = new LocalIpcHub())
     {
         $this->contextFactory = new ProcessContextFactory(ipcHub: $ipcHub);
     }
