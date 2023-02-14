@@ -40,7 +40,7 @@ $executions = [];
 foreach ($urls as $url) {
     // FetchTask is just an example, you'll have to implement
     // the Task interface for your task.
-    $executions[$url] = Worker\submit(new FetchTask, $url);
+    $executions[$url] = Worker\submit(new FetchTask($url));
 }
 
 // Each submission returns an Execution instance to allow two-way
