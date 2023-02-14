@@ -6,6 +6,9 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
 
+/**
+ * @template-implements Task<string, never, never>
+ */
 final class FetchTask implements Task
 {
     private string $url;
