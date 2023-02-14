@@ -28,7 +28,7 @@ trait ContextException
             . ' if the Xdebug extension is enabled, set "xdebug.mode" to "debug" to include'
             . ' the exception stack trace in the context in the exception message';
 
-        $this->invokeExceptionConstructor(\sprintf(
+        parent::__construct(\sprintf(
             $format,
             $className,
             $originalMessage,
@@ -36,10 +36,8 @@ trait ContextException
             $originalFile,
             $originalLine,
             self::class,
-        ), $previous);
+        ), previous: $previous);
     }
-
-    abstract protected function invokeExceptionConstructor(string $message, ?\Throwable $previous): void;
 
     public function __toString(): string
     {
