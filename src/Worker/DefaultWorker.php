@@ -18,8 +18,6 @@ use function Amp\async;
 
 /**
  * Default worker implementation executing {@see Task}s.
- *
- * Use {@see runTasks()} to run tasks.
  */
 final class DefaultWorker implements Worker
 {
@@ -40,8 +38,7 @@ final class DefaultWorker implements Worker
     private ?Future $exitStatus = null;
 
     /**
-     * @param Context<int, Internal\JobPacket, Internal\JobPacket|int> $context A context running an instance of
-     * {@see runTasks()}.
+     * @param Context<int, Internal\JobPacket, Internal\JobPacket|int> $context A context running tasks.
      */
     public function __construct(private readonly Context $context)
     {
