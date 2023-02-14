@@ -38,13 +38,7 @@ final class ProcessContextFactory implements ContextFactory
     }
 
     /**
-     * @template TResult
-     * @template TReceive
-     * @template TSend
-     *
      * @param string|non-empty-list<string> $script
-     *
-     * @return ProcessContext<TResult, TReceive, TSend>
      *
      * @throws ContextException
      */

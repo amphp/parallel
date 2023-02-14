@@ -5,13 +5,11 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Parallel\Context\ProcessContextFactory;
-use Amp\Process\Internal\ProcessContext;
 use Amp\Sync\PosixSemaphore;
 use Amp\Sync\SemaphoreMutex;
 use Amp\Sync\SharedMemoryParcel;
 use function Amp\async;
 use function Amp\delay;
-use function Amp\Parallel\Context\contextFactory;
 
 $mutex = new SemaphoreMutex($semaphore = PosixSemaphore::create(1));
 

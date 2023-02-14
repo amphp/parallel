@@ -23,13 +23,7 @@ final class DefaultContextFactory implements ContextFactory
     }
 
     /**
-     * @template TResult
-     * @template TReceive
-     * @template TSend
-     *
      * @param string|non-empty-list<string> $script
-     *
-     * @return Context<TResult, TReceive, TSend>
      *
      * @throws ContextException
      */
