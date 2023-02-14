@@ -75,16 +75,14 @@ final class ProcessContext implements Context
      * @throws ContextException If starting the process fails.
      */
     public static function start(
+        IpcHub $ipcHub,
         string|array $script,
         ?string $workingDirectory = null,
         array $environment = [],
         ?Cancellation $cancellation = null,
         string|array|null $binary = null,
-        int $childConnectTimeout = self::DEFAULT_START_TIMEOUT,
-        ?IpcHub $ipcHub = null
+        int $childConnectTimeout = self::DEFAULT_START_TIMEOUT
     ): self {
-        $ipcHub ??= Ipc\ipcHub();
-
         /** @psalm-suppress RedundantFunctionCall */
         $script = \is_array($script) ? \array_values($script) : [$script];
         if (!$script) {

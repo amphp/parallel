@@ -6,6 +6,7 @@ use Amp\Cancellation;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
+use Amp\Parallel\Ipc\LocalIpcHub;
 
 final class ProcessContextFactory implements ContextFactory
 {
@@ -27,8 +28,9 @@ final class ProcessContextFactory implements ContextFactory
         private readonly array $environment = [],
         private readonly string|array|null $binary = null,
         private readonly int $childConnectTimeout = 5,
-        private readonly ?IpcHub $ipcHub = null,
+        private ?IpcHub $ipcHub = null,
     ) {
+        $this->ipcHub ??= new LocalIpcHub();
     }
 
     /**
@@ -45,13 +47,13 @@ final class ProcessContextFactory implements ContextFactory
     public function start(string|array $script, ?Cancellation $cancellation = null): ProcessContext
     {
         return ProcessContext::start(
+            ipcHub: $this->ipcHub,
             script: $script,
             workingDirectory: $this->workingDirectory,
             environment: $this->environment,
             cancellation: $cancellation,
             binary: $this->binary,
             childConnectTimeout: $this->childConnectTimeout,
-            ipcHub: $this->ipcHub,
         );
     }
 }

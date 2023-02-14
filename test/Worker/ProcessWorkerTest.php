@@ -5,7 +5,7 @@ namespace Amp\Parallel\Test\Worker;
 use Amp\Cancellation;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextFactory;
-use Amp\Parallel\Context\ProcessContext;
+use Amp\Parallel\Context\ProcessContextFactory;
 
 class ProcessWorkerTest extends AbstractWorkerTest
 {
@@ -14,7 +14,7 @@ class ProcessWorkerTest extends AbstractWorkerTest
         return new class implements ContextFactory {
             public function start(array|string $script, ?Cancellation $cancellation = null): Context
             {
-                return ProcessContext::start($script, cancellation: $cancellation);
+                return (new ProcessContextFactory())->start($script, cancellation: $cancellation);
             }
         };
     }

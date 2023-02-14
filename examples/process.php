@@ -16,7 +16,7 @@ $timer = EventLoop::repeat(1, function () {
 
 try {
     // Create a new child process that does some blocking stuff.
-    $context = ProcessContext::start(__DIR__ . "/contexts/blocking-process.php");
+    $context = contextFactory()->start(__DIR__ . "/contexts/blocking-process.php");
 
     // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
     $future = async(fn () => ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));

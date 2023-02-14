@@ -3,12 +3,12 @@
 namespace Amp\Parallel\Test\Context;
 
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\ProcessContext;
+use Amp\Parallel\Context\ProcessContextFactory;
 
 class ProcessContextTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
     {
-        return ProcessContext::start($script);
+        return (new ProcessContextFactory())->start($script);
     }
 }

@@ -19,7 +19,7 @@ $parcel = SharedMemoryParcel::create($mutex, 1);
 printf("Parent %d created semaphore %s and parcel: %s\n", getmypid(), $semaphore->getKey(), $parcel->getKey());
 
 // Send semaphore and parcel key to child process as command argument.
-$context = ProcessContext::start([
+$context = contextFactory()->start([
     __DIR__ . "/contexts/parcel-process.php",
     (string) $semaphore->getKey(),
     (string) $parcel->getKey(),

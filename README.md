@@ -200,7 +200,7 @@ return function (Channel $channel): mixed {
 use Amp\Parallel\Context\ProcessContext;
 
 // Creates and starts a child process context using ProcessContext
-$context = ProcessContext::start(__DIR__ . '/child.php');
+$context = Amp\Parallel\Context\contextFactory()->start(__DIR__ . '/child.php');
 
 $url = 'https://google.com';
 $context->send($url);

@@ -6,26 +6,7 @@ use Amp\ByteStream\ReadableResourceStream;
 use Amp\Cancellation;
 use Amp\Socket\Socket;
 use Amp\Socket\SocketConnector;
-use Revolt\EventLoop;
 use function Amp\Socket\socketConnector;
-
-/**
- * Gets or sets the global shared IpcHub instance.
- *
- * @param IpcHub|null $ipcHub If not null, set the global shared IpcHub to this instance.
- */
-function ipcHub(?IpcHub $ipcHub = null): IpcHub
-{
-    static $map;
-    $map ??= new \WeakMap();
-    $driver = EventLoop::getDriver();
-
-    if ($ipcHub) {
-        return $map[$driver] = $ipcHub;
-    }
-
-    return $map[$driver] ??= new LocalIpcHub();
-}
 
 /**
  * @param positive-int $keyLength
