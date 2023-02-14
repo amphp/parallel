@@ -11,7 +11,6 @@ use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc;
 use Amp\Parallel\Ipc\IpcHub;
-use Amp\Parallel\Ipc\SynchronizationError;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
 use Amp\Sync\ChannelException;
@@ -285,7 +284,7 @@ final class ProcessContext implements Context
                 );
             }
 
-            throw new SynchronizationError(\sprintf(
+            throw new \Error(\sprintf(
                 'Process unexpectedly exited when waiting to receive data with result: %s',
                 flattenArgument($data),
             ), 0, $exception);
@@ -295,13 +294,13 @@ final class ProcessContext implements Context
             if ($data instanceof Internal\ExitResult) {
                 $data = $data->getResult();
 
-                throw new SynchronizationError(\sprintf(
+                throw new \Error(\sprintf(
                     'Process unexpectedly exited when waiting to receive data with result: %s',
                     flattenArgument($data),
                 ));
             }
 
-            throw new SynchronizationError(\sprintf(
+            throw new \Error(\sprintf(
                 'Unexpected data type from context: %s',
                 flattenArgument($data),
             ));
@@ -328,7 +327,7 @@ final class ProcessContext implements Context
                 );
             }
 
-            throw new SynchronizationError(\sprintf(
+            throw new \Error(\sprintf(
                 'Process unexpectedly exited when sending data with result: %s',
                 flattenArgument($data),
             ), 0, $exception);
@@ -358,13 +357,13 @@ final class ProcessContext implements Context
             }
 
             if ($data instanceof Internal\ContextMessage) {
-                throw new SynchronizationError(\sprintf(
+                throw new \Error(\sprintf(
                     "The process sent data instead of exiting: %s",
                     flattenArgument($data),
                 ));
             }
 
-            throw new SynchronizationError("Did not receive an exit result from process");
+            throw new \Error("Did not receive an exit result from process");
         }
 
         $this->channel->close();
