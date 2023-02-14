@@ -8,6 +8,7 @@ use Amp\Parallel\Worker\TaskFailureThrowable;
 
 /**
  * @psalm-import-type FlattenedTrace from TaskFailureThrowable
+ * @internal
  */
 enum TaskExceptionType
 {

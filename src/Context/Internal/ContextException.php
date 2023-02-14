@@ -7,6 +7,8 @@ use function Amp\Parallel\Context\formatFlattenedBacktrace;
 
 /**
  * @psalm-import-type FlattenedTrace from ContextPanicError
+ *
+ * @internal
  */
 trait ContextException
 {
