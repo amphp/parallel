@@ -99,9 +99,7 @@ class FetchTask implements Task
 ```
 
 ```php
-use Amp\Parallel\Worker\DefaultWorker;
-
-$worker = new DefaultWorker();
+$worker = Amp\Parallel\Worker\createWorker();
 $task = new FetchTask('https://amphp.org');
 
 $execution = $worker->submit($task);

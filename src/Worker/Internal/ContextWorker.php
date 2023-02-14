@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Amp\Parallel\Worker;
+namespace Amp\Parallel\Worker\Internal;
 
 use Amp\Cancellation;
 use Amp\CancelledException;
@@ -10,6 +10,11 @@ use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Worker\Execution;
+use Amp\Parallel\Worker\Internal;
+use Amp\Parallel\Worker\Task;
+use Amp\Parallel\Worker\Worker;
+use Amp\Parallel\Worker\WorkerException;
 use Amp\Pipeline\Queue;
 use Amp\Sync\ChannelException;
 use Amp\TimeoutCancellation;
@@ -17,9 +22,11 @@ use Revolt\EventLoop;
 use function Amp\async;
 
 /**
- * Default worker implementation executing {@see Task}s.
+ * Context based worker implementation executing {@see Task}s.
+ *
+ * @internal
  */
-final class DefaultWorker implements Worker
+final class ContextWorker implements Worker
 {
     use ForbidCloning;
     use ForbidSerialization;
