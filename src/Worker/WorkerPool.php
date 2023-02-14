@@ -37,11 +37,4 @@ interface WorkerPool extends Worker
      * @return int The number of idle workers.
      */
     public function getIdleWorkerCount(): int;
-
-    /**
-     * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
-     *
-     * @return int The maximum number of workers.
-     */
-    public function getLimit(): int;
 }

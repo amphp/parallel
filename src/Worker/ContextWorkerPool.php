@@ -117,6 +117,11 @@ final class ContextWorkerPool implements WorkerPool
         return $this->idleWorkers->count() > 0 || $this->workers->count() < $this->limit;
     }
 
+    /**
+     * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
+     *
+     * @return int The maximum number of workers.
+     */
     public function getLimit(): int
     {
         return $this->limit;
