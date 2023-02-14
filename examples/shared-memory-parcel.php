@@ -4,7 +4,6 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Amp\ByteStream;
-use Amp\Parallel\Context\ProcessContext;
 use Amp\Sync\PosixSemaphore;
 use Amp\Sync\SemaphoreMutex;
 use Amp\Sync\SharedMemoryParcel;

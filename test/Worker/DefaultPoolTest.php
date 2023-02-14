@@ -3,7 +3,7 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Future;
-use Amp\Parallel\Worker\DefaultWorkerPool;
+use Amp\Parallel\Worker\ContextWorkerPool;
 use Amp\Parallel\Worker\Execution;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
@@ -24,7 +24,7 @@ class DefaultPoolTest extends AsyncTestCase
         $factory->method('create')
             ->willReturn($worker);
 
-        $pool = new DefaultWorkerPool(32, $factory);
+        $pool = new ContextWorkerPool(32, $factory);
 
         $this->expectException(WorkerException::class);
         $this->expectExceptionMessage('Worker factory did not create a viable worker');
@@ -53,7 +53,7 @@ class DefaultPoolTest extends AsyncTestCase
                 return $worker;
             });
 
-        $pool = new DefaultWorkerPool(32, $factory);
+        $pool = new ContextWorkerPool(32, $factory);
 
         $pool->submit($this->createMock(Task::class))->getResult()->await();
 

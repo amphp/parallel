@@ -7,7 +7,7 @@ use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\StatusError;
 use Amp\Parallel\Test\Worker\Fixtures\CommunicatingTask;
-use Amp\Parallel\Worker\DefaultWorkerFactory;
+use Amp\Parallel\Worker\ContextWorkerFactory;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\TaskCancelledException;
 use Amp\Parallel\Worker\TaskFailureError;
@@ -366,7 +366,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
     protected function createWorker(?string $autoloadPath = null): Worker
     {
-        $factory = new DefaultWorkerFactory(
+        $factory = new ContextWorkerFactory(
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
         );

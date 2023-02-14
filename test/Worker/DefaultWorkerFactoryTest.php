@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Test\Worker;
 
-use Amp\Parallel\Worker\DefaultWorkerFactory;
+use Amp\Parallel\Worker\ContextWorkerFactory;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
 
@@ -10,7 +10,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
 {
     public function testCreate(): void
     {
-        $factory = new DefaultWorkerFactory;
+        $factory = new ContextWorkerFactory;
 
         self::assertInstanceOf(Worker::class, $worker = $factory->create());
 
@@ -19,7 +19,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
 
     public function testAutoloading(): void
     {
-        $factory = new DefaultWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php');
+        $factory = new ContextWorkerFactory(__DIR__ . '/Fixtures/custom-bootstrap.php');
 
         $worker = $factory->create();
 
@@ -33,7 +33,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('No file found at bootstrap path given');
 
-        $factory = new DefaultWorkerFactory(__DIR__ . '/Fixtures/not-found.php');
+        $factory = new ContextWorkerFactory(__DIR__ . '/Fixtures/not-found.php');
 
         $worker = $factory->create();
 

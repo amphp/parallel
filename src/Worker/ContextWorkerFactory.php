@@ -12,7 +12,7 @@ use function Amp\Parallel\Context\contextFactory;
 /**
  * The built-in worker factory type.
  */
-final class DefaultWorkerFactory implements WorkerFactory
+final class ContextWorkerFactory implements WorkerFactory
 {
     use ForbidCloning;
     use ForbidSerialization;

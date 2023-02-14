@@ -9,7 +9,6 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
-use Amp\Parallel\Ipc;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;

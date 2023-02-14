@@ -22,7 +22,7 @@ function workerPool(?WorkerPool $pool = null): WorkerPool
         return $map[$driver] = $pool;
     }
 
-    return $map[$driver] ??= new DefaultWorkerPool();
+    return $map[$driver] ??= new ContextWorkerPool();
 }
 
 /**
@@ -72,5 +72,5 @@ function workerFactory(?WorkerFactory $factory = null): WorkerFactory
         return $map[$driver] = $factory;
     }
 
-    return $map[$driver] ??= new DefaultWorkerFactory();
+    return $map[$driver] ??= new ContextWorkerFactory();
 }

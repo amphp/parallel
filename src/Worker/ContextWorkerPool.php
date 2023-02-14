@@ -20,7 +20,7 @@ use function Amp\async;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-final class DefaultWorkerPool implements WorkerPool
+final class ContextWorkerPool implements WorkerPool
 {
     use ForbidCloning;
     use ForbidSerialization;

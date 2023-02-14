@@ -4,8 +4,8 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
-use Amp\Parallel\Worker\DefaultWorkerFactory;
-use Amp\Parallel\Worker\DefaultWorkerPool;
+use Amp\Parallel\Worker\ContextWorkerFactory;
+use Amp\Parallel\Worker\ContextWorkerPool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerPool;
@@ -151,11 +151,11 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         int $max = WorkerPool::DEFAULT_WORKER_LIMIT,
         ?string $autoloadPath = null
     ): WorkerPool {
-        $factory = new DefaultWorkerFactory(
+        $factory = new ContextWorkerFactory(
             bootstrapPath: $autoloadPath,
             contextFactory: $this->createContextFactory(),
         );
 
-        return new DefaultWorkerPool($max, $factory);
+        return new ContextWorkerPool($max, $factory);
     }
 }
