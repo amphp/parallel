@@ -13,6 +13,8 @@ final class ProcessContextFactory implements ContextFactory
     use ForbidCloning;
     use ForbidSerialization;
 
+    private readonly IpcHub $ipcHub;
+
     /**
      * @param string|null $workingDirectory Working directory.
      * @param array<string, string> $environment Array of environment variables, or use an empty array to inherit from
@@ -28,9 +30,11 @@ final class ProcessContextFactory implements ContextFactory
         private readonly array $environment = [],
         private readonly string|array|null $binary = null,
         private readonly int $childConnectTimeout = 5,
-        private ?IpcHub $ipcHub = null,
+        ?IpcHub $ipcHub = null,
     ) {
-        $this->ipcHub ??= new LocalIpcHub();
+        $ipcHub ??= new LocalIpcHub();
+
+        $this->ipcHub = $ipcHub;
     }
 
     /**

@@ -67,7 +67,7 @@ final class ProcessContext implements Context
      *      Null will attempt to automatically locate the binary.
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
-     * @param IpcHub|null $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
+     * @param IpcHub $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
      *
      * @return ProcessContext<TResult, TReceive, TSend>
      *

@@ -3,9 +3,12 @@
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\ByteStream;
+use Amp\Parallel\Context\ProcessContext;
+use Amp\Parallel\Context\ProcessContextFactory;
 use Revolt\EventLoop;
 use function Amp\async;
 use function Amp\delay;
+use function Amp\Parallel\Context\contextFactory;
 
 $timer = EventLoop::repeat(1, function () {
     static $i;
@@ -15,7 +18,8 @@ $timer = EventLoop::repeat(1, function () {
 
 try {
     // Create a new child process that does some blocking stuff.
-    $context = contextFactory()->start(__DIR__ . "/contexts/blocking-process.php");
+    /** @var ProcessContext<mixed, mixed, mixed> $context */
+    $context = (new ProcessContextFactory())->start(__DIR__ . "/contexts/blocking-process.php");
 
     // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
     $future = async(fn () => ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
