@@ -267,14 +267,6 @@ final class ProcessContext implements Context
     ) {
     }
 
-    /**
-     * Always throws to prevent cloning.
-     */
-    public function __clone()
-    {
-        throw new \Error(self::class . ' objects cannot be cloned');
-    }
-
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
