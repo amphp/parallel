@@ -54,7 +54,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Parallel\\Example\\": "examples",
+            "App\\Worker\\": "examples/worker",
             "Amp\\Parallel\\Test\\": "test"
         }
     },
