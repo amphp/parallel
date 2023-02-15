@@ -152,7 +152,7 @@ final class ContextWorkerPool implements WorkerPool
             throw $exception;
         }
 
-        $execution->getResult()->finally(static fn () => $push($worker))->ignore();
+        $execution->getFuture()->finally(static fn () => $push($worker))->ignore();
 
         return $execution;
     }

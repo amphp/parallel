@@ -14,8 +14,8 @@ $execution1 = workerPool()->submit(new FetchTask('https://amphp.org'));
 $execution2 = workerPool()->submit(new FetchTask('https://github.com'));
 
 $bodies = await([
-    $execution1->getResult(),
-    $execution2->getResult(),
+    $execution1->getFuture(),
+    $execution2->getFuture(),
 ]);
 
 print strlen($bodies[0]) . PHP_EOL;

@@ -51,7 +51,7 @@ class FunctionsTest extends AsyncTestCase
 
         $task = new Fixtures\TestTask($value);
 
-        self::assertSame($value, Worker\submit($task)->getResult()->await());
+        self::assertSame($value, Worker\submit($task)->await());
     }
 
     /**

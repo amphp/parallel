@@ -65,7 +65,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         self::assertTrue($worker->isRunning());
         self::assertTrue($worker->isIdle());
 
-        self::assertSame(42, $worker->submit(new Fixtures\TestTask(42))->getResult()->await());
+        self::assertSame(42, $worker->submit(new Fixtures\TestTask(42))->await());
 
         $worker->shutdown();
 
@@ -82,13 +82,13 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return $pool->submit($task)->getResult();
+            return $pool->submit($task)->getFuture();
         }, $tasks);
 
         self::assertEquals($values, Future\await($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return $pool->submit($task)->getResult();
+            return $pool->submit($task)->getFuture();
         }, $tasks);
 
         self::assertEquals($values, Future\await($promises));
@@ -113,7 +113,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
             $values = \range(1, 50);
 
             $promises = \array_map(static function (int $value) use ($pool): Future {
-                return $pool->submit(new Fixtures\TestTask($value))->getResult();
+                return $pool->submit(new Fixtures\TestTask($value))->getFuture();
             }, $values);
 
             self::assertEquals($values, Future\await($promises));

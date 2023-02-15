@@ -47,7 +47,7 @@ final class PooledWorker implements Worker
         $job = $this->worker->submit($task, $cancellation);
 
         // Retain a reference to $this to prevent premature release of worker.
-        $job->getResult()->finally(fn () => $this)->ignore();
+        $job->getFuture()->finally(fn () => $this)->ignore();
 
         return $job;
     }

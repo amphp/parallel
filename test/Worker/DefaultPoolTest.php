@@ -55,8 +55,8 @@ class DefaultPoolTest extends AsyncTestCase
 
         $pool = new ContextWorkerPool(32, $factory);
 
-        $pool->submit($this->createMock(Task::class))->getResult()->await();
+        $pool->submit($this->createMock(Task::class))->await();
 
-        $pool->submit($this->createMock(Task::class))->getResult()->await();
+        $pool->submit($this->createMock(Task::class))->await();
     }
 }

@@ -23,7 +23,7 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
 
         $worker = $factory->create();
 
-        self::assertTrue($worker->submit(new Fixtures\AutoloadTestTask)->getResult()->await());
+        self::assertTrue($worker->submit(new Fixtures\AutoloadTestTask)->await());
 
         $worker->shutdown();
     }
@@ -37,6 +37,6 @@ class DefaultWorkerFactoryTest extends AsyncTestCase
 
         $worker = $factory->create();
 
-        $worker->submit(new Fixtures\TestTask(42))->getResult()->await();
+        $worker->submit(new Fixtures\TestTask(42))->await();
     }
 }

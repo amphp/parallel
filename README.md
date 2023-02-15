@@ -45,9 +45,9 @@ foreach ($urls as $url) {
 
 // Each submission returns an Execution instance to allow two-way
 // communication with a task. Here we're only interested in the
-// task result, so we use the Future from Execution::getResult()
+// task result, so we use the Future from Execution::getFuture()
 $responses = Future\await(array_map(
-    fn (Worker\Execution $e => $e->getResult(),
+    fn (Worker\Execution $e => $e->getFuture(),
     $executions,
 ));
 
@@ -104,10 +104,8 @@ $task = new FetchTask('https://amphp.org');
 
 $execution = $worker->submit($task);
 
-$future = $execution->getResult();
-
 // $data will be the return value from FetchTask::run()
-$data = $future->await(); 
+$data = $execution->await();
 ```
 
 #### Sharing data between tasks
