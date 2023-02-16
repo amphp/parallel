@@ -24,7 +24,7 @@ final class ParallelContextFactory implements ContextFactory
     ) {
     }
 
-    public function start(array|string $script, ?Cancellation $cancellation = null): Context
+    public function start(array|string $script, ?Cancellation $cancellation = null): ParallelContext
     {
         return ParallelContext::start($this->ipcHub, $script, $cancellation, $this->childConnectTimeout);
     }

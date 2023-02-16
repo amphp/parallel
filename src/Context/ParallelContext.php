@@ -17,7 +17,7 @@ use function Amp\Parallel\Context\Internal\runTasks;
  * @template TResult
  * @template TReceive
  * @template TSend
- * @template-implements Context<TResult, TReceive, TSend>
+ * @template-extends AbstractContext<TResult, TReceive, TSend>
  */
 final class ParallelContext extends AbstractContext
 {
@@ -49,7 +49,7 @@ final class ParallelContext extends AbstractContext
         }
 
         self::$hubs ??= new \WeakMap();
-        $hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub($ipcHub));
+        $hub = (self::$hubs[EventLoop::getDriver()] ??= new Internal\ParallelHub());
 
         $key = $ipcHub->generateKey();
 
@@ -97,6 +97,11 @@ final class ParallelContext extends AbstractContext
             return 0;
             // @codeCoverageIgnoreEnd
         }, [$id, $ipcHub->getUri(), $key, $childConnectTimeout, $script]);
+
+        if (!$future) {
+            $runtime->kill();
+            throw new ContextException('Starting the thread did not return a future');
+        }
 
         try {
             $socket = $ipcHub->accept($key, $cancellation);

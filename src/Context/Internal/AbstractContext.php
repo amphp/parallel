@@ -13,6 +13,12 @@ use Amp\Sync\ChannelException;
 use Amp\TimeoutCancellation;
 use function Amp\Parallel\Context\flattenArgument;
 
+/**
+ * @template TResult
+ * @template TReceive
+ * @template TSend
+ * @template-implements Context<TResult, TReceive, TSend>
+ */
 abstract class AbstractContext implements Context
 {
     use ForbidCloning;

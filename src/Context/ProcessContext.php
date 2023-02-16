@@ -15,7 +15,7 @@ use Amp\Process\ProcessException;
  * @template TResult
  * @template TReceive
  * @template TSend
- * @template-implements Context<TResult, TReceive, TSend>
+ * @template-extends AbstractContext<TResult, TReceive, TSend>
  */
 final class ProcessContext extends AbstractContext
 {
