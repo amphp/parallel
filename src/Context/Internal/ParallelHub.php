@@ -17,10 +17,12 @@ final class ParallelHub
 
     private string $watcher;
 
+    /** @psalm-suppress UndefinedClass */
     private Events $events;
 
     public function __construct()
     {
+        /** @psalm-suppress UndefinedClass */
         $events = $this->events = new Events;
         $this->events->setBlocking(false);
 
@@ -38,6 +40,7 @@ final class ParallelHub
         EventLoop::unreference($this->watcher);
     }
 
+    /** @psalm-suppress UndefinedClass */
     public function add(int $id, StreamChannel $channel, Future $future): void
     {
         $this->channels[$id] = $channel;

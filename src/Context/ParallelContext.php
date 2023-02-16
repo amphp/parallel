@@ -73,6 +73,7 @@ final class ParallelContext extends AbstractContext
 
         $id = self::$nextId++;
 
+        /** @psalm-suppress UndefinedClass */
         $runtime = new Runtime(self::$autoloadPath);
         $future = $runtime->run(function (
             int $id,
@@ -119,6 +120,7 @@ final class ParallelContext extends AbstractContext
 
     private readonly int $oid;
 
+    /** @psalm-suppress UndefinedClass */
     private function __construct(
         private readonly int $id,
         private readonly Runtime $runtime,
