@@ -82,4 +82,4 @@ try {
     \trigger_error($exception->getMessage(), E_USER_ERROR);
 }
 
-runTasks($uri, $key, $cancellation, $argv);
+runContext($uri, $key, $cancellation, $argv);

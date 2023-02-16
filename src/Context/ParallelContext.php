@@ -11,7 +11,6 @@ use Amp\TimeoutCancellation;
 use parallel\Runtime;
 use parallel\Runtime\Error\Closed;
 use Revolt\EventLoop;
-use function Amp\Parallel\Context\Internal\runTasks;
 
 /**
  * @template TResult
@@ -92,7 +91,7 @@ final class ParallelContext extends AbstractContext
                 // such as select() will not be interrupted.
             }));
 
-            runTasks($uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+            Internal\runContext($uri, $key, new TimeoutCancellation($connectTimeout), $argv);
 
             return 0;
             // @codeCoverageIgnoreEnd

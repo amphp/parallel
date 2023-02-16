@@ -10,7 +10,7 @@ use Amp\Serialization\SerializationException;
 use Revolt\EventLoop;
 
 /** @internal */
-function runTasks(string $uri, string $key, Cancellation $connectCancellation, array $argv): void
+function runContext(string $uri, string $key, Cancellation $connectCancellation, array $argv): void
 {
     EventLoop::queue(function () use ($argv, $uri, $key, $connectCancellation): void {
         /** @noinspection PhpUnusedLocalVariableInspection */
