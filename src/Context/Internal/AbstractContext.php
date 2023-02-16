@@ -98,7 +98,7 @@ abstract class AbstractContext implements Context
 
     public function isClosed(): bool
     {
-        $this->channel->isClosed();
+        return $this->channel->isClosed();
     }
 
     public function onClose(\Closure $onClose): void

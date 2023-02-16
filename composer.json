@@ -48,6 +48,7 @@
         },
         "files": [
             "src/Context/functions.php",
+            "src/Context/Internal/functions.php",
             "src/Ipc/functions.php",
             "src/Worker/functions.php"
         ]

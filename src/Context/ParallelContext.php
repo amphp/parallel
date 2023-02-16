@@ -9,6 +9,7 @@ use Amp\Parallel\Context\Internal\ParallelHub;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\TimeoutCancellation;
 use parallel\Runtime;
+use parallel\Runtime\Error\Closed;
 use Revolt\EventLoop;
 use function Amp\Parallel\Context\Internal\runTasks;
 
@@ -141,8 +142,13 @@ final class ParallelContext extends AbstractContext
 
     public function close(): void
     {
+        try {
+            $this->runtime->kill();
+        } catch (Closed) {
+            // ignore
+        }
+
         $this->hub->remove($this->id);
-        $this->runtime->kill();
 
         parent::close();
     }
