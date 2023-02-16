@@ -13,14 +13,18 @@ final class DefaultContextFactory implements ContextFactory
     use ForbidCloning;
     use ForbidSerialization;
 
-    private readonly ProcessContextFactory $contextFactory;
+    private readonly ContextFactory $contextFactory;
 
     /**
      * @param IpcHub $ipcHub Optional IpcHub instance.
      */
     public function __construct(IpcHub $ipcHub = new LocalIpcHub())
     {
-        $this->contextFactory = new ProcessContextFactory(ipcHub: $ipcHub);
+        if (ParallelContext::isSupported()) {
+            $this->contextFactory = new ParallelContextFactory(ipcHub: $ipcHub);
+        } else {
+            $this->contextFactory = new ProcessContextFactory(ipcHub: $ipcHub);
+        }
     }
 
     /**
