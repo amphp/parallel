@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\Cancellation;
 use Amp\Sync\Channel;
 
 /**
@@ -18,5 +19,5 @@ interface Context extends Channel
      * @throws ContextException If the context dies unexpectedly.
      * @throws ContextPanicError If the context throws an uncaught exception.
      */
-    public function join(): mixed;
+    public function join(?Cancellation $cancellation = null): mixed;
 }

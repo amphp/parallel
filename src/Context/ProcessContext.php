@@ -6,14 +6,10 @@ use Amp\ByteStream\ReadableResourceStream;
 use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
-use Amp\CancelledException;
-use Amp\ForbidCloning;
-use Amp\ForbidSerialization;
+use Amp\Parallel\Context\Internal\AbstractContext;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
-use Amp\Sync\ChannelException;
-use Amp\TimeoutCancellation;
 
 /**
  * @template TResult
@@ -21,11 +17,8 @@ use Amp\TimeoutCancellation;
  * @template TSend
  * @template-implements Context<TResult, TReceive, TSend>
  */
-final class ProcessContext implements Context
+final class ProcessContext extends AbstractContext
 {
-    use ForbidCloning;
-    use ForbidSerialization;
-
     private const SCRIPT_PATH = __DIR__ . "/Internal/process-runner.php";
     private const DEFAULT_START_TIMEOUT = 5;
 
@@ -261,74 +254,7 @@ final class ProcessContext implements Context
         private readonly Process $process,
         private readonly StreamChannel $channel,
     ) {
-    }
-
-    public function receive(?Cancellation $cancellation = null): mixed
-    {
-        try {
-            $data = $this->channel->receive($cancellation);
-        } catch (ChannelException $exception) {
-            try {
-                $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ContextException|ChannelException|CancelledException) {
-                if (!$this->isClosed()) {
-                    $this->close();
-                }
-                throw new ContextException(
-                    "The process stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception,
-                );
-            }
-
-            throw new \Error(\sprintf(
-                'Process unexpectedly exited when waiting to receive data with result: %s',
-                flattenArgument($data),
-            ), 0, $exception);
-        }
-
-        if (!$data instanceof Internal\ContextMessage) {
-            if ($data instanceof Internal\ExitResult) {
-                $data = $data->getResult();
-
-                throw new \Error(\sprintf(
-                    'Process unexpectedly exited when waiting to receive data with result: %s',
-                    flattenArgument($data),
-                ));
-            }
-
-            throw new \Error(\sprintf(
-                'Unexpected data type from context: %s',
-                flattenArgument($data),
-            ));
-        }
-
-        return $data->getMessage();
-    }
-
-    public function send(mixed $data): void
-    {
-        try {
-            $this->channel->send($data);
-        } catch (ChannelException $exception) {
-            try {
-                $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ContextException|ChannelException|CancelledException) {
-                if (!$this->isClosed()) {
-                    $this->close();
-                }
-                throw new ContextException(
-                    "The process stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception,
-                );
-            }
-
-            throw new \Error(\sprintf(
-                'Process unexpectedly exited when sending data with result: %s',
-                flattenArgument($data),
-            ), 0, $exception);
-        }
+        parent::__construct($this->channel);
     }
 
     /**
@@ -337,37 +263,11 @@ final class ProcessContext implements Context
      */
     public function join(?Cancellation $cancellation = null): mixed
     {
-        try {
-            $data = $this->channel->receive($cancellation);
-        } catch (CancelledException $exception) {
-            throw $exception;
-        } catch (\Throwable $exception) {
-            if (!$this->isClosed()) {
-                $this->close();
-            }
-            throw new ContextException("Failed to receive result from process", 0, $exception);
-        }
-
-        if (!$data instanceof Internal\ExitResult) {
-            if (!$this->isClosed()) {
-                $this->close();
-            }
-
-            if ($data instanceof Internal\ContextMessage) {
-                throw new \Error(\sprintf(
-                    "The process sent data instead of exiting: %s",
-                    flattenArgument($data),
-                ));
-            }
-
-            throw new \Error("Did not receive an exit result from process");
-        }
-
-        $this->channel->close();
+        $data = $this->receiveExitResult($cancellation);
 
         $code = $this->process->join();
         if ($code !== 0) {
-            throw new ContextException(\sprintf("Process exited with code %d", $code));
+            throw new ContextException(\sprintf("Context exited with code %d", $code));
         }
 
         return $data->getResult();
@@ -431,16 +331,7 @@ final class ProcessContext implements Context
     public function close(): void
     {
         $this->process->kill();
-        $this->channel->close();
-    }
 
-    public function isClosed(): bool
-    {
-        return !$this->process->isRunning();
-    }
-
-    public function onClose(\Closure $onClose): void
-    {
-        $this->channel->onClose($onClose);
+        parent::close();
     }
 }
