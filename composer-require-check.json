@@ -28,7 +28,7 @@
         "parallel\\Events",
         "parallel\\Future",
         "parallel\\Runtime",
-        "parallel\\Runtime\\Error\\Closed",
+        "parallel\\Runtime\\Error\\Closed"
     ],
     "php-core-extensions": [
         "Core",
