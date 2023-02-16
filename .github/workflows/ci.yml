@@ -10,8 +10,9 @@ jobs:
       matrix:
         include:
           - operating-system: 'ubuntu-latest'
-            php-version: '8.1'
-            php-ts: nts
+            php-version: '8.1-dev'
+            php-extensions: parallel
+            php-ts: ts
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.2'
