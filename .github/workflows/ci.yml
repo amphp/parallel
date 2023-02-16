@@ -37,6 +37,8 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           extensions: parallel
+        env:
+          fail-fast: true
 
       - name: Get Composer cache directory
         id: composer-cache
