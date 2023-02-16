@@ -34,5 +34,11 @@
                 <directory name="src"/>
             </errorLevel>
         </DocblockTypeContradiction>
+
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <directory name="src"/>
+            </errorLevel>
+        </UndefinedClass>
     </issueHandlers>
 </psalm>
