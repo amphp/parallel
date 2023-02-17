@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-// The function returned by this script is run by process.php in a separate process.
+// The function returned by this script is run by context.php in a separate process or thread.
 // $argc and $argv are available in this process as any other cli PHP script.
 
 use Amp\Sync\Channel;

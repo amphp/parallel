@@ -2,11 +2,9 @@
 <?php
 require dirname(__DIR__).'/vendor/autoload.php';
 
-use Amp\ByteStream;
-use Amp\Parallel\Context\ProcessContextFactory;
 use Revolt\EventLoop;
-use function Amp\async;
 use function Amp\delay;
+use function Amp\Parallel\Context\contextFactory;
 
 $timer = EventLoop::repeat(1, function () {
     static $i;
@@ -14,15 +12,9 @@ $timer = EventLoop::repeat(1, function () {
     print "Demonstrating how alive the parent is for the {$i}th time.\n";
 });
 
-// This example is identical to context.php, but uses a ProcessContext to demonstrate piping STDOUT
-// of the child process to STDOUT of the parent process.
-
 try {
-    // Create a new child process that does some blocking stuff.
-    $context = (new ProcessContextFactory())->start(__DIR__ . "/contexts/blocking.php");
-
-    // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
-    $future = async(fn () => ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
+    // Create a new child process or thread that does some blocking stuff.
+    $context = contextFactory()->start(__DIR__ . "/contexts/blocking.php");
 
     print "Waiting 2 seconds to send start data...\n";
     delay(2);
