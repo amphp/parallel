@@ -40,46 +40,45 @@ if (\function_exists("cli_set_process_title")) {
     require $autoloadPath;
 })();
 
-EventLoop::queue(function (): void {
-    $handler = fn () => null;
-
+// Wrap in a closure to keep local variables out of global scope
+(function () use ($argv, $argc): void {
     try {
         foreach (ProcessContext::getIgnoredSignals() as $signal) {
-            EventLoop::unreference(EventLoop::onSignal($signal, $handler));
+            EventLoop::unreference(EventLoop::onSignal($signal, static fn () => null));
         }
     } catch (EventLoop\UnsupportedFeatureException) {
         // Signal handling not supported on current event loop driver.
     }
-});
 
-/** @var list<string> $argv */
+    /** @var list<string> $argv */
 
-if (!isset($argv[1])) {
-    \trigger_error("No socket path provided", E_USER_ERROR);
-}
+    if (!isset($argv[1])) {
+        \trigger_error("No socket path provided", E_USER_ERROR);
+    }
 
-if (!isset($argv[2]) || !\is_numeric($argv[2])) {
-    \trigger_error("No key length provided", E_USER_ERROR);
-}
+    if (!isset($argv[2]) || !\is_numeric($argv[2])) {
+        \trigger_error("No key length provided", E_USER_ERROR);
+    }
 
-if (!isset($argv[3]) || !\is_numeric($argv[3])) {
-    \trigger_error("No timeout provided", E_USER_ERROR);
-}
+    if (!isset($argv[3]) || !\is_numeric($argv[3])) {
+        \trigger_error("No timeout provided", E_USER_ERROR);
+    }
 
-[, $uri, $length, $timeout] = $argv;
-$length = (int) $length;
-$timeout = (int) $timeout;
+    [, $uri, $length, $timeout] = $argv;
+    $length = (int) $length;
+    $timeout = (int) $timeout;
 
-\assert($length > 0 && $timeout > 0);
+    \assert($length > 0 && $timeout > 0);
 
-// Remove script path, socket path, key length, and timeout from process arguments.
-$argv = \array_slice($argv, 4);
+    // Remove script path, socket path, key length, and timeout from process arguments.
+    $argv = \array_slice($argv, 4);
 
-try {
-    $cancellation = new TimeoutCancellation($timeout);
-    $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, $length);
-} catch (\Throwable $exception) {
-    \trigger_error($exception->getMessage(), E_USER_ERROR);
-}
+    try {
+        $cancellation = new TimeoutCancellation($timeout);
+        $key = Ipc\readKey(ByteStream\getStdin(), $cancellation, $length);
+    } catch (\Throwable $exception) {
+        \trigger_error($exception->getMessage(), E_USER_ERROR);
+    }
 
-runContext($uri, $key, $cancellation, $argv);
+    runContext($uri, $key, $cancellation, $argv);
+})();
