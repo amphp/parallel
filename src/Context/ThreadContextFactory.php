@@ -8,7 +8,7 @@ use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Parallel\Ipc\LocalIpcHub;
 
-final class ParallelContextFactory implements ContextFactory
+final class ThreadContextFactory implements ContextFactory
 {
     use ForbidCloning;
     use ForbidSerialization;
@@ -24,8 +24,8 @@ final class ParallelContextFactory implements ContextFactory
     ) {
     }
 
-    public function start(array|string $script, ?Cancellation $cancellation = null): ParallelContext
+    public function start(array|string $script, ?Cancellation $cancellation = null): ThreadContext
     {
-        return ParallelContext::start($this->ipcHub, $script, $cancellation, $this->childConnectTimeout);
+        return ThreadContext::start($this->ipcHub, $script, $cancellation, $this->childConnectTimeout);
     }
 }

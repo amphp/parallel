@@ -19,7 +19,7 @@ use Revolt\EventLoop;
  * @template TSend
  * @template-extends AbstractContext<TResult, TReceive, TSend>
  */
-final class ParallelContext extends AbstractContext
+final class ThreadContext extends AbstractContext
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
     private const DEFAULT_START_TIMEOUT = 5;

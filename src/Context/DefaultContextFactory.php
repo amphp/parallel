@@ -20,8 +20,8 @@ final class DefaultContextFactory implements ContextFactory
      */
     public function __construct(IpcHub $ipcHub = new LocalIpcHub())
     {
-        if (ParallelContext::isSupported()) {
-            $this->contextFactory = new ParallelContextFactory(ipcHub: $ipcHub);
+        if (ThreadContext::isSupported()) {
+            $this->contextFactory = new ThreadContextFactory(ipcHub: $ipcHub);
         } else {
             $this->contextFactory = new ProcessContextFactory(ipcHub: $ipcHub);
         }

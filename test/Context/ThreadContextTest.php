@@ -3,18 +3,18 @@
 namespace Amp\Parallel\Test\Context;
 
 use Amp\Parallel\Context\Context;
-use Amp\Parallel\Context\ParallelContext;
-use Amp\Parallel\Context\ParallelContextFactory;
+use Amp\Parallel\Context\ThreadContext;
+use Amp\Parallel\Context\ThreadContextFactory;
 
-class ParallelContextTest extends AbstractContextTest
+class ThreadContextTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
     {
-        if (!ParallelContext::isSupported()) {
+        if (!ThreadContext::isSupported()) {
             $this->markTestSkipped('ext-parallel required');
         }
 
-        return (new ParallelContextFactory())->start($script);
+        return (new ThreadContextFactory())->start($script);
     }
 
     public function testExitingProcessOnReceive(): void
