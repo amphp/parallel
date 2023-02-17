@@ -107,7 +107,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->setTimeout(1);
 
         $this->expectException(ContextException::class);
-        $this->expectExceptionMessage('Failed to receive result');
+        $this->expectExceptionMessage('The context has already closed');
 
         $context = $this->createContext([
             __DIR__ . "/Fixtures/delayed-process.php",
@@ -125,7 +125,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext([__DIR__ . "/Fixtures/sleep-process.php"]);
         $future = async($context->join(...));
-        $context->close();
+        async($context->close(...));
         $future->await();
     }
 

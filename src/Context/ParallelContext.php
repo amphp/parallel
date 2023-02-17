@@ -8,6 +8,7 @@ use Amp\Parallel\Context\Internal\AbstractContext;
 use Amp\Parallel\Context\Internal\ParallelHub;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\TimeoutCancellation;
+use parallel\Future as ParallelFuture;
 use parallel\Runtime;
 use parallel\Runtime\Error\Closed;
 use Revolt\EventLoop;
@@ -25,6 +26,11 @@ final class ParallelContext extends AbstractContext
 
     private static ?\WeakMap $hubs = null;
 
+    /** @var int Next thread ID. */
+    private static int $nextId = 1;
+
+    private static ?string $autoloadPath = null;
+
     /**
      * Checks if threading is enabled.
      *
@@ -35,6 +41,14 @@ final class ParallelContext extends AbstractContext
         return \extension_loaded('parallel');
     }
 
+    /**
+     * @param string|non-empty-list<string> $script Path to PHP script or array with first element as path and
+     *     following elements options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
+     * @param positive-int $childConnectTimeout Number of seconds the thread will attempt to connect to the parent
+     *      before failing.
+     *
+     * @throws ContextException If starting the process fails.
+     */
     public static function start(
         IpcHub $ipcHub,
         string|array $script,
@@ -72,7 +86,6 @@ final class ParallelContext extends AbstractContext
 
         $id = self::$nextId++;
 
-        /** @psalm-suppress UndefinedClass */
         $runtime = new Runtime(self::$autoloadPath);
         $future = $runtime->run(function (
             int $id,
@@ -105,7 +118,6 @@ final class ParallelContext extends AbstractContext
         try {
             $socket = $ipcHub->accept($key, $cancellation);
             $channel = new StreamChannel($socket, $socket);
-            $hub->add($id, $channel, $future);
         } catch (\Throwable $exception) {
             $runtime->kill();
 
@@ -114,26 +126,46 @@ final class ParallelContext extends AbstractContext
             throw new ContextException("Starting the runtime failed", 0, $exception);
         }
 
-        return new self($id, $runtime, $hub, $channel);
+        return new self($id, $runtime, $future, $hub, $channel);
     }
-
-    /** @var int Next thread ID. */
-    private static int $nextId = 1;
-
-    private static ?string $autoloadPath = null;
 
     private readonly int $oid;
 
-    /** @psalm-suppress UndefinedClass */
+    private bool $exited = false;
+
     private function __construct(
         private readonly int $id,
         private readonly Runtime $runtime,
+        ParallelFuture $future,
         private readonly ParallelHub $hub,
-        private readonly StreamChannel $channel,
+        StreamChannel $channel,
     ) {
-        parent::__construct($this->channel);
+        parent::__construct($channel);
+
+        $exited = &$this->exited;
+        $this->hub->add($this->id, $future)->finally(static function () use (&$exited): void {
+            $exited = true;
+        });
 
         $this->oid = \getmypid();
+    }
+
+    public function receive(?Cancellation $cancellation = null): mixed
+    {
+        if ($this->exited) {
+            throw new ContextException('The thread has exited');
+        }
+
+        return parent::receive($cancellation);
+    }
+
+    public function send(mixed $data): void
+    {
+        if ($this->exited) {
+            throw new ContextException('The thread has exited');
+        }
+
+        parent::send($data);
     }
 
     /**
@@ -148,10 +180,12 @@ final class ParallelContext extends AbstractContext
 
     public function close(): void
     {
-        try {
-            $this->runtime->kill();
-        } catch (Closed) {
-            // ignore
+        if (!$this->exited) {
+            try {
+                $this->runtime->kill();
+            } catch (Closed) {
+                // ignore
+            }
         }
 
         $this->hub->remove($this->id);
@@ -162,7 +196,8 @@ final class ParallelContext extends AbstractContext
     public function join(?Cancellation $cancellation = null): mixed
     {
         $data = $this->receiveExitResult($cancellation);
-        $this->runtime->close();
+
+        $this->close();
 
         return $data->getResult();
     }

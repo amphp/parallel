@@ -114,6 +114,10 @@ abstract class AbstractContext implements Context
 
     protected function receiveExitResult(?Cancellation $cancellation = null): ExitResult
     {
+        if ($this->channel->isClosed()) {
+            throw new ContextException("The context has already closed");
+        }
+
         try {
             $data = $this->channel->receive($cancellation);
         } catch (CancelledException $exception) {

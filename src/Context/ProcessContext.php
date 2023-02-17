@@ -60,9 +60,6 @@ final class ProcessContext extends AbstractContext
      *      Null will attempt to automatically locate the binary.
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
-     * @param IpcHub $ipcHub Optional IpcHub instance. Global IpcHub instance used if null.
-     *
-     * @return ProcessContext<TResult, TReceive, TSend>
      *
      * @throws ContextException If starting the process fails.
      */
@@ -252,9 +249,9 @@ final class ProcessContext extends AbstractContext
      */
     private function __construct(
         private readonly Process $process,
-        private readonly StreamChannel $channel,
+        StreamChannel $channel,
     ) {
-        parent::__construct($this->channel);
+        parent::__construct($channel);
     }
 
     /**

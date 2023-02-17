@@ -2,9 +2,10 @@
 
 namespace Amp\Parallel\Context\Internal;
 
-use Amp\ByteStream\StreamChannel;
+use Amp\DeferredFuture;
+use Amp\Future as AmpFuture;
 use parallel\Events;
-use parallel\Future;
+use parallel\Future as ParallelFuture;
 use Revolt\EventLoop;
 
 /** @internal */
@@ -12,53 +13,60 @@ final class ParallelHub
 {
     private const EXIT_CHECK_FREQUENCY = 0.25;
 
-    /** @var StreamChannel[] */
-    private array $channels = [];
+    /** @var array<int, DeferredFuture> */
+    private array $deferredFutures = [];
 
-    private string $watcher;
+    private readonly string $watcher;
 
-    /** @psalm-suppress UndefinedClass */
-    private Events $events;
+    private readonly Events $events;
 
     public function __construct()
     {
-        /** @psalm-suppress UndefinedClass */
-        $events = $this->events = new Events;
+        $events = $this->events = new Events();
         $this->events->setBlocking(false);
 
-        $channels = &$this->channels;
-        $this->watcher = EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (&$channels, $events): void {
+        $deferredFutures = &$this->deferredFutures;
+        $this->watcher = EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (
+            &$deferredFutures,
+            $events,
+        ): void {
             while ($event = $events->poll()) {
                 $id = (int) $event->source;
-                \assert(isset($channels[$id]), 'Channel for context ID not found');
-                $channel = $channels[$id];
-                unset($channels[$id]);
-                $channel->close();
+                \assert(isset($deferredFutures[$id]), 'Deferred future for context ID not found');
+                $deferredFuture = $deferredFutures[$id];
+                unset($deferredFutures[$id]);
+                $deferredFuture->complete();
             }
         });
         EventLoop::disable($this->watcher);
         EventLoop::unreference($this->watcher);
     }
 
-    /** @psalm-suppress UndefinedClass */
-    public function add(int $id, StreamChannel $channel, Future $future): void
+    public function add(int $id, ParallelFuture $future): AmpFuture
     {
-        $this->channels[$id] = $channel;
+        $this->deferredFutures[$id] = $deferred = new DeferredFuture();
         $this->events->addFuture((string) $id, $future);
 
         EventLoop::enable($this->watcher);
+
+        return $deferred->getFuture();
     }
 
     public function remove(int $id): void
     {
-        if (!isset($this->channels[$id])) {
+        $deferred = $this->deferredFutures[$id] ?? null;
+        if (!$deferred) {
             return;
         }
 
-        unset($this->channels[$id]);
+        if (!$deferred->isComplete()) {
+            $deferred->complete();
+        }
+
+        unset($this->deferredFutures[$id]);
         $this->events->remove((string) $id);
 
-        if (empty($this->channels)) {
+        if (empty($this->deferredFutures)) {
             EventLoop::disable($this->watcher);
         }
     }
