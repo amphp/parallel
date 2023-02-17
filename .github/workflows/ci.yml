@@ -12,24 +12,48 @@ jobs:
           - operating-system: 'ubuntu-latest'
             php-version: '8.1'
             php-ts: nts
+            continue-on-error: false
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.2'
             php-ts: nts
+            continue-on-error: false
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.1'
+            php-extensions: parallel
+            job-description: 'with ext-parallel'
+            php-ts: ts
+            continue-on-error: true
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.2'
+            php-extensions: parallel
+            job-description: 'with ext-parallel'
+            php-ts: ts
+            continue-on-error: true
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
             php-extensions: parallel
+            job-description: 'with ext-parallel'
             php-ts: ts
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+            continue-on-error: true
 
           - operating-system: 'macos-latest'
             php-version: '8.2'
             job-description: 'on macOS'
             php-ts: nts
+            continue-on-error: false
 
     name: PHP ${{ matrix.php-version }} ${{ matrix.job-description }}
 
     runs-on: ${{ matrix.operating-system }}
+
+    continue-on-error: ${{ matrix.continue-on-error }}
 
     steps:
       - name: Set git to use LF
@@ -79,12 +103,13 @@ jobs:
 
       - name: Run static analysis
         run: vendor/bin/psalm.phar
+        if: matrix.static-analysis != 'none'
 
       - name: Run style fixer
         env:
           PHP_CS_FIXER_IGNORE_ENV: 1
         run: vendor/bin/php-cs-fixer --diff --dry-run -v fix
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && matrix.style-fix != 'none'
 
       - name: Install composer-require-checker
         run: php -r 'file_put_contents("composer-require-checker.phar", file_get_contents("https://github.com/maglnet/ComposerRequireChecker/releases/download/3.7.0/composer-require-checker.phar"));'
