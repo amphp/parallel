@@ -1,7 +1,7 @@
 # amphp/parallel
 
 AMPHP is a collection of event-driven libraries for PHP designed with fibers and concurrency in mind.
-`amphp/parallel` provides *true parallel processing* for PHP using multiple processes, *without blocking and no extensions required*.
+`amphp/parallel` provides *true parallel processing* for PHP using multiple processes or threads, *without blocking and no extensions required*.
 
 To be as flexible as possible, this library comes with a collection of non-blocking concurrency tools that can be used independently as needed, as well as an "opinionated" worker API that allows you to assign units of work to a pool of worker processes.
 
@@ -60,24 +60,24 @@ foreach ($responses as $url => $response) {
 If you just want to fetch multiple HTTP resources concurrently, it's better to use [`amphp/http-client`](https://amphp.org/http-client/), our non-blocking HTTP client.
 
 > **Note**
-> The functions you call must be predefined or autoloadable by Composer, so they also exist in the worker processes.
+> The functions you call must be predefined or autoloadable by Composer, so they also exist in the worker process or thread.
 
 ### Workers
 
-`Worker` provides a simple interface for executing PHP code in parallel in a separate PHP process.
+`Worker` provides a simple interface for executing PHP code in parallel in a separate PHP process or thread.
 Classes implementing [`Task`](#tasks) are used to define the code to be run in parallel.
 
 ### Tasks
 
 The `Task` interface has a single `run()` method that gets invoked in the worker to dispatch the work that needs to be done.
-The `run()` method can be written using blocking code since the code is executed in a separate process.
+The `run()` method can be written using blocking code since the code is executed in a separate process or thread.
 
 Task instances are `serialize`'d in the main process and `unserialize`'d in the worker.
 That means that all data that is passed between the main process and a worker needs to be serializable.
 
 In the example below, a `Task` is defined which calls a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests).
 
-Child processes executing tasks may be reused to execute multiple tasks.
+Child processes or threads executing tasks may be reused to execute multiple tasks.
 
 ```php
 use Amp\Cancellation;
@@ -159,18 +159,20 @@ A global worker pool is available and can be set using the function `Amp\Paralle
 Passing an instance of `WorkerPool` will set the global pool to the given instance.
 Invoking the function without an instance will return the current global instance.
 
-### Child Processes
+### Child Processes or Threads
 
-The `ProcessContext` class simplifies writing and running PHP in parallel.
-A script written to be run in parallel must return a callable that will be run in a child process.
-The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes. Any serializable data can be sent across this channel.
+Contexts simplify writing and running PHP in parallel.
+A script written to be run in parallel must return a callable that will be run in a child process or thread.
+The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes or threads. Any serializable data can be sent across this channel.
 The `Context` object, which extends the `Channel` interface, is the other end of the communication channel.
 
-In the example below, a child process is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests).
-The result of that function is then sent back to the parent using the `Channel` object.
-The return value of the child process callable is available using the `Context::join()` method.
+Contexts are created using a `ContextFactory`. `DefaultContextFactory` will use the best available method of creating context, creating a thread if [`ext-parallel`](https://github.com/krakjoe/parallel) is installed or otherwise using a child process. `ParallelContextFactory` (requires a ZTS build of PHP and `ext-parallel` to create threads) and `ProcessContextFactory` are also provided should you wish to create a specific context type.
 
-#### Child Process
+In the example below, a child process or thread is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests).
+The result of that function is then sent back to the parent using the `Channel` object.
+The return value of the child callable is available using the `Context::join()` method.
+
+#### Child Process or Thread
 
 ```php
 # child.php
@@ -195,7 +197,7 @@ return function (Channel $channel): mixed {
 
 use Amp\Parallel\Context\ProcessContext;
 
-// Creates and starts a child process context using ProcessContext
+// Creates and starts a child process or thread.
 $context = Amp\Parallel\Context\contextFactory()->start(__DIR__ . '/child.php');
 
 $url = 'https://google.com';
@@ -208,7 +210,7 @@ $returnValue = $context->join();
 printf("Child processes exited with '%s'\n", $returnValue);
 ```
 
-Child processes are also great for CPU-intensive operations such as image manipulation or for running daemons that perform periodic tasks based on input from the parent.
+Child processes or threads are also great for CPU-intensive operations such as image manipulation or for running daemons that perform periodic tasks based on input from the parent.
 
 ### Context creation
 
