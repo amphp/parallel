@@ -45,7 +45,7 @@ final class ContextWorker implements Worker
     private ?Future $exitStatus = null;
 
     /**
-     * @param Context<int, Internal\JobPacket, Internal\JobPacket|int> $context A context running tasks.
+     * @param Context<int, Internal\JobPacket, Internal\JobPacket|null> $context A context running tasks.
      */
     public function __construct(private readonly Context $context)
     {
@@ -201,11 +201,9 @@ final class ContextWorker implements Worker
             // Wait for pending tasks to finish.
             Future\awaitAll(\array_map(static fn (DeferredFuture $deferred) => $deferred->getFuture(), $this->jobQueue));
 
-            $this->context->send(0);
-
             try {
-                async($this->context->join(...))
-                    ->await(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
+                $this->context->send(null); // End loop in task runner.
+                $this->context->join(new TimeoutCancellation(self::SHUTDOWN_TIMEOUT));
             } catch (\Throwable $exception) {
                 $this->context->close();
                 throw new WorkerException("Failed to gracefully shutdown worker", 0, $exception);
