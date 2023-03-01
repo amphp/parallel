@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context\Internal;
 
+use Amp\Parallel\Context\ContextException;
 use Amp\Parallel\Context\ContextPanicError;
 use function Amp\Parallel\Context\flattenThrowableBacktrace;
 
@@ -42,11 +43,16 @@ final class ExitFailure implements ExitResult
     }
 
     /**
-     * @throws ContextPanicError
+     * @throws ContextException
      */
     public function getResult(): never
     {
-        throw $this->createException();
+        $exception = $this->createException();
+
+        throw new ContextException(
+            'Process exited with an uncaught exception: ' . $exception->getMessage(),
+            previous: $exception,
+        );
     }
 
     private function createException(): ContextPanicError

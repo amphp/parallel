@@ -24,6 +24,8 @@ abstract class AbstractContext implements Context
     use ForbidCloning;
     use ForbidSerialization;
 
+    private ?ExitResult $result = null;
+
     protected function __construct(
         private readonly Channel $channel,
     ) {
@@ -36,34 +38,34 @@ abstract class AbstractContext implements Context
         } catch (ChannelException $exception) {
             try {
                 $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ContextException|ChannelException|CancelledException) {
+            } catch (ChannelException|CancelledException) {
                 if (!$this->isClosed()) {
                     $this->close();
                 }
                 throw new ContextException(
                     "The process stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception,
+                    previous: $exception,
                 );
             }
 
-            throw new \Error(\sprintf(
+            throw new ContextException(\sprintf(
                 'Process unexpectedly exited when waiting to receive data with result: %s',
                 flattenArgument($data),
-            ), 0, $exception);
+            ), previous: $exception);
         }
 
         if (!$data instanceof ContextMessage) {
             if ($data instanceof ExitResult) {
+                $this->result = $data;
                 $data = $data->getResult();
 
-                throw new \Error(\sprintf(
+                throw new ContextException(\sprintf(
                     'Process unexpectedly exited when waiting to receive data with result: %s',
                     flattenArgument($data),
                 ));
             }
 
-            throw new \Error(\sprintf(
+            throw new ContextException(\sprintf(
                 'Unexpected data type from context: %s',
                 flattenArgument($data),
             ));
@@ -79,18 +81,18 @@ abstract class AbstractContext implements Context
         } catch (ChannelException $exception) {
             try {
                 $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ContextException|ChannelException|CancelledException) {
+            } catch (ChannelException|CancelledException) {
                 if (!$this->isClosed()) {
                     $this->close();
                 }
+
                 throw new ContextException(
                     "The process stopped responding, potentially due to a fatal error or calling exit",
-                    0,
-                    $exception,
+                    previous: $exception,
                 );
             }
 
-            throw new \Error(\sprintf(
+            throw new ContextException(\sprintf(
                 'Process unexpectedly exited when sending data with result: %s',
                 flattenArgument($data),
             ), 0, $exception);
@@ -114,8 +116,12 @@ abstract class AbstractContext implements Context
 
     protected function receiveExitResult(?Cancellation $cancellation = null): ExitResult
     {
+        if ($this->result) {
+            return $this->result;
+        }
+
         if ($this->channel->isClosed()) {
-            throw new ContextException("The context has already closed");
+            throw new ContextException("The context has already closed without providing a result");
         }
 
         try {
@@ -126,7 +132,7 @@ abstract class AbstractContext implements Context
             if (!$this->isClosed()) {
                 $this->close();
             }
-            throw new ContextException("Failed to receive result from context", 0, $exception);
+            throw new ContextException("Failed to receive result from context", previous: $exception);
         }
 
         if (!$data instanceof ExitResult) {
@@ -135,16 +141,17 @@ abstract class AbstractContext implements Context
             }
 
             if ($data instanceof ContextMessage) {
-                throw new \Error(\sprintf(
-                    "The context sent data instead of exiting: %s",
-                    flattenArgument($data),
-                ));
+                $data = $data->getMessage();
             }
 
-            throw new \Error("Did not receive an exit result from context");
+            throw new ContextException(\sprintf(
+                "The context sent data instead of exiting: %s",
+                flattenArgument($data),
+            ));
         }
 
         $this->channel->close();
+        $this->result = $data;
 
         return $data;
     }

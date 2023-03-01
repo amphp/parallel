@@ -5,7 +5,6 @@ namespace Amp\Parallel\Test\Context;
 use Amp\CancelledException;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
-use Amp\Parallel\Context\ContextPanicError;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellation;
 use function Amp\async;
@@ -26,7 +25,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testFailingProcess(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('No string provided');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/test-process.php");
@@ -35,7 +34,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testThrowingProcessOnReceive(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
@@ -52,7 +51,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testThrowingProcessOnSend(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
@@ -68,7 +67,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testInvalidScriptPath(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage("No script found at '../test-process.php'");
 
         $context = $this->createContext("../test-process.php");
@@ -77,7 +76,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testInvalidResult(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('The given data could not be serialized');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/invalid-result-process.php");
@@ -86,7 +85,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testNoCallbackReturned(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('did not return a callable function');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/no-callback-process.php");
@@ -95,7 +94,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testParseError(): void
     {
-        $this->expectException(ContextPanicError::class);
+        $this->expectException(ContextException::class);
         $this->expectExceptionMessage('contains a parse error');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/parse-error-process.inc");
