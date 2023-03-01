@@ -24,8 +24,6 @@ abstract class AbstractContext implements Context
     use ForbidCloning;
     use ForbidSerialization;
 
-    private ?ExitResult $result = null;
-
     protected function __construct(
         private readonly Channel $channel,
     ) {
@@ -43,24 +41,23 @@ abstract class AbstractContext implements Context
                     $this->close();
                 }
                 throw new ContextException(
-                    "The process stopped responding, potentially due to a fatal error or calling exit",
+                    "The context stopped responding, potentially due to a fatal error or calling exit",
                     previous: $exception,
                 );
             }
 
             throw new ContextException(\sprintf(
-                'Process unexpectedly exited when waiting to receive data with result: %s',
+                'Context unexpectedly exited when waiting to receive data with result: %s',
                 flattenArgument($data),
             ), previous: $exception);
         }
 
         if (!$data instanceof ContextMessage) {
             if ($data instanceof ExitResult) {
-                $this->result = $data;
                 $data = $data->getResult();
 
                 throw new ContextException(\sprintf(
-                    'Process unexpectedly exited when waiting to receive data with result: %s',
+                    'Context unexpectedly exited when waiting to receive data with result: %s',
                     flattenArgument($data),
                 ));
             }
@@ -87,13 +84,13 @@ abstract class AbstractContext implements Context
                 }
 
                 throw new ContextException(
-                    "The process stopped responding, potentially due to a fatal error or calling exit",
+                    "The context stopped responding, potentially due to a fatal error or calling exit",
                     previous: $exception,
                 );
             }
 
             throw new ContextException(\sprintf(
-                'Process unexpectedly exited when sending data with result: %s',
+                'Context unexpectedly exited when sending data with result: %s',
                 flattenArgument($data),
             ), 0, $exception);
         }
@@ -116,10 +113,6 @@ abstract class AbstractContext implements Context
 
     protected function receiveExitResult(?Cancellation $cancellation = null): ExitResult
     {
-        if ($this->result) {
-            return $this->result;
-        }
-
         if ($this->channel->isClosed()) {
             throw new ContextException("The context has already closed without providing a result");
         }
@@ -151,7 +144,6 @@ abstract class AbstractContext implements Context
         }
 
         $this->channel->close();
-        $this->result = $data;
 
         return $data;
     }

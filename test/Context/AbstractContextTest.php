@@ -41,28 +41,21 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $cancellation = new TimeoutCancellation(0.1);
 
-        try {
-            $context->receive($cancellation);
-            self::fail('Receiving should have failed');
-        } catch (ContextException) {
-            $context->join($cancellation);
-        }
+        $context->receive($cancellation);
+
+        self::fail('Receiving should have failed');
     }
 
     public function testThrowingProcessOnSend(): void
     {
         $this->expectException(ContextException::class);
-        $this->expectExceptionMessage('Test message');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
-        delay(1);
+        delay(1); // Give process time to start.
 
-        try {
-            $context->send(1);
-            self::fail('Sending should have failed');
-        } catch (ContextException) {
-            $context->join(new TimeoutCancellation(1));
-        }
+        $context->send(1);
+
+        self::fail('Sending should have failed');
     }
 
     public function testInvalidScriptPath(): void
