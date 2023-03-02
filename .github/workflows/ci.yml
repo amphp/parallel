@@ -20,6 +20,14 @@ jobs:
             continue-on-error: false
 
           - operating-system: 'ubuntu-latest'
+            php-version: '8.3'
+            php-ts: nts
+            continue-on-error: false
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+
+          - operating-system: 'ubuntu-latest'
             php-version: '8.1'
             php-extensions: parallel
             job-description: 'with ext-parallel'
@@ -46,6 +54,12 @@ jobs:
           - operating-system: 'macos-latest'
             php-version: '8.2'
             job-description: 'on macOS'
+            php-ts: nts
+            continue-on-error: false
+
+          - operating-system: 'windows-latest'
+            php-version: '8.3'
+            job-description: 'on Windows'
             php-ts: nts
             continue-on-error: false
 
@@ -97,6 +111,9 @@ jobs:
           command: |
             composer update --optimize-autoloader --no-interaction --no-progress ${{ matrix.composer-flags }}
             composer info -D
+
+      - name: Run process example
+        run: php examples/process.php
 
       - name: Run tests
         run: vendor/bin/phpunit ${{ matrix.phpunit-flags }}

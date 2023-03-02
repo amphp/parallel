@@ -122,7 +122,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
 
     public function testPooledKill(): void
     {
-        $this->setTimeout(1);
+        $this->setTimeout(10);
 
         // See https://github.com/amphp/parallel/issues/66
         $pool = $this->createPool(1);

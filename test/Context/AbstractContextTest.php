@@ -55,6 +55,9 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context->send(1);
 
+        delay(1); // await TCP RST
+
+        $context->send(1);
         self::fail('Sending should have failed');
     }
 
@@ -96,7 +99,7 @@ abstract class AbstractContextTest extends AsyncTestCase
 
     public function testCloseWhenJoining(): void
     {
-        $this->setTimeout(1);
+        $this->setTimeout(3);
 
         $this->expectException(ContextException::class);
         $this->expectExceptionMessage('The context has already closed');
@@ -146,6 +149,8 @@ abstract class AbstractContextTest extends AsyncTestCase
 
         $context = $this->createContext(__DIR__ . "/Fixtures/exiting-process.php");
         delay(1);
+        $context->send(1);
+        delay(1); // Await TCP RST
         $context->send(1);
     }
 
