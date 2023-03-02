@@ -16,8 +16,7 @@ interface Context extends Channel
     /**
      * @return TResult The data returned from the context.
      *
-     * @throws ContextException If the context dies unexpectedly.
-     * @throws ContextPanicError If the context throws an uncaught exception.
+     * @throws ContextException If the context exited with an uncaught exception or non-zero code.
      */
     public function join(?Cancellation $cancellation = null): mixed;
 }

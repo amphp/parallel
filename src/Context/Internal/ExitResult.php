@@ -2,7 +2,7 @@
 
 namespace Amp\Parallel\Context\Internal;
 
-use Amp\Parallel\Context\ContextPanicError;
+use Amp\Parallel\Context\ContextException;
 
 /**
  * @internal
@@ -13,7 +13,7 @@ interface ExitResult
     /**
      * @return TValue Return value of the callable given to the execution context.
      *
-     * @throws ContextPanicError If the context exited with an uncaught exception.
+     * @throws ContextException If the context exited with an uncaught exception.
      */
     public function getResult(): mixed;
 }
