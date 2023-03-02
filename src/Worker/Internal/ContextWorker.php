@@ -149,8 +149,7 @@ final class ContextWorker implements Worker
         } catch (ChannelException $exception) {
             try {
                 $exception = new WorkerException("The worker exited unexpectedly", 0, $exception);
-                async($this->context->join(...))
-                    ->await(new TimeoutCancellation(self::ERROR_TIMEOUT));
+                $this->context->join(new TimeoutCancellation(self::ERROR_TIMEOUT));
             } catch (CancelledException) {
                 $this->kill();
             } catch (\Throwable $exception) {
