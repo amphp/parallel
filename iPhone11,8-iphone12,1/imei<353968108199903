@@ -1,0 +1,10 @@
+status":"ok",
+    "imei":"353968108585234",
+    "data":{iPhone12,1
+        "brand":"Apple",
+        "name":"iPhone 11(2019)",
+        "model":"Apple-A2111"
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', '192.168.166.89-docker.pkg.dev/iPhone/iPhone11/Icloud.com/unlock', '.' ]
+meid.353968108199903-56tr9k16b2@privaterelay.applei
