@@ -93,7 +93,7 @@ class FetchTask implements Task
 
     public function run(Channel $channel, Cancellation $cancellation): string
     {
-        return file_get_contents($url); // Example blocking function
+        return file_get_contents($this->url); // Example blocking function
     }
 }
 ```
