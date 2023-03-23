@@ -5,8 +5,14 @@ namespace Amp\Parallel\Sync;
 use Amp\Serialization\SerializationException as SerializerException;
 
 if (!\class_exists(SerializationException::class)) {
-    // Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
-    \class_alias(SerializerException::class, SerializationException::class);
+    // Wrap definition in error handler to avoid apparently PHP bug with preloading, see amphp/parallel#159
+    set_error_handler(function (): bool { return true; });
+    try {
+        // Alias must be defined in an always-loaded file as catch blocks do not trigger the autoloader.
+        \class_alias(SerializerException::class, SerializationException::class);
+    } finally {
+        restore_error_handler();
+    }
 }
 
 /**
