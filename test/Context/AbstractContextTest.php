@@ -35,7 +35,7 @@ abstract class AbstractContextTest extends AsyncTestCase
     public function testThrowingProcessOnReceive(): void
     {
         $this->expectException(ContextException::class);
-        $this->expectExceptionMessage('Test message');
+        $this->expectExceptionMessage('The context stopped responding');
 
         $context = $this->createContext(__DIR__ . "/Fixtures/throwing-process.php");
 
@@ -102,7 +102,7 @@ abstract class AbstractContextTest extends AsyncTestCase
         $this->setTimeout(3);
 
         $this->expectException(ContextException::class);
-        $this->expectExceptionMessage('The context has already closed');
+        $this->expectExceptionMessage('Failed to receive result from context');
 
         $context = $this->createContext([
             __DIR__ . "/Fixtures/delayed-process.php",
@@ -171,5 +171,24 @@ abstract class AbstractContextTest extends AsyncTestCase
         }
 
         self::assertSame(1, $context->join(new TimeoutCancellation(1)));
+    }
+
+    public function testImmediateJoin(): void
+    {
+        $context = $this->createContext([
+            __DIR__ . "/Fixtures/channel-process.php",
+            1,
+        ]);
+
+        $cancellation = new TimeoutCancellation(1);
+
+        $exitValue = async($context->join(...));
+        $receivedValue = async($context->receive(...));
+
+        $value = 'value';
+        $context->send($value);
+
+        self::assertSame($value, $receivedValue->await($cancellation));
+        self::assertSame($value, $exitValue->await($cancellation));
     }
 }

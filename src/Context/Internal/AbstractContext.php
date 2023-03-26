@@ -3,14 +3,14 @@
 namespace Amp\Parallel\Context\Internal;
 
 use Amp\Cancellation;
-use Amp\CancelledException;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
+use Amp\Future;
 use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
-use Amp\TimeoutCancellation;
+use function Amp\async;
 use function Amp\Parallel\Context\flattenArgument;
 
 /**
@@ -24,32 +24,47 @@ abstract class AbstractContext implements Context
     use ForbidCloning;
     use ForbidSerialization;
 
+    /** @var Future<ExitResult> */
+    private readonly Future $result;
+
     protected function __construct(
-        private readonly Channel $channel,
+        private readonly Channel $ipcChannel,
+        private readonly Channel $resultChannel,
     ) {
+        $this->result = async(static function () use ($resultChannel, $ipcChannel): ExitResult {
+            try {
+                $data = $resultChannel->receive();
+            } catch (\Throwable $exception) {
+                throw new ContextException("Failed to receive result from context", previous: $exception);
+            } finally {
+                $resultChannel->close();
+                $ipcChannel->close();
+            }
+
+            if (!$data instanceof ExitResult) {
+                throw new ContextException(\sprintf(
+                    "The context sent data instead of exiting: %s",
+                    flattenArgument($data),
+                ));
+            }
+
+            return $data;
+        });
+
+        $this->result->ignore();
     }
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
-            $data = $this->channel->receive($cancellation);
+            $data = $this->ipcChannel->receive($cancellation);
         } catch (ChannelException $exception) {
-            try {
-                $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ChannelException|CancelledException) {
-                if (!$this->isClosed()) {
-                    $this->close();
-                }
-                throw new ContextException(
-                    "The context stopped responding, potentially due to a fatal error or calling exit",
-                    previous: $exception,
-                );
-            }
+            $this->ipcChannel->close();
 
-            throw new ContextException(\sprintf(
-                'Context unexpectedly exited when waiting to receive data with result: %s',
-                flattenArgument($data),
-            ), previous: $exception);
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit",
+                previous: $exception,
+            );
         }
 
         if (!$data instanceof ContextMessage) {
@@ -74,77 +89,35 @@ abstract class AbstractContext implements Context
     public function send(mixed $data): void
     {
         try {
-            $this->channel->send($data);
+            $this->ipcChannel->send($data);
         } catch (ChannelException $exception) {
-            try {
-                $data = $this->join(new TimeoutCancellation(0.1));
-            } catch (ChannelException|CancelledException) {
-                if (!$this->isClosed()) {
-                    $this->close();
-                }
+            $this->ipcChannel->close();
 
-                throw new ContextException(
-                    "The context stopped responding, potentially due to a fatal error or calling exit",
-                    previous: $exception,
-                );
-            }
-
-            throw new ContextException(\sprintf(
-                'Context unexpectedly exited when sending data with result: %s',
-                flattenArgument($data),
-            ), 0, $exception);
+            throw new ContextException(
+                "The context stopped responding, potentially due to a fatal error or calling exit",
+                previous: $exception,
+            );
         }
     }
 
     public function close(): void
     {
-        $this->channel->close();
+        $this->ipcChannel->close();
+        $this->resultChannel->close();
     }
 
     public function isClosed(): bool
     {
-        return $this->channel->isClosed();
+        return $this->resultChannel->isClosed();
     }
 
     public function onClose(\Closure $onClose): void
     {
-        $this->channel->onClose($onClose);
+        $this->resultChannel->onClose($onClose);
     }
 
     protected function receiveExitResult(?Cancellation $cancellation = null): ExitResult
     {
-        if ($this->channel->isClosed()) {
-            throw new ContextException("The context has already closed without providing a result");
-        }
-
-        try {
-            $data = $this->channel->receive($cancellation);
-        } catch (CancelledException $exception) {
-            throw $exception;
-        } catch (\Throwable $exception) {
-            if (!$this->isClosed()) {
-                $this->close();
-            }
-            throw new ContextException("Failed to receive result from context", previous: $exception);
-        }
-
-        if (!$data instanceof ExitResult) {
-            if (!$this->isClosed()) {
-                $this->close();
-            }
-
-            if ($data instanceof ContextMessage) {
-                $data = $data->getMessage();
-            }
-
-            throw new ContextException(\sprintf(
-                "The context sent data instead of exiting: %s",
-                flattenArgument($data),
-            ));
-        }
-
-        $this->channel->close();
-
-        return $data;
+        return $this->result->await($cancellation);
     }
 }

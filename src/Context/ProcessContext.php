@@ -159,7 +159,10 @@ final class ProcessContext extends AbstractContext
             $process->getStdin()->write($key);
 
             $socket = $ipcHub->accept($key, $cancellation);
-            $channel = new StreamChannel($socket, $socket);
+            $ipcChannel = new StreamChannel($socket, $socket);
+
+            $socket = $ipcHub->accept($key, $cancellation);
+            $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {
                 $process->kill();
@@ -170,7 +173,7 @@ final class ProcessContext extends AbstractContext
             throw new ContextException("Starting the process failed", 0, $exception);
         }
 
-        return new self($process, $channel);
+        return new self($process, $ipcChannel, $resultChannel);
     }
 
     /**
@@ -245,13 +248,14 @@ final class ProcessContext extends AbstractContext
     }
 
     /**
-     * @param StreamChannel<TReceive, TSend> $channel
+     * @param StreamChannel<TReceive, TSend> $ipcChannel
      */
     private function __construct(
         private readonly Process $process,
-        StreamChannel $channel,
+        StreamChannel $ipcChannel,
+        StreamChannel $resultChannel,
     ) {
-        parent::__construct($channel);
+        parent::__construct($ipcChannel, $resultChannel);
     }
 
     /**

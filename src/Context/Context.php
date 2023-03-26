@@ -14,7 +14,8 @@ use Amp\Sync\Channel;
 interface Context extends Channel
 {
     /**
-     * @return TResult The data returned from the context.
+     * @return TResult The data returned from the context. This method may be called at any time to await the result or
+     *      an exception will be thrown if the context is closed or throws an exception or exits with a non-zero code.
      *
      * @throws ContextException If the context exited with an uncaught exception or non-zero code.
      */

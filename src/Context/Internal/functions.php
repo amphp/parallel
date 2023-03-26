@@ -18,7 +18,10 @@ function runContext(string $uri, string $key, Cancellation $connectCancellation,
 
         try {
             $socket = Ipc\connect($uri, $key, $connectCancellation);
-            $channel = new StreamChannel($socket, $socket);
+            $ipcChannel = new StreamChannel($socket, $socket);
+
+            $socket = Ipc\connect($uri, $key, $connectCancellation);
+            $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             \trigger_error($exception->getMessage(), E_USER_ERROR);
         }
@@ -56,7 +59,7 @@ function runContext(string $uri, string $key, Cancellation $connectCancellation,
                 ), 0, $exception);
             }
 
-            $returnValue = $callable(new ContextChannel($channel));
+            $returnValue = $callable(new ContextChannel($ipcChannel));
             $result = new ExitSuccess($returnValue instanceof Future ? $returnValue->await() : $returnValue);
         } catch (\Throwable $exception) {
             $result = new ExitFailure($exception);
@@ -64,10 +67,10 @@ function runContext(string $uri, string $key, Cancellation $connectCancellation,
 
         try {
             try {
-                $channel->send($result);
+                $resultChannel->send($result);
             } catch (SerializationException $exception) {
                 // Serializing the result failed. Send the reason why.
-                $channel->send(new ExitFailure($exception));
+                $resultChannel->send(new ExitFailure($exception));
             }
         } catch (\Throwable $exception) {
             \trigger_error(\sprintf(

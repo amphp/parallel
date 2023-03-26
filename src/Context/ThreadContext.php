@@ -117,7 +117,10 @@ final class ThreadContext extends AbstractContext
 
         try {
             $socket = $ipcHub->accept($key, $cancellation);
-            $channel = new StreamChannel($socket, $socket);
+            $ipcChannel = new StreamChannel($socket, $socket);
+
+            $socket = $ipcHub->accept($key, $cancellation);
+            $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             $runtime->kill();
 
@@ -126,7 +129,7 @@ final class ThreadContext extends AbstractContext
             throw new ContextException("Starting the runtime failed", 0, $exception);
         }
 
-        return new self($id, $runtime, $future, $hub, $channel);
+        return new self($id, $runtime, $future, $hub, $ipcChannel, $resultChannel);
     }
 
     private readonly int $oid;
@@ -138,9 +141,10 @@ final class ThreadContext extends AbstractContext
         private readonly Runtime $runtime,
         ParallelFuture $future,
         private readonly ParallelHub $hub,
-        StreamChannel $channel,
+        StreamChannel $ipcChannel,
+        StreamChannel $resultChannel,
     ) {
-        parent::__construct($channel);
+        parent::__construct($ipcChannel, $resultChannel);
 
         $exited = &$this->exited;
         $this->hub->add($this->id, $future)->finally(static function () use (&$exited): void {
