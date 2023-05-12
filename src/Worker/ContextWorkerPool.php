@@ -35,7 +35,7 @@ final class ContextWorkerPool implements WorkerPool
     private readonly \SplQueue $idleWorkers;
 
     /** @var \SplQueue<DeferredFuture<Worker|null>> Task submissions awaiting an available worker. */
-    private \SplQueue $waiting;
+    private readonly \SplQueue $waiting;
 
     /** @var \Closure(Worker):void */
     private readonly \Closure $push;
@@ -58,33 +58,26 @@ final class ContextWorkerPool implements WorkerPool
         private readonly int $limit = self::DEFAULT_WORKER_LIMIT,
         private readonly ?WorkerFactory $factory = null,
     ) {
-        if ($limit < 0) {
-            throw new \Error("Maximum size must be a non-negative integer");
+        if ($limit <= 0) {
+            throw new \ValueError("Maximum size must be a positive integer");
         }
 
-        $this->workers = new \SplObjectStorage();
-        $this->idleWorkers = new \SplQueue();
-        $this->waiting = new \SplQueue();
+        $this->workers = $workers = new \SplObjectStorage();
+        $this->idleWorkers = $idleWorkers = new \SplQueue();
+        $this->waiting = $waiting = new \SplQueue();
 
         $this->deferredCancellation = new DeferredCancellation();
 
-        $workers = $this->workers;
-        $idleWorkers = $this->idleWorkers;
-        $waiting = $this->waiting;
-
+        /** @var \SplObjectStorage<Worker, int> $workers Needed for Psalm. */
         $this->push = static function (Worker $worker) use ($waiting, $workers, $idleWorkers): void {
             if (!$workers->contains($worker)) {
+                // Pool was shutdown, do not re-insert worker into collection.
                 return;
             }
 
-            if ($worker->isRunning()) {
+            if ($waiting->isEmpty()) {
                 $idleWorkers->push($worker);
             } else {
-                $workers->detach($worker);
-                $worker = null;
-            }
-
-            if (!$waiting->isEmpty()) {
                 $waiting->dequeue()->complete($worker);
             }
         };

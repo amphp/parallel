@@ -53,10 +53,20 @@ class DefaultPoolTest extends AsyncTestCase
                 return $worker;
             });
 
-        $pool = new ContextWorkerPool(32, $factory);
+        \set_error_handler(static function (int $errno, string $errstr) use (&$error): void {
+            $error = $errstr;
+        });
 
-        $pool->submit($this->createMock(Task::class))->await();
+        try {
+            $pool = new ContextWorkerPool(32, $factory);
 
-        $pool->submit($this->createMock(Task::class))->await();
+            $pool->submit($this->createMock(Task::class))->await();
+
+            $pool->submit($this->createMock(Task::class))->await();
+
+            self::assertStringContainsString('Worker in pool crashed', $error);
+        } finally {
+            \restore_error_handler();
+        }
     }
 }

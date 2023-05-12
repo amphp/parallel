@@ -4,8 +4,10 @@ namespace Amp\Parallel\Test\Worker;
 
 use Amp\Future;
 use Amp\Parallel\Context\StatusError;
+use Amp\Parallel\Test\Worker\Fixtures\TestTask;
 use Amp\Parallel\Worker\ContextWorkerFactory;
 use Amp\Parallel\Worker\ContextWorkerPool;
+use Amp\Parallel\Worker\Execution;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerPool;
@@ -81,17 +83,17 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
             return new Fixtures\TestTask($value);
         }, $values);
 
-        $promises = \array_map(function (Task $task) use ($pool): Future {
+        $futures = \array_map(function (Task $task) use ($pool): Future {
             return $pool->submit($task)->getFuture();
         }, $tasks);
 
-        self::assertEquals($values, Future\await($promises));
+        self::assertEquals($values, Future\await($futures));
 
-        $promises = \array_map(function (Task $task) use ($pool): Future {
+        $futures = \array_map(function (Task $task) use ($pool): Future {
             return $pool->submit($task)->getFuture();
         }, $tasks);
 
-        self::assertEquals($values, Future\await($promises));
+        self::assertEquals($values, Future\await($futures));
 
         $pool->shutdown();
     }
@@ -99,7 +101,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
     public function testCreatePoolShouldThrowError(): void
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Maximum size must be a non-negative integer');
+        $this->expectExceptionMessage('Maximum size must be a positive integer');
 
         $this->createPool(-1);
     }
@@ -112,28 +114,60 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
 
             $values = \range(1, 50);
 
-            $promises = \array_map(static function (int $value) use ($pool): Future {
+            $futures = \array_map(static function (int $value) use ($pool): Future {
                 return $pool->submit(new Fixtures\TestTask($value))->getFuture();
             }, $values);
 
-            self::assertEquals($values, Future\await($promises));
+            self::assertEquals($values, Future\await($futures));
         }
     }
 
+    /**
+     * @see https://github.com/amphp/parallel/issues/66
+     */
     public function testPooledKill(): void
     {
         $this->setTimeout(10);
+        \set_error_handler(static function (int $errno, string $errstr) use (&$error): void {
+            $error = $errstr;
+        });
 
-        // See https://github.com/amphp/parallel/issues/66
+        try {
+            $pool = $this->createPool(1);
+            $worker1 = $pool->getWorker();
+            $worker1->kill();
+            self::assertFalse($worker1->isRunning());
+
+            unset($worker1); // Destroying the worker will trigger the pool to recognize it has been killed.
+
+            $worker2 = $pool->getWorker();
+            self::assertTrue($worker2->isRunning());
+
+            self::assertStringContainsString('Worker in pool crashed', $error);
+        } finally {
+            \restore_error_handler();
+        }
+    }
+
+    /**
+     * @see https://github.com/amphp/parallel/issues/177
+     */
+    public function testWaitingForAvailableWorker(): void
+    {
+        $count = 4;
+        $delay = 0.1;
+
+        $this->setMinimumRuntime($delay * $count);
+        $this->setTimeout($delay * $count + $delay);
+
         $pool = $this->createPool(1);
-        $worker1 = $pool->getWorker();
-        $worker1->kill();
-        self::assertFalse($worker1->isRunning());
 
-        unset($worker1); // Destroying the worker will trigger the pool to recognize it has been killed.
+        $executions = [];
+        for ($i = 0; $i < $count; $i++) {
+            $executions[] = $pool->submit(new TestTask($i, $delay));
+        }
 
-        $worker2 = $pool->getWorker();
-        self::assertTrue($worker2->isRunning());
+        Future\await(\array_map(fn (Execution $e) => $e->getFuture(), $executions));
     }
 
     protected function createWorker(?string $autoloadPath = null): Worker
