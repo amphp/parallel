@@ -29,16 +29,15 @@ abstract class AbstractContext implements Context
 
     protected function __construct(
         private readonly Channel $ipcChannel,
-        private readonly Channel $resultChannel,
+        Channel $resultChannel,
     ) {
-        $this->result = async(static function () use ($resultChannel, $ipcChannel): ExitResult {
+        $this->result = async(static function () use ($resultChannel): ExitResult {
             try {
                 $data = $resultChannel->receive();
             } catch (\Throwable $exception) {
                 throw new ContextException("Failed to receive result from context", previous: $exception);
             } finally {
                 $resultChannel->close();
-                $ipcChannel->close();
             }
 
             if (!$data instanceof ExitResult) {
@@ -103,17 +102,16 @@ abstract class AbstractContext implements Context
     public function close(): void
     {
         $this->ipcChannel->close();
-        $this->resultChannel->close();
     }
 
     public function isClosed(): bool
     {
-        return $this->resultChannel->isClosed();
+        return $this->ipcChannel->isClosed();
     }
 
     public function onClose(\Closure $onClose): void
     {
-        $this->resultChannel->onClose($onClose);
+        $this->ipcChannel->onClose($onClose);
     }
 
     protected function receiveExitResult(?Cancellation $cancellation = null): ExitResult

@@ -258,6 +258,11 @@ final class ProcessContext extends AbstractContext
         parent::__construct($ipcChannel, $resultChannel);
     }
 
+    public function __destruct()
+    {
+        $this->close();
+    }
+
     /**
      * @return TResult
      * @throws ContextException
