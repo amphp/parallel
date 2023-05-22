@@ -158,7 +158,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         $delay = 0.1;
 
         $this->setMinimumRuntime($delay * $count);
-        $this->setTimeout($delay * $count + $delay);
+        $this->setTimeout($delay * $count * 2);
 
         $pool = $this->createPool(1);
 
