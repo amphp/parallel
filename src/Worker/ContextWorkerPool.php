@@ -247,6 +247,10 @@ final class ContextWorkerPool implements WorkerPool
                             $pending--;
                         }
 
+                        if (!$worker->isRunning()) {
+                            throw new WorkerException('Worker factory did not create a viable worker');
+                        }
+
                         $workers->attach($worker, 0);
                         return $worker;
                     });
