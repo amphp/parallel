@@ -100,9 +100,9 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $futures = [
-            $worker->submit(new Fixtures\TestTask(42, 2))->getFuture(),
-            $worker->submit(new Fixtures\TestTask(56, 3))->getFuture(),
-            $worker->submit(new Fixtures\TestTask(72, 1))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(42, 0.2))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(56, 0.3))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(72, 0.1))->getFuture(),
         ];
 
         self::assertEquals([2 => 72, 0 => 42, 1 => 56], Future\await($futures));
@@ -117,9 +117,9 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         $futures = [
-            $worker->submit(new Fixtures\TestTask(42, 2))->getFuture(),
-            $worker->submit(new Fixtures\TestTask(56, 3))->getFuture(),
-            $worker->submit(new Fixtures\TestTask(72, 1))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(42, 0.2))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(56, 0.3))->getFuture(),
+            $worker->submit(new Fixtures\TestTask(72, 0.1))->getFuture(),
         ];
 
         // Send shutdown signal, but don't await until tasks have finished.

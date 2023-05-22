@@ -40,7 +40,7 @@ class DefaultPoolTest extends AsyncTestCase
             ->willReturnCallback(function (): Worker {
                 $worker = $this->createMock(Worker::class);
                 $worker->method('isRunning')
-                    ->willReturnOnConsecutiveCalls(true, false, false);
+                    ->willReturnOnConsecutiveCalls(true, true, false);
                 $worker->method('shutdown')
                     ->willThrowException(new WorkerException('Test worker unexpectedly exited'));
                 $worker->method('submit')

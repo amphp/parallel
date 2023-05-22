@@ -25,8 +25,7 @@ final class ContextWorkerPool implements WorkerPool
     use ForbidCloning;
     use ForbidSerialization;
 
-    /** @var bool Indicates if the pool is currently running. */
-    private bool $running = true;
+    private int $pendingWorkerCount = 0;
 
     /** @var \SplObjectStorage<Worker, int> A collection of all workers in the pool. */
     private readonly \SplObjectStorage $workers;
@@ -62,19 +61,13 @@ final class ContextWorkerPool implements WorkerPool
             throw new \ValueError("Maximum size must be a positive integer");
         }
 
-        $this->workers = $workers = new \SplObjectStorage();
+        $this->workers = new \SplObjectStorage();
         $this->idleWorkers = $idleWorkers = new \SplQueue();
         $this->waiting = $waiting = new \SplQueue();
 
         $this->deferredCancellation = new DeferredCancellation();
 
-        /** @var \SplObjectStorage<Worker, int> $workers Needed for Psalm. */
-        $this->push = static function (Worker $worker) use ($waiting, $workers, $idleWorkers): void {
-            if (!$workers->contains($worker)) {
-                // Pool was shutdown, do not re-insert worker into collection.
-                return;
-            }
-
+        $this->push = static function (Worker $worker) use ($waiting, $idleWorkers): void {
             if ($waiting->isEmpty()) {
                 $idleWorkers->push($worker);
             } else {
@@ -86,6 +79,7 @@ final class ContextWorkerPool implements WorkerPool
     public function __destruct()
     {
         if ($this->isRunning()) {
+            $this->deferredCancellation->cancel();
             self::killWorkers($this->workers, $this->waiting);
         }
     }
@@ -97,7 +91,7 @@ final class ContextWorkerPool implements WorkerPool
      */
     public function isRunning(): bool
     {
-        return $this->running;
+        return !$this->deferredCancellation->isCancelled();
     }
 
     /**
@@ -122,7 +116,7 @@ final class ContextWorkerPool implements WorkerPool
 
     public function getWorkerCount(): int
     {
-        return $this->workers->count();
+        return $this->workers->count() + $this->pendingWorkerCount;
     }
 
     public function getIdleWorkerCount(): int
@@ -162,7 +156,7 @@ final class ContextWorkerPool implements WorkerPool
             return;
         }
 
-        $this->running = false;
+        $this->deferredCancellation->cancel();
 
         while (!$this->waiting->isEmpty()) {
             $this->waiting->dequeue()->error(
@@ -186,7 +180,7 @@ final class ContextWorkerPool implements WorkerPool
      */
     public function kill(): void
     {
-        $this->running = false;
+        $this->deferredCancellation->cancel();
         self::killWorkers($this->workers, $this->waiting);
     }
 
@@ -194,8 +188,11 @@ final class ContextWorkerPool implements WorkerPool
      * @param \SplObjectStorage<Worker, int> $workers
      * @param \SplQueue<DeferredFuture<Worker|null>> $waiting
      */
-    private static function killWorkers(\SplObjectStorage $workers, \SplQueue $waiting): void
-    {
+    private static function killWorkers(
+        \SplObjectStorage $workers,
+        \SplQueue $waiting,
+        ?\Throwable $exception = null,
+    ): void {
         foreach ($workers as $worker) {
             \assert($worker instanceof Worker);
             if ($worker->isRunning()) {
@@ -229,29 +226,43 @@ final class ContextWorkerPool implements WorkerPool
 
         do {
             if ($this->idleWorkers->isEmpty()) {
+                /** @var DeferredFuture<Worker|null> $deferredFuture */
+                $deferredFuture = new DeferredFuture;
+                $this->waiting->enqueue($deferredFuture);
+
                 if ($this->getWorkerCount() < $this->limit) {
-                    try {
-                        // Max worker count has not been reached, so create another worker.
-                        $worker = ($this->factory ?? workerFactory())->create(
-                            $this->deferredCancellation->getCancellation(),
-                        );
-                    } catch (CancelledException) {
-                        throw new WorkerException('The pool shut down before the task could be executed');
-                    }
+                    // Max worker count has not been reached, so create another worker.
+                    $this->pendingWorkerCount++;
 
-                    if (!$worker->isRunning()) {
-                        throw new WorkerException('Worker factory did not create a viable worker');
-                    }
+                    $factory = $this->factory ?? workerFactory();
+                    $pending = &$this->pendingWorkerCount;
+                    $cancellation = $this->deferredCancellation->getCancellation();
+                    $workers = $this->workers;
+                    $future = async(static function () use (&$pending, $factory, $workers, $cancellation): Worker {
+                        try {
+                            $worker = $factory->create($cancellation);
+                        } catch (CancelledException) {
+                            throw new WorkerException('The pool shut down before the task could be executed');
+                        } finally {
+                            $pending--;
+                        }
 
-                    $this->workers->attach($worker, 0);
-                    return $worker;
+                        $workers->attach($worker, 0);
+                        return $worker;
+                    });
+
+                    $waiting = $this->waiting;
+                    $deferredCancellation = $this->deferredCancellation;
+                    $future
+                        ->map($this->push)
+                        ->catch(static function (\Throwable $e) use ($deferredCancellation, $workers, $waiting): void {
+                            $deferredCancellation->cancel();
+                            self::killWorkers($workers, $waiting, $e);
+                        })
+                        ->ignore();
                 }
 
-                /** @var DeferredFuture<Worker|null> $deferred */
-                $deferred = new DeferredFuture;
-                $this->waiting->enqueue($deferred);
-
-                $worker = $deferred->getFuture()->await();
+                $worker = $deferredFuture->getFuture()->await();
             } else {
                 // Shift a worker off the idle queue.
                 $worker = $this->idleWorkers->shift();
@@ -276,7 +287,7 @@ final class ContextWorkerPool implements WorkerPool
                 } catch (\Throwable $exception) {
                     \trigger_error(
                         'Worker in pool crashed with exception on shutdown: ' . $exception->getMessage(),
-                        \E_USER_WARNING
+                        \E_USER_WARNING,
                     );
                 }
             });
