@@ -40,5 +40,11 @@
                 <directory name="src"/>
             </errorLevel>
         </UndefinedClass>
+
+        <UnsupportedPropertyReferenceUsage>
+            <errorLevel type="suppress">
+                <directory name="src"/>
+            </errorLevel>
+        </UnsupportedPropertyReferenceUsage>
     </issueHandlers>
 </psalm>
