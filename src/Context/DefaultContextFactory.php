@@ -2,11 +2,13 @@
 
 namespace Amp\Parallel\Context;
 
+use Amp\ByteStream;
 use Amp\Cancellation;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Parallel\Ipc\LocalIpcHub;
+use function Amp\async;
 
 final class DefaultContextFactory implements ContextFactory
 {
@@ -34,6 +36,13 @@ final class DefaultContextFactory implements ContextFactory
      */
     public function start(string|array $script, ?Cancellation $cancellation = null): Context
     {
-        return $this->contextFactory->start($script, $cancellation);
+        $context = $this->contextFactory->start($script, $cancellation);
+
+        if ($context instanceof ProcessContext) {
+            async(ByteStream\pipe(...), $context->getStdout(), ByteStream\getStdout())->ignore();
+            async(ByteStream\pipe(...), $context->getStderr(), ByteStream\getStderr())->ignore();
+        }
+
+        return $context;
     }
 }
