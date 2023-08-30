@@ -80,6 +80,9 @@ In the example below, a `Task` is defined which calls a blocking function (`file
 Child processes or threads executing tasks may be reused to execute multiple tasks.
 
 ```php
+// FetchTask.php
+// Tasks must be defined in a file which can be loaded by the composer autoloader.
+
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
@@ -99,6 +102,8 @@ class FetchTask implements Task
 ```
 
 ```php
+// main.php
+
 $worker = Amp\Parallel\Worker\createWorker();
 $task = new FetchTask('https://amphp.org');
 
