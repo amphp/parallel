@@ -26,6 +26,7 @@
     ],
     "require": {
         "php": ">=8.1",
+        "ext-posix": "*",
         "amphp/amp": "^3",
         "amphp/byte-stream": "^2",
         "amphp/parser": "^1",
