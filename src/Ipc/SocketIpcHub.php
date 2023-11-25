@@ -34,6 +34,8 @@ final class SocketIpcHub implements IpcHub
     /** @var \Closure(): void */
     private readonly \Closure $accept;
 
+    private bool $queued = false;
+
     /**
      * @param float $keyReceiveTimeout Timeout to receive the key on accepted connections.
      * @param positive-int $keyLength Length of the random key exchanged on the IPC channel when connecting.
@@ -49,10 +51,28 @@ final class SocketIpcHub implements IpcHub
             SocketAddressType::Internet => 'tcp://' . $address->toString(),
         };
 
+        $queued = &$this->queued;
         $keys = &$this->keys;
         $pending = &$this->pending;
-        $this->accept = static function () use (&$keys, &$pending, $server, $keyReceiveTimeout, $keyLength): void {
-            while ($pending && $client = $server->accept()) {
+        $this->accept = static function () use (
+            &$queued,
+            &$keys,
+            &$pending,
+            $server,
+            $keyReceiveTimeout,
+            $keyLength,
+        ): void {
+            while ($pending) {
+                $client = $server->accept();
+                if (!$client) {
+                    $queued = false;
+                    $exception = new Socket\SocketException('IPC socket closed before the client connected');
+                    foreach ($pending as $deferred) {
+                        $deferred->error($exception);
+                    }
+                    return;
+                }
+
                 try {
                     $received = readKey($client, new TimeoutCancellation($keyReceiveTimeout), $keyLength);
                 } catch (\Throwable) {
@@ -77,6 +97,8 @@ final class SocketIpcHub implements IpcHub
 
                 $deferred->complete($client);
             }
+
+            $queued = false;
         };
     }
 
@@ -124,6 +146,10 @@ final class SocketIpcHub implements IpcHub
      */
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
+        if ($this->server->isClosed()) {
+            throw new Socket\SocketException('The IPC server has been closed');
+        }
+
         if (\strlen($key) !== $this->keyLength) {
             throw new \ValueError(\sprintf(
                 "Key provided is of length %d, expected %d",
@@ -138,12 +164,13 @@ final class SocketIpcHub implements IpcHub
 
         $id = $this->nextId++;
 
-        if (!$this->pending) {
+        if (!$this->queued) {
             EventLoop::queue($this->accept);
+            $this->queued = true;
         }
 
         $this->keys[$key] = $id;
-        $this->pending[$id] = $deferred = new DeferredFuture;
+        $this->pending[$id] = $deferred = new DeferredFuture();
 
         try {
             $client = $deferred->getFuture()->await($cancellation);
