@@ -7,6 +7,7 @@ use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
+use Revolt\EventLoop;
 use const Amp\Process\IS_WINDOWS;
 
 final class LocalIpcHub implements IpcHub
@@ -40,6 +41,12 @@ final class LocalIpcHub implements IpcHub
         $this->delegate = new SocketIpcHub(Socket\listen($address), $keyReceiveTimeout, $keyLength);
     }
 
+    public function __destruct()
+    {
+        EventLoop::queue($this->delegate->close(...));
+        $this->unlink();
+    }
+
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
         return $this->delegate->accept($key, $cancellation);
@@ -53,20 +60,28 @@ final class LocalIpcHub implements IpcHub
     public function close(): void
     {
         $this->delegate->close();
-        if ($this->toUnlink !== null) {
-            // Ignore errors when unlinking temp socket.
-            \set_error_handler(static fn () => true);
-            try {
-                \unlink($this->toUnlink);
-            } finally {
-                \restore_error_handler();
-            }
-        }
+        $this->unlink();
     }
 
     public function onClose(\Closure $onClose): void
     {
         $this->delegate->onClose($onClose);
+    }
+
+    private function unlink(): void
+    {
+        if ($this->toUnlink === null) {
+            return;
+        }
+
+        // Ignore errors when unlinking temp socket.
+        \set_error_handler(static fn () => true);
+        try {
+            \unlink($this->toUnlink);
+        } finally {
+            \restore_error_handler();
+            $this->toUnlink = null;
+        }
     }
 
     public function getUri(): string
