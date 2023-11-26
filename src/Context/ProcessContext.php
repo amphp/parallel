@@ -152,7 +152,7 @@ final class ProcessContext extends AbstractContext
         try {
             $process = Process::start($command, $workingDirectory, $environment);
         } catch (\Throwable $exception) {
-            throw new ContextException("Starting the process failed", 0, $exception);
+            throw new ContextException("Starting the process failed: " . $exception->getMessage(), 0, $exception);
         }
 
         try {
