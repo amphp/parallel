@@ -51,6 +51,7 @@ final class ContextWorker implements Worker
     {
         $jobQueue = &$this->jobQueue;
         $queues = &$this->queues;
+        /** @psalm-suppress UndefinedVariable $onReceive is defined here. */
         $this->onReceive = $onReceive = static function (
             ?\Throwable $exception,
             ?Internal\JobPacket $data
