@@ -19,11 +19,16 @@ class ThreadContextTest extends AbstractContextTest
 
     public function testExitingProcessOnReceive(): void
     {
-        $this->markTestSkipped('exit in thread is buggy');
+        $this->markTestSkipped('exit in thread is not supported');
     }
 
     public function testExitingProcessOnSend(): void
     {
-        $this->markTestSkipped('exit in thread is buggy');
+        $this->markTestSkipped('exit in thread is not supported');
+    }
+
+    public function testExitingProcess(): void
+    {
+        $this->markTestSkipped('exit in thread is not supported');
     }
 }
