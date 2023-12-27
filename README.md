@@ -8,6 +8,13 @@ To be as flexible as possible, this library comes with a collection of non-block
 [![Latest Release](https://img.shields.io/github/release/amphp/parallel.svg?style=flat-square)](https://github.com/amphp/parallel/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/amphp/parallel/blob/master/LICENSE)
 
+## Requirements
+
+- PHP 8.1+
+
+#### Optional requirements to use threads instead of processes
+- PHP 8.2+ ZTS build
+- [`ext-parallel`](https://github.com/krakjoe/parallel)
 
 ## Installation
 
@@ -171,7 +178,7 @@ A script written to be run in parallel must return a callable that will be run i
 The callable receives a single argument – an instance of `Channel` that can be used to send data between the parent and child processes or threads. Any serializable data can be sent across this channel.
 The `Context` object, which extends the `Channel` interface, is the other end of the communication channel.
 
-Contexts are created using a `ContextFactory`. `DefaultContextFactory` will use the best available method of creating context, creating a thread if [`ext-parallel`](https://github.com/krakjoe/parallel) is installed or otherwise using a child process. `ParallelContextFactory` (requires a ZTS build of PHP and `ext-parallel` to create threads) and `ProcessContextFactory` are also provided should you wish to create a specific context type.
+Contexts are created using a `ContextFactory`. `DefaultContextFactory` will use the best available method of creating context, creating a thread if [`ext-parallel`](https://github.com/krakjoe/parallel) is installed or otherwise using a child process. `ThreadContextFactory` (requires a ZTS build of PHP 8.2+ and `ext-parallel` to create threads) and `ProcessContextFactory` are also provided should you wish to create a specific context type.
 
 In the example below, a child process or thread is used to call a blocking function (`file_get_contents()` is only an example of a blocking function, use [`http-client`](https://amphp.org/http-client) for non-blocking HTTP requests).
 The result of that function is then sent back to the parent using the `Channel` object.
