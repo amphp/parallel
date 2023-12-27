@@ -164,15 +164,12 @@ final class ContextWorkerPool implements WorkerPool
             );
         }
 
-        $workers = $this->workers;
-        ($this->exitStatus = async(static function () use ($workers): void {
-            foreach ($workers as $worker) {
-                \assert($worker instanceof Worker);
-                if ($worker->isRunning()) {
-                    $worker->shutdown();
-                }
-            }
-        }))->await();
+        $futures = \array_map(
+            static fn (Worker $worker) => async($worker->shutdown(...)),
+            \iterator_to_array($this->workers),
+        );
+
+        ($this->exitStatus = async(Future\awaitAll(...), $futures)->map(static fn () => null))->await();
     }
 
     /**
