@@ -39,8 +39,14 @@ final class DefaultContextFactory implements ContextFactory
         $context = $this->contextFactory->start($script, $cancellation);
 
         if ($context instanceof ProcessContext) {
-            async(ByteStream\pipe(...), $context->getStdout(), ByteStream\getStdout())->ignore();
-            async(ByteStream\pipe(...), $context->getStderr(), ByteStream\getStderr())->ignore();
+            $stdout = $context->getStdout();
+            $stdout->unreference();
+
+            $stderr = $context->getStderr();
+            $stderr->unreference();
+
+            async(ByteStream\pipe(...), $stdout, ByteStream\getStdout())->ignore();
+            async(ByteStream\pipe(...), $stderr, ByteStream\getStderr())->ignore();
         }
 
         return $context;
