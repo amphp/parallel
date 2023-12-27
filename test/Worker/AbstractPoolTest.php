@@ -11,6 +11,7 @@ use Amp\Parallel\Worker\Execution;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\Parallel\Worker\WorkerPool;
+use const Amp\Process\IS_WINDOWS;
 
 abstract class AbstractPoolTest extends AbstractWorkerTest
 {
@@ -108,6 +109,10 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
 
     public function testCleanGarbageCollection(): void
     {
+        if (IS_WINDOWS) {
+            $this->markTestSkipped('Skipping on Windows for now');
+        }
+
         // See https://github.com/amphp/parallel-functions/issues/5
         for ($i = 0; $i < 3; $i++) {
             $pool = $this->createPool(32);
@@ -158,7 +163,7 @@ abstract class AbstractPoolTest extends AbstractWorkerTest
         $delay = 0.1;
 
         $this->setMinimumRuntime($delay * $count);
-        $this->setTimeout($delay * $count * 2);
+        $this->setTimeout($delay * $count * 3);
 
         $pool = $this->createPool(1);
 

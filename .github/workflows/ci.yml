@@ -29,6 +29,9 @@ jobs:
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
             continue-on-error: true
 
           - operating-system: 'ubuntu-latest'
@@ -42,7 +45,7 @@ jobs:
             continue-on-error: true
 
           - operating-system: 'macos-latest'
-            php-version: '8.2'
+            php-version: '8.3'
             job-description: 'on macOS'
             php-ts: nts
             continue-on-error: false

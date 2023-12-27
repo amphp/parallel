@@ -134,8 +134,8 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     {
         $worker = $this->createWorker();
 
-        $future = $worker->submit(new Fixtures\TestTask(42))->getFuture();
-        delay(0); // Tick event loop to call Worker::submit()
+        $future = $worker->submit(new Fixtures\TestTask(42, 0.5))->getFuture();
+        delay(0.1); // Tick event loop to call Worker::submit()
         self::assertFalse($worker->isIdle());
         $future->await();
 
