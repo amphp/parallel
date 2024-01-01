@@ -9,7 +9,8 @@ use function Amp\Parallel\Context\contextFactory;
 $timer = EventLoop::repeat(1, function () {
     static $i;
     $i = $i ? ++$i : 1;
-    print "Demonstrating how alive the parent is for the {$i}th time.\n";
+    $nth = $i . ([1 => 'st', 2 => 'nd', 3 => 'rd'][$i] ?? 'th');
+    print "Demonstrating how alive the parent is for the {$nth} time.\n";
 });
 
 try {

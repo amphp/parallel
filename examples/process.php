@@ -11,7 +11,8 @@ use function Amp\delay;
 $timer = EventLoop::repeat(1, function () {
     static $i;
     $i = $i ? ++$i : 1;
-    print "Demonstrating how alive the parent is for the {$i}th time.\n";
+    $nth = $i . ([1 => 'st', 2 => 'nd', 3 => 'rd'][$i] ?? 'th');
+    print "Demonstrating how alive the parent is for the {$nth} time.\n";
 });
 
 // This example is identical to context.php, but uses a ProcessContext to demonstrate piping STDOUT
