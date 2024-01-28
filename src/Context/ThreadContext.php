@@ -14,10 +14,10 @@ use parallel\Runtime\Error\Closed;
 use Revolt\EventLoop;
 
 /**
- * @template TResult
- * @template TReceive
+ * @template-covariant TResult
+ * @template-covariant TReceive
  * @template TSend
- * @template-extends AbstractContext<TResult, TReceive, TSend>
+ * @extends AbstractContext<TResult, TReceive, TSend>
  */
 final class ThreadContext extends AbstractContext
 {

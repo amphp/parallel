@@ -7,9 +7,9 @@ use Amp\Sync\Channel;
 
 /**
  * @template-covariant TResult
- * @template TReceive
+ * @template-covariant TReceive
  * @template TSend
- * @template-extends Channel<TReceive, TSend>
+ * @extends Channel<TReceive, TSend>
  */
 interface Context extends Channel
 {

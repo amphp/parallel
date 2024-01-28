@@ -12,10 +12,10 @@ use Amp\Process\Process;
 use Amp\Process\ProcessException;
 
 /**
- * @template TResult
- * @template TReceive
+ * @template-covariant TResult
+ * @template-covariant TReceive
  * @template TSend
- * @template-extends AbstractContext<TResult, TReceive, TSend>
+ * @extends AbstractContext<TResult, TReceive, TSend>
  */
 final class ProcessContext extends AbstractContext
 {

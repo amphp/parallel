@@ -15,10 +15,10 @@ use function Amp\async;
 use function Amp\Parallel\Context\flattenArgument;
 
 /**
- * @template TResult
- * @template TReceive
+ * @template-covariant TResult
+ * @template-covariant TReceive
  * @template TSend
- * @template-implements Context<TResult, TReceive, TSend>
+ * @implements Context<TResult, TReceive, TSend>
  */
 abstract class AbstractContext implements Context
 {
