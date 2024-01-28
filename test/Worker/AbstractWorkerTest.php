@@ -3,6 +3,8 @@
 namespace Amp\Parallel\Test\Worker;
 
 use Amp\Cancellation;
+use Amp\CancelledException;
+use Amp\DeferredCancellation;
 use Amp\Future;
 use Amp\Parallel\Context\ContextFactory;
 use Amp\Parallel\Context\StatusError;
@@ -335,6 +337,22 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         self::assertTrue($worker->submit(new Fixtures\ConstantTask)->await());
 
         $worker->shutdown();
+    }
+
+    public function testCancelBeforeSubmit(): void
+    {
+        $this->expectException(CancelledException::class);
+
+        $worker = $this->createWorker();
+
+        $deferredCancellation = new DeferredCancellation();
+        $deferredCancellation->cancel();
+
+        try {
+            $worker->submit(new Fixtures\CancellingTask, $deferredCancellation->getCancellation())->await();
+        } finally {
+            $worker->shutdown();
+        }
     }
 
     public function testCancellingCompletedTask(): void

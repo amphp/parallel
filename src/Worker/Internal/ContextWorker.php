@@ -2,6 +2,9 @@
 
 namespace Amp\Parallel\Worker\Internal;
 
+use Amp\ByteStream\ReadableBuffer;
+use Amp\ByteStream\StreamChannel;
+use Amp\ByteStream\WritableBuffer;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredFuture;
@@ -139,6 +142,10 @@ final class ContextWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
+        if ($cancellation?->isRequested()) {
+            return self::createCancelledExecution($task, $cancellation);
+        }
+
         $receive = empty($this->jobQueue);
         $submission = new Internal\TaskSubmission($task);
         $jobId = $submission->getId();
@@ -219,5 +226,18 @@ final class ContextWorker implements Worker
 
         $this->exitStatus ??= Future::error(new WorkerException("The worker was killed"));
         $this->exitStatus->ignore();
+    }
+
+    private static function createCancelledExecution(Task $task, Cancellation $cancellation): Execution
+    {
+        $channel = new StreamChannel(new ReadableBuffer(), new WritableBuffer());
+        $channel->close();
+
+        try {
+            $cancellation->throwIfRequested();
+            throw new \Error('Expected cancellation to have been requested');
+        } catch (CancelledException $exception) {
+            return new Execution($task, $channel, Future::error($exception));
+        }
     }
 }
