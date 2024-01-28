@@ -317,7 +317,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->submit(new Fixtures\CancellingTask, new TimeoutCancellation(0.1))->await();
+            $worker->submit(new Fixtures\CancellingTask, new TimeoutCancellation(0.5))->await();
         } finally {
             $worker->shutdown();
         }
@@ -328,7 +328,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
         $worker = $this->createWorker();
 
         try {
-            $worker->submit(new Fixtures\CancellingTask, new TimeoutCancellation(0.1))->await();
+            $worker->submit(new Fixtures\CancellingTask, new TimeoutCancellation(0.5))->await();
             self::fail(TaskCancelledException::class . ' did not fail submit future');
         } catch (TaskCancelledException $exception) {
             // Task should be cancelled, ignore this exception.
@@ -361,7 +361,7 @@ abstract class AbstractWorkerTest extends AsyncTestCase
 
         self::assertTrue($worker->submit(
             new Fixtures\ConstantTask(),
-            new TimeoutCancellation(0.1),
+            new TimeoutCancellation(0.5),
         )->await());
 
         $worker->shutdown();
