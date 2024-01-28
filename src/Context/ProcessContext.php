@@ -35,10 +35,10 @@ final class ProcessContext extends AbstractContext
         "xdebug.client_host" => "localhost",
     ];
 
-    /** @var string|null External version of SCRIPT_PATH if inside a PHAR. */
+    /** @var non-empty-string|null External version of SCRIPT_PATH if inside a PHAR. */
     private static ?string $pharScriptPath = null;
 
-    /** @var string|null PHAR path with a '.phar' extension. */
+    /** @var non-empty-string|null PHAR path with a '.phar' extension. */
     private static ?string $pharCopy = null;
 
     /** @var non-empty-list<string>|null Cached path to located PHP binary. */
@@ -97,7 +97,7 @@ final class ProcessContext extends AbstractContext
         // Write process runner to external file if inside a PHAR,
         // because PHP can't open files inside a PHAR directly except for the stub.
         if (\str_starts_with(self::SCRIPT_PATH, "phar://")) {
-            if (self::$pharScriptPath) {
+            if (self::$pharScriptPath !== null) {
                 $scriptPath = self::$pharScriptPath;
             } else {
                 $path = \dirname(self::SCRIPT_PATH);
@@ -107,7 +107,7 @@ final class ProcessContext extends AbstractContext
                     \copy(\Phar::running(false), self::$pharCopy);
 
                     \register_shutdown_function(static function (): void {
-                        if (self::$pharCopy) {
+                        if (self::$pharCopy !== null) {
                             @\unlink(self::$pharCopy);
                         }
                     });
@@ -122,7 +122,7 @@ final class ProcessContext extends AbstractContext
                 \file_put_contents($scriptPath, $contents);
 
                 \register_shutdown_function(static function (): void {
-                    if (self::$pharScriptPath) {
+                    if (self::$pharScriptPath !== null) {
                         @\unlink(self::$pharScriptPath);
                     }
                 });
@@ -189,6 +189,7 @@ final class ProcessContext extends AbstractContext
 
         $executable = \PHP_OS_FAMILY === 'Windows' ? "php.exe" : "php";
 
+        /** @psalm-suppress RiskyTruthyFalsyComparison */
         $paths = \array_filter(\explode(
             \PATH_SEPARATOR,
             \getenv('PATH') ?: '/usr/bin' . \PATH_SEPARATOR . '/usr/local/bin',

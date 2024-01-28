@@ -173,6 +173,7 @@ final class ContextWorker implements Worker
             throw $exception;
         }
 
+        /** @psalm-suppress TypeDoesNotContainType https://github.com/vimeo/psalm/issues/10608 */
         if ($cancellation) {
             $context = $this->context;
             $cancellationId = $cancellation->subscribe(static fn () => async(
