@@ -59,8 +59,8 @@ final class Execution
     }
 
     /**
-     * Shortcut to calling getFuture()->await(). Cancellation only cancels awaiting the result, it does not cancel
-     * the task. Use the cancellation passed to {@see Worker::submit()} to cancel the task.
+     * Shortcut to calling {@see self::getFuture()::await()}. Cancellation only cancels awaiting the result, it does
+     * not cancel the task. Use the cancellation passed to {@see Worker::submit()} to cancel the task.
      *
      * @return TResult
      */
