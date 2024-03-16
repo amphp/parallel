@@ -142,8 +142,10 @@ final class ContextWorker implements Worker
             throw new StatusError("The worker has been shut down");
         }
 
-        if ($cancellation?->isRequested()) {
-            return self::createCancelledExecution($task, $cancellation);
+        try {
+            $cancellation?->throwIfRequested();
+        } catch (CancelledException $exception) {
+            return self::createCancelledExecution($task, $exception);
         }
 
         $receive = empty($this->jobQueue);
@@ -229,16 +231,11 @@ final class ContextWorker implements Worker
         $this->exitStatus->ignore();
     }
 
-    private static function createCancelledExecution(Task $task, Cancellation $cancellation): Execution
+    private static function createCancelledExecution(Task $task, CancelledException $exception): Execution
     {
         $channel = new StreamChannel(new ReadableBuffer(), new WritableBuffer());
         $channel->close();
 
-        try {
-            $cancellation->throwIfRequested();
-            throw new \Error('Expected cancellation to have been requested');
-        } catch (CancelledException $exception) {
-            return new Execution($task, $channel, Future::error($exception));
-        }
+        return new Execution($task, $channel, Future::error($exception));
     }
 }
