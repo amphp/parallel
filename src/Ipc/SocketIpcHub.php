@@ -165,9 +165,10 @@ final class SocketIpcHub implements IpcHub
             $this->queued = true;
         }
 
-        $this->waitingByKey[$key] = $suspension = EventLoop::getSuspension();
-
         $cancellation = $cancellation ?? new NullCancellation();
+        $cancellation->throwIfRequested();
+
+        $this->waitingByKey[$key] = $suspension = EventLoop::getSuspension();
         $cancellationId = $cancellation->subscribe(function (CancelledException $exception) use ($suspension) {
             $suspension->throw($exception);
         });
