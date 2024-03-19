@@ -154,7 +154,7 @@ final class SocketIpcHub implements IpcHub
         }
 
         $client = $this->clientsByKey->get($key);
-        if ($client) {
+        if ($client !== null) {
             $this->clientsByKey->delete($key);
 
             return $client;
