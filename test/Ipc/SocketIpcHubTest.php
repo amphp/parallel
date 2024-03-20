@@ -50,4 +50,23 @@ class SocketIpcHubTest extends AsyncTestCase
 
         self::assertSame($this->server->getAddress()->toString(), $client->getLocalAddress()->toString());
     }
+
+    public function testCancelledAcceptAndCloseServer(): void
+    {
+        $deferredCancellation = new DeferredCancellation();
+        $future = async(fn () => $this->ipcHub->accept(
+            $this->ipcHub->generateKey(),
+            $deferredCancellation->getCancellation(),
+        ));
+
+        async(function () use ($deferredCancellation): void {
+            $this->server->close();
+            $deferredCancellation->cancel();
+        });
+
+        $this->expectException(Socket\SocketException::class);
+        $this->expectExceptionMessage('closed before');
+
+        $future->await();
+    }
 }

@@ -4,7 +4,7 @@ namespace Amp\Parallel\Ipc;
 
 use Amp\Cache\LocalCache;
 use Amp\Cancellation;
-use Amp\CancelledException;
+use Amp\DeferredFuture;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\NullCancellation;
@@ -25,7 +25,7 @@ final class SocketIpcHub implements IpcHub
     /** @var non-empty-string */
     private readonly string $uri;
 
-    /** @var array<string, EventLoop\Suspension> */
+    /** @var array<string, DeferredFuture> */
     private array $waitingByKey = [];
 
     /** @var \Closure(): void */
@@ -33,6 +33,7 @@ final class SocketIpcHub implements IpcHub
 
     private bool $queued = false;
 
+    /** @var LocalCache<ResourceSocket> */
     private LocalCache $clientsByKey;
 
     /**
@@ -68,8 +69,8 @@ final class SocketIpcHub implements IpcHub
                 if (!$client) {
                     $queued = false;
                     $exception = new Socket\SocketException('IPC socket closed before the client connected');
-                    foreach ($waitingByKey as $suspension) {
-                        $suspension->throw($exception);
+                    foreach ($waitingByKey as $deferred) {
+                        $deferred->error($exception);
                     }
                     return;
                 }
@@ -82,7 +83,7 @@ final class SocketIpcHub implements IpcHub
                 }
 
                 if (isset($waitingByKey[$received])) {
-                    $waitingByKey[$received]->resume($client);
+                    $waitingByKey[$received]->complete($client);
                     unset($waitingByKey[$received]);
                 } else {
                     $clientsByKey->set($received, $client);
@@ -112,8 +113,8 @@ final class SocketIpcHub implements IpcHub
         }
 
         $exception = new Socket\SocketException('IPC socket closed before the client connected');
-        foreach ($this->waitingByKey as $suspension) {
-            $suspension->throw($exception);
+        foreach ($this->waitingByKey as $deferred) {
+            $deferred->error($exception);
         }
     }
 
@@ -165,19 +166,19 @@ final class SocketIpcHub implements IpcHub
             $this->queued = true;
         }
 
-        $cancellation = $cancellation ?? new NullCancellation();
-        $cancellation->throwIfRequested();
+        $cancellation ??= new NullCancellation();
 
-        $this->waitingByKey[$key] = $suspension = EventLoop::getSuspension();
-        $cancellationId = $cancellation->subscribe(function (CancelledException $exception) use ($suspension) {
-            $suspension->throw($exception);
+        $this->waitingByKey[$key] = $deferred = new DeferredFuture();
+
+        $waitingByKey = &$this->waitingByKey;
+        $cancellationId = $cancellation->subscribe(static function () use (&$waitingByKey, $key): void {
+            unset($waitingByKey[$key]);
         });
 
         try {
-            $client = $suspension->suspend();
+            $client = $deferred->getFuture()->await($cancellation);
         } finally {
             $cancellation->unsubscribe($cancellationId);
-            unset($this->waitingByKey[$key]);
         }
 
         return $client;
