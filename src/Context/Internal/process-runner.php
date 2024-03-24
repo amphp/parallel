@@ -13,7 +13,12 @@ use Revolt\EventLoop;
 
 // Doesn't exist in phpdbg...
 if (\function_exists("cli_set_process_title")) {
-    @\cli_set_process_title("amp-process");
+    \set_error_handler(static fn () => true);
+    try {
+        \cli_set_process_title("amp-process");
+    } finally {
+        \restore_error_handler();
+    }
 }
 
 (function (): void {

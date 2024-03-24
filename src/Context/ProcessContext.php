@@ -106,11 +106,7 @@ final class ProcessContext extends AbstractContext
                     self::$pharCopy = \sys_get_temp_dir() . "/phar-" . \bin2hex(\random_bytes(10)) . ".phar";
                     \copy(\Phar::running(false), self::$pharCopy);
 
-                    \register_shutdown_function(static function (): void {
-                        if (self::$pharCopy !== null) {
-                            @\unlink(self::$pharCopy);
-                        }
-                    });
+                    \register_shutdown_function(static fn () => self::unlinkExternalCopy(self::$pharCopy));
 
                     $path = "phar://" . self::$pharCopy . "/" . \substr($path, \strlen(\Phar::running(true)));
                 }
@@ -121,11 +117,7 @@ final class ProcessContext extends AbstractContext
                 self::$pharScriptPath = $scriptPath = \sys_get_temp_dir() . "/amp-process-runner-" . $suffix . ".php";
                 \file_put_contents($scriptPath, $contents);
 
-                \register_shutdown_function(static function (): void {
-                    if (self::$pharScriptPath !== null) {
-                        @\unlink(self::$pharScriptPath);
-                    }
-                });
+                \register_shutdown_function(static fn () => self::unlinkExternalCopy(self::$pharScriptPath));
             }
 
             // Monkey-patch the script path in the same way, only supported if the command is given as array.
@@ -174,6 +166,20 @@ final class ProcessContext extends AbstractContext
         }
 
         return new self($process, $ipcChannel, $resultChannel);
+    }
+
+    private static function unlinkExternalCopy(?string $filepath): void
+    {
+        if ($filepath === null) {
+            return;
+        }
+
+        \set_error_handler(static fn () => true);
+        try {
+            \unlink($filepath);
+        } finally {
+            \restore_error_handler();
+        }
     }
 
     /**
