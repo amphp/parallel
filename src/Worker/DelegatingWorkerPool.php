@@ -4,10 +4,15 @@ namespace Amp\Parallel\Worker;
 
 use Amp\Cancellation;
 use Amp\DeferredFuture;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Parallel\Worker\Internal\PooledWorker;
 
-final class DelegatingWorkerPool implements WorkerPool
+final class DelegatingWorkerPool implements LimitedWorkerPool
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var array<int, Worker> */
     private array $workerStorage = [];
 
@@ -116,7 +121,7 @@ final class DelegatingWorkerPool implements WorkerPool
         return new PooledWorker($this->selectWorker(), $this->push(...));
     }
 
-    public function getLimit(): int
+    public function getWorkerLimit(): int
     {
         return $this->limit;
     }

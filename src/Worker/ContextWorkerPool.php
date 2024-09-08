@@ -20,7 +20,7 @@ use function Amp\async;
  * tasks simultaneously. The load on each worker is balanced such that tasks
  * are completed as soon as possible and workers are used efficiently.
  */
-final class ContextWorkerPool implements WorkerPool
+final class ContextWorkerPool implements LimitedWorkerPool
 {
     use ForbidCloning;
     use ForbidSerialization;
@@ -104,14 +104,21 @@ final class ContextWorkerPool implements WorkerPool
         return $this->idleWorkers->count() > 0 || $this->workers->count() < $this->limit;
     }
 
+    public function getWorkerLimit(): int
+    {
+        return $this->limit;
+    }
+
     /**
      * Gets the maximum number of workers the pool may spawn to handle concurrent tasks.
      *
      * @return int The maximum number of workers.
+     *
+     * @deprecated Use {@see getWorkerLimit()} instead.
      */
     public function getLimit(): int
     {
-        return $this->limit;
+        return $this->getWorkerLimit();
     }
 
     public function getWorkerCount(): int
