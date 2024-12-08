@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-require \dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Loop;
 use Amp\Parallel\Worker\CallableTask;
@@ -20,7 +20,7 @@ $tasks = [
 // Event loop for parallel tasks
 Loop::run(function () use (&$results, $tasks) {
     $timer = Loop::repeat(200, function () {
-        \printf(".");
+        printf(".");
     });
     Loop::unreference($timer);
 
@@ -31,7 +31,7 @@ Loop::run(function () use (&$results, $tasks) {
     foreach ($tasks as $index => $task) {
         $coroutines[] = Amp\call(function () use ($pool, $index, $task) {
             $result = yield $pool->enqueue($task);
-            \printf("\nRead from task %d: %d bytes\n", $index, \strlen($result));
+            printf("\nRead from task %d: %d bytes\n", $index, strlen($result));
             return $result;
         });
     }
@@ -42,4 +42,4 @@ Loop::run(function () use (&$results, $tasks) {
 });
 
 echo "\nResult array keys:\n";
-echo \var_export(\array_keys($results), true);
+echo var_export(array_keys($results), true);

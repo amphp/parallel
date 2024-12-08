@@ -15,7 +15,7 @@ const LOOP_FACTORY_IDENTIFIER = WorkerFactory::class;
  *
  * @return Pool The global worker pool instance.
  */
-function pool(Pool $pool = null): Pool
+function pool(?Pool $pool = null): Pool
 {
     if ($pool === null) {
         $pool = Loop::getState(LOOP_POOL_IDENTIFIER);
@@ -57,8 +57,6 @@ function enqueueCallable(callable $callable, ...$args)
 
 /**
  * Gets a worker from the global worker pool.
- *
- * @return \Amp\Parallel\Worker\Worker
  */
 function worker(): Worker
 {
@@ -67,8 +65,6 @@ function worker(): Worker
 
 /**
  * Creates a worker using the global worker factory.
- *
- * @return \Amp\Parallel\Worker\Worker
  */
 function create(): Worker
 {
@@ -77,12 +73,8 @@ function create(): Worker
 
 /**
  * Gets or sets the global worker factory.
- *
- * @param WorkerFactory|null $factory
- *
- * @return WorkerFactory
  */
-function factory(WorkerFactory $factory = null): WorkerFactory
+function factory(?WorkerFactory $factory = null): WorkerFactory
 {
     if ($factory === null) {
         $factory = Loop::getState(LOOP_FACTORY_IDENTIFIER);

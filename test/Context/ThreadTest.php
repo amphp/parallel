@@ -19,8 +19,6 @@ use Amp\PHPUnit\AsyncTestCase;
 class ThreadTest extends AsyncTestCase
 {
     /**
-     * @param callable $function
-     *
      * @return \Amp\Parallel\Context\Context
      */
     public function createContext(callable $function)

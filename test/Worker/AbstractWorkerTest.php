@@ -24,12 +24,9 @@ class NonAutoloadableTask implements Task
 abstract class AbstractWorkerTest extends AsyncTestCase
 {
     /**
-     * @param string $envClassName
-     * @param string|null $autoloadPath
-     *
      * @return \Amp\Parallel\Worker\Worker
      */
-    abstract protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null);
+    abstract protected function createWorker(string $envClassName = BasicEnvironment::class, ?string $autoloadPath = null);
 
     public function testWorkerConstantDefined()
     {
@@ -155,7 +152,6 @@ abstract class AbstractWorkerTest extends AsyncTestCase
     public function testKill()
     {
         $this->setTimeout(500);
-
 
         $worker = $this->createWorker();
 

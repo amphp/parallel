@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
-require \dirname(__DIR__).'/vendor/autoload.php';
+
+require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Delayed;
@@ -10,14 +11,14 @@ use Amp\Parallel\Sync\SharedMemoryParcel;
 
 Loop::run(function () {
     // Create a parcel that then can be accessed in any number of child processes.
-    $parcel = SharedMemoryParcel::create($id = \bin2hex(\random_bytes(10)), 1);
+    $parcel = SharedMemoryParcel::create($id = bin2hex(random_bytes(10)), 1);
 
     $context = yield Process::run([
         __DIR__ . "/parcel-process.php",
         $id, // Send parcel ID to child process as command argument.
     ]);
 
-    \assert($context instanceof Process);
+    assert($context instanceof Process);
 
     // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
     Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
@@ -30,5 +31,5 @@ Loop::run(function () {
 
     yield $context->join(); // Wait for child process to finish.
 
-    \printf("Final value of parcel: %d\n", yield $parcel->unwrap());
+    printf("Final value of parcel: %d\n", yield $parcel->unwrap());
 });

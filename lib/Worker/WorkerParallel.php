@@ -18,7 +18,7 @@ final class WorkerParallel extends TaskWorker
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, string $bootstrapPath = null)
+    public function __construct(string $envClassName = BasicEnvironment::class, ?string $bootstrapPath = null)
     {
         $script = [
             self::SCRIPT_PATH,

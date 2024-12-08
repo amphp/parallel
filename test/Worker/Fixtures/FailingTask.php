@@ -13,7 +13,7 @@ class FailingTask implements Task
     /** @var string|null */
     private $previousExceptionType;
 
-    public function __construct(string $exceptionType, string $previousExceptionType = null)
+    public function __construct(string $exceptionType, ?string $previousExceptionType = null)
     {
         $this->exceptionType = $exceptionType;
         $this->previousExceptionType = $previousExceptionType;

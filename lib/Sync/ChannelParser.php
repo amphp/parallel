@@ -16,7 +16,6 @@ final class ChannelParser extends Parser
 
     /**
      * @param callable(mixed $data) Callback invoked when data is parsed.
-     * @param Serializer|null $serializer
      */
     public function __construct(callable $callback, ?Serializer $serializer = null)
     {
@@ -38,11 +37,6 @@ final class ChannelParser extends Parser
     }
 
     /**
-     * @param callable $push
-     * @param Serializer $serializer
-     *
-     * @return \Generator
-     *
      * @throws ChannelException
      * @throws SerializationException
      */

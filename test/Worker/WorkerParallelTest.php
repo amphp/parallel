@@ -10,7 +10,7 @@ use Amp\Parallel\Worker\WorkerParallel;
  */
 class WorkerParallelTest extends AbstractWorkerTest
 {
-    protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null)
+    protected function createWorker(string $envClassName = BasicEnvironment::class, ?string $autoloadPath = null)
     {
         return new WorkerParallel($envClassName, $autoloadPath);
     }

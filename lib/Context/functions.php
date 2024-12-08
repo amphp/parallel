@@ -10,8 +10,6 @@ const LOOP_FACTORY_IDENTIFIER = ContextFactory::class;
 /**
  * @param string|string[] $script Path to PHP script or array with first element as path and following elements options
  *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
- *
- * @return Context
  */
 function create($script): Context
 {
@@ -34,10 +32,6 @@ function run($script): Promise
 
 /**
  * Gets or sets the global context factory.
- *
- * @param ContextFactory|null $factory
- *
- * @return ContextFactory
  */
 function factory(?ContextFactory $factory = null): ContextFactory
 {

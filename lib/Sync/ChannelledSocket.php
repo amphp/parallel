@@ -21,7 +21,6 @@ final class ChannelledSocket implements Channel
     /**
      * @param resource $read Readable stream resource.
      * @param resource $write Writable stream resource.
-     * @param Serializer|null $serializer
      *
      * @throws \Error If a stream resource is not given for $resource.
      */

@@ -24,8 +24,6 @@ final class TaskRunner
 
     /**
      * Runs the task runner, receiving tasks from the parent and sending the result of those tasks.
-     *
-     * @return \Amp\Promise
      */
     public function run(): Promise
     {
@@ -34,8 +32,6 @@ final class TaskRunner
 
     /**
      * @coroutine
-     *
-     * @return \Generator
      */
     private function execute(): \Generator
     {

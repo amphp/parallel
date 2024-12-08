@@ -81,7 +81,6 @@ class SharedMemoryParcelTest extends AbstractParcelTest
         SharedMemoryParcel::create(self::ID, 42, 8192, 0);
     }
 
-
     public function testNotFound(): void
     {
         $this->expectException(SyncException::class);

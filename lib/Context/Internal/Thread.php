@@ -122,10 +122,6 @@ final class Thread extends \Thread
     }
 
     /**
-     * @param \Amp\Parallel\Sync\Channel $channel
-     *
-     * @return \Generator
-     *
      * @codeCoverageIgnore Only executed in thread.
      */
     private function execute(Channel $channel): \Generator

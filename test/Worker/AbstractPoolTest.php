@@ -12,10 +12,7 @@ use Amp\Promise;
 abstract class AbstractPoolTest extends AsyncTestCase
 {
     /**
-     * @param int $min
      * @param int $max
-     *
-     * @return \Amp\Parallel\Worker\Pool
      */
     abstract protected function createPool($max = Pool::DEFAULT_MAX_SIZE): Pool;
 

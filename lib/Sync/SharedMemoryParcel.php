@@ -62,14 +62,9 @@ final class SharedMemoryParcel implements Parcel
     private $serializer;
 
     /**
-     * @param string $id
-     * @param mixed $value
      * @param int $size The initial size in bytes of the shared memory segment. It will automatically be expanded as
      *     necessary.
      * @param int $permissions Permissions to access the semaphore. Use file permission format specified as 0xxx.
-     * @param Serializer|null $serializer
-     *
-     * @return self
      *
      * @throws SharedMemoryException
      * @throws SyncException
@@ -88,11 +83,6 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * @param string $id
-     * @param Serializer|null $serializer
-     *
-     * @return self
-     *
      * @throws SharedMemoryException
      */
     public static function use(string $id, ?Serializer $serializer = null): self
@@ -102,10 +92,6 @@ final class SharedMemoryParcel implements Parcel
         return $parcel;
     }
 
-    /**
-     * @param string $id
-     * @param Serializer|null $serializer
-     */
     private function __construct(string $id, ?Serializer $serializer = null)
     {
         if (!\extension_loaded("shmop")) {
@@ -118,10 +104,6 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * @param mixed $value
-     * @param int   $size
-     * @param int   $permissions
-     *
      * @throws SharedMemoryException
      * @throws SyncException
      * @throws \Error If the size or permissions are invalid.
@@ -189,8 +171,6 @@ final class SharedMemoryParcel implements Parcel
     }
 
     /**
-     * @return mixed
-     *
      * @throws SharedMemoryException
      * @throws SerializationException
      */
@@ -274,7 +254,6 @@ final class SharedMemoryParcel implements Parcel
             return $result;
         });
     }
-
 
     /**
      * Frees the shared object from memory.

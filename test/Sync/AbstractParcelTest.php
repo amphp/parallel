@@ -9,8 +9,6 @@ use Amp\Promise;
 abstract class AbstractParcelTest extends AsyncTestCase
 {
     /**
-     * @param mixed $value
-     *
      * @return Promise<Parcel>
      */
     abstract protected function createParcel($value): Promise;

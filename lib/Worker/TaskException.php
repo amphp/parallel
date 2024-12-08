@@ -31,8 +31,6 @@ class TaskException extends \Exception
      * @deprecated Use TaskFailureThrowable::getOriginalClassName() instead.
      *
      * Returns the class name of the exception thrown from the task.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -43,8 +41,6 @@ class TaskException extends \Exception
      * @deprecated Use TaskFailureThrowable::getOriginalTraceAsString() instead.
      *
      * Gets the stack trace at the point the exception was thrown in the task.
-     *
-     * @return string
      */
     public function getWorkerTrace(): string
     {

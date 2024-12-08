@@ -315,8 +315,6 @@ final class Thread implements Context
     /**
      * Returns the ID of the thread. This ID will be unique to this process.
      *
-     * @return int
-     *
      * @throws \Amp\Process\StatusError
      */
     public function getId(): int

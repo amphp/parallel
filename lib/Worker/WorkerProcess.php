@@ -22,8 +22,8 @@ final class WorkerProcess extends TaskWorker
     public function __construct(
         string $envClassName = BasicEnvironment::class,
         array $env = [],
-        string $binary = null,
-        string $bootstrapPath = null
+        ?string $binary = null,
+        ?string $bootstrapPath = null
     ) {
         $script = [
             self::SCRIPT_PATH,

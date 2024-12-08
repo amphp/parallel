@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
-require \dirname(__DIR__).'/vendor/autoload.php';
+
+require dirname(__DIR__).'/vendor/autoload.php';
 
 use Amp\ByteStream;
 use Amp\Delayed;
@@ -18,7 +19,7 @@ Loop::run(function () {
         // Create a new child process that does some blocking stuff.
         $context = yield Process::run(__DIR__ . "/blocking-process.php");
 
-        \assert($context instanceof Process);
+        assert($context instanceof Process);
 
         // Pipe any data written to the STDOUT in the child process to STDOUT of this process.
         Amp\Promise\rethrow(ByteStream\pipe($context->getStdout(), ByteStream\getStdout()));
@@ -28,8 +29,8 @@ Loop::run(function () {
 
         yield $context->send("Start data"); // Data sent to child process, received on line 9 of blocking-process.php
 
-        \printf("Received the following from child: %s\n", yield $context->receive()); // Sent on line 14 of blocking-process.php
-        \printf("Process ended with value %d!\n", yield $context->join());
+        printf("Received the following from child: %s\n", yield $context->receive()); // Sent on line 14 of blocking-process.php
+        printf("Process ended with value %d!\n", yield $context->join());
     } finally {
         Loop::cancel($timer);
     }

@@ -21,8 +21,6 @@ interface Channel
     public function receive(): Promise;
 
     /**
-     * @param mixed $data
-     *
      * @return \Amp\Promise<int> Resolves with the number of bytes sent on the channel.
      *
      * @throws \Amp\Parallel\Context\StatusError Thrown if the context has not been started.

@@ -244,7 +244,7 @@ final class Parallel implements Context
             }
 
             return 0;
-        // @codeCoverageIgnoreEnd
+            // @codeCoverageIgnoreEnd
         }, [
             $this->id,
             $this->hub->getUri(),
@@ -402,8 +402,6 @@ final class Parallel implements Context
 
     /**
      * Returns the ID of the thread. This ID will be unique to this process.
-     *
-     * @return int
      *
      * @throws \Amp\Process\StatusError
      */

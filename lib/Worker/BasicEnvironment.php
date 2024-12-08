@@ -65,19 +65,12 @@ final class BasicEnvironment implements Environment
         Loop::unreference($this->timer);
     }
 
-    /**
-     * @param string $key
-     *
-     * @return bool
-     */
     public function exists(string $key): bool
     {
         return isset($this->data[$key]);
     }
 
     /**
-     * @param string $key
-     *
      * @return mixed|null Returns null if the key does not exist.
      */
     public function get(string $key)
@@ -100,13 +93,12 @@ final class BasicEnvironment implements Environment
     }
 
     /**
-     * @param string $key
      * @param mixed $value Using null for the value deletes the key.
      * @param int $ttl Number of seconds until data is automatically deleted. Use null for unlimited TTL.
      *
      * @throws \Error If the time-to-live is not a positive integer.
      */
-    public function set(string $key, $value, int $ttl = null): void
+    public function set(string $key, $value, ?int $ttl = null): void
     {
         if ($value === null) {
             $this->delete($key);
@@ -137,9 +129,6 @@ final class BasicEnvironment implements Environment
         $this->data[$key] = $struct;
     }
 
-    /**
-     * @param string $key
-     */
     public function delete(string $key): void
     {
         unset($this->data[$key]);
@@ -147,10 +136,6 @@ final class BasicEnvironment implements Environment
 
     /**
      * Alias of exists().
-     *
-     * @param $key
-     *
-     * @return bool
      */
     public function offsetExists($key): bool
     {
@@ -161,8 +146,6 @@ final class BasicEnvironment implements Environment
      * Alias of get().
      *
      * @param string $key
-     *
-     * @return mixed
      */
     #[\ReturnTypeWillChange]
     public function offsetGet($key)
@@ -174,7 +157,6 @@ final class BasicEnvironment implements Environment
      * Alias of set() with $ttl = null.
      *
      * @param string $key
-     * @param mixed $value
      */
     public function offsetSet($key, $value): void
     {

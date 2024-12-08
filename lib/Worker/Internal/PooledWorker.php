@@ -16,7 +16,6 @@ final class PooledWorker implements Worker
     private $worker;
 
     /**
-     * @param Worker $worker
      * @param callable $push Callable to push the worker back into the queue.
      */
     public function __construct(Worker $worker, callable $push)

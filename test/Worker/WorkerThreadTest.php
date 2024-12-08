@@ -11,7 +11,7 @@ use Amp\Parallel\Worker\WorkerThread;
  */
 class WorkerThreadTest extends AbstractWorkerTest
 {
-    protected function createWorker(string $envClassName = BasicEnvironment::class, string $autoloadPath = null)
+    protected function createWorker(string $envClassName = BasicEnvironment::class, ?string $autoloadPath = null)
     {
         return new WorkerThread($envClassName, $autoloadPath);
     }

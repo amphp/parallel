@@ -7,9 +7,6 @@ use Amp\Promise;
 
 interface Context extends Channel
 {
-    /**
-     * @return bool
-     */
     public function isRunning(): bool;
 
     /**

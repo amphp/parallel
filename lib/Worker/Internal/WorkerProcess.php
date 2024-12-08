@@ -13,7 +13,7 @@ class WorkerProcess implements Context
     /** @var Process */
     private $process;
 
-    public function __construct($script, array $env = [], string $binary = null)
+    public function __construct($script, array $env = [], ?string $binary = null)
     {
         $this->process = new Process($script, null, $env, $binary);
     }

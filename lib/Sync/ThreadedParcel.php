@@ -39,9 +39,6 @@ final class ThreadedParcel implements Parcel
         return new Success($this->storage->get());
     }
 
-    /**
-     * @return \Amp\Promise
-     */
     public function synchronized(callable $callback): Promise
     {
         return call(function () use ($callback): \Generator {

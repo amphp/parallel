@@ -18,8 +18,6 @@ interface Worker
 
     /**
      * Checks if the worker is currently idle.
-     *
-     * @return bool
      */
     public function isIdle(): bool;
 

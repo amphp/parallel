@@ -31,8 +31,6 @@ class TaskError extends \Error
      * @deprecated Use TaskFailureThrowable::getOriginalClassName() instead.
      *
      * Returns the class name of the error thrown from the task.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -43,8 +41,6 @@ class TaskError extends \Error
      * @deprecated Use TaskFailureThrowable::getOriginalTraceAsString() instead.
      *
      * Gets the stack trace at the point the error was thrown in the task.
-     *
-     * @return string
      */
     public function getWorkerTrace(): string
     {

@@ -44,11 +44,11 @@ final class Process implements Context
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      * @param string|null  $cwd Working directory.
      * @param mixed[]      $env Array of environment variables.
-     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|null  $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @return Promise<Process>
      */
-    public static function run($script, string $cwd = null, array $env = [], string $binary = null): Promise
+    public static function run($script, ?string $cwd = null, array $env = [], ?string $binary = null): Promise
     {
         $process = new self($script, $cwd, $env, $binary);
         return call(function () use ($process): \Generator {
@@ -62,11 +62,11 @@ final class Process implements Context
      *     to the PHP script (e.g.: ['bin/worker', 'Option1Value', 'Option2Value'].
      * @param string|null  $cwd Working directory.
      * @param mixed[]      $env Array of environment variables.
-     * @param string       $binary Path to PHP binary. Null will attempt to automatically locate the binary.
+     * @param string|null  $binary Path to PHP binary. Null will attempt to automatically locate the binary.
      *
      * @throws \Error If the PHP binary path given cannot be found or is not executable.
      */
-    public function __construct($script, string $cwd = null, array $env = [], string $binary = null)
+    public function __construct($script, ?string $cwd = null, array $env = [], ?string $binary = null)
     {
         $this->hub = Loop::getState(self::class);
         if (!$this->hub instanceof Internal\ProcessHub) {
@@ -84,7 +84,7 @@ final class Process implements Context
         if ($binary === null) {
             if (\PHP_SAPI === "cli") {
                 $binary = \PHP_BINARY;
-            } else if (\PHP_SAPI === "phpdbg") {
+            } elseif (\PHP_SAPI === "phpdbg") {
                 $binary = \PHP_BINARY;
                 $otherOpts []= '-qrr';
             } else {
@@ -315,7 +315,6 @@ final class Process implements Context
                 throw new ContextException(\sprintf("Process exited with code %d", $code));
             }
 
-
             return $data->getResult();
         });
     }
@@ -324,8 +323,6 @@ final class Process implements Context
      * Send a signal to the process.
      *
      * @see \Amp\Process\Process::signal()
-     *
-     * @param int $signo
      *
      * @throws \Amp\Process\ProcessException
      * @throws \Amp\Process\StatusError
@@ -340,8 +337,6 @@ final class Process implements Context
      *
      * @see \Amp\Process\Process::getPid()
      *
-     * @return int
-     *
      * @throws \Amp\Process\StatusError
      */
     public function getPid(): int
@@ -353,8 +348,6 @@ final class Process implements Context
      * Returns the STDIN stream of the process.
      *
      * @see \Amp\Process\Process::getStdin()
-     *
-     * @return ProcessOutputStream
      *
      * @throws \Amp\Process\StatusError
      */
@@ -368,8 +361,6 @@ final class Process implements Context
      *
      * @see \Amp\Process\Process::getStdout()
      *
-     * @return ProcessInputStream
-     *
      * @throws \Amp\Process\StatusError
      */
     public function getStdout(): ProcessInputStream
@@ -381,8 +372,6 @@ final class Process implements Context
      * Returns the STDOUT stream of the process.
      *
      * @see \Amp\Process\Process::getStderr()
-     *
-     * @return ProcessInputStream
      *
      * @throws \Amp\Process\StatusError
      */

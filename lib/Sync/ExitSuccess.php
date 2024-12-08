@@ -4,7 +4,6 @@ namespace Amp\Parallel\Sync;
 
 final class ExitSuccess implements ExitResult
 {
-    /** @var mixed */
     private $result;
 
     public function __construct($result)

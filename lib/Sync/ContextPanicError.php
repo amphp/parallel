@@ -73,8 +73,6 @@ final class ContextPanicError extends PanicError
 
     /**
      * Original backtrace flattened to a human-readable string.
-     *
-     * @return string
      */
     public function getOriginalTraceAsString(): string
     {

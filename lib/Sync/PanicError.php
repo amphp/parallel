@@ -34,8 +34,6 @@ class PanicError extends \Error
      * @deprecated Use ContextPanicError::getOriginalClassName() instead.
      *
      * Returns the class name of the uncaught exception.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -46,8 +44,6 @@ class PanicError extends \Error
      * @deprecated Use ContextPanicError::getOriginalTraceAsString() instead.
      *
      * Gets the stack trace at the point the panic occurred.
-     *
-     * @return string
      */
     public function getPanicTrace(): string
     {

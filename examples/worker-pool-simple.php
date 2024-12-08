@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-require \dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Parallel\Worker;
 use Amp\Promise;
@@ -20,5 +20,5 @@ foreach ($urls as $url) {
 $responses = Promise\wait(Promise\all($promises));
 
 foreach ($responses as $url => $response) {
-    \printf("Read %d bytes from %s\n", \strlen($response), $url);
+    printf("Read %d bytes from %s\n", strlen($response), $url);
 }

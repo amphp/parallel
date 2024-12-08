@@ -18,9 +18,9 @@ final class WorkerThread extends TaskWorker
      *     Defaults to \Amp\Parallel\Worker\BasicEnvironment.
      * @param string|null $bootstrapPath Path to custom autoloader.
      */
-    public function __construct(string $envClassName = BasicEnvironment::class, string $bootstrapPath = null)
+    public function __construct(string $envClassName = BasicEnvironment::class, ?string $bootstrapPath = null)
     {
-        parent::__construct(new Thread(static function (Channel $channel, string $className, string $bootstrapPath = null): Promise {
+        parent::__construct(new Thread(static function (Channel $channel, string $className, ?string $bootstrapPath = null): Promise {
             if ($bootstrapPath !== null) {
                 if (!\is_file($bootstrapPath)) {
                     throw new \Error(\sprintf("No file found at bootstrap file path given '%s'", $bootstrapPath));
