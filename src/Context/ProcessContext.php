@@ -7,6 +7,7 @@ use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\Parallel\Context\Internal\AbstractContext;
+use Amp\Parallel\Context\Internal\ExitFailure;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
@@ -281,7 +282,7 @@ final class ProcessContext extends AbstractContext
         $data = $this->receiveExitResult($cancellation);
 
         $code = $this->process->join();
-        if ($code !== 0) {
+        if ($code !== 0 && !($data instanceof ExitFailure)) {
             throw new ContextException(\sprintf("Context exited with code %d", $code));
         }
 
