@@ -282,11 +282,16 @@ final class ProcessContext extends AbstractContext
         $data = $this->receiveExitResult($cancellation);
 
         $code = $this->process->join();
-        if ($code !== 0 && !($data instanceof ExitFailure)) {
-            throw new ContextException(\sprintf("Context exited with code %d", $code));
-        }
 
-        return $data->getResult();
+        try {
+            return $data->getResult();
+        } finally {
+            if ($code !== 0) {
+                // If an ExitFailure throws above, the exception will be automatically attached as the previous
+                // exception on the instance thrown below.
+                throw new ContextException(\sprintf("Context exited with code %d", $code));
+            }
+        }
     }
 
     /**
