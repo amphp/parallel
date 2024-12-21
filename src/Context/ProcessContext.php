@@ -7,7 +7,6 @@ use Amp\ByteStream\StreamChannel;
 use Amp\ByteStream\WritableResourceStream;
 use Amp\Cancellation;
 use Amp\Parallel\Context\Internal\AbstractContext;
-use Amp\Parallel\Context\Internal\ExitFailure;
 use Amp\Parallel\Ipc\IpcHub;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
