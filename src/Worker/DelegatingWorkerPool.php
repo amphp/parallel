@@ -118,7 +118,8 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
 
     public function getWorker(): Worker
     {
-        return new PooledWorker($this->selectWorker(), $this->push(...));
+        $worker = $this->selectWorker();
+        return new PooledWorker($worker, $this->push(...));
     }
 
     public function getWorkerLimit(): int

@@ -213,7 +213,8 @@ final class ContextWorkerPool implements LimitedWorkerPool
 
     public function getWorker(): Worker
     {
-        return new Internal\PooledWorker($this->pull(), $this->push);
+        $worker = $this->pull();
+        return new Internal\PooledWorker($worker, $this->push);
     }
 
     /**
