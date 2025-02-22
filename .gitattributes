@@ -1,3 +1,4 @@
+.github export-ignore
 examples export-ignore
 test export-ignore
 travis export-ignore
@@ -6,3 +7,4 @@ travis export-ignore
 .travis.yml export-ignore
 phpunit.xml.dist export-ignore
 docs/asset export-ignore
+psalm.xml export-ignore
