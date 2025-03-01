@@ -104,7 +104,9 @@ final class ThreadContext extends AbstractContext
                 // such as select() will not be interrupted.
             }));
 
-            Internal\runContext($uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+            EventLoop::queue(Internal\runContext(...), $uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+
+            EventLoop::run();
 
             return 0;
             // @codeCoverageIgnoreEnd

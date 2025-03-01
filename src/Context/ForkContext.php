@@ -12,7 +12,7 @@ use Amp\TimeoutCancellation;
 
 /**
  * USE AT YOUR OWN RISK! This context is not used by default in {@see DefaultContextFactory} because the timing of its
- * use must be purposeful and situational.
+ * creation must be purposeful and situational.
  *
  * Forking is not recommended at arbitrary points in an application since the entire state of the parent process is
  * inherited into the child process, including the event-loop!
@@ -83,7 +83,9 @@ final class ForkContext extends AbstractContext
         exit(0);
     }
 
-    private bool $exited = false;
+    private ?int $exited = null;
+
+    private bool $weKilled = false;
 
     /**
      * @param StreamChannel<TReceive, TSend> $ipcChannel
@@ -101,11 +103,49 @@ final class ForkContext extends AbstractContext
         $this->close();
     }
 
+    public function receive(?Cancellation $cancellation = null): mixed
+    {
+        $this->checkExit(false);
+
+        return parent::receive($cancellation);
+    }
+
+    public function send(mixed $data): void
+    {
+        $this->checkExit(false);
+
+        parent::send($data);
+    }
+
+    private function checkExit(bool $wait): ?int
+    {
+        if ($this->exited === null) {
+            if (\pcntl_waitpid($this->pid, $status, $wait ? 0 : \WNOHANG) === 0) {
+                return null;
+            }
+
+            $this->exited = match (true) {
+                \pcntl_wifsignaled($status) => \pcntl_wtermsig($status),
+                \pcntl_wifexited($status) => \pcntl_wexitstatus($status) - 128,
+                \pcntl_wifstopped($status) => \pcntl_wstopsig($status),
+                default => -1,
+            };
+        }
+
+        if (!$this->weKilled && $this->exited > 0) {
+            throw new ContextException("Worker exited due to signal {$this->exited}", $this->exited);
+        }
+
+        return $this->exited;
+    }
+
     public function close(): void
     {
         if (!$this->exited) {
+            $this->weKilled = true;
             \posix_kill($this->pid, \SIGKILL);
-            $this->exited = true;
+
+            $this->checkExit(true);
         }
 
         parent::close();
@@ -113,9 +153,11 @@ final class ForkContext extends AbstractContext
 
     public function join(?Cancellation $cancellation = null): mixed
     {
-        $data = $this->receiveExitResult($cancellation);
-
-        $this->close();
+        try {
+            $data = $this->receiveExitResult($cancellation);
+        } finally {
+            $this->close();
+        }
 
         return $data->getResult();
     }

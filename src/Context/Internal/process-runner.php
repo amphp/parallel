@@ -85,5 +85,7 @@ if (\function_exists("cli_set_process_title")) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
 
-    runContext($uri, $key, $cancellation, $argv);
+    EventLoop::queue(runContext(...), $uri, $key, $cancellation, $argv);
+
+    EventLoop::run();
 })();
