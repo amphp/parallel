@@ -141,7 +141,7 @@ final class ForkContext extends AbstractContext
 
     public function close(): void
     {
-        if (!$this->exited) {
+        if ($this->checkExit(false) === null) {
             $this->weKilled = true;
             \posix_kill($this->pid, \SIGKILL);
 
