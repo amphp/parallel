@@ -6,22 +6,29 @@ use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Ipc;
+use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\SerializationException;
+use Amp\Serialization\Serializer;
 use Revolt\EventLoop;
 
 /** @internal */
-function runContext(string $uri, string $key, Cancellation $connectCancellation, array $argv): void
-{
-    EventLoop::queue(function () use ($argv, $uri, $key, $connectCancellation): void {
+function runContext(
+    string $uri,
+    string $key,
+    Cancellation $connectCancellation,
+    array $argv,
+    Serializer $serializer = new NativeSerializer(),
+): void {
+    EventLoop::queue(function () use ($argv, $uri, $key, $connectCancellation, $serializer): void {
         /** @noinspection PhpUnusedLocalVariableInspection */
         $argc = \count($argv);
 
         try {
             $socket = Ipc\connect($uri, $key, $connectCancellation);
-            $ipcChannel = new StreamChannel($socket, $socket);
+            $ipcChannel = new StreamChannel($socket, $socket, $serializer);
 
             $socket = Ipc\connect($uri, $key, $connectCancellation);
-            $resultChannel = new StreamChannel($socket, $socket);
+            $resultChannel = new StreamChannel($socket, $socket, $serializer);
         } catch (\Throwable $exception) {
             \trigger_error($exception->getMessage(), E_USER_ERROR);
         }
