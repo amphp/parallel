@@ -30,6 +30,11 @@ final class ForkContext extends AbstractContext
 {
     private const DEFAULT_START_TIMEOUT = 5;
 
+    public static function isSupported(): bool
+    {
+        return \function_exists('pcntl_fork');
+    }
+
     /**
      * @param string|non-empty-list<string> $script Path to PHP script or array with first element as path and
      *     following elements options to the PHP script (e.g.: ['bin/worker.php', 'Option1Value', 'Option2Value']).
@@ -153,11 +158,9 @@ final class ForkContext extends AbstractContext
 
     public function join(?Cancellation $cancellation = null): mixed
     {
-        try {
-            $data = $this->receiveExitResult($cancellation);
-        } finally {
-            $this->close();
-        }
+        $data = $this->receiveExitResult($cancellation);
+
+        $this->close();
 
         return $data->getResult();
     }
