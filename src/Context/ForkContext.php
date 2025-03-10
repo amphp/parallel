@@ -9,6 +9,8 @@ use Amp\Parallel\Ipc\IpcHub;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
 use Amp\TimeoutCancellation;
+use Revolt\EventLoop;
+use Revolt\EventLoop\Driver\UvDriver;
 
 /**
  * USE AT YOUR OWN RISK! This context is not used by default in {@see DefaultContextFactory} because the timing of its
@@ -32,7 +34,8 @@ final class ForkContext extends AbstractContext
 
     public static function isSupported(): bool
     {
-        return \function_exists('pcntl_fork');
+        return \function_exists('pcntl_fork')
+            && !EventLoop::getDriver() instanceof UvDriver;
     }
 
     /**
