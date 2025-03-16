@@ -25,6 +25,14 @@ jobs:
             continue-on-error: false
 
           - operating-system: 'ubuntu-latest'
+            php-version: '8.4'
+            php-ts: nts
+            continue-on-error: false
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+
+          - operating-system: 'ubuntu-latest'
             php-version: '8.2'
             php-extensions: parallel
             job-description: 'with ext-parallel'
@@ -36,6 +44,16 @@ jobs:
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
+            php-extensions: parallel
+            job-description: 'with ext-parallel'
+            php-ts: ts
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+            continue-on-error: true
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.4'
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
@@ -69,7 +87,7 @@ jobs:
           git config --global core.eol lf
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -85,7 +103,7 @@ jobs:
         run: echo "::set-output name=dir::$(composer config cache-dir)"
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-${{ matrix.php-version }}-${{ hashFiles('**/composer.*') }}-${{ matrix.composer-flags }}
