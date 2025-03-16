@@ -25,6 +25,14 @@ jobs:
             continue-on-error: false
 
           - operating-system: 'ubuntu-latest'
+            php-version: '8.4'
+            php-ts: nts
+            continue-on-error: false
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+
+          - operating-system: 'ubuntu-latest'
             php-version: '8.2'
             php-extensions: parallel
             job-description: 'with ext-parallel'
@@ -36,6 +44,16 @@ jobs:
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
+            php-extensions: parallel
+            job-description: 'with ext-parallel'
+            php-ts: ts
+            static-analysis: none
+            style-fix: none
+            composer-require-checker-version: none
+            continue-on-error: true
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.4'
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
