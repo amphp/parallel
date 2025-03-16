@@ -34,6 +34,7 @@ final class DefaultContextFactory implements ContextFactory
      *
      * @throws ContextException
      */
+    #[\Override]
     public function start(string|array $script, ?Cancellation $cancellation = null): Context
     {
         $context = $this->contextFactory->start($script, $cancellation);

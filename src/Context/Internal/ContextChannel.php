@@ -24,26 +24,31 @@ final class ContextChannel implements Channel
     ) {
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         $this->channel->send(new ContextMessage($data));
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         return $this->channel->receive($cancellation);
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->channel->close();
     }
 
+    #[\Override]
     public function isClosed(): bool
     {
         return $this->channel->isClosed();
     }
 
+    #[\Override]
     public function onClose(\Closure $onClose): void
     {
         $this->channel->onClose($onClose);

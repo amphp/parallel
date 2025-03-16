@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Context;
 
+/** @api */
 class StatusError extends \Error
 {
 }

@@ -32,16 +32,19 @@ final class PooledWorker implements Worker
         ($this->push)($this->worker);
     }
 
+    #[\Override]
     public function isRunning(): bool
     {
         return $this->worker->isRunning();
     }
 
+    #[\Override]
     public function isIdle(): bool
     {
         return $this->worker->isIdle();
     }
 
+    #[\Override]
     public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         $job = $this->worker->submit($task, $cancellation);
@@ -52,11 +55,13 @@ final class PooledWorker implements Worker
         return $job;
     }
 
+    #[\Override]
     public function shutdown(): void
     {
         $this->worker->shutdown();
     }
 
+    #[\Override]
     public function kill(): void
     {
         $this->worker->kill();

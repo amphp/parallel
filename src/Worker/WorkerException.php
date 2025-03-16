@@ -2,6 +2,7 @@
 
 namespace Amp\Parallel\Worker;
 
+/** @api */
 class WorkerException extends \Exception
 {
 }

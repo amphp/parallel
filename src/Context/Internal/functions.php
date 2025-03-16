@@ -11,6 +11,8 @@ use Revolt\EventLoop;
 
 /**
  * @param class-string<IpcHub> $hubClass
+ * @param non-empty-string $uri
+ * @param non-empty-string $key
  * @internal
  */
 function runContext(string $hubClass, string $uri, string $key, Cancellation $connectCancellation, array $argv): void

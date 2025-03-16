@@ -52,6 +52,7 @@ final class LocalIpcHub implements IpcHub
     /**
      * Note that this is designed to be used in the child process/thread to connect to an IPC socket.
      */
+    #[\Override]
     public static function connect(
         string $uri,
         string $key,
@@ -60,22 +61,26 @@ final class LocalIpcHub implements IpcHub
         return SocketIpcHub::connect($uri, $key, $cancellation);
     }
 
+    #[\Override]
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
     {
         return $this->delegate->accept($key, $cancellation);
     }
 
+    #[\Override]
     public function isClosed(): bool
     {
         return $this->delegate->isClosed();
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->delegate->close();
         $this->unlink();
     }
 
+    #[\Override]
     public function onClose(\Closure $onClose): void
     {
         $this->delegate->onClose($onClose);
@@ -97,11 +102,13 @@ final class LocalIpcHub implements IpcHub
         }
     }
 
+    #[\Override]
     public function getUri(): string
     {
         return $this->delegate->getUri();
     }
 
+    #[\Override]
     public function generateKey(): string
     {
         return $this->delegate->generateKey();

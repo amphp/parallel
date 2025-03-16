@@ -34,6 +34,7 @@ abstract class AbstractContext implements Context
     ) {
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         try {
@@ -66,6 +67,7 @@ abstract class AbstractContext implements Context
         return $data->getMessage();
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         try {
@@ -80,16 +82,19 @@ abstract class AbstractContext implements Context
         }
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->ipcChannel->close();
     }
 
+    #[\Override]
     public function isClosed(): bool
     {
         return $this->ipcChannel->isClosed();
     }
 
+    #[\Override]
     public function onClose(\Closure $onClose): void
     {
         $this->ipcChannel->onClose($onClose);

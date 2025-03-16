@@ -24,6 +24,7 @@ final class ThreadContextFactory implements ContextFactory
     ) {
     }
 
+    #[\Override]
     public function start(array|string $script, ?Cancellation $cancellation = null): ThreadContext
     {
         return ThreadContext::start($this->ipcHub, $script, $cancellation, $this->childConnectTimeout);

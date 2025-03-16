@@ -37,6 +37,7 @@ final class JobChannel implements Channel
         $this->close();
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         if ($this->onClose->isComplete()) {
@@ -46,6 +47,7 @@ final class JobChannel implements Channel
         $this->channel->send(new JobMessage($this->id, $data));
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         if (!$this->iterator->continue($cancellation)) {
@@ -56,6 +58,7 @@ final class JobChannel implements Channel
         return $this->iterator->getValue();
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->iterator->dispose();
@@ -65,11 +68,13 @@ final class JobChannel implements Channel
         }
     }
 
+    #[\Override]
     public function isClosed(): bool
     {
         return $this->channel->isClosed() || $this->onClose->isComplete();
     }
 
+    #[\Override]
     public function onClose(\Closure $onClose): void
     {
         $this->onClose->getFuture()->finally($onClose);

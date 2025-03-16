@@ -89,6 +89,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
      *
      * @return bool True if the pool is running, otherwise false.
      */
+    #[\Override]
     public function isRunning(): bool
     {
         return !$this->deferredCancellation->isCancelled();
@@ -99,11 +100,13 @@ final class ContextWorkerPool implements LimitedWorkerPool
      *
      * @return bool True if the pool has at least one idle worker, otherwise false.
      */
+    #[\Override]
     public function isIdle(): bool
     {
         return $this->idleWorkers->count() > 0 || $this->workers->count() < $this->limit;
     }
 
+    #[\Override]
     public function getWorkerLimit(): int
     {
         return $this->limit;
@@ -121,11 +124,13 @@ final class ContextWorkerPool implements LimitedWorkerPool
         return $this->getWorkerLimit();
     }
 
+    #[\Override]
     public function getWorkerCount(): int
     {
         return $this->workers->count() + $this->pendingWorkerCount;
     }
 
+    #[\Override]
     public function getIdleWorkerCount(): int
     {
         return $this->idleWorkers->count();
@@ -134,6 +139,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
     /**
      * Submits a {@see Task} to be executed by the worker pool.
      */
+    #[\Override]
     public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         $worker = $this->pull();
@@ -156,6 +162,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
      *
      * @throws StatusError If the pool has not been started.
      */
+    #[\Override]
     public function shutdown(): void
     {
         if ($this->exitStatus) {
@@ -182,6 +189,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
     /**
      * Kills all workers in the pool and halts the worker pool.
      */
+    #[\Override]
     public function kill(): void
     {
         $this->deferredCancellation->cancel();
@@ -211,6 +219,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
         }
     }
 
+    #[\Override]
     public function getWorker(): Worker
     {
         $worker = $this->pull();

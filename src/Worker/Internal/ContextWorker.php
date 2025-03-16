@@ -54,7 +54,7 @@ final class ContextWorker implements Worker
     {
         $jobQueue = &$this->jobQueue;
         $queues = &$this->queues;
-        /** @psalm-suppress UndefinedVariable $onReceive is defined here. */
+        /** @psalm-suppress UndefinedVariable, UnusedVariable $onReceive is defined here. */
         $this->onReceive = $onReceive = static function (
             ?\Throwable $exception,
             ?Internal\JobPacket $data
@@ -125,17 +125,20 @@ final class ContextWorker implements Worker
         });
     }
 
+    #[\Override]
     public function isRunning(): bool
     {
         // Report as running unless shutdown or killed.
         return $this->exitStatus === null;
     }
 
+    #[\Override]
     public function isIdle(): bool
     {
         return empty($this->jobQueue);
     }
 
+    #[\Override]
     public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         if ($this->exitStatus) {
@@ -196,6 +199,7 @@ final class ContextWorker implements Worker
         return new Execution($task, $channel, $future);
     }
 
+    #[\Override]
     public function shutdown(): void
     {
         if ($this->exitStatus) {
@@ -221,6 +225,7 @@ final class ContextWorker implements Worker
         }))->await();
     }
 
+    #[\Override]
     public function kill(): void
     {
         if (!$this->context->isClosed()) {

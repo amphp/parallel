@@ -8,6 +8,7 @@ use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Parallel\Worker\Internal\PooledWorker;
 
+/** @api */
 final class DelegatingWorkerPool implements LimitedWorkerPool
 {
     use ForbidCloning;
@@ -29,16 +30,19 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
         $this->waiting = new \SplQueue();
     }
 
+    #[\Override]
     public function isRunning(): bool
     {
         return $this->pool->isRunning();
     }
 
+    #[\Override]
     public function isIdle(): bool
     {
         return $this->pool->isIdle();
     }
 
+    #[\Override]
     public function submit(Task $task, ?Cancellation $cancellation = null): Execution
     {
         $worker = $this->selectWorker();
@@ -88,6 +92,7 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
         }
     }
 
+    #[\Override]
     public function shutdown(): void
     {
         if (!$this->waiting->isEmpty()) {
@@ -98,6 +103,7 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
         $this->pool->shutdown();
     }
 
+    #[\Override]
     public function kill(): void
     {
         if (!$this->waiting->isEmpty()) {
@@ -116,22 +122,26 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
         }
     }
 
+    #[\Override]
     public function getWorker(): Worker
     {
         $worker = $this->selectWorker();
         return new PooledWorker($worker, $this->push(...));
     }
 
+    #[\Override]
     public function getWorkerLimit(): int
     {
         return $this->limit;
     }
 
+    #[\Override]
     public function getWorkerCount(): int
     {
         return \min($this->limit, $this->pool->getWorkerCount());
     }
 
+    #[\Override]
     public function getIdleWorkerCount(): int
     {
         return \min($this->limit, $this->pool->getIdleWorkerCount());

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.8.9@e856423a5dc38d65e56b5792750c557277afe393">
+  <file src="examples/process.php">
+    <UnusedVariable>
+      <code><![CDATA[$future]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="examples/shared-memory-parcel.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[getmypid()]]></code>
+    </PossiblyFalseArgument>
+  </file>
+  <file src="examples/worker/FetchTask.php">
+    <FalsableReturnStatement>
+      <code><![CDATA[\file_get_contents($this->url)]]></code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType>
+      <code><![CDATA[mixed]]></code>
+    </InvalidFalsableReturnType>
+  </file>
+  <file src="examples/worker/parent.php">
+    <InvalidOperand>
+      <code><![CDATA[microtime(true) - $start]]></code>
+    </InvalidOperand>
+  </file>
+  <file src="src/Context/Internal/ContextException.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[getOriginalClassName]]></code>
+      <code><![CDATA[getOriginalCode]]></code>
+      <code><![CDATA[getOriginalFile]]></code>
+      <code><![CDATA[getOriginalLine]]></code>
+      <code><![CDATA[getOriginalMessage]]></code>
+      <code><![CDATA[getOriginalTrace]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Context/Internal/functions.php">
+    <UnusedVariable>
+      <code><![CDATA[$argc]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Context/Internal/process-runner.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$hubClass]]></code>
+      <code><![CDATA[$key]]></code>
+      <code><![CDATA[$uri]]></code>
+    </ArgumentTypeCoercion>
+    <UnusedVariable>
+      <code><![CDATA[$argc]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Context/ProcessContext.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[$contents]]></code>
+    </PossiblyFalseArgument>
+  </file>
+  <file src="src/Context/ThreadContext.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$hubClass]]></code>
+      <code><![CDATA[$uri]]></code>
+    </ArgumentTypeCoercion>
+    <PossiblyFalsePropertyAssignmentValue>
+      <code><![CDATA[\getmypid()]]></code>
+    </PossiblyFalsePropertyAssignmentValue>
+  </file>
+  <file src="src/Ipc/functions.php">
+    <TooManyArguments>
+      <code><![CDATA[read]]></code>
+    </TooManyArguments>
+  </file>
+  <file src="src/Worker/ContextWorkerPool.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[getLimit]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Worker/Execution.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[await]]></code>
+      <code><![CDATA[getChannel]]></code>
+      <code><![CDATA[getTask]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Worker/Internal/ContextWorker.php">
+    <UnusedVariable>
+      <code><![CDATA[$onReceive]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Worker/Internal/task-runner.php">
+    <UnusedVariable>
+      <code><![CDATA[$argc]]></code>
+    </UnusedVariable>
+  </file>
+</files>

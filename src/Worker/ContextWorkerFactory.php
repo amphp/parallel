@@ -32,6 +32,7 @@ final class ContextWorkerFactory implements WorkerFactory
      * The type of worker created depends on the extensions available. If multi-threading is enabled, a WorkerThread
      * will be created. If threads are not available a WorkerProcess will be created.
      */
+    #[\Override]
     public function create(?Cancellation $cancellation = null): Worker
     {
         $script = [self::SCRIPT_PATH];

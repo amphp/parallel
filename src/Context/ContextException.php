@@ -4,6 +4,6 @@ namespace Amp\Parallel\Context;
 
 use Amp\Sync\ChannelException;
 
-class ContextException extends ChannelException
+final class ContextException extends ChannelException
 {
 }

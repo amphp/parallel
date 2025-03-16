@@ -104,6 +104,8 @@ final class ThreadContext extends AbstractContext
                 // Timer to give the chance for the PHP VM to be interrupted by Runtime::kill(), since system calls
                 // such as select() will not be interrupted.
             }));
+            /** @var non-empty-string $uri */
+            /** @var non-empty-string $key */
 
             Internal\runContext($hubClass, $uri, $key, new TimeoutCancellation($connectTimeout), $argv);
 
@@ -155,6 +157,7 @@ final class ThreadContext extends AbstractContext
         $this->oid = \getmypid();
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         if ($this->exited) {
@@ -164,6 +167,7 @@ final class ThreadContext extends AbstractContext
         return parent::receive($cancellation);
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         if ($this->exited) {
@@ -183,6 +187,7 @@ final class ThreadContext extends AbstractContext
         }
     }
 
+    #[\Override]
     public function close(): void
     {
         if (!$this->exited) {
@@ -198,6 +203,7 @@ final class ThreadContext extends AbstractContext
         parent::close();
     }
 
+    #[\Override]
     public function join(?Cancellation $cancellation = null): mixed
     {
         $data = $this->receiveExitResult($cancellation);

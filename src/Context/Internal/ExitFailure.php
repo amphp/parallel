@@ -45,6 +45,7 @@ final class ExitFailure implements ExitResult
     /**
      * @throws ContextException
      */
+    #[\Override]
     public function getResult(): never
     {
         $exception = $this->createException();
