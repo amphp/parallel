@@ -89,6 +89,7 @@ final class ThreadContext extends AbstractContext
         $runtime = new Runtime(self::$autoloadPath);
         $future = $runtime->run(function (
             int $id,
+            string $hubClass,
             string $uri,
             string $key,
             float $connectTimeout,
@@ -104,11 +105,11 @@ final class ThreadContext extends AbstractContext
                 // such as select() will not be interrupted.
             }));
 
-            Internal\runContext($uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+            Internal\runContext($hubClass, $uri, $key, new TimeoutCancellation($connectTimeout), $argv);
 
             return 0;
             // @codeCoverageIgnoreEnd
-        }, [$id, $ipcHub->getUri(), $key, $childConnectTimeout, $script]);
+        }, [$id, $ipcHub::class, $ipcHub->getUri(), $key, $childConnectTimeout, $script]);
 
         if (!$future) {
             $runtime->kill();

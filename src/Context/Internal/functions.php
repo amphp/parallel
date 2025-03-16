@@ -5,22 +5,25 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\ByteStream\StreamChannel;
 use Amp\Cancellation;
 use Amp\Future;
-use Amp\Parallel\Ipc;
+use Amp\Parallel\Ipc\IpcHub;
 use Amp\Serialization\SerializationException;
 use Revolt\EventLoop;
 
-/** @internal */
-function runContext(string $uri, string $key, Cancellation $connectCancellation, array $argv): void
+/**
+ * @param class-string<IpcHub> $hubClass
+ * @internal
+ */
+function runContext(string $hubClass, string $uri, string $key, Cancellation $connectCancellation, array $argv): void
 {
-    EventLoop::queue(function () use ($argv, $uri, $key, $connectCancellation): void {
+    EventLoop::queue(function () use ($hubClass, $argv, $uri, $key, $connectCancellation): void {
         /** @noinspection PhpUnusedLocalVariableInspection */
         $argc = \count($argv);
 
         try {
-            $socket = Ipc\connect($uri, $key, $connectCancellation);
+            $socket = $hubClass::connect($uri, $key, $connectCancellation);
             $ipcChannel = new StreamChannel($socket, $socket);
 
-            $socket = Ipc\connect($uri, $key, $connectCancellation);
+            $socket = $hubClass::connect($uri, $key, $connectCancellation);
             $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             \trigger_error($exception->getMessage(), E_USER_ERROR);

@@ -2,17 +2,15 @@
 
 namespace Amp\Parallel\Ipc;
 
-use Amp\ByteStream\ReadableResourceStream;
+use Amp\ByteStream\ReadableStream;
 use Amp\Cancellation;
 use Amp\Socket\Socket;
-use Amp\Socket\SocketConnector;
-use function Amp\Socket\socketConnector;
 
 /**
  * @param positive-int $keyLength
  */
 function readKey(
-    ReadableResourceStream|Socket $stream,
+    ReadableStream|Socket $stream,
     ?Cancellation $cancellation = null,
     int $keyLength = SocketIpcHub::DEFAULT_KEY_LENGTH,
 ): string {
@@ -28,21 +26,4 @@ function readKey(
     } while (\strlen($key) < $keyLength);
 
     return $key;
-}
-
-/**
- * Note that this is designed to be used in the child process/thread to connect to an IPC socket.
- */
-function connect(
-    string $uri,
-    string $key,
-    ?Cancellation $cancellation = null,
-    ?SocketConnector $connector = null,
-): Socket {
-    $connector ??= socketConnector();
-
-    $client = $connector->connect($uri, cancellation: $cancellation);
-    $client->write($key);
-
-    return $client;
 }

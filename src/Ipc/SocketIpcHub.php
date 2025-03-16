@@ -10,9 +10,12 @@ use Amp\ForbidSerialization;
 use Amp\NullCancellation;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
+use Amp\Socket\Socket as SocketSocket;
 use Amp\Socket\SocketAddressType;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
+
+use function Amp\Socket\socketConnector;
 
 final class SocketIpcHub implements IpcHub
 {
@@ -92,6 +95,22 @@ final class SocketIpcHub implements IpcHub
 
             $queued = false;
         };
+    }
+
+    /**
+     * Note that this is designed to be used in the child process/thread to connect to an IPC socket.
+     */
+    public static function connect(
+        string $uri,
+        string $key,
+        ?Cancellation $cancellation = null,
+    ): SocketSocket {
+        $connector ??= socketConnector();
+
+        $client = $connector->connect($uri, cancellation: $cancellation);
+        $client->write($key);
+
+        return $client;
     }
 
     public function __destruct()

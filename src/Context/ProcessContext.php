@@ -11,6 +11,9 @@ use Amp\Parallel\Ipc\IpcHub;
 use Amp\Process\Process;
 use Amp\Process\ProcessException;
 
+use function Amp\ByteStream\getStderr;
+use function Amp\ByteStream\getStdout;
+
 /**
  * @template-covariant TResult
  * @template-covariant TReceive
@@ -136,6 +139,7 @@ final class ProcessContext extends AbstractContext
             ...(self::$options ??= self::buildOptions()),
             $scriptPath,
             $ipcHub->getUri(),
+            $ipcHub::class,
             (string) \strlen($key),
             (string) $childConnectTimeout,
             ...$script,

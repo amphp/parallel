@@ -5,6 +5,7 @@ namespace Amp\Parallel\Context\Internal;
 use Amp\ByteStream;
 use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Ipc;
+use Amp\Parallel\Ipc\IpcHub;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 
@@ -61,22 +62,30 @@ if (\function_exists("cli_set_process_title")) {
         \trigger_error("No socket path provided", E_USER_ERROR);
     }
 
-    if (!isset($argv[2]) || !\is_numeric($argv[2])) {
-        \trigger_error("No key length provided", E_USER_ERROR);
+    if (!isset($argv[2])) {
+        \trigger_error("No hub class provided", E_USER_ERROR);
     }
 
     if (!isset($argv[3]) || !\is_numeric($argv[3])) {
+        \trigger_error("No key length provided", E_USER_ERROR);
+    }
+
+    if (!isset($argv[4]) || !\is_numeric($argv[4])) {
         \trigger_error("No timeout provided", E_USER_ERROR);
     }
 
-    [, $uri, $length, $timeout] = $argv;
+    [, $uri, $hubClass, $length, $timeout] = $argv;
     $length = (int) $length;
     $timeout = (int) $timeout;
 
     \assert($length > 0 && $timeout > 0);
 
+    if (!isset(\class_implements($hubClass)[IpcHub::class])) {
+        throw new \Error("Passed hub class $hubClass does not implement IpcHub!");
+    }
+
     // Remove script path, socket path, key length, and timeout from process arguments.
-    $argv = \array_slice($argv, 4);
+    $argv = \array_slice($argv, 5);
 
     try {
         $cancellation = new TimeoutCancellation($timeout);
@@ -85,5 +94,5 @@ if (\function_exists("cli_set_process_title")) {
         \trigger_error($exception->getMessage(), E_USER_ERROR);
     }
 
-    runContext($uri, $key, $cancellation, $argv);
+    runContext($hubClass, $uri, $key, $cancellation, $argv);
 })();

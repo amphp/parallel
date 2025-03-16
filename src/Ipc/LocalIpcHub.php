@@ -7,7 +7,9 @@ use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Socket;
 use Amp\Socket\ResourceSocket;
+use Amp\Socket\Socket as SocketSocket;
 use Revolt\EventLoop;
+
 use const Amp\Process\IS_WINDOWS;
 
 final class LocalIpcHub implements IpcHub
@@ -45,6 +47,17 @@ final class LocalIpcHub implements IpcHub
     {
         EventLoop::queue($this->delegate->close(...));
         $this->unlink();
+    }
+
+    /**
+     * Note that this is designed to be used in the child process/thread to connect to an IPC socket.
+     */
+    public static function connect(
+        string $uri,
+        string $key,
+        ?Cancellation $cancellation = null,
+    ): SocketSocket {
+        return SocketIpcHub::connect($uri, $key, $cancellation);
     }
 
     public function accept(string $key, ?Cancellation $cancellation = null): ResourceSocket
