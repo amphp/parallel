@@ -18,8 +18,8 @@ $bodies = await([
     $execution2->getFuture(),
 ]);
 
-print strlen($bodies[0]) . PHP_EOL;
-print strlen($bodies[1]) . PHP_EOL;
+print ((string) strlen($bodies[0])) . PHP_EOL;
+print ((string) strlen($bodies[1])) . PHP_EOL;
 
 print PHP_EOL;
 print 'Took ' . (microtime(true) - $start) . ' seconds' . PHP_EOL;
