@@ -28,4 +28,10 @@ class ForkContextTest extends AbstractContextTest
         // tmp
         $this->expectNotToPerformAssertions();
     }
+
+    public function testImmediateJoin(): void
+    {
+        // tmp
+        $this->expectNotToPerformAssertions();
+    }
 }
