@@ -78,7 +78,7 @@ final class ForkContext extends AbstractContext
         }
 
         // Child
-        \define("AMP_CONTEXT", "parallel");
+        \define("AMP_CONTEXT", "fork");
         \define("AMP_CONTEXT_ID", \getmypid());
 
         if (\is_string($script)) {
