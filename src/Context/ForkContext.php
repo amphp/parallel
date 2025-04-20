@@ -11,7 +11,6 @@ use Amp\Serialization\Serializer;
 use Amp\TimeoutCancellation;
 use React\EventLoop\StreamSelectLoop;
 use Revolt\EventLoop;
-use Revolt\EventLoop\Driver\UvDriver;
 
 /**
  * USE AT YOUR OWN RISK! This context is not used by default in {@see DefaultContextFactory} because the timing of its
