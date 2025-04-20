@@ -9,6 +9,7 @@ use Amp\Parallel\Ipc\IpcHub;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
 use Amp\TimeoutCancellation;
+use React\EventLoop\StreamSelectLoop;
 use Revolt\EventLoop;
 use Revolt\EventLoop\Driver\UvDriver;
 
@@ -34,8 +35,7 @@ final class ForkContext extends AbstractContext
 
     public static function isSupported(): bool
     {
-        return \function_exists('pcntl_fork')
-            && !EventLoop::getDriver() instanceof UvDriver;
+        return \function_exists('pcntl_fork') && EventLoop::getDriver() instanceof StreamSelectLoop;
     }
 
     /**
