@@ -18,6 +18,7 @@
         "never",
         "object",
         "random_bytes",
+        "str_increment",
         "readKey",
         "flattenArgument",
         "formatFlattenedBacktrace",
