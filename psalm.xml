@@ -41,6 +41,12 @@
             </errorLevel>
         </UndefinedClass>
 
+        <UndefinedFunction>
+            <errorLevel type="suppress">
+                <referencedFunction name="str_increment"/>
+            </errorLevel>
+        </UndefinedFunction>
+
         <UnsupportedPropertyReferenceUsage>
             <errorLevel type="suppress">
                 <directory name="src"/>

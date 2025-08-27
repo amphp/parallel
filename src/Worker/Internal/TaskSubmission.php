@@ -14,7 +14,9 @@ final class TaskSubmission extends JobPacket
     public function __construct(Task $task)
     {
         $this->task = $task;
-        parent::__construct(self::$nextId++);
+        $id = self::$nextId;
+        \PHP_VERSION_ID >= 80300 ? self::$nextId = \str_increment(self::$nextId) : ++self::$nextId;
+        parent::__construct($id);
     }
 
     public function getTask(): Task
