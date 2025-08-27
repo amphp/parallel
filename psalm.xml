@@ -41,6 +41,12 @@
             </errorLevel>
         </UndefinedClass>
 
+        <UndefinedFunction>
+            <errorLevel type="suppress">
+                <directory name="src/Worker/Internal"/>
+            </errorLevel>
+        </UndefinedFunction>
+
         <UnsupportedPropertyReferenceUsage>
             <errorLevel type="suppress">
                 <directory name="src"/>
