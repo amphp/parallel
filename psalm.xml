@@ -43,7 +43,7 @@
 
         <UndefinedFunction>
             <errorLevel type="suppress">
-                <directory name="src/Worker/Internal"/>
+                <referencedFunction name="str_increment"/>
             </errorLevel>
         </UndefinedFunction>
 
