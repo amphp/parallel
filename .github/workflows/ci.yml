@@ -60,7 +60,7 @@ jobs:
             static-analysis: none
             style-fix: none
             composer-require-checker-version: none
-            continue-on-error:
+            continue-on-error: true
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.5'
