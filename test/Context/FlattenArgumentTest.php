@@ -1,10 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp\Parallel\Test\Context;
 
 use PHPUnit\Framework\TestCase;
 use function Amp\Parallel\Context\flattenArgument;
-use function sqrt;
 
 class FlattenArgumentTest extends TestCase
 {

@@ -22,4 +22,4 @@ print strlen($bodies[0]) . PHP_EOL;
 print strlen($bodies[1]) . PHP_EOL;
 
 print PHP_EOL;
-print 'Took ' . (microtime(true) - $start) . ' seconds' . PHP_EOL;
+print 'Took ' . number_format(microtime(true) - $start, 2) . ' seconds' . PHP_EOL;

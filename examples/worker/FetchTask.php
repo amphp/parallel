@@ -20,6 +20,11 @@ final class FetchTask implements Task
 
     public function run(Channel $channel, Cancellation $cancellation): mixed
     {
-        return \file_get_contents($this->url);
+        $contents = \file_get_contents($this->url);
+        if ($contents === false) {
+            throw new \RuntimeException("Unable to read from {$this->url}");
+        }
+
+        return $contents;
     }
 }

@@ -14,7 +14,13 @@ $mutex = new SemaphoreMutex($semaphore = PosixSemaphore::create(1));
 // Create a parcel that then can be accessed in any number of child processes or threads.
 $parcel = SharedMemoryParcel::create($mutex, 1);
 
-printf("Parent %d created semaphore %s and parcel: %s\n", getmypid(), $semaphore->getKey(), $parcel->getKey());
+$pid = getmypid();
+if ($pid === false) {
+    print "Unable to determine PID";
+    exit(1);
+}
+
+printf("Parent %d created semaphore %s and parcel: %s\n", $pid, $semaphore->getKey(), $parcel->getKey());
 
 // Send semaphore and parcel key to child process as command argument.
 $context = contextFactory()->start([
