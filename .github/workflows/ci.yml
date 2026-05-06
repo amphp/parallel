@@ -13,6 +13,7 @@ jobs:
             php-version: '8.1'
             php-ts: nts
             continue-on-error: false
+            psalm: skip
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.2'
@@ -33,7 +34,7 @@ jobs:
             php-version: '8.5'
             php-ts: nts
             continue-on-error: false
-            static-analysis: none
+            psalm: skip
             style-fix: none
             composer-require-checker-version: none
 
@@ -42,7 +43,7 @@ jobs:
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
-            static-analysis: none
+            psalm: skip
             style-fix: none
             composer-require-checker-version: none
             continue-on-error: true
@@ -52,7 +53,7 @@ jobs:
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
-            static-analysis: none
+            psalm: skip
             style-fix: none
             composer-require-checker-version: none
             continue-on-error: true
@@ -62,7 +63,7 @@ jobs:
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
-            static-analysis: none
+            psalm: skip
             style-fix: none
             composer-require-checker-version: none
             continue-on-error: true
@@ -72,7 +73,7 @@ jobs:
             php-extensions: parallel
             job-description: 'with ext-parallel'
             php-ts: ts
-            static-analysis: none
+            psalm: skip
             style-fix: none
             composer-require-checker-version: none
             continue-on-error: true
@@ -128,6 +129,10 @@ jobs:
             composer-${{ runner.os }}-
             composer-
 
+      - name: Remove psalm/phar
+        run: composer remove --no-update --dev psalm/phar
+        if: matrix.psalm == 'skip'
+
       - name: Install dependencies
         run: |
           composer update --optimize-autoloader --no-interaction --no-progress ${{ matrix.composer-flags }}
@@ -141,7 +146,7 @@ jobs:
 
       - name: Run static analysis
         run: vendor/bin/psalm.phar
-        if: matrix.static-analysis != 'none'
+        if: matrix.psalm != 'skip'
 
       - name: Run style fixer
         env:
