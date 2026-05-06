@@ -19,6 +19,7 @@ jobs:
             php-version: '8.2'
             php-ts: nts
             continue-on-error: false
+            psalm: skip
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
