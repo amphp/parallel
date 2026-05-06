@@ -28,6 +28,11 @@ jobs:
             php-version: '8.4'
             php-ts: nts
             continue-on-error: false
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.5'
+            php-ts: nts
+            continue-on-error: false
             static-analysis: none
             style-fix: none
             composer-require-checker-version: none
