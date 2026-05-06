@@ -10,6 +10,6 @@ class FlattenArgumentTest extends TestCase
 {
     public function testNan()
     {
-        self::assertSame('NAN', flattenArgument(sqrt(-1)));
+        self::assertSame('NAN', flattenArgument(\sqrt(-1)));
     }
 }
