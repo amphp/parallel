@@ -72,12 +72,16 @@ function runContext(
         $result = new ExitFailure($exception);
     }
 
+    $ipcChannel->close();
+
     try {
         try {
             $resultChannel->send($result);
         } catch (SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
             $resultChannel->send(new ExitFailure($exception));
+        } finally {
+            $resultChannel->close();
         }
     } catch (ChannelException) {
         // The parent may have already closed the channel after reading
