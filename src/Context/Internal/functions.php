@@ -8,8 +8,8 @@ use Amp\Future;
 use Amp\Parallel\Ipc;
 use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\SerializationException;
-use Amp\Sync\ChannelException;
 use Amp\Serialization\Serializer;
+use Amp\Sync\ChannelException;
 
 /** @internal */
 function runContext(
