@@ -33,7 +33,10 @@ final class ForkContext extends AbstractContext
 
     public static function isSupported(): bool
     {
-        return \function_exists('pcntl_fork') && EventLoop::getDriver()->getHandle() === null;
+        return \extension_loaded('pcntl')
+            && \extension_loaded('posix')
+            && \function_exists('pcntl_fork') // pcntl_fork may be disabled.
+            && EventLoop::getDriver()->getHandle() === null;
     }
 
     /**
@@ -102,11 +105,6 @@ final class ForkContext extends AbstractContext
         StreamChannel $resultChannel,
     ) {
         parent::__construct($ipcChannel, $resultChannel);
-    }
-
-    public function __destruct()
-    {
-        $this->close();
     }
 
     public function receive(?Cancellation $cancellation = null): mixed
