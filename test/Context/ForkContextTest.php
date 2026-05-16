@@ -6,6 +6,10 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ForkContext;
 use Amp\Parallel\Context\ForkContextFactory;
 
+/**
+ * @requires extension pcntl
+ * @requires extension posix
+ */
 class ForkContextTest extends AbstractContextTest
 {
     public function createContext(string|array $script): Context
@@ -15,23 +19,5 @@ class ForkContextTest extends AbstractContextTest
         }
 
         return (new ForkContextFactory())->start($script);
-    }
-
-    public function testThrowingProcessOnReceive(): void
-    {
-        // tmp
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function testThrowingProcessOnSend(): void
-    {
-        // tmp
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function testImmediateJoin(): void
-    {
-        // tmp
-        $this->expectNotToPerformAssertions();
     }
 }
