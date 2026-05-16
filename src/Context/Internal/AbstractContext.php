@@ -42,7 +42,7 @@ abstract class AbstractContext implements Context
             $this->ipcChannel->close();
 
             throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit",
+                "The context stopped responding during receive, potentially due to a fatal error or calling exit",
                 previous: $exception,
             );
         }
@@ -74,7 +74,7 @@ abstract class AbstractContext implements Context
             $this->ipcChannel->close();
 
             throw new ContextException(
-                "The context stopped responding, potentially due to a fatal error or calling exit",
+                "The context stopped responding during send, potentially due to a fatal error or calling exit",
                 previous: $exception,
             );
         }
