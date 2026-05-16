@@ -256,7 +256,7 @@ final class ContextWorkerPool implements LimitedWorkerPool
                             throw new WorkerException('Worker factory did not create a viable worker');
                         }
 
-                        $workers->attach($worker, 0);
+                        $workers->offsetSet($worker, 0);
                         return $worker;
                     });
 

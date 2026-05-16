@@ -138,6 +138,9 @@ final class ThreadContext extends AbstractContext
 
     private bool $exited = false;
 
+    /**
+     * @throws ContextException
+     */
     private function __construct(
         private readonly int $id,
         private readonly Runtime $runtime,
@@ -153,7 +156,12 @@ final class ThreadContext extends AbstractContext
             $exited = true;
         });
 
-        $this->oid = \getmypid();
+        $pid = \getmypid();
+        if ($pid === false) {
+            throw new ContextException("Failed to determine PID");
+        }
+
+        $this->oid = $pid;
     }
 
     public function receive(?Cancellation $cancellation = null): mixed

@@ -128,5 +128,9 @@ function flattenArgument(mixed $value): string
         return $value ? 'true' : 'false';
     }
 
+    if (\is_nan($value)) {
+        return 'NAN';
+    }
+
     return (string) $value;
 }
