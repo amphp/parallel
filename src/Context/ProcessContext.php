@@ -282,12 +282,12 @@ final class ProcessContext extends AbstractContext
      */
     public function join(?Cancellation $cancellation = null): mixed
     {
-        $data = $this->receiveExitResult($cancellation);
+        $result = $this->receiveExitResult($cancellation);
 
         $code = $this->process->join();
 
         try {
-            return $data->getResult();
+            return $result->getResult();
         } finally {
             if ($code !== 0) {
                 // If an ExitFailure throws above, the exception will be automatically attached as the previous

@@ -87,5 +87,7 @@ if (\function_exists("cli_set_process_title")) {
         exit(255);
     }
 
-    runContext($uri, $key, $cancellation, $argv);
+    EventLoop::queue(runContext(...), $uri, $key, $cancellation, $argv);
+
+    EventLoop::run();
 })();

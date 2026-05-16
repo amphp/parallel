@@ -104,7 +104,9 @@ final class ThreadContext extends AbstractContext
                 // such as select() will not be interrupted.
             }));
 
-            Internal\runContext($uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+            EventLoop::queue(Internal\runContext(...), $uri, $key, new TimeoutCancellation($connectTimeout), $argv);
+
+            EventLoop::run();
 
             return 0;
             // @codeCoverageIgnoreEnd
@@ -207,10 +209,8 @@ final class ThreadContext extends AbstractContext
 
     public function join(?Cancellation $cancellation = null): mixed
     {
-        $data = $this->receiveExitResult($cancellation);
+        $result = $this->receiveExitResult($cancellation);
 
-        $this->close();
-
-        return $data->getResult();
+        return $result->getResult();
     }
 }

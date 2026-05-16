@@ -40,6 +40,7 @@
         "SPL",
         "standard",
         "hash",
-        "pcntl"
+        "pcntl",
+        "posix"
     ]
 }
