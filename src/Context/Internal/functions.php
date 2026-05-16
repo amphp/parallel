@@ -7,6 +7,7 @@ use Amp\Cancellation;
 use Amp\Future;
 use Amp\Parallel\Ipc;
 use Amp\Serialization\SerializationException;
+use Amp\Sync\ChannelException;
 use Revolt\EventLoop;
 
 /** @internal */
@@ -23,7 +24,8 @@ function runContext(string $uri, string $key, Cancellation $connectCancellation,
             $socket = Ipc\connect($uri, $key, $connectCancellation);
             $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
-            \trigger_error($exception->getMessage(), E_USER_ERROR);
+            \file_put_contents('php://stderr', $exception->getMessage(), \FILE_APPEND);
+            exit(255);
         }
 
         try {
@@ -72,11 +74,12 @@ function runContext(string $uri, string $key, Cancellation $connectCancellation,
                 // Serializing the result failed. Send the reason why.
                 $resultChannel->send(new ExitFailure($exception));
             }
+        } catch (ChannelException) {
+            // The parent may have already closed the channel after reading
+            // the result (e.g. during shutdown). Nothing left to do.
         } catch (\Throwable $exception) {
-            \trigger_error(\sprintf(
-                "Could not send result to parent: '%s'; be sure to shutdown the child before ending the parent",
-                $exception->getMessage(),
-            ), E_USER_ERROR);
+            \file_put_contents('php://stderr', $exception->getMessage(), \FILE_APPEND);
+            exit(255);
         }
     });
 
