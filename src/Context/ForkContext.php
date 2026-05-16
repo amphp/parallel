@@ -111,14 +111,14 @@ final class ForkContext extends AbstractContext
 
     public function receive(?Cancellation $cancellation = null): mixed
     {
-        $this->checkExit(false);
+        $this->checkExit(false); // Will throw if the process exited unexpectedly.
 
         return parent::receive($cancellation);
     }
 
     public function send(mixed $data): void
     {
-        $this->checkExit(false);
+        $this->checkExit(false); // Will throw if the process exited unexpectedly.
 
         parent::send($data);
     }
