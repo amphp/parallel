@@ -159,8 +159,6 @@ final class ForkContext extends AbstractContext
     {
         $data = $this->receiveExitResult($cancellation);
 
-        $this->close();
-
         return $data->getResult();
     }
 }
