@@ -157,8 +157,8 @@ final class ForkContext extends AbstractContext
 
     public function join(?Cancellation $cancellation = null): mixed
     {
-        $data = $this->receiveExitResult($cancellation);
+        $result = $this->receiveExitResult($cancellation);
 
-        return $data->getResult();
+        return $result->getResult();
     }
 }
