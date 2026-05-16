@@ -37,6 +37,7 @@ final class ProcessContextFactory implements ContextFactory
      *
      * @throws ContextException
      */
+    #[\Override]
     public function start(string|array $script, ?Cancellation $cancellation = null): ProcessContext
     {
         return ProcessContext::start(

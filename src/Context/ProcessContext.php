@@ -280,6 +280,7 @@ final class ProcessContext extends AbstractContext
      * @return TResult
      * @throws ContextException
      */
+    #[\Override]
     public function join(?Cancellation $cancellation = null): mixed
     {
         $result = $this->receiveExitResult($cancellation);
@@ -352,6 +353,7 @@ final class ProcessContext extends AbstractContext
         return $this->process->getStderr();
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->process->kill();

@@ -37,6 +37,7 @@ final class ForkContextFactory implements ContextFactory
      *
      * @throws ContextException
      */
+    #[\Override]
     public function start(string|array $script, ?Cancellation $cancellation = null): ForkContext
     {
         return ForkContext::start(

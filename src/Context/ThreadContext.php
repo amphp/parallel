@@ -164,6 +164,7 @@ final class ThreadContext extends AbstractContext
         $this->oid = $pid;
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         if ($this->exited) {
@@ -173,6 +174,7 @@ final class ThreadContext extends AbstractContext
         return parent::receive($cancellation);
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         if ($this->exited) {
@@ -192,6 +194,7 @@ final class ThreadContext extends AbstractContext
         }
     }
 
+    #[\Override]
     public function close(): void
     {
         if (!$this->exited) {
@@ -207,6 +210,7 @@ final class ThreadContext extends AbstractContext
         parent::close();
     }
 
+    #[\Override]
     public function join(?Cancellation $cancellation = null): mixed
     {
         $result = $this->receiveExitResult($cancellation);

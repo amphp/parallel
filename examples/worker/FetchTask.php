@@ -18,6 +18,7 @@ final class FetchTask implements Task
         $this->url = $url;
     }
 
+    #[\Override]
     public function run(Channel $channel, Cancellation $cancellation): mixed
     {
         $contents = \file_get_contents($this->url);

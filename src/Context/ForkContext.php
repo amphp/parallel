@@ -107,6 +107,7 @@ final class ForkContext extends AbstractContext
         parent::__construct($ipcChannel, $resultChannel);
     }
 
+    #[\Override]
     public function receive(?Cancellation $cancellation = null): mixed
     {
         $this->checkExit(false); // Will throw if the process exited unexpectedly.
@@ -114,6 +115,7 @@ final class ForkContext extends AbstractContext
         return parent::receive($cancellation);
     }
 
+    #[\Override]
     public function send(mixed $data): void
     {
         $this->checkExit(false); // Will throw if the process exited unexpectedly.
@@ -143,6 +145,7 @@ final class ForkContext extends AbstractContext
         return $this->exited;
     }
 
+    #[\Override]
     public function close(): void
     {
         if ($this->checkExit(false) === null) {
@@ -155,6 +158,7 @@ final class ForkContext extends AbstractContext
         parent::close();
     }
 
+    #[\Override]
     public function join(?Cancellation $cancellation = null): mixed
     {
         $result = $this->receiveExitResult($cancellation);

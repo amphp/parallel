@@ -18,8 +18,7 @@
     <issueHandlers>
         <StringIncrement>
             <errorLevel type="suppress">
-                <directory name="examples"/>
-                <directory name="src"/>
+                <file name="src/Worker/Internal/TaskSubmission.php"/>
             </errorLevel>
         </StringIncrement>
 
@@ -36,13 +35,6 @@
                 <directory name="src"/>
             </errorLevel>
         </DocblockTypeContradiction>
-
-        <MissingOverrideAttribute>
-            <errorLevel type="suppress">
-                <directory name="examples"/>
-                <directory name="src"/>
-            </errorLevel>
-        </MissingOverrideAttribute>
 
         <UnusedClass>
             <errorLevel type="suppress">

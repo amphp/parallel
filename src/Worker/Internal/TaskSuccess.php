@@ -25,6 +25,7 @@ final class TaskSuccess extends TaskResult
     /**
      * @return T
      */
+    #[\Override]
     public function getResult(): mixed
     {
         if ($this->result instanceof \__PHP_Incomplete_Class) {

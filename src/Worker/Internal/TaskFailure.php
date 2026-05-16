@@ -48,6 +48,7 @@ class TaskFailure extends TaskResult
     /**
      * @throws TaskFailureThrowable
      */
+    #[\Override]
     public function getResult(): never
     {
         throw $this->createException();

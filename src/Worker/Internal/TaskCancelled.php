@@ -16,6 +16,7 @@ final class TaskCancelled extends TaskFailure
     /**
      * @throws TaskCancelledException
      */
+    #[\Override]
     public function getResult(): never
     {
         throw new TaskCancelledException($this->createException());

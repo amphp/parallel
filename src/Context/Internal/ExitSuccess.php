@@ -20,6 +20,7 @@ final class ExitSuccess implements ExitResult
     /**
      * @return TValue
      */
+    #[\Override]
     public function getResult(): mixed
     {
         return $this->result;
