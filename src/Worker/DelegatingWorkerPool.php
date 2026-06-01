@@ -46,7 +46,12 @@ final class DelegatingWorkerPool implements LimitedWorkerPool
     {
         $worker = $this->selectWorker();
 
-        $execution = $worker->submit($task, $cancellation);
+        try {
+            $execution = $worker->submit($task, $cancellation);
+        } catch (\Throwable $exception) {
+            $this->push($worker);
+            throw $exception;
+        }
 
         $execution->getFuture()->finally(fn () => $this->push($worker))->ignore();
 
