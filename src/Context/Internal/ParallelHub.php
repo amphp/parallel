@@ -4,9 +4,10 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\DeferredFuture;
 use Amp\Future as AmpFuture;
+use Amp\Interval;
 use parallel\Events;
 use parallel\Future as ParallelFuture;
-use Revolt\EventLoop;
+use function Amp\weakClosure;
 
 /** @internal */
 final class ParallelHub
@@ -16,30 +17,30 @@ final class ParallelHub
     /** @var array<int, DeferredFuture> */
     private array $deferredFutures = [];
 
-    private readonly string $watcher;
+    private readonly Interval $interval;
 
     private readonly Events $events;
 
     public function __construct()
     {
-        $events = $this->events = new Events();
+        $this->events = new Events();
         $this->events->setBlocking(false);
 
-        $deferredFutures = &$this->deferredFutures;
-        $this->watcher = EventLoop::repeat(self::EXIT_CHECK_FREQUENCY, static function () use (
-            &$deferredFutures,
-            $events,
-        ): void {
-            while ($event = $events->poll()) {
+        $this->interval = new Interval(self::EXIT_CHECK_FREQUENCY, weakClosure(function (): void {
+            while ($event = $this->events->poll()) {
                 $id = (int) $event->source;
-                \assert(isset($deferredFutures[$id]), 'Deferred future for context ID not found');
-                $deferredFuture = $deferredFutures[$id];
-                unset($deferredFutures[$id]);
+                \assert(isset($this->deferredFutures[$id]), 'Deferred future for context ID not found');
+                $deferredFuture = $this->deferredFutures[$id];
+                unset($this->deferredFutures[$id]);
                 $deferredFuture->complete();
             }
-        });
-        EventLoop::disable($this->watcher);
-        EventLoop::unreference($this->watcher);
+
+            if (empty($this->deferredFutures)) {
+                $this->interval->disable();
+            }
+        }), reference: false);
+
+        $this->interval->disable();
     }
 
     public function add(int $id, ParallelFuture $future): AmpFuture
@@ -47,7 +48,7 @@ final class ParallelHub
         $this->deferredFutures[$id] = $deferred = new DeferredFuture();
         $this->events->addFuture((string) $id, $future);
 
-        EventLoop::enable($this->watcher);
+        $this->interval->enable();
 
         return $deferred->getFuture();
     }
@@ -67,7 +68,7 @@ final class ParallelHub
         $this->events->remove((string) $id);
 
         if (empty($this->deferredFutures)) {
-            EventLoop::disable($this->watcher);
+            $this->interval->disable();
         }
     }
 }
