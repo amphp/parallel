@@ -104,7 +104,7 @@ abstract class AbstractContext implements Context
     {
         while ($this->result) {
             try {
-                $this->result->await($cancellation);
+                return $this->result->await($cancellation);
             } catch (CancelledException) {
                 // Ignore cancellation from a prior join request, throw only if this request was cancelled.
                 $cancellation?->throwIfRequested();
