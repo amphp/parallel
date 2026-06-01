@@ -151,13 +151,15 @@ final class ProcessContext extends AbstractContext
             throw new ContextException("Starting the process failed: " . $exception->getMessage(), 0, $exception);
         }
 
+        $acceptCancellation = self::makeAcceptCancellation($cancellation, $childConnectTimeout);
+
         try {
             $process->getStdin()->write($key);
 
-            $socket = $ipcHub->accept($key, $cancellation);
+            $socket = $ipcHub->accept($key, $acceptCancellation);
             $ipcChannel = new StreamChannel($socket, $socket);
 
-            $socket = $ipcHub->accept($key, $cancellation);
+            $socket = $ipcHub->accept($key, $acceptCancellation);
             $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             if ($process->isRunning()) {

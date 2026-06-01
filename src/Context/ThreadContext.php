@@ -117,11 +117,13 @@ final class ThreadContext extends AbstractContext
             throw new ContextException('Starting the thread did not return a future');
         }
 
+        $acceptCancellation = self::makeAcceptCancellation($cancellation, $childConnectTimeout);
+
         try {
-            $socket = $ipcHub->accept($key, $cancellation);
+            $socket = $ipcHub->accept($key, $acceptCancellation);
             $ipcChannel = new StreamChannel($socket, $socket);
 
-            $socket = $ipcHub->accept($key, $cancellation);
+            $socket = $ipcHub->accept($key, $acceptCancellation);
             $resultChannel = new StreamChannel($socket, $socket);
         } catch (\Throwable $exception) {
             $runtime->kill();

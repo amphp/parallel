@@ -4,6 +4,7 @@ namespace Amp\Parallel\Context\Internal;
 
 use Amp\Cancellation;
 use Amp\CancelledException;
+use Amp\CompositeCancellation;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Future;
@@ -11,6 +12,7 @@ use Amp\Parallel\Context\Context;
 use Amp\Parallel\Context\ContextException;
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
+use Amp\TimeoutCancellation;
 use function Amp\async;
 use function Amp\Parallel\Context\flattenArgument;
 
@@ -27,6 +29,17 @@ abstract class AbstractContext implements Context
 
     /** @var Future<ExitResult<TResult>>|null */
     private ?Future $result = null;
+
+    protected static function makeAcceptCancellation(
+        ?Cancellation $cancellation,
+        float $acceptTimeout,
+    ): Cancellation {
+        $timeoutCancellation = new TimeoutCancellation($acceptTimeout);
+
+        return $cancellation
+            ? new CompositeCancellation($cancellation, $timeoutCancellation)
+            : $timeoutCancellation;
+    }
 
     protected function __construct(
         private readonly Channel $ipcChannel,
