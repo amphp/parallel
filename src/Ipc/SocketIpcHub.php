@@ -86,7 +86,7 @@ final class SocketIpcHub implements IpcHub
                     $waitingByKey[$received]->complete($client);
                     unset($waitingByKey[$received]);
                 } else {
-                    $clientsByKey->set($received, $client);
+                    $clientsByKey->set($received, $client, (int) \ceil($keyReceiveTimeout));
                 }
             }
 
