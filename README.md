@@ -153,6 +153,33 @@ A worker may be executing multiple tasks, so consider using `AtomicCache` instea
 
 A `Cancellation` provided to `Worker::submit()` may be used to request cancellation of the task in the worker. When cancellation is requested in the parent, the `Cancellation` provided to `Task::run()` is cancelled. The task may choose to ignore this cancellation request or act accordingly and throw a `CancelledException` from `Task::run()`. If the cancellation request is ignored, the task may continue and return a value which will be returned to the parent as though cancellation had not been requested.
 
+#### Bootstrapping workers
+
+Composer's autoloader is initialized automatically in each worker, so any class loadable by Composer is available inside `Task::run()` without extra setup. When a worker needs *additional* initialization, pass a **bootstrap file** as the first argument to `ContextWorkerFactory`. The file is `require`d once per worker, when the worker starts — not on every `Task::run()` call.
+
+```php
+use Amp\Parallel\Worker\ContextWorkerFactory;
+use Amp\Parallel\Worker\ContextWorkerPool;
+
+$factory = new ContextWorkerFactory(bootstrapPath: __DIR__ . '/worker-bootstrap.php');
+$pool = new ContextWorkerPool(factory: $factory);
+```
+
+```php
+// worker-bootstrap.php — executed once per worker, before any task
+
+// Register additional autoloaders not managed by Composer.
+require __DIR__ . '/legacy/autoload.php';
+
+// Load framework/application configuration for the worker.
+require __DIR__ . '/app/worker-bootstrap.php';
+
+// Define worker-specific constants.
+define('APP_WORKER', true);
+```
+
+Composer's autoloader is automatically initialized in each worker. Use a bootstrap file when additional initialization is required, such as registering custom autoloaders, loading framework configuration, or defining worker-specific constants. The path must point to an existing file; `ContextWorkerFactory` throws otherwise.
+
 ### Worker Pools
 
 The easiest way to use workers is through a worker pool.
