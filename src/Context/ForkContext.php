@@ -10,6 +10,7 @@ use Amp\Serialization\NativeSerializer;
 use Amp\Serialization\Serializer;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
+use Revolt\EventLoop\Driver\StreamSelectDriver;
 
 /**
  * USE AT YOUR OWN RISK! This context is not used by default in {@see DefaultContextFactory} because the timing of its
@@ -20,7 +21,11 @@ use Revolt\EventLoop;
  *
  * Forking very early in an application, may be beneficial to copy state from the parent that was expensive to set up.
  *
- * This context is NOT compatible with event-loop extensions such as ext-uv or ext-ev.
+ * This context does NOT support event-loop drivers with a native handle: the drivers of ext-uv, ext-ev and ext-event,
+ * and the Io\Poll driver, which revolt/event-loop 1.1+ selects on PHP 8.6+ (except on Windows) when none of those
+ * extensions is loaded and REVOLT_DRIVER isn't set. Their state inherited by the child may be unsafe or unusable after
+ * a fork: on Linux, for example, the parent and the child share an epoll instance. Use {@see StreamSelectDriver}
+ * instead, for example by setting REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'.
  *
  * @template-covariant TResult
  * @template-covariant TReceive
@@ -45,7 +50,7 @@ final class ForkContext extends AbstractContext
      * @param positive-int $childConnectTimeout Number of seconds the child will attempt to connect to the parent
      *      before failing.
      *
-     * @throws ContextException If starting the process fails.
+     * @throws ContextException If forking is not supported, see {@see isSupported()}, or starting the process fails.
      */
     public static function start(
         IpcHub $ipcHub,
@@ -54,6 +59,15 @@ final class ForkContext extends AbstractContext
         int $childConnectTimeout = self::DEFAULT_START_TIMEOUT,
         Serializer $serializer = new NativeSerializer(),
     ): self {
+        if (!self::isSupported()) {
+            throw new ContextException(\sprintf(
+                "Forking requires the pcntl and posix extensions, an enabled pcntl_fork(), and an event loop driver"
+                . " without a native handle, such as %s; the current driver is %s",
+                StreamSelectDriver::class,
+                EventLoop::getDriver()::class,
+            ));
+        }
+
         $key = $ipcHub->generateKey();
 
         // Fork
